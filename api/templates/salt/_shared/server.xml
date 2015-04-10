@@ -18,27 +18,25 @@
   <Service name="Catalina">
 
 
-  <Connector port="8443" address="localhost"
-        protocol="org.apache.coyote.http11.Http11Protocol" scheme="https" secure="true"
+  <Connector port="8443" address="%(ip)s"
+        protocol="HTTP/1.1" scheme="https" secure="true"
         clientAuth="false" sslProtocol="TLS" SSLEnabled="true"
-        keystoreFile="/etc/certs/shibIDP.jks"
+        keystoreFile="%(shibJksFn)s"
         keystoreType="JKS" keystorePass="%(shibJksPass)s"
-        truststoreFile="/etc/certs/shibIDP.jks"
-        truststorePass="%(shibJksPass)s" truststoreType="JKS"
-        truststoreAlgorithm="DelegateToApplication"
-        sslImplementationName="edu.internet2.middleware.security.tomcat7.DelegateToApplicationJSSEImplementation"/>
+        truststoreFile="%(shibJksFn)s"
+        truststorePass="%(shibJksPass)s" truststoreType="JKS"/>
 
-  <Connector port="8009" address="localhost" protocol="AJP/1.3"
+  <Connector port="8009" address="%(ip)s" protocol="AJP/1.3"
         redirectPort="8443" tomcatAuthentication="false" />
 
-    <Engine name="Catalina" defaultHost="localhost">
+    <Engine name="Catalina" defaultHost="%(ip)s">
 
       <Realm className="org.apache.catalina.realm.LockOutRealm">
         <Realm className="org.apache.catalina.realm.UserDatabaseRealm"
                resourceName="UserDatabase"/>
       </Realm>
 
-      <Host name="localhost"  appBase="webapps"
+      <Host name="%(ip)s"  appBase="webapps"
         unpackWARs="true" autoDeploy="false"
             xmlValidation="false" xmlNamespaceAware="false">
 

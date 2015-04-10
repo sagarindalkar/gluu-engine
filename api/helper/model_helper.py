@@ -32,8 +32,8 @@ from api.model import oxauthNode
 from api.model import oxtrustNode
 from api.helper.docker_helper import DockerHelper
 from api.helper.salt_helper import SaltHelper
-from api.helper.common_helper import get_random_chars
-from api.helper.common_helper import encrypt_text
+# from api.helper.common_helper import get_random_chars
+# from api.helper.common_helper import encrypt_text
 from api.helper.common_helper import run
 from api.setup.ldap_setup import ldapSetup
 from api.setup.oxauth_setup import OxAuthSetup
@@ -141,10 +141,14 @@ class BaseModelHelper(object):
                 self.prepare_minion()
                 if self.salt.is_minion_registered(self.node.id):
                     setup_obj = self.setup_class(self.node, self.cluster, self.logger)
+                    setup_obj.before_setup()
+
                     if setup_obj.setup():
                         self.logger.info("saving to database")
                         self.save()
+
                     setup_obj.after_setup()
+                    setup_obj.remove_build_dir()
 
                 # minion is not connected
                 else:
@@ -224,9 +228,3 @@ class OxTrustModelHelper(BaseModelHelper):
         container_ip = self.docker.get_container_ip(self.node.id)
         self.node.hostname = container_ip
         self.node.ip = container_ip
-        self.node.shib_jks_pass = get_random_chars()
-        self.node.encoded_shib_jks_pw = encrypt_text(self.node.shib_jks_pass, self.cluster.passkey)
-
-    def before_save(self):
-        # set oxtrust plain-text password as empty before saving to database
-        self.node.shib_jks_pass = ""

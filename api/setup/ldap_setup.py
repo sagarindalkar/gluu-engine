@@ -250,6 +250,7 @@ class ldapSetup(BaseSetup):
             "inumAppliance": self.cluster.inumAppliance,
             "hostname": self.node.local_hostname,
             "hostname_oxauth_cluster": self.cluster.hostname_oxauth_cluster,
+            "hostname_oxtrust_cluster": self.cluster.hostname_oxtrust_cluster,
             "ldaps_port": self.node.ldaps_port,
             "ldap_binddn": self.node.ldap_binddn,
             "inumOrg": self.cluster.inumOrg,

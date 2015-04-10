@@ -1,6 +1,6 @@
 # The MIT License (MIT)
 #
-# Copyright (c) 2014 Gluu
+# Copyright (c) 2015 Gluu
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -47,18 +47,17 @@ class oxtrustNode(BaseModel):
         self.tomcat_home = "/opt/tomcat"
         self.tomcat_conf_dir = "/opt/tomcat/conf"
         self.tomcat_log_folder = "/opt/tomcat/logs"
+
         self.ldap_binddn = 'cn=directory manager'
         self.openssl_cmd = "/usr/bin/openssl"
+        self.keytool_cmd = "/usr/bin/keytool"
+
         self.cert_folder = "/etc/certs"
         self.httpd_key = "/etc/certs/httpd.key"
         self.httpd_key_orig = "/etc/certs/httpd.key.orig"
         self.httpd_csr = "/etc/certs/httpd.csr"
         self.httpd_crt = "/etc/certs/httpd.crt"
         self.defaultTrustStoreFN = '/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/security/cacerts'
-
-        self.shib_jks_pass = ""
-        self.encoded_shib_jks_pw = ""
-        self.shib_jks_fn = "/etc/certs/shibIDP.jks"
 
         # enabled if we have saml
         self.oxtrust_config_generation = "disabled"
@@ -68,7 +67,7 @@ class oxtrustNode(BaseModel):
         self.oxtrust_properties = "api/templates/salt/oxtrust/oxTrust.properties"
         self.oxtrust_ldap_properties = "api/templates/salt/oxtrust/oxTrustLdap.properties"
         self.oxtrust_log_rotation_configuration = "api/templates/salt/oxtrust/oxTrustLogRotationConfiguration.xml"
-        self.oxauth_static_conf_json = "api/templates/salt/_shared/oxauth-static-conf.json"
+        self.tomcat_server_xml = "api/templates/salt/_shared/server.xml"
 
         # the following template should be rendered and copied
         # to apache2 conf directory

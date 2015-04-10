@@ -1,6 +1,6 @@
 # The MIT License (MIT)
 #
-# Copyright (c) 2014 Gluu
+# Copyright (c) 2015 Gluu
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -109,6 +109,10 @@ class GluuCluster(BaseModel):
         self.oxauth_client_id = '%s!0008!%s' % (self.baseInum, client_quads)
         oxauth_client_pw = get_random_chars()
         self.oxauth_client_encoded_pw = encrypt_text(oxauth_client_pw, self.passkey)
+
+        # key store
+        self.encoded_shib_jks_pw = self.admin_pw
+        self.shib_jks_fn = "/etc/certs/shibIDP.jks"
 
     def add_node(self, node):
         """Adds node into current cluster.

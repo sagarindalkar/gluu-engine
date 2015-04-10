@@ -26,7 +26,6 @@ import time
 
 from api.database import db
 from api.helper.common_helper import run
-from api.helper.common_helper import get_random_chars
 from api.setup.base import BaseSetup
 
 
@@ -52,6 +51,9 @@ class OxAuthSetup(BaseSetup):
             "ldap_binddn": self.node.ldap_binddn,
             "encoded_ox_ldap_pw": self.cluster.encoded_ox_ldap_pw,
             "ldap_hosts": ",".join(self.get_ldap_hosts()),
+            "shibJksPass": self.cluster.decrypted_admin_pw,
+            "shibJksFn": self.cluster.shib_jks_fn,
+            "ip": self.node.ip,
         }
 
         # rendered templates
@@ -59,7 +61,7 @@ class OxAuthSetup(BaseSetup):
             self.node.oxauth_ldap_properties,
             self.node.oxauth_config_xml,
             self.node.oxauth_static_conf_json,
-            # self.tomcat_server_xml,
+            self.node.tomcat_server_xml,
         )
         for tmpl in conf_templates:
             rendered_content = ""
@@ -83,117 +85,78 @@ class OxAuthSetup(BaseSetup):
             run("salt-cp {} {} {}".format(self.node.id, local_dest,
                                           remote_dest))
 
-    def gen_httpd_cert(self):
-        passwd = get_random_chars()
-        suffix = "httpd"
-        user = "apache"
-
-        mkdir_cmd = "mkdir -p {}".format(self.node.cert_folder)
+    def gen_cert(self, suffix, password, user, hostname):
+        key_with_password = "{}/{}.key.orig".format(self.node.cert_folder, suffix)
+        key = "{}/{}.key".format(self.node.cert_folder, suffix)
+        csr = "{}/{}.csr".format(self.node.cert_folder, suffix)
+        crt = "{}/{}.crt".format(self.node.cert_folder, suffix)
 
         # command to create key with password file
-        keypass_cmd = " ".join([self.node.openssl_cmd, "genrsa", "-des3",
-                                "-out", self.node.httpd_key_orig,
-                                "-passout", "pass:{}".format(passwd), "2048"])
+        keypass_cmd = " ".join([
+            self.node.openssl_cmd, "genrsa", "-des3",
+            "-out", key_with_password,
+            "-passout", "pass:{}".format(password), "2048",
+        ])
 
         # command to create key file
-        key_cmd = " ".join([self.node.openssl_cmd, "rsa", "-in",
-                            self.node.httpd_key_orig, "-passin",
-                            "pass:{}".format(passwd), "-out", self.node.httpd_key])
+        key_cmd = " ".join([
+            self.node.openssl_cmd, "rsa",
+            "-in", key_with_password, "-passin",
+            "pass:{}".format(password),
+            "-out", key,
+        ])
 
         # command to create csr file
-        csr_cmd = " ".join([self.node.openssl_cmd, "req", "-new",
-                            "-key", self.node.httpd_key, "-out", self.node.httpd_csr,
-                            "-subj", "/CN=%s/O=%s/C=%s/ST=%s/L=%s" % (
-                                self.cluster.hostname_oxauth_cluster,
-                                self.cluster.orgName,
-                                self.cluster.countryCode,
-                                self.cluster.state,
-                                self.cluster.city,
-                            )])
+        csr_cmd = " ".join([
+            self.node.openssl_cmd, "req", "-new",
+            "-key", key,
+            "-out", csr,
+            "-subj", "/CN=%s/O=%s/C=%s/ST=%s/L=%s" % (
+                hostname,
+                self.cluster.orgName,
+                self.cluster.countryCode,
+                self.cluster.state,
+                self.cluster.city,
+            )])
 
         # command to create crt file
-        crt_cmd = " ".join([self.node.openssl_cmd, "x509", "-req",
-                            "-days", "365",
-                            "-in", self.node.httpd_csr,
-                            "-signkey", self.node.httpd_key,
-                            "-out", self.node.httpd_crt])
+        crt_cmd = " ".join([
+            self.node.openssl_cmd, "x509", "-req",
+            "-days", "365",
+            "-in", csr,
+            "-signkey", key,
+            "-out", crt,
+        ])
 
         self.logger.info("generating certificates for {}".format(suffix))
         self.saltlocal.cmd(
             self.node.id,
-            ["cmd.run", "cmd.run", "cmd.run", "cmd.run", "cmd.run"],
-            [[mkdir_cmd], [keypass_cmd], [key_cmd], [csr_cmd], [crt_cmd]],
+            ["cmd.run", "cmd.run", "cmd.run", "cmd.run"],
+            [[keypass_cmd], [key_cmd], [csr_cmd], [crt_cmd]],
         )
 
-        self.logger.info("changing access to httpd certificates")
+        self.logger.info("changing access to {} certificates".format(suffix))
         self.saltlocal.cmd(
             self.node.id,
             ["cmd.run", "cmd.run", "cmd.run", "cmd.run"],
             [
-                ["/bin/chown {0}:{0} {1}".format(user, self.node.httpd_key_orig)],
-                ["/bin/chmod 700 {}".format(self.node.httpd_key_orig)],
-                ["/bin/chown {0}:{0} {1}".format(user, self.node.httpd_key)],
-                ["/bin/chmod 700 {}".format(self.node.httpd_key)],
+                ["/bin/chown {0}:{0} {1}".format(user, key_with_password)],
+                ["/bin/chmod 700 {}".format(key_with_password)],
+                ["/bin/chown {0}:{0} {1}".format(user, key)],
+                ["/bin/chmod 700 {}".format(key)],
             ],
         )
 
         import_cmd = " ".join([
             "/usr/bin/keytool", "-import", "-trustcacerts",
-            "-alias", "{}_{}".format(self.cluster.hostname_oxauth_cluster, suffix),
-            "-file", self.node.httpd_crt,
+            "-alias", "{}_{}".format(hostname, suffix),
+            "-file", crt,
             "-keystore", self.node.defaultTrustStoreFN,
             "-storepass", "changeit", "-noprompt",
         ])
 
         self.logger.info("importing public certificate into Java truststore")
         self.saltlocal.cmd(self.node.id, "cmd.run", [import_cmd])
-
-    def copy_httpd_conf(self):
-        ctx = {
-            "hostname": self.cluster.hostname_oxauth_cluster,
-            "ip": self.node.ip,
-            "httpdCertFn": self.node.httpd_crt,
-            "httpdKeyFn": self.node.httpd_key,
-        }
-
-        tmpl = self.node.apache2_ssl_conf
-        rendered_content = ""
-
-        self.saltlocal.cmd(
-            self.node.id,
-            ["cmd.run", "cmd.run"],
-            [
-                ["mkdir -p /etc/apache2/sites-available"],
-                ["mkdir -p /etc/apache2/sites-enabled"],
-            ],
-        )
-
-        try:
-            with codecs.open(tmpl, "r", encoding="utf-8") as fp:
-                rendered_content = fp.read() % ctx
-        except Exception as exc:
-            self.logger.error(exc)
-
-        file_basename = os.path.basename(tmpl)
-        local_dest = os.path.join(self.build_dir, file_basename)
-        remote_dest = os.path.join("/etc/apache2/sites-available",
-                                   file_basename)
-
-        try:
-            with codecs.open(local_dest, "w", encoding="utf-8") as fp:
-                fp.write(rendered_content)
-        except Exception as exc:
-            self.logger.error(exc)
-
-        self.logger.info("copying {}".format(local_dest))
-        run("salt-cp {} {} {}".format(self.node.id, local_dest,
-                                      remote_dest))
-
-        # TODO: when to run httpd service?
-        symlink_cmd = "ln -s /etc/apache2/sites-available/{0} " \
-                      "/etc/apache2/sites-enabled/{0}".format(file_basename)
-        self.logger.info("symlinking {}".format(file_basename))
-        self.saltlocal.cmd(self.node.id, "cmd.run", [symlink_cmd])
 
     def get_ldap_hosts(self):
         ldap_hosts = []
@@ -220,16 +183,25 @@ class OxAuthSetup(BaseSetup):
             os.unlink(local_dest)
 
     def gen_openid_keys(self):
-        # FIXME: generate proper OpenID keys; see http://git.io/pMJE
-        openid_key = "{}"
         openid_key_json_fn = os.path.join(self.node.cert_folder, "oxauth-web-keys.json")
 
         self.logger.info("generating OpenID key file")
-        self.saltlocal.cmd(
-            self.node.id,
-            "cmd.run",
-            ["echo '{}' > {}".format(openid_key, openid_key_json_fn)],
+        # waiting for oxauth.war to be unpacked
+        time.sleep(2)
+        web_inf = "/opt/tomcat/webapps/oxauth/WEB-INF"
+        classpath = ":".join([
+            "{}/classes".format(web_inf),
+            "{}/lib/bcprov-jdk16-1.46.jar".format(web_inf),
+            "{}/lib/oxauth-model-2.1.0.Final.jar".format(web_inf),
+            "{}/lib/jettison-1.3.jar".format(web_inf),
+            "{}/lib/commons-lang-2.6.jar".format(web_inf),
+            "{}/lib/log4j-1.2.14.jar".format(web_inf),
+            "{}/lib/commons-codec-1.5.jar".format(web_inf),
+        ])
+        key_cmd = "java -cp {} org.xdi.oxauth.util.KeyGenerator > {}".format(
+            classpath, openid_key_json_fn,
         )
+        self.saltlocal.cmd(self.node.id, "cmd.run", [key_cmd])
 
         self.logger.info("changing access to OpenID key file")
         self.saltlocal.cmd(
@@ -256,6 +228,55 @@ class OxAuthSetup(BaseSetup):
             ["{}/bin/catalina.sh start".format(self.node.tomcat_home)],
         )
 
+    def create_cert_dir(self):
+        mkdir_cmd = "mkdir -p {}".format(self.node.cert_folder)
+        self.saltlocal.cmd(self.node.id, "cmd.run", [mkdir_cmd])
+
+    def gen_keystore(self, suffix, keystore_fn, keystore_pw, in_key,
+                     in_cert, user, hostname):
+        self.logger.info("Creating keystore %s" % suffix)
+
+        try:
+            # Convert key to pkcs12
+            pkcs_fn = '%s/%s.pkcs12' % (self.node.cert_folder, suffix)
+            export_cmd = " ".join([
+                self.node.openssl_cmd, 'pkcs12', '-export',
+                '-inkey', in_key,
+                '-in', in_cert,
+                '-out', pkcs_fn,
+                '-name', hostname,
+                '-passout', 'pass:%s' % keystore_pw,
+            ])
+            self.saltlocal.cmd(self.node.id, "cmd.run", [export_cmd])
+
+            # Import p12 to keystore
+            import_cmd = " ".join([
+                self.node.keytool_cmd, '-importkeystore',
+                '-srckeystore', '%s/%s.pkcs12' % (self.node.cert_folder, suffix),
+                '-srcstorepass', keystore_pw,
+                '-srcstoretype', 'PKCS12',
+                '-destkeystore', keystore_fn,
+                '-deststorepass', keystore_pw,
+                '-deststoretype', 'JKS',
+                '-keyalg', 'RSA',
+                '-noprompt',
+            ])
+            self.saltlocal.cmd(self.node.id, "cmd.run", [import_cmd])
+
+            self.logger.info("changing access to keystore file")
+            self.saltlocal.cmd(
+                self.node.id,
+                ["cmd.run", "cmd.run", "cmd.run", "cmd.run"],
+                [
+                    ["/bin/chown {0}:{0}".format(user), pkcs_fn],
+                    ["/bin/chmod 700 {}".format(pkcs_fn)],
+                    ["/bin/chown {0}:{0}".format(user), keystore_fn],
+                    ["/bin/chmod 700 {}".format(keystore_fn)],
+                ],
+            )
+        except Exception as exc:
+            self.logger.error("failed to create keystore: {}".format(exc))
+
     def setup(self):
         start = time.time()
         self.logger.info("oxAuth setup is started")
@@ -267,15 +288,27 @@ class OxAuthSetup(BaseSetup):
         self.write_salt_file()
 
         # create or copy key material to /etc/certs
-        self.gen_httpd_cert()
-        self.gen_openid_keys()
-        self.change_cert_access()
+        self.create_cert_dir()
 
-        # configure apache httpd to proxy AJP:8009
-        self.copy_httpd_conf()
+        hostname = self.cluster.hostname_oxauth_cluster.split(":")[0]
+        self.gen_cert("shibIDP", self.cluster.decrypted_admin_pw, "tomcat", hostname)
+
+        # IDP keystore
+        self.gen_keystore(
+            "shibIDP",
+            self.cluster.shib_jks_fn,
+            self.cluster.decrypted_admin_pw,
+            "{}/shibIDP.key".format(self.node.cert_folder),
+            "{}/shibIDP.crt".format(self.node.cert_folder),
+            "tomcat",
+            hostname,
+        )
 
         # configure tomcat to run oxauth war file
         self.start_tomcat()
+
+        self.gen_openid_keys()
+        self.change_cert_access()
 
         elapsed = time.time() - start
         self.logger.info("oxAuth setup is finished ({} seconds)".format(elapsed))

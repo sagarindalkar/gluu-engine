@@ -56,14 +56,15 @@ class OxTrustSetup(OxAuthSetup):
             "orgShortName": self.cluster.orgShortName,
             "admin_email": self.cluster.admin_email,
             "tomcat_log_folder": self.node.tomcat_log_folder,
-            "shibJksPass": self.node.shib_jks_pass,
-            "shibJksFn": self.node.shib_jks_fn,
             "oxTrustConfigGeneration": self.node.oxtrust_config_generation,
             "oxauth_client_id": self.cluster.oxauth_client_id,
             "encoded_ox_ldap_pw": self.cluster.encoded_ox_ldap_pw,
-            "encoded_shib_jks_pw": self.node.encoded_shib_jks_pw,
+            "encoded_shib_jks_pw": self.cluster.encoded_shib_jks_pw,
             "oxauthClient_encoded_pw": self.cluster.oxauth_client_encoded_pw,
             "ldap_hosts": ",".join(self.get_ldap_hosts()),
+            "shibJksPass": self.cluster.decrypted_admin_pw,
+            "shibJksFn": self.cluster.shib_jks_fn,
+            "ip": self.node.ip,
         }
 
         # rendered templates
@@ -71,7 +72,8 @@ class OxTrustSetup(OxAuthSetup):
             self.node.oxtrust_properties,
             self.node.oxtrust_ldap_properties,
             self.node.oxtrust_log_rotation_configuration,
-            self.node.oxauth_static_conf_json,
+            # self.node.oxauth_static_conf_json,
+            self.node.tomcat_server_xml,
         )
         for tmpl in conf_templates:
             rendered_content = ""
@@ -106,15 +108,28 @@ class OxTrustSetup(OxAuthSetup):
         self.write_salt_file()
 
         # Create or copy key material to /etc/certs
-        self.gen_httpd_cert()
-        self.change_cert_access()
+        # self.change_cert_access()
+        self.create_cert_dir()
 
-        # Configure apache httpd to proxy AJP:8009
-        self.copy_httpd_conf()
+        hostname = self.cluster.hostname_oxtrust_cluster.split(":")[0]
+        self.gen_cert("shibIDP", self.cluster.decrypted_admin_pw, "tomcat", hostname)
+
+        # IDP keystore
+        self.gen_keystore(
+            "shibIDP",
+            self.cluster.shib_jks_fn,
+            self.cluster.decrypted_admin_pw,
+            "{}/shibIDP.key".format(self.node.cert_folder),
+            "{}/shibIDP.crt".format(self.node.cert_folder),
+            "tomcat",
+            hostname,
+        )
 
         # Configure tomcat to run oxtrust war file
         # FIXME: cannot found "facter" and "check_ssl" commands
         self.start_tomcat()
+
+        self.change_cert_access()
 
         elapsed = time.time() - start
         self.logger.info("oxTrust setup is finished ({} seconds)".format(elapsed))

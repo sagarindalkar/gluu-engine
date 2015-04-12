@@ -26,6 +26,7 @@ import time
 
 from api.helper.common_helper import run
 from api.setup.oxauth_setup import OxAuthSetup
+from api.database import db
 
 
 class OxTrustSetup(OxAuthSetup):
@@ -97,9 +98,50 @@ class OxTrustSetup(OxAuthSetup):
             run("salt-cp {} {} {}".format(self.node.id, local_dest,
                                           remote_dest))
 
+    def import_oxauth_cert(self):
+        # imports oxauth cert into oxtrust cacerts to avoid
+        # "peer not authenticated" error
+        cert_cmd = "echo -n | openssl s_client -connect {} | " \
+                   "sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' " \
+                   "> /tmp/oxauth.cert".format(self.cluster.hostname_oxauth_cluster)
+
+        import_cmd = " ".join([
+            "keytool -importcert -trustcacerts",
+            "-alias '{}'".format(self.cluster.hostname_oxauth_cluster),
+            "-file /tmp/oxauth.cert",
+            "-keystore {}".format(self.node.defaultTrustStoreFN),
+            "-storepass changeit -noprompt",
+        ])
+        self.saltlocal.cmd(
+            self.node.id,
+            ["cmd.run", "cmd.run"],
+            [[cert_cmd], [import_cmd]]
+        )
+
+    def update_host_entries(self):
+        self.logger.info("updating host entries in /etc/hosts")
+        for oxauth_id in self.cluster.oxauth_nodes:
+            oxauth = db.get(oxauth_id, "nodes")
+
+            if not oxauth:
+                continue
+
+            self.saltlocal.cmd(
+                self.node.id,
+                "cmd.run",
+                ["echo '{} {}' >> /etc/hosts".format(
+                    oxauth.ip,
+                    self.cluster.hostname_oxauth_cluster.split(":")[0],
+                )],
+            )
+
     def setup(self):
         start = time.time()
         self.logger.info("oxTrust setup is started")
+
+        # update host entries
+        # TODO: use docker links?
+        self.update_host_entries()
 
         # generate oxtrustLdap.properties, oxTrust.properties,
         # oxauth-static-conf.json, oxTrustLogRotationConfiguration.xml
@@ -108,7 +150,6 @@ class OxTrustSetup(OxAuthSetup):
         self.write_salt_file()
 
         # Create or copy key material to /etc/certs
-        # self.change_cert_access()
         self.create_cert_dir()
 
         hostname = self.cluster.hostname_oxtrust_cluster.split(":")[0]
@@ -124,6 +165,7 @@ class OxTrustSetup(OxAuthSetup):
             "tomcat",
             hostname,
         )
+        self.import_oxauth_cert()
 
         # Configure tomcat to run oxtrust war file
         # FIXME: cannot found "facter" and "check_ssl" commands

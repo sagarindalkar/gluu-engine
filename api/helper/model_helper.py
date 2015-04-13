@@ -32,8 +32,6 @@ from api.model import oxauthNode
 from api.model import oxtrustNode
 from api.helper.docker_helper import DockerHelper
 from api.helper.salt_helper import SaltHelper
-# from api.helper.common_helper import get_random_chars
-# from api.helper.common_helper import encrypt_text
 from api.helper.common_helper import run
 from api.setup.ldap_setup import ldapSetup
 from api.setup.oxauth_setup import OxAuthSetup

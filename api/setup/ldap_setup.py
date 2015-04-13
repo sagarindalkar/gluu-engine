@@ -28,6 +28,8 @@ import time
 from api.database import db
 from api.helper.common_helper import run
 from api.setup.base import BaseSetup
+from api.setup.oxauth_setup import OxAuthSetup
+from api.setup.oxtrust_setup import OxTrustSetup
 
 
 class ldapSetup(BaseSetup):
@@ -119,13 +121,6 @@ class ldapSetup(BaseSetup):
             )
         except Exception as exc:
             self.logger.error(exc)
-
-        # change_ownership
-        #self.saltlocal.cmd(
-        #    self.node.id,
-        #    'cmd.run',
-        #    ['chown -R ldap:ldap {}'.format(self.node.ldapBaseFolder)],
-        #)
 
         try:
             setupCmd = " ".join([self.node.ldapSetupCommand,
@@ -288,12 +283,6 @@ class ldapSetup(BaseSetup):
                 run("salt-cp {} {} {}".format(self.node.id, local_dest,
                                               remote_dest))
 
-                # self.saltlocal.cmd(
-                #     self.node.id,
-                #     'cmd.run',
-                #     ['chown ldap:ldap {}'.format(remote_dest)],
-                # )
-
                 if file_basename == "o_site.ldif":
                     backend_id = "site"
                 else:
@@ -384,19 +373,15 @@ class ldapSetup(BaseSetup):
                     "--host1", existing_node.local_hostname,
                     "--port1", existing_node.ldap_admin_port,
                     "--bindDN1", "'{}'".format(existing_node.ldap_binddn),
-                    # "--bindPassword1", self.cluster.decrypted_admin_pw,
                     "--bindPasswordFile1", self.node.ldapPassFn,
                     "--replicationPort1", existing_node.ldap_replication_port,
                     "--host2", self.node.local_hostname,
                     "--port2", self.node.ldap_admin_port,
                     "--bindDN2", "'{}'".format(self.node.ldap_binddn),
-                    # "--bindPassword2", self.cluster.decrypted_admin_pw,
                     "--bindPasswordFile2", self.node.ldapPassFn,
                     "--replicationPort2", self.node.ldap_replication_port,
                     "--adminUID", "admin",
-                    # "--adminPassword", self.cluster.decrypted_admin_pw,
                     "--adminPasswordFile", self.node.ldapPassFn,
-                    # "--adminPassword", self.node.encoded_ldap_pw,
                     "--baseDN", "'{}'".format(base_dn),
                     "--secureReplication1", "--secureReplication2",
                     "-X", "-n",
@@ -404,7 +389,6 @@ class ldapSetup(BaseSetup):
                 self.logger.info("enabling {!r} replication between {} and {}".format(
                     base_dn, existing_node.local_hostname, self.node.local_hostname,
                 ))
-                # self.saltlocal.cmd(existing_node.id, "cmd.run", [enable_cmd])
                 self.saltlocal.cmd(self.node.id, "cmd.run", [enable_cmd])
 
                 # wait before initializing the replication to ensure it
@@ -418,9 +402,7 @@ class ldapSetup(BaseSetup):
                     "/opt/opendj/bin/dsreplication", "initialize",
                     "--baseDN", "'{}'".format(base_dn),
                     "--adminUID", "admin",
-                    # "--adminPassword", self.cluster.decrypted_admin_pw,
                     "--adminPasswordFile", self.node.ldapPassFn,
-                    # "--adminPassword", self.node.encoded_ldap_pw,
                     "--hostSource", existing_node.local_hostname,
                     "--portSource", existing_node.ldap_admin_port,
                     "--hostDestination", self.node.local_hostname,
@@ -430,7 +412,6 @@ class ldapSetup(BaseSetup):
                 self.logger.info("initializing {!r} replication between {} and {}".format(
                     base_dn, existing_node.local_hostname, self.node.local_hostname,
                 ))
-                # self.saltlocal.cmd(existing_node.id, "cmd.run", [init_cmd])
                 self.saltlocal.cmd(self.node.id, "cmd.run", [init_cmd])
                 time.sleep(5)
             except Exception as exc:
@@ -445,16 +426,16 @@ class ldapSetup(BaseSetup):
         self.configure_opendj()
         self.index_opendj()
 
-        # If no ldap nodes exist, import auto-generated base ldif data;
-        # otherwise initialize data from existing ldap node.
-        # Also to create fully meshed replication, update the other ldap
-        # nodes to use this new ldap node as a master.
         if self.cluster.ldap_nodes:
+            # Initialize data from existing ldap node.
+            # To create fully meshed replication, update the other ldap
+            # nodes to use this new ldap node as a master.
             for node_id in self.cluster.ldap_nodes:
                 existing_node = self.get_existing_node(node_id)
                 if existing_node:
                     self.replicate_from(existing_node)
         else:
+            # If no ldap nodes exist, import auto-generated base ldif data
             self.import_ldif()
 
         self.export_opendj_public_cert()
@@ -465,3 +446,24 @@ class ldapSetup(BaseSetup):
         elapsed = time.time() - start
         self.logger.info("LDAP setup is finished ({} seconds)".format(elapsed))
         return True
+
+    def after_setup(self):
+        """Runs post-setup.
+        """
+        # Currently, we need to update oxAuth and oxTrust LDAP properties
+        # TODO: use signals?
+        for node_id in self.cluster.oxauth_nodes:
+            node = db.get(node_id, "nodes")
+            if not node:
+                continue
+
+            setup_obj = OxAuthSetup(node, self.cluster, logger=self.logger)
+            setup_obj.render_ldap_props_template()
+
+        for node_id in self.cluster.oxtrust_nodes:
+            node = db.get(node_id, "nodes")
+            if not node:
+                continue
+
+            setup_obj = OxTrustSetup(node, self.cluster, logger=self.logger)
+            setup_obj.render_ldap_props_template()

@@ -33,6 +33,8 @@ from api.helper.model_helper import stop_ldap
 from api.helper.docker_helper import DockerHelper
 from api.helper.salt_helper import SaltHelper
 from api.reqparser import node_reqparser
+from api.setup.oxauth_setup import OxAuthSetup
+from api.setup.oxtrust_setup import OxTrustSetup
 
 
 class Node(Resource):
@@ -104,10 +106,29 @@ class Node(Resource):
         # remove node
         db.delete(node_id, "nodes")
 
-        # # removes reference from cluster, if any
-        # if cluster:
+        # removes reference from cluster, if any
         cluster.remove_node(node)
         db.update(cluster.id, cluster, "clusters")
+
+        # TODO: move to helper?
+        if node.type == "ldap":
+            # Currently, we need to update oxAuth and oxTrust LDAP properties
+            # TODO: use signals?
+            for oxauth_node_id in cluster.oxauth_nodes:
+                oxauth_node = db.get(oxauth_node_id, "nodes")
+                if not oxauth_node:
+                    continue
+
+                setup_obj = OxAuthSetup(oxauth_node, cluster)
+                setup_obj.render_ldap_props_template()
+
+            for oxtrust_node_id in cluster.oxtrust_nodes:
+                oxtrust_node = db.get(oxtrust_node_id, "nodes")
+                if not oxtrust_node:
+                    continue
+
+                setup_obj = OxTrustSetup(oxtrust_node, cluster)
+                setup_obj.render_ldap_props_template()
         return {}, 204
 
 

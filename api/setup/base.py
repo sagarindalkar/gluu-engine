@@ -21,10 +21,13 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 import abc
+import codecs
+import os.path
 import shutil
 import tempfile
 
 from api.log import create_file_logger
+from api.helper.common_helper import run
 
 
 class BaseSetup(object):
@@ -57,3 +60,22 @@ class BaseSetup(object):
 
     def before_setup(self):
         pass
+
+    def render_template(self, src, dest, ctx=None):
+        ctx = ctx or {}
+        rendered_content = ""
+        file_basename = os.path.basename(src)
+        local = os.path.join(self.build_dir, file_basename)
+
+        try:
+            with codecs.open(src, "r", encoding="utf-8") as fp:
+                rendered_content = fp.read() % ctx
+
+            with codecs.open(local, "w", encoding="utf-8") as fp:
+                fp.write(rendered_content)
+
+            self.logger.info("rendering {}".format(file_basename))
+            run("salt-cp {} {} {}".format(self.node.id, local, dest))
+        except Exception as exc:
+            self.logger.error("failed to render template {}; "
+                              "reason={}".format(file_basename, exc))

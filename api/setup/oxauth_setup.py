@@ -30,61 +30,6 @@ from api.setup.base import BaseSetup
 
 
 class OxAuthSetup(BaseSetup):
-    def copy_tomcat_conf(self):
-        # static template
-        self.logger.info("copying {}".format(self.node.oxauth_errors_json))
-        run("salt-cp {} {} {}".format(
-            self.node.id,
-            self.node.oxauth_errors_json,
-            os.path.join(
-                self. node.tomcat_conf_dir,
-                os.path.basename(self.node.oxauth_errors_json),
-            ),
-        ))
-
-        ctx = {
-            "inumOrg": self.cluster.inumOrg,
-            "ldaps_port": self.cluster.ldaps_port,
-            "certFolder": self.node.cert_folder,
-            "hostname_oxauth_cluster": self.cluster.hostname_oxauth_cluster,
-            "inumAppliance": self.cluster.inumAppliance,
-            "ldap_binddn": self.node.ldap_binddn,
-            "encoded_ox_ldap_pw": self.cluster.encoded_ox_ldap_pw,
-            "ldap_hosts": ",".join(self.get_ldap_hosts()),
-            "shibJksPass": self.cluster.decrypted_admin_pw,
-            "shibJksFn": self.cluster.shib_jks_fn,
-            "ip": self.node.ip,
-        }
-
-        # rendered templates
-        conf_templates = (
-            self.node.oxauth_ldap_properties,
-            self.node.oxauth_config_xml,
-            self.node.oxauth_static_conf_json,
-            self.node.tomcat_server_xml,
-        )
-        for tmpl in conf_templates:
-            rendered_content = ""
-            try:
-                with codecs.open(tmpl, "r", encoding="utf-8") as fp:
-                    rendered_content = fp.read() % ctx
-            except Exception as exc:
-                self.logger.error(exc)
-
-            file_basename = os.path.basename(tmpl)
-            local_dest = os.path.join(self.build_dir, file_basename)
-            remote_dest = os.path.join(self.node.tomcat_conf_dir, file_basename)
-
-            try:
-                with codecs.open(local_dest, "w", encoding="utf-8") as fp:
-                    fp.write(rendered_content)
-            except Exception as exc:
-                self.logger.error(exc)
-
-            self.logger.info("copying {}".format(local_dest))
-            run("salt-cp {} {} {}".format(self.node.id, local_dest,
-                                          remote_dest))
-
     def gen_cert(self, suffix, password, user, hostname):
         key_with_password = "{}/{}.key.orig".format(self.node.cert_folder, suffix)
         key = "{}/{}.key".format(self.node.cert_folder, suffix)
@@ -277,14 +222,61 @@ class OxAuthSetup(BaseSetup):
         except Exception as exc:
             self.logger.error("failed to create keystore: {}".format(exc))
 
+    def render_errors_template(self):
+        src = self.node.oxauth_errors_json
+        dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
+        self.render_template(src, dest)
+
+    def render_config_template(self):
+        src = self.node.oxauth_config_xml
+        dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
+        ctx = {
+            "hostname_oxauth_cluster": self.cluster.hostname_oxauth_cluster,
+            "inumAppliance": self.cluster.inumAppliance,
+            "inumOrg": self.cluster.inumOrg,
+        }
+        self.render_template(src, dest, ctx)
+
+    def render_ldap_props_template(self):
+        src = self.node.oxauth_ldap_properties
+        dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
+        ctx = {
+            "ldap_binddn": self.node.ldap_binddn,
+            "encoded_ox_ldap_pw": self.cluster.encoded_ox_ldap_pw,
+            "ldap_hosts": ",".join(self.get_ldap_hosts()),
+            "inumAppliance": self.cluster.inumAppliance,
+            "certFolder": self.node.cert_folder,
+        }
+        self.render_template(src, dest, ctx)
+
+    def render_static_conf_template(self):
+        src = self.node.oxauth_static_conf_json
+        dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
+        ctx = {
+            "inumOrg": self.cluster.inumOrg,
+        }
+        self.render_template(src, dest, ctx)
+
+    def render_server_xml_template(self):
+        src = self.node.tomcat_server_xml
+        dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
+        ctx = {
+            "ip": self.node.ip,
+            "shibJksPass": self.cluster.decrypted_admin_pw,
+            "shibJksFn": self.cluster.shib_jks_fn,
+        }
+        self.render_template(src, dest, ctx)
+
     def setup(self):
         start = time.time()
         self.logger.info("oxAuth setup is started")
 
-        # copy rendered templates: oxauth-ldap.properties,
-        # oxauth-config.xml, oxauth-static-conf.json
-        self.copy_tomcat_conf()
-
+        # render config templates
+        self.render_errors_template()
+        self.render_config_template()
+        self.render_ldap_props_template()
+        self.render_static_conf_template()
+        self.render_server_xml_template()
         self.write_salt_file()
 
         # create or copy key material to /etc/certs

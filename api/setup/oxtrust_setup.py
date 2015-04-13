@@ -20,84 +20,14 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-import codecs
 import os.path
 import time
 
-from api.helper.common_helper import run
 from api.setup.oxauth_setup import OxAuthSetup
 from api.database import db
 
 
 class OxTrustSetup(OxAuthSetup):
-    def copy_tomcat_conf(self):
-        # copy static template
-        remote_dest_dir = os.path.join(self.node.tomcat_conf_dir, "template", "conf")
-        self.logger.info("copying {}".format(self.node.oxtrust_cache_refresh_properties))
-        self.saltlocal.cmd(self.node.id, "cmd.run", ["mkdir -p {}".format(remote_dest_dir)])
-        run("salt-cp {} {} {}".format(
-            self.node.id,
-            self.node.oxtrust_cache_refresh_properties,
-            os.path.join(
-                remote_dest_dir,
-                os.path.basename(self.node.oxtrust_cache_refresh_properties),
-            ),
-        ))
-
-        ctx = {
-            "inumOrg": self.cluster.inumOrg,
-            "inumOrgFN": self.cluster.inumOrgFN,
-            "ldaps_port": self.cluster.ldaps_port,
-            "hostname_oxtrust_cluster": self.cluster.hostname_oxtrust_cluster,
-            "hostname_oxauth_cluster": self.cluster.hostname_oxauth_cluster,
-            "inumAppliance": self.cluster.inumAppliance,
-            "inumApplianceFN": self.cluster.inumApplianceFN,
-            "ldap_binddn": self.node.ldap_binddn,
-            "orgName": self.cluster.orgName,
-            "orgShortName": self.cluster.orgShortName,
-            "admin_email": self.cluster.admin_email,
-            "tomcat_log_folder": self.node.tomcat_log_folder,
-            "oxTrustConfigGeneration": self.node.oxtrust_config_generation,
-            "oxauth_client_id": self.cluster.oxauth_client_id,
-            "encoded_ox_ldap_pw": self.cluster.encoded_ox_ldap_pw,
-            "encoded_shib_jks_pw": self.cluster.encoded_shib_jks_pw,
-            "oxauthClient_encoded_pw": self.cluster.oxauth_client_encoded_pw,
-            "ldap_hosts": ",".join(self.get_ldap_hosts()),
-            "shibJksPass": self.cluster.decrypted_admin_pw,
-            "shibJksFn": self.cluster.shib_jks_fn,
-            "ip": self.node.ip,
-        }
-
-        # rendered templates
-        conf_templates = (
-            self.node.oxtrust_properties,
-            self.node.oxtrust_ldap_properties,
-            self.node.oxtrust_log_rotation_configuration,
-            # self.node.oxauth_static_conf_json,
-            self.node.tomcat_server_xml,
-        )
-        for tmpl in conf_templates:
-            rendered_content = ""
-            try:
-                with codecs.open(tmpl, "r", encoding="utf-8") as fp:
-                    rendered_content = fp.read() % ctx
-            except Exception as exc:
-                self.logger.error(exc)
-
-            file_basename = os.path.basename(tmpl)
-            local_dest = os.path.join(self.build_dir, file_basename)
-            remote_dest = os.path.join(self.node.tomcat_conf_dir, file_basename)
-
-            try:
-                with codecs.open(local_dest, "w", encoding="utf-8") as fp:
-                    fp.write(rendered_content)
-            except Exception as exc:
-                self.logger.error(exc)
-
-            self.logger.info("copying {}".format(local_dest))
-            run("salt-cp {} {} {}".format(self.node.id, local_dest,
-                                          remote_dest))
-
     def import_oxauth_cert(self):
         # imports oxauth cert into oxtrust cacerts to avoid
         # "peer not authenticated" error
@@ -135,18 +65,69 @@ class OxTrustSetup(OxAuthSetup):
                 )],
             )
 
+    def render_cache_props_template(self):
+        src = self.node.oxtrust_cache_refresh_properties
+        dest_dir = os.path.join(self.node.tomcat_conf_dir, "template", "conf")
+        dest = os.path.join(dest_dir, os.path.basename(src))
+        self.saltlocal.cmd(self.node.id, "cmd.run",
+                           ["mkdir -p {}".format(dest_dir)])
+        self.render_template(src, dest)
+
+    def render_log_config_template(self):
+        src = self.node.oxtrust_log_rotation_configuration
+        dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
+        ctx = {
+            "tomcat_log_folder": self.node.tomcat_log_folder,
+        }
+        self.render_template(src, dest, ctx)
+
+    def render_props_template(self):
+        src = self.node.oxtrust_properties
+        dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
+        ctx = {
+            "inumAppliance": self.cluster.inumAppliance,
+            "inumOrg": self.cluster.inumOrg,
+            "orgName": self.cluster.orgName,
+            "orgShortName": self.cluster.orgShortName,
+            "admin_email": self.cluster.admin_email,
+            "hostname_oxtrust_cluster": self.cluster.hostname_oxtrust_cluster,
+            "shibJksFn": self.cluster.shib_jks_fn,
+            "shibJksPass": self.cluster.decrypted_admin_pw,
+            "inumOrgFN": self.cluster.inumOrgFN,
+            "oxTrustConfigGeneration": self.node.oxtrust_config_generation,
+            "encoded_shib_jks_pw": self.cluster.encoded_shib_jks_pw,
+            "encoded_ox_ldap_pw": self.cluster.encoded_ox_ldap_pw,
+            "hostname_oxauth_cluster": self.cluster.hostname_oxauth_cluster,
+            "oxauth_client_id": self.cluster.oxauth_client_id,
+            "oxauthClient_encoded_pw": self.cluster.oxauth_client_encoded_pw,
+            "inumApplianceFN": self.cluster.inumApplianceFN,
+        }
+        self.render_template(src, dest, ctx)
+
+    def render_ldap_props_template(self):
+        src = self.node.oxtrust_ldap_properties
+        dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
+        ctx = {
+            "ldap_binddn": self.node.ldap_binddn,
+            "encoded_ox_ldap_pw": self.cluster.encoded_ox_ldap_pw,
+            "ldap_hosts": ",".join(self.get_ldap_hosts()),
+            "inumAppliance": self.cluster.inumAppliance,
+        }
+        self.render_template(src, dest, ctx)
+
     def setup(self):
         start = time.time()
         self.logger.info("oxTrust setup is started")
 
         # update host entries
-        # TODO: use docker links?
         self.update_host_entries()
 
-        # generate oxtrustLdap.properties, oxTrust.properties,
-        # oxauth-static-conf.json, oxTrustLogRotationConfiguration.xml
-        self.copy_tomcat_conf()
-
+        # render config templates
+        self.render_cache_props_template()
+        self.render_log_config_template()
+        self.render_props_template()
+        self.render_ldap_props_template()
+        self.render_server_xml_template()
         self.write_salt_file()
 
         # Create or copy key material to /etc/certs

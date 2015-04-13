@@ -53,7 +53,7 @@ def get_random_chars(size=12, chars=_DEFAULT_CHARS):
     return ''.join(random.choice(chars) for _ in range(size))
 
 
-def encrypt_password(password):
+def ldap_encode(password):
     # borrowed from https://github.com/GluuFederation/community-edition-setup
     # /blob/c23aa9a4353867060fc9faf674c72708059ae3bb/setup.py#L960-L966
     salt = os.urandom(4)
@@ -62,6 +62,9 @@ def encrypt_password(password):
     b64encoded = '{0}{1}'.format(sha.digest(), salt).encode('base64').strip()
     encrypted_password = '{{SSHA}}{0}'.format(b64encoded)
     return encrypted_password
+
+# backward-compat
+encrypt_password = ldap_encode
 
 
 def get_quad():

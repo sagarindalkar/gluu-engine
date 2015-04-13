@@ -30,6 +30,7 @@ from api.helper.common_helper import get_random_chars
 from api.helper.common_helper import encrypt_text
 from api.helper.common_helper import decrypt_text
 from api.helper.common_helper import generate_passkey
+from api.helper.common_helper import ldap_encode
 
 
 @swagger.model
@@ -89,7 +90,7 @@ class GluuCluster(BaseModel):
         # Secret for ldap cn=directory manager, and oxTrust admin
         admin_pw = fields.get("admin_pw", get_random_chars())
         self.admin_pw = encrypt_text(admin_pw, self.passkey)
-        self.encoded_ldap_pw = self.admin_pw
+        self.encoded_ldap_pw = ldap_encode(admin_pw)
         self.encoded_ox_ldap_pw = self.admin_pw
 
         # Inums

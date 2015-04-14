@@ -23,7 +23,6 @@ salt==2014.7.0
 pyzmq==14.5.0
 
 # Testing
-Flask-Testing==0.4.2
 pytest==2.6.4
 pytest-cov==1.8.1
 pytest-pythonpath==0.6

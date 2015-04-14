@@ -87,3 +87,14 @@ def test_cluster_set_none_fields(cluster):
     data = {"random": None}
     cluster.set_fields(data)
     assert hasattr(cluster, "random") is False
+
+
+def test_cluster_max_allowed_nodes(cluster):
+    assert cluster.max_allowed_ldap_nodes == 4
+
+
+def test_decrypted_admin_pw():
+    from api.model import GluuCluster
+
+    cluster = GluuCluster({"admin_pw": "secret"})
+    assert cluster.decrypted_admin_pw == "secret"

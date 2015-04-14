@@ -1,4 +1,3 @@
-import uuid
 import os
 
 import pytest
@@ -40,7 +39,6 @@ def cluster():
     from api.model import GluuCluster
 
     cluster = GluuCluster()
-    cluster.id = "{}".format(uuid.uuid4())
     return cluster
 
 
@@ -49,8 +47,7 @@ def ldap_node(cluster):
     from api.model import ldapNode
 
     node = ldapNode()
-    node.id = "abc123".format(cluster.id)
-    node.type = "ldap"
+    node.id = "ldap_{}_123".format(cluster.id)
     node.cluster_id = cluster.id
     return node
 
@@ -60,8 +57,7 @@ def oxauth_node(cluster):
     from api.model import oxauthNode
 
     node = oxauthNode()
-    node.id = "abc123".format(cluster.id)
-    node.type = "oxauth"
+    node.id = "oxauth_{}_123".format(cluster.id)
     node.cluster_id = cluster.id
     return node
 
@@ -71,7 +67,6 @@ def oxtrust_node(cluster):
     from api.model import oxtrustNode
 
     node = oxtrustNode()
-    node.id = "abc123".format(cluster.id)
-    node.type = "oxtrust"
+    node.id = "oxtrust_{}_123".format(cluster.id)
     node.cluster_id = cluster.id
     return node

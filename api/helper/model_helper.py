@@ -78,7 +78,6 @@ class BaseModelHelper(object):
         It's worth noting that changing ``id`` attribute in this method
         should be avoided.
         """
-        pass
 
     def prepare_minion(self):
         """Waits for minion to connect before doing any remote execution.
@@ -106,7 +105,6 @@ class BaseModelHelper(object):
         Typical usage is to remove or protect sensitive field such as
         password or secret.
         """
-        pass
 
     def save(self):
         """Saves node and updates the cluster where node belongs to.

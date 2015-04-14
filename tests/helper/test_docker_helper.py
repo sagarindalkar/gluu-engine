@@ -1,3 +1,11 @@
+import os.path
+import shutil
+from collections import namedtuple
+
+
+FakeResp = namedtuple("FakeReps", ["status_code", "text"])
+
+
 def test_image_exists_found(monkeypatch, docker_helper):
     # stubbed ``docker.Client.images`` method's return value
     monkeypatch.setattr(
@@ -176,3 +184,19 @@ def test_setup_container_failed(monkeypatch, docker_helper):
         "http://example.com/Dockerfile", "127.0.0.1",
     )
     assert container_id == ""
+
+
+def test_get_remote_files(monkeypatch, docker_helper):
+    fake_resp = FakeResp(status_code=200, text="example")
+    monkeypatch.setattr("requests.get", lambda url: fake_resp)
+
+    files = ["http://example.com/a.txt"]
+    local_dir = docker_helper.get_remote_files(*files)
+    file_ = os.path.join(local_dir, "a.txt")
+
+    assert local_dir != ""
+    assert os.path.exists(file_)
+    assert open(file_).read() == "example"
+
+    # remove temporary dir
+    shutil.rmtree(local_dir)

@@ -365,13 +365,13 @@ class ldapSetup(BaseSetup):
             self.logger.warn(exc)
 
     def replicate_from(self, existing_node):
+        setup_obj = ldapSetup(existing_node, self.cluster, logger=self.logger)
+
+        # creates temporary password file
+        setup_obj.write_ldap_pw()
+
         base_dns = ("o=gluu", "o=site",)
         for base_dn in base_dns:
-            setup_obj = ldapSetup(existing_node, self.cluster, logger=self.logger)
-
-            # creates temporary password file
-            setup_obj.write_ldap_pw()
-
             try:
                 enable_cmd = " ".join([
                     "/opt/opendj/bin/dsreplication", "enable",
@@ -422,8 +422,8 @@ class ldapSetup(BaseSetup):
             except Exception as exc:
                 self.logger.error("error initializing {!r} replication: {}".format(base_dn, exc))
 
-            # cleanups temporary password file
-            setup_obj.delete_ldap_pw()
+        # cleanups temporary password file
+        setup_obj.delete_ldap_pw()
 
     def setup(self):
         self.logger.info("LDAP setup is started")

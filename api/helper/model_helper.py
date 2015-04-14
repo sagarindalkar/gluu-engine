@@ -32,7 +32,6 @@ from api.model import oxauthNode
 from api.model import oxtrustNode
 from api.helper.docker_helper import DockerHelper
 from api.helper.salt_helper import SaltHelper
-from api.helper.common_helper import run
 from api.setup.ldap_setup import ldapSetup
 from api.setup.oxauth_setup import OxAuthSetup
 from api.setup.oxtrust_setup import OxTrustSetup
@@ -149,6 +148,8 @@ class BaseModelHelper(object):
                 # minion is not connected
                 else:
                     self.logger.error("minion {} is unreachable".format(self.node.id))
+                    self.logger.info("destroying minion {}".format(self.node.id))
+                    self.docker.remove_container(self.node.id)
 
             # container is not running
             else:
@@ -175,30 +176,6 @@ class LdapModelHelper(BaseModelHelper):
         container_ip = self.docker.get_container_ip(self.node.id)
         self.node.local_hostname = container_ip
         self.node.ip = container_ip
-
-
-def stop_ldap(node, cluster):
-    try:
-        # since LDAP nodes are replicated if there's more than 1 node,
-        # we need to disable the replication agreement first before
-        # before stopping the opendj server
-        if len(cluster.ldap_nodes) > 1:
-            disable_repl_cmd = " ".join([
-                "{}/bin/dsreplication".format(node.ldapBaseFolder), "disable",
-                "--hostname", node.local_hostname,
-                "--port", node.ldap_admin_port,
-                "--adminUID", "admin",
-                # "--adminPassword", cluster.decrypted_admin_pw,
-                "--adminPasswordFile", node.ldapPassFn,
-                "-X", "-n", "--disableAll",
-            ])
-            run("salt {} cmd.run '{}'".format(node.id, disable_repl_cmd))
-        run("salt {} cmd.run '{}/bin/stop-ds'".format(node.id, node.ldapBaseFolder))
-    except SystemExit as exc:
-        if exc.code == 2:
-            # executable may not exist or minion is unreachable
-            pass
-        print(exc)
 
 
 class OxAuthModelHelper(BaseModelHelper):

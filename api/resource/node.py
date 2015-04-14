@@ -29,12 +29,12 @@ from api.database import db
 from api.helper.model_helper import LdapModelHelper
 from api.helper.model_helper import OxAuthModelHelper
 from api.helper.model_helper import OxTrustModelHelper
-from api.helper.model_helper import stop_ldap
 from api.helper.docker_helper import DockerHelper
 from api.helper.salt_helper import SaltHelper
 from api.reqparser import node_reqparser
 from api.setup.oxauth_setup import OxAuthSetup
 from api.setup.oxtrust_setup import OxTrustSetup
+from api.setup.ldap_setup import ldapSetup
 
 
 class Node(Resource):
@@ -93,7 +93,8 @@ class Node(Resource):
         cluster = db.get(node.cluster_id, "clusters")
 
         if node.type == "ldap":
-            stop_ldap(node, cluster)
+            setup_obj = ldapSetup(node, cluster)
+            setup_obj.stop()
 
         # remove container
         docker = DockerHelper()

@@ -475,3 +475,29 @@ class ldapSetup(BaseSetup):
 
             setup_obj = OxTrustSetup(node, self.cluster, logger=self.logger)
             setup_obj.render_ldap_props_template()
+
+    def stop(self):
+        try:
+            # since LDAP nodes are replicated if there's more than 1 node,
+            # we need to disable the replication agreement first before
+            # before stopping the opendj server
+            if len(self.cluster.ldap_nodes) > 1:
+                self.write_ldap_pw()
+                disable_repl_cmd = " ".join([
+                    "{}/bin/dsreplication".format(self.node.ldapBaseFolder),
+                    "disable",
+                    "--hostname", self.node.local_hostname,
+                    "--port", self.node.ldap_admin_port,
+                    "--adminUID", "admin",
+                    "--adminPasswordFile", self.node.ldapPassFn,
+                    "-X", "-n", "--disableAll",
+                ])
+                run("salt {} cmd.run '{}'".format(self.node.id, disable_repl_cmd))
+                self.delete_ldap_pw()
+            run("salt {} cmd.run '{}/bin/stop-ds'".format(self.node.id, self.node.ldapBaseFolder))
+        except SystemExit as exc:
+            # executable may not exist or minion is unreachable
+            if exc.code == 2:
+                pass
+            self.logger.error(exc)
+            print(exc)

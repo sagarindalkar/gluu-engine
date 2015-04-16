@@ -150,6 +150,7 @@ class BaseModelHelper(object):
                     self.logger.error("minion {} is unreachable".format(self.node.id))
                     self.logger.info("destroying minion {}".format(self.node.id))
                     self.docker.remove_container(self.node.id)
+                    self.salt.unregister_minion(self.node.id)
 
             # container is not running
             else:

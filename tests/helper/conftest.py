@@ -5,7 +5,7 @@ import pytest
 def docker_helper(request, app):
     from api.helper.docker_helper import DockerHelper
 
-    helper = DockerHelper(base_url=app.config["DOCKER_SOCKET"])
+    helper = DockerHelper(base_url=app.config["DOCKER_HOST"])
 
     def teardown():
         helper.docker.close()

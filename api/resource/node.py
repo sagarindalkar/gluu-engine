@@ -97,7 +97,8 @@ class Node(Resource):
             setup_obj.stop()
 
         # remove container
-        docker = DockerHelper()
+        docker_base_url = current_app.config["DOCKER_HOST"]
+        docker = DockerHelper(base_url=docker_base_url)
         docker.remove_container(node.id)
 
         # unregister minion
@@ -202,7 +203,7 @@ status of the cluster node is available.""",
     def post(self):
         params = node_reqparser.parse_args()
         salt_master_ipaddr = current_app.config["SALT_MASTER_IPADDR"]
-        docker_base_url = current_app.config["DOCKER_SOCKET"]
+        docker_base_url = current_app.config["DOCKER_HOST"]
 
         # check node type
         if params.node_type not in ("ldap", "oxauth", "oxtrust"):

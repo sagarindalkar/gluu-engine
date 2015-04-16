@@ -9,7 +9,6 @@ class Config(object):
     APP_DIR = os.path.abspath(os.path.dirname(__file__))  # This directory
     PROJECT_ROOT = os.path.abspath(os.path.join(APP_DIR, os.pardir))
     BCRYPT_LOG_ROUNDS = 13
-    # CACHE_TYPE = 'simple'  # Can be "memcached", "redis", etc.
     PORT = 8080
     DATA_DIR = os.path.expanduser('~') + '/gfdata'
     CLUSTER_FILE = DATA_DIR + '/cluster.json'
@@ -18,7 +17,9 @@ class Config(object):
     SALT_MASTER_IPADDR = os_env.get("SALT_MASTER_IPADDR", "")
     # Is there any better place to put this path
     #DOCKER_REPO = 'https://raw.githubusercontent.com/GluuFederation/gluu-docker/master/ubuntu/14.04'
-    DOCKER_SOCKET = os_env.get("DOCKER_SOCKET", 'unix:///var/run/docker.sock')
+
+    # Default docker host
+    DOCKER_HOST = os_env.get("DOCKER_HOST", 'unix:///var/run/docker.sock')
 
 
 class ProdConfig(Config):

@@ -86,22 +86,22 @@ def test_run_container(monkeypatch, docker_helper):
     assert docker_helper.run_container("abc", "gluuopendj") == "123"
 
 
-def test_build_saltminion(monkeypatch, docker_helper):
+def test_build_gluubase(monkeypatch, docker_helper):
     monkeypatch.setattr(
         "api.helper.docker_helper.DockerHelper.image_exists",
         lambda cls, name: [{
             'Created': 1401926735,
             'Id': 'a9eb172552348a9a49180694790b33a1097f546456d041b6e82e4d',
             'ParentId': '120e218dd395ec314e7b6249f39d2853911b3d6def6ea164',
-            'RepoTags': ['saltminion:latest'],
+            'RepoTags': ['gluubase:latest'],
             'Size': 0,
             'VirtualSize': 2433303,
         }],
     )
-    assert docker_helper._build_saltminion() is True
+    assert docker_helper._build_gluubase() is True
 
 
-def test_build_saltminion_no_image(monkeypatch, docker_helper):
+def test_build_gluubase_no_image(monkeypatch, docker_helper):
     monkeypatch.setattr(
         "api.helper.docker_helper.DockerHelper.image_exists",
         lambda cls, name: [],
@@ -116,12 +116,12 @@ def test_build_saltminion_no_image(monkeypatch, docker_helper):
     )
     # not sure whether to monkeypatch of use fixture
     monkeypatch.setattr("shutil.rmtree", lambda path: None)
-    assert docker_helper._build_saltminion() is True
+    assert docker_helper._build_gluubase() is True
 
 
 def test_setup_container_existing_image(monkeypatch, docker_helper):
     monkeypatch.setattr(
-        "api.helper.docker_helper.DockerHelper._build_saltminion",
+        "api.helper.docker_helper.DockerHelper._build_gluubase",
         lambda cls: True,
     )
     monkeypatch.setattr(
@@ -147,9 +147,9 @@ def test_setup_container_existing_image(monkeypatch, docker_helper):
     assert container_id == "123"
 
 
-def test_setup_container_no_saltminion(monkeypatch, docker_helper):
+def test_setup_container_no_gluubase(monkeypatch, docker_helper):
     monkeypatch.setattr(
-        "api.helper.docker_helper.DockerHelper._build_saltminion",
+        "api.helper.docker_helper.DockerHelper._build_gluubase",
         lambda cls: False,
     )
     container_id = docker_helper.setup_container(
@@ -161,7 +161,7 @@ def test_setup_container_no_saltminion(monkeypatch, docker_helper):
 
 def test_setup_container_failed(monkeypatch, docker_helper):
     monkeypatch.setattr(
-        "api.helper.docker_helper.DockerHelper._build_saltminion",
+        "api.helper.docker_helper.DockerHelper._build_gluubase",
         lambda cls: True,
     )
     monkeypatch.setattr(

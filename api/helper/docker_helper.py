@@ -125,25 +125,25 @@ class DockerHelper(object):
                     fp.write(resp.text)
         return local_dir
 
-    def _build_saltminion(self):
-        """Builds saltminion image.
+    def _build_gluubase(self):
+        """Builds gluubase image.
 
         :param salt_master_ipaddr: IP address of salt-master.
         :returns: ``True`` if image successfully built, otherwise ``False``
         """
         build_succeed = True
 
-        if not self.image_exists("saltminion"):
-            self.logger.info("building saltminion image")
+        if not self.image_exists("gluubase"):
+            self.logger.info("building gluubase image")
             # There must be a better way than to hard code every file one by one
             DOCKER_REPO = 'https://raw.githubusercontent.com/GluuFederation/gluu-docker/master/ubuntu/14.04'
-            minion_file = DOCKER_REPO + '/saltminion/minion'
-            supervisor_conf = DOCKER_REPO + '/saltminion/supervisord.conf'
-            render = DOCKER_REPO + '/saltminion/render.sh'
-            dockerfile = DOCKER_REPO + '/saltminion/Dockerfile'
+            minion_file = DOCKER_REPO + '/gluubase/minion'
+            supervisor_conf = DOCKER_REPO + '/gluubase/supervisord.conf'
+            render = DOCKER_REPO + '/gluubase/render.sh'
+            dockerfile = DOCKER_REPO + '/gluubase/Dockerfile'
             files = [minion_file, supervisor_conf, render, dockerfile]
             build_dir = self.get_remote_files(*files)
-            build_succeed = self.build_image(build_dir, "saltminion")
+            build_succeed = self.build_image(build_dir, "gluubase")
             shutil.rmtree(build_dir)
         return build_succeed
 
@@ -157,7 +157,7 @@ class DockerHelper(object):
         :returns: Container ID in long format if container running successfully,
                 otherwise an empty string.
         """
-        if not self._build_saltminion():
+        if not self._build_gluubase():
             return ""
 
         # a flag to determine whether build image process is succeed

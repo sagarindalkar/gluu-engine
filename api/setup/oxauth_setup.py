@@ -115,17 +115,12 @@ class OxAuthSetup(BaseSetup):
     def write_salt_file(self):
         self.logger.info("writing salt file")
 
-        try:
-            local_dest = os.path.join(self.build_dir, "salt")
-            with codecs.open(local_dest, "w", encoding="utf-8") as fp:
-                fp.write("encodeSalt = {}".format(self.cluster.passkey))
+        local_dest = os.path.join(self.build_dir, "salt")
+        with codecs.open(local_dest, "w", encoding="utf-8") as fp:
+            fp.write("encodeSalt = {}".format(self.cluster.passkey))
 
-            remote_dest = os.path.join(self.node.tomcat_conf_dir, "salt")
-            run("salt-cp {} {} {}".format(self.node.id, local_dest, remote_dest))
-        except Exception as exc:
-            self.logger.error(exc)
-        finally:
-            os.unlink(local_dest)
+        remote_dest = os.path.join(self.node.tomcat_conf_dir, "salt")
+        run("salt-cp {} {} {}".format(self.node.id, local_dest, remote_dest))
 
     def gen_openid_keys(self):
         openid_key_json_fn = os.path.join(self.node.cert_folder, "oxauth-web-keys.json")
@@ -181,46 +176,43 @@ class OxAuthSetup(BaseSetup):
                      in_cert, user, hostname):
         self.logger.info("Creating keystore %s" % suffix)
 
-        try:
-            # Convert key to pkcs12
-            pkcs_fn = '%s/%s.pkcs12' % (self.node.cert_folder, suffix)
-            export_cmd = " ".join([
-                self.node.openssl_cmd, 'pkcs12', '-export',
-                '-inkey', in_key,
-                '-in', in_cert,
-                '-out', pkcs_fn,
-                '-name', hostname,
-                '-passout', 'pass:%s' % keystore_pw,
-            ])
-            self.saltlocal.cmd(self.node.id, "cmd.run", [export_cmd])
+        # Convert key to pkcs12
+        pkcs_fn = '%s/%s.pkcs12' % (self.node.cert_folder, suffix)
+        export_cmd = " ".join([
+            self.node.openssl_cmd, 'pkcs12', '-export',
+            '-inkey', in_key,
+            '-in', in_cert,
+            '-out', pkcs_fn,
+            '-name', hostname,
+            '-passout', 'pass:%s' % keystore_pw,
+        ])
+        self.saltlocal.cmd(self.node.id, "cmd.run", [export_cmd])
 
-            # Import p12 to keystore
-            import_cmd = " ".join([
-                self.node.keytool_cmd, '-importkeystore',
-                '-srckeystore', '%s/%s.pkcs12' % (self.node.cert_folder, suffix),
-                '-srcstorepass', keystore_pw,
-                '-srcstoretype', 'PKCS12',
-                '-destkeystore', keystore_fn,
-                '-deststorepass', keystore_pw,
-                '-deststoretype', 'JKS',
-                '-keyalg', 'RSA',
-                '-noprompt',
-            ])
-            self.saltlocal.cmd(self.node.id, "cmd.run", [import_cmd])
+        # Import p12 to keystore
+        import_cmd = " ".join([
+            self.node.keytool_cmd, '-importkeystore',
+            '-srckeystore', '%s/%s.pkcs12' % (self.node.cert_folder, suffix),
+            '-srcstorepass', keystore_pw,
+            '-srcstoretype', 'PKCS12',
+            '-destkeystore', keystore_fn,
+            '-deststorepass', keystore_pw,
+            '-deststoretype', 'JKS',
+            '-keyalg', 'RSA',
+            '-noprompt',
+        ])
+        self.saltlocal.cmd(self.node.id, "cmd.run", [import_cmd])
 
-            self.logger.info("changing access to keystore file")
-            self.saltlocal.cmd(
-                self.node.id,
-                ["cmd.run", "cmd.run", "cmd.run", "cmd.run"],
-                [
-                    ["/bin/chown {0}:{0}".format(user), pkcs_fn],
-                    ["/bin/chmod 700 {}".format(pkcs_fn)],
-                    ["/bin/chown {0}:{0}".format(user), keystore_fn],
-                    ["/bin/chmod 700 {}".format(keystore_fn)],
-                ],
-            )
-        except Exception as exc:
-            self.logger.error("failed to create keystore: {}".format(exc))
+        self.logger.info("changing access to keystore file")
+        self.saltlocal.cmd(
+            self.node.id,
+            ["cmd.run", "cmd.run", "cmd.run", "cmd.run"],
+            [
+                ["/bin/chown {0}:{0}".format(user), pkcs_fn],
+                ["/bin/chmod 700 {}".format(pkcs_fn)],
+                ["/bin/chown {0}:{0}".format(user), keystore_fn],
+                ["/bin/chmod 700 {}".format(keystore_fn)],
+            ],
+        )
 
     def render_errors_template(self):
         src = self.node.oxauth_errors_json

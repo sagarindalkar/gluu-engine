@@ -27,6 +27,7 @@ import random
 import string
 import subprocess
 import sys
+import traceback
 import uuid
 
 from M2Crypto.EVP import Cipher
@@ -98,3 +99,13 @@ def decrypt_text(encrypted_text, key):
 # backward-compat
 ox_encode_password = encrypt_text
 ox_decode_password = decrypt_text
+
+
+def exc_traceback():
+    """Get exception traceback as string.
+    """
+    exc_info = sys.exc_info()
+    exc_string = ''.join(
+        traceback.format_exception_only(*exc_info[:2]) +
+        traceback.format_exception(*exc_info))
+    return exc_string

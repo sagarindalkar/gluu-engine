@@ -27,6 +27,7 @@ import time
 
 from api.database import db
 from api.helper.common_helper import run
+from api.helper.common_helper import exc_traceback
 from api.setup.base import BaseSetup
 from api.setup.oxauth_setup import OxAuthSetup
 from api.setup.oxtrust_setup import OxTrustSetup
@@ -36,19 +37,14 @@ class ldapSetup(BaseSetup):
     def write_ldap_pw(self):
         self.logger.info("writing temporary LDAP password")
 
-        try:
-            local_dest = os.path.join(self.build_dir, ".pw")
-            with codecs.open(local_dest, "w", encoding="utf-8") as fp:
-                fp.write(self.cluster.decrypted_admin_pw)
+        local_dest = os.path.join(self.build_dir, ".pw")
+        with codecs.open(local_dest, "w", encoding="utf-8") as fp:
+            fp.write(self.cluster.decrypted_admin_pw)
 
-            self.saltlocal.cmd(
-                self.node.id, "cmd.run", ["mkdir -p {}".format(os.path.dirname(self.node.ldapPassFn))],
-            )
-            run("salt-cp {} {} {}".format(self.node.id, local_dest, self.node.ldapPassFn))
-        except Exception as exc:
-            self.logger.error(exc)
-        finally:
-            os.unlink(local_dest)
+        self.saltlocal.cmd(
+            self.node.id, "cmd.run", ["mkdir -p {}".format(os.path.dirname(self.node.ldapPassFn))],
+        )
+        run("salt-cp {} {} {}".format(self.node.id, local_dest, self.node.ldapPassFn))
 
     def delete_ldap_pw(self):
         self.logger.info("deleting temporary LDAP password")
@@ -65,32 +61,20 @@ class ldapSetup(BaseSetup):
 
         for schema_file in self.node.schemaFiles:
             # render templates
-            rendered_content = ""
+            with codecs.open(schema_file, "r", encoding="utf-8") as fp:
+                rendered_content = fp.read() % ctx
 
-            try:
-                with codecs.open(schema_file, "r", encoding="utf-8") as fp:
-                    rendered_content = fp.read() % ctx
-            except Exception as exc:
-                self.logger.error(exc)
+            file_basename = os.path.basename(schema_file)
 
-            try:
-                file_basename = os.path.basename(schema_file)
+            # save to temporary file
+            local_dest = os.path.join(self.build_dir, file_basename)
+            with codecs.open(local_dest, "w", encoding="utf-8") as fp:
+                fp.write(rendered_content)
 
-                # save to temporary file
-                local_dest = os.path.join(self.build_dir, file_basename)
-                with codecs.open(local_dest, "w", encoding="utf-8") as fp:
-                    fp.write(rendered_content)
-
-                # copy to minion
-                remote_dest = os.path.join(self.node.schemaFolder,
-                                           file_basename)
-                self.logger.info("copying {}".format(local_dest))
-                run("salt-cp {} {} {}".format(self.node.id, local_dest,
-                                              remote_dest))
-            except Exception as exc:
-                self.logger.error(exc)
-            finally:
-                os.unlink(local_dest)
+            # copy to minion
+            remote_dest = os.path.join(self.node.schemaFolder, file_basename)
+            self.logger.info("copying {}".format(local_dest))
+            run("salt-cp {} {} {}".format(self.node.id, local_dest, remote_dest))
 
     def setup_opendj(self):
         self.add_ldap_schema()
@@ -99,67 +83,51 @@ class ldapSetup(BaseSetup):
         setupPropsFN = os.path.join(self.node.ldapBaseFolder,
                                     'opendj-setup.properties')
 
-        try:
-            with open(self.node.ldap_setup_properties, "r") as fp:
-                content = fp.read().format(
-                    ldap_hostname=self.node.local_hostname,
-                    ldap_port=self.node.ldap_port,
-                    ldaps_port=self.node.ldaps_port,
-                    ldap_jmx_port=self.node.ldap_jmx_port,
-                    ldap_admin_port=self.node.ldap_admin_port,
-                    ldap_binddn=self.node.ldap_binddn,
-                    ldapPassFn=self.node.ldapPassFn,
-                )
-
-            # Copy opendj-setup.properties so user ldap can find it
-            # in /opt/opendj
-            self.logger.info("copying opendj-setup.properties")
-            self.saltlocal.cmd(
-                self.node.id,
-                "cmd.run",
-                ["echo '{}' > {}".format(content, setupPropsFN)],
+        with open(self.node.ldap_setup_properties, "r") as fp:
+            content = fp.read().format(
+                ldap_hostname=self.node.local_hostname,
+                ldap_port=self.node.ldap_port,
+                ldaps_port=self.node.ldaps_port,
+                ldap_jmx_port=self.node.ldap_jmx_port,
+                ldap_admin_port=self.node.ldap_admin_port,
+                ldap_binddn=self.node.ldap_binddn,
+                ldapPassFn=self.node.ldapPassFn,
             )
-        except Exception as exc:
-            self.logger.error(exc)
 
-        try:
-            setupCmd = " ".join([self.node.ldapSetupCommand,
-                                 '--no-prompt',
-                                 '--cli',
-                                 '--acceptLicense',
-                                 '--propertiesFilePath',
-                                 setupPropsFN,
-                                 ])
+        # Copy opendj-setup.properties so user ldap can find it
+        # in /opt/opendj
+        self.logger.info("copying opendj-setup.properties")
+        self.saltlocal.cmd(
+            self.node.id,
+            "cmd.run",
+            ["echo '{}' > {}".format(content, setupPropsFN)],
+        )
 
-            self.logger.info("running opendj setup")
-            self.saltlocal.cmd(
-                self.node.id,
-                'cmd.run',
-                ["{}".format(setupCmd)],
-            )
-            self.logger.debug("{}".format(setupCmd))
-        except Exception as exc:
-            self.logger.error("error running LDAP setup script: %s" % exc)
+        setupCmd = " ".join([
+            self.node.ldapSetupCommand,
+            '--no-prompt', '--cli', '--acceptLicense', '--propertiesFilePath',
+            setupPropsFN,
+        ])
 
-        try:
-            self.logger.info("running dsjavaproperties")
-            self.saltlocal.cmd(
-                self.node.id,
-                'cmd.run',
-                [self.node.ldapDsJavaPropCommand],
-            )
-            self.logger.debug("{}".format(self.node.ldapDsJavaPropCommand))
-        except Exception as exc:
-            self.logger.error("error running dsjavaproperties: %s" % exc)
+        self.logger.info("running opendj setup")
+        self.saltlocal.cmd(
+            self.node.id,
+            'cmd.run',
+            ["{}".format(setupCmd)],
+        )
+
+        self.logger.info("running dsjavaproperties")
+        self.saltlocal.cmd(
+            self.node.id,
+            'cmd.run',
+            [self.node.ldapDsJavaPropCommand],
+        )
 
         # wait for opendj being started before proceeding to next step
-        try:
-            self.logger.info(
-                "warming up opendj server; "
-                "sleeping for {} seconds".format(self.node.ldapStartTimeOut))
-            time.sleep(self.node.ldapStartTimeOut)
-        except Exception as exc:
-            self.logger.error(exc)
+        self.logger.info(
+            "warming up opendj server; "
+            "sleeping for {} seconds".format(self.node.ldapStartTimeOut))
+        time.sleep(self.node.ldapStartTimeOut)
 
     def configure_opendj(self):
         config_changes = [
@@ -170,70 +138,44 @@ class ldapSetup(BaseSetup):
             ['create-backend', '--backend-name', 'site', '--set', 'base-dn:o=site', '--type local-db', '--set', 'enabled:true'],
         ]
 
-        try:
-            for changes in config_changes:
-                dsconfigCmd = " ".join([self.node.ldapDsconfigCommand,
-                                        '--trustAll',
-                                        '--no-prompt',
-                                        '--hostname',
-                                        self.node.local_hostname,
-                                        '--port',
-                                        self.node.ldap_admin_port,
-                                        '--bindDN',
-                                        '"%s"' % self.node.ldap_binddn,
-                                        '--bindPasswordFile',
-                                        self.node.ldapPassFn] + changes)
-                self.logger.info("configuring opendj config changes: {}".format(dsconfigCmd))
-                # self.logger.debug("{}".format(dsconfigCmd))
-                self.saltlocal.cmd(self.node.id, 'cmd.run', [dsconfigCmd])
-                time.sleep(1)
-        except Exception as exc:
-            self.logger.error("error executing config changes: %s" % exc)
+        for changes in config_changes:
+            dsconfigCmd = " ".join([
+                self.node.ldapDsconfigCommand, '--trustAll', '--no-prompt',
+                '--hostname', self.node.local_hostname,
+                '--port', self.node.ldap_admin_port,
+                '--bindDN', '"%s"' % self.node.ldap_binddn,
+                '--bindPasswordFile', self.node.ldapPassFn,
+            ] + changes)
+            self.logger.info("configuring opendj config changes: {}".format(dsconfigCmd))
+            self.saltlocal.cmd(self.node.id, 'cmd.run', [dsconfigCmd])
+            time.sleep(1)
 
     def index_opendj(self):
-        try:
-            try:
-                with open(self.node.indexJson, 'r') as fp:
-                    index_json = json.load(fp)
-            except Exception as exc:
-                self.logger.error(exc)
-                index_json = []
+        with open(self.node.indexJson, 'r') as fp:
+            index_json = json.load(fp)
 
-            if index_json:
-                for attrDict in index_json:
-                    attr_name = attrDict['attribute']
-                    index_types = attrDict['index']
+        if index_json:
+            for attrDict in index_json:
+                attr_name = attrDict['attribute']
+                index_types = attrDict['index']
 
-                    for index_type in index_types:
-                        self.logger.info("creating %s index for attribute %s" % (index_type, attr_name))
-                        indexCmd = " ".join([self.node.ldapDsconfigCommand,
-                                             'create-local-db-index',
-                                             '--backend-name',
-                                             'userRoot',
-                                             '--type',
-                                             'generic',
-                                             '--index-name',
-                                             attr_name,
-                                             '--set',
-                                             'index-type:%s' % index_type,
-                                             '--set',
-                                             'index-entry-limit:4000',
-                                             '--hostName',
-                                             self.node.local_hostname,
-                                             '--port',
-                                             self.node.ldap_admin_port,
-                                             '--bindDN',
-                                             '"%s"' % self.node.ldap_binddn,
-                                             '-j', self.node.ldapPassFn,
-                                             '--trustAll',
-                                             '--noPropertiesFile',
-                                             '--no-prompt'])
-                        self.saltlocal.cmd(self.node.id, 'cmd.run', [indexCmd])
-                        self.logger.debug("{}".format(indexCmd))
-            else:
-                self.logger.warn("no indexes found %s" % self.node.indexJson)
-        except Exception as exc:
-            self.logger.error("error occured during LDAP indexing: %s" % exc)
+                for index_type in index_types:
+                    self.logger.info("creating %s index for attribute %s" % (index_type, attr_name))
+                    indexCmd = " ".join([
+                        self.node.ldapDsconfigCommand,
+                        'create-local-db-index',
+                        '--backend-name', 'userRoot',
+                        '--type', 'generic',
+                        '--index-name', attr_name,
+                        '--set', 'index-type:%s' % index_type,
+                        '--set', 'index-entry-limit:4000',
+                        '--hostName', self.node.local_hostname,
+                        '--port', self.node.ldap_admin_port,
+                        '--bindDN', '"%s"' % self.node.ldap_binddn,
+                        '-j', self.node.ldapPassFn,
+                        '--trustAll', '--noPropertiesFile', '--no-prompt',
+                    ])
+                    self.saltlocal.cmd(self.node.id, 'cmd.run', [indexCmd])
 
     def import_ldif(self):
         # template's context
@@ -262,56 +204,38 @@ class ldapSetup(BaseSetup):
 
         for ldif_file in self.node.ldif_files:
             # render templates
-            rendered_content = ""
-            try:
-                with codecs.open(ldif_file, "r", encoding="utf-8") as fp:
-                    rendered_content = fp.read() % ctx
-            except Exception as exc:
-                self.logger.error(exc)
+            with codecs.open(ldif_file, "r", encoding="utf-8") as fp:
+                rendered_content = fp.read() % ctx
 
-            try:
-                file_basename = os.path.basename(ldif_file)
+            file_basename = os.path.basename(ldif_file)
 
-                # save to temporary file
-                local_dest = os.path.join(self.build_dir, file_basename)
-                with codecs.open(local_dest, "w", encoding="utf-8") as fp:
-                    fp.write(rendered_content)
+            # save to temporary file
+            local_dest = os.path.join(self.build_dir, file_basename)
+            with codecs.open(local_dest, "w", encoding="utf-8") as fp:
+                fp.write(rendered_content)
 
-                # copy to minion
-                remote_dest = os.path.join(ldifFolder, file_basename)
-                self.logger.info("copying {}".format(local_dest))
-                run("salt-cp {} {} {}".format(self.node.id, local_dest,
-                                              remote_dest))
+            # copy to minion
+            remote_dest = os.path.join(ldifFolder, file_basename)
+            self.logger.info("copying {}".format(local_dest))
+            run("salt-cp {} {} {}".format(self.node.id, local_dest, remote_dest))
 
-                if file_basename == "o_site.ldif":
-                    backend_id = "site"
-                else:
-                    backend_id = "userRoot"
-                importCmd = " ".join([
-                    self.node.importLdifCommand,
-                    '--ldifFile',
-                    remote_dest,
-                    '--backendID',
-                    backend_id,
-                    '--hostname',
-                    self.node.local_hostname,
-                    '--port',
-                    self.node.ldap_admin_port,
-                    '--bindDN',
-                    '"%s"' % self.node.ldap_binddn,
-                    '-j',
-                    self.node.ldapPassFn,
-                    '--append',
-                    '--trustAll',
-                ])
-                self.saltlocal.cmd(self.node.id, 'cmd.run', [importCmd])
-                self.logger.debug("{}".format(importCmd))
-                time.sleep(1)
-            except Exception as exc:
-                self.logger.error(exc)
-            finally:
-                # remove temporary file
-                os.unlink(local_dest)
+            if file_basename == "o_site.ldif":
+                backend_id = "site"
+            else:
+                backend_id = "userRoot"
+
+            importCmd = " ".join([
+                self.node.importLdifCommand,
+                '--ldifFile', remote_dest,
+                '--backendID', backend_id,
+                '--hostname', self.node.local_hostname,
+                '--port', self.node.ldap_admin_port,
+                '--bindDN', '"%s"' % self.node.ldap_binddn,
+                '-j', self.node.ldapPassFn,
+                '--append', '--trustAll',
+            ])
+            self.saltlocal.cmd(self.node.id, 'cmd.run', [importCmd])
+            time.sleep(1)
 
     def export_opendj_public_cert(self):
         # Load password to acces OpenDJ truststore
@@ -330,19 +254,15 @@ class ldapSetup(BaseSetup):
 
         # Export public OpenDJ certificate
         self.logger.info("exporting OpenDJ certificate")
-        cmdsrt = ' '.join([self.node.keytoolCommand,
-                           '-exportcert',
-                           '-keystore',
-                           openDjTruststoreFn,
-                           '-storepass',
-                           openDjPin,
-                           '-file',
-                           self.node.openDjCertFn,
-                           '-alias',
-                           'server-cert',
-                           '-rfc'])
+        cmdsrt = ' '.join([
+            self.node.keytoolCommand, '-exportcert',
+            '-keystore', openDjTruststoreFn,
+            '-storepass', openDjPin,
+            '-file', self.node.openDjCertFn,
+            '-alias', 'server-cert',
+            '-rfc',
+        ])
         self.saltlocal.cmd(self.node.id, 'cmd.run', [cmdsrt])
-        self.logger.debug("{}".format(cmdsrt))
 
         # Import OpenDJ certificate into java truststore
         cmdstr = ' '.join([
@@ -354,7 +274,6 @@ class ldapSetup(BaseSetup):
         ])
         self.logger.info("importing OpenDJ certificate into Java truststore")
         self.saltlocal.cmd(self.node.id, 'cmd.run', [cmdstr])
-        self.logger.debug("{}".format(cmdsrt))
 
     def get_existing_node(self, node_id):
         try:
@@ -372,55 +291,51 @@ class ldapSetup(BaseSetup):
 
         base_dns = ("o=gluu", "o=site",)
         for base_dn in base_dns:
-            try:
-                enable_cmd = " ".join([
-                    "/opt/opendj/bin/dsreplication", "enable",
-                    "--host1", existing_node.local_hostname,
-                    "--port1", existing_node.ldap_admin_port,
-                    "--bindDN1", "'{}'".format(existing_node.ldap_binddn),
-                    "--bindPasswordFile1", self.node.ldapPassFn,
-                    "--replicationPort1", existing_node.ldap_replication_port,
-                    "--host2", self.node.local_hostname,
-                    "--port2", self.node.ldap_admin_port,
-                    "--bindDN2", "'{}'".format(self.node.ldap_binddn),
-                    "--bindPasswordFile2", self.node.ldapPassFn,
-                    "--replicationPort2", self.node.ldap_replication_port,
-                    "--adminUID", "admin",
-                    "--adminPasswordFile", self.node.ldapPassFn,
-                    "--baseDN", "'{}'".format(base_dn),
-                    "--secureReplication1", "--secureReplication2",
-                    "-X", "-n",
-                ])
-                self.logger.info("enabling {!r} replication between {} and {}".format(
-                    base_dn, existing_node.local_hostname, self.node.local_hostname,
-                ))
-                self.saltlocal.cmd(self.node.id, "cmd.run", [enable_cmd])
+            # try:
+            enable_cmd = " ".join([
+                "/opt/opendj/bin/dsreplication", "enable",
+                "--host1", existing_node.local_hostname,
+                "--port1", existing_node.ldap_admin_port,
+                "--bindDN1", "'{}'".format(existing_node.ldap_binddn),
+                "--bindPasswordFile1", self.node.ldapPassFn,
+                "--replicationPort1", existing_node.ldap_replication_port,
+                "--host2", self.node.local_hostname,
+                "--port2", self.node.ldap_admin_port,
+                "--bindDN2", "'{}'".format(self.node.ldap_binddn),
+                "--bindPasswordFile2", self.node.ldapPassFn,
+                "--replicationPort2", self.node.ldap_replication_port,
+                "--adminUID", "admin",
+                "--adminPasswordFile", self.node.ldapPassFn,
+                "--baseDN", "'{}'".format(base_dn),
+                "--secureReplication1", "--secureReplication2",
+                "-X", "-n",
+            ])
+            self.logger.info("enabling {!r} replication between {} and {}".format(
+                base_dn, existing_node.local_hostname, self.node.local_hostname,
+            ))
+            self.saltlocal.cmd(self.node.id, "cmd.run", [enable_cmd])
 
-                # wait before initializing the replication to ensure it
-                # has been enabled
-                time.sleep(10)
-            except Exception as exc:
-                self.logger.error("error enabling {!r} replication: {}".format(base_dn, exc))
+            # wait before initializing the replication to ensure it
+            # has been enabled
+            time.sleep(10)
 
-            try:
-                init_cmd = " ".join([
-                    "/opt/opendj/bin/dsreplication", "initialize",
-                    "--baseDN", "'{}'".format(base_dn),
-                    "--adminUID", "admin",
-                    "--adminPasswordFile", self.node.ldapPassFn,
-                    "--hostSource", existing_node.local_hostname,
-                    "--portSource", existing_node.ldap_admin_port,
-                    "--hostDestination", self.node.local_hostname,
-                    "--portDestination", self.node.ldap_admin_port,
-                    "-X", "-n"
-                ])
-                self.logger.info("initializing {!r} replication between {} and {}".format(
-                    base_dn, existing_node.local_hostname, self.node.local_hostname,
-                ))
-                self.saltlocal.cmd(self.node.id, "cmd.run", [init_cmd])
-                time.sleep(5)
-            except Exception as exc:
-                self.logger.error("error initializing {!r} replication: {}".format(base_dn, exc))
+            # try:
+            init_cmd = " ".join([
+                "/opt/opendj/bin/dsreplication", "initialize",
+                "--baseDN", "'{}'".format(base_dn),
+                "--adminUID", "admin",
+                "--adminPasswordFile", self.node.ldapPassFn,
+                "--hostSource", existing_node.local_hostname,
+                "--portSource", existing_node.ldap_admin_port,
+                "--hostDestination", self.node.local_hostname,
+                "--portDestination", self.node.ldap_admin_port,
+                "-X", "-n"
+            ])
+            self.logger.info("initializing {!r} replication between {} and {}".format(
+                base_dn, existing_node.local_hostname, self.node.local_hostname,
+            ))
+            self.saltlocal.cmd(self.node.id, "cmd.run", [init_cmd])
+            time.sleep(5)
 
         # cleanups temporary password file
         setup_obj.delete_ldap_pw()
@@ -499,5 +414,4 @@ class ldapSetup(BaseSetup):
             # executable may not exist or minion is unreachable
             if exc.code == 2:
                 pass
-            self.logger.error(exc)
-            print(exc)
+            print exc_traceback()

@@ -29,8 +29,7 @@ from api.database import db
 
 class OxTrustSetup(OxAuthSetup):
     def import_oxauth_cert(self):
-        # imports oxauth cert into oxtrust cacerts to avoid
-        # "peer not authenticated" error
+        # imports oxauth cert into oxtrust cacerts to avoid "peer not authenticated" error
         cert_cmd = "echo -n | openssl s_client -connect {} | " \
                    "sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' " \
                    "> /tmp/oxauth.cert".format(self.cluster.hostname_oxauth_cluster)

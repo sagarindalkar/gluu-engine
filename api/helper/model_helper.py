@@ -30,6 +30,7 @@ from api.database import db
 from api.model import ldapNode
 from api.model import oxauthNode
 from api.model import oxtrustNode
+from api.helper.common_helper import exc_traceback
 from api.helper.docker_helper import DockerHelper
 from api.helper.salt_helper import SaltHelper
 from api.setup.ldap_setup import ldapSetup
@@ -155,8 +156,8 @@ class BaseModelHelper(object):
             # container is not running
             else:
                 self.logger.error("Failed to start the {!r} container".format(self.node.name))
-        except Exception as exc:
-            self.logger.error(exc)
+        except Exception:
+            self.logger.error(exc_traceback())
 
 
 class LdapModelHelper(BaseModelHelper):

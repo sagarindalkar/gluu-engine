@@ -1,6 +1,6 @@
 # The MIT License (MIT)
 #
-# Copyright (c) 2014 Gluu
+# Copyright (c) 2015 Gluu
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -19,9 +19,8 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from flask.ext.restful import reqparse
 
-from .gluu_cluster import GluuCluster  # noqa
-from .ldap_node import ldapNode  # noqa
-from .oxauth_node import oxauthNode  # noqa
-from .oxtrust_node import oxtrustNode  # noqa
-from .provider import Provider  # noqa
+provider_req = reqparse.RequestParser()
+provider_req.add_argument("base_url", location="form", required=True,
+                          help="URL to Docker API, could be unix socket or HTTP")

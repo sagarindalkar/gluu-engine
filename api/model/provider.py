@@ -1,6 +1,6 @@
 # The MIT License (MIT)
 #
-# Copyright (c) 2014 Gluu
+# Copyright (c) 2015 Gluu
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -19,9 +19,28 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import uuid
 
-from .gluu_cluster import GluuCluster  # noqa
-from .ldap_node import ldapNode  # noqa
-from .oxauth_node import oxauthNode  # noqa
-from .oxtrust_node import oxtrustNode  # noqa
-from .provider import Provider  # noqa
+from flask_restful_swagger import swagger
+from flask.ext.restful import fields
+
+from api.model.base import BaseModel
+
+
+@swagger.model
+class Provider(BaseModel):
+    """Provider is a model represents a Docker host.
+
+    Docker host could be any reachable machine, either local or remote.
+    """
+    resource_fields = {
+        "id": fields.String(attribute="Provider unique identifier"),
+        "base_url": fields.String(
+            attribute="URL to Docker API, could be unix socket or HTTP"),
+    }
+
+    def __init__(self, fields=None):
+        fields = fields or {}
+
+        self.id = str(uuid.uuid4())
+        self.base_url = fields.get("base_url")

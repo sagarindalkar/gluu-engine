@@ -70,3 +70,11 @@ def oxtrust_node(cluster):
     node.id = "oxtrust_{}_123".format(cluster.id)
     node.cluster_id = cluster.id
     return node
+
+
+@pytest.fixture()
+def provider():
+    from api.model import Provider
+
+    provider = Provider({"base_url": "unix:///var/run/docker.sock"})
+    return provider

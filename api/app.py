@@ -9,6 +9,8 @@ from api.resource.node import Node
 from api.resource.node import NodeList
 from api.resource.cluster import Cluster
 from api.resource.cluster import ClusterList
+from api.resource import ProviderResource
+from api.resource import ProviderListResource
 from api.database import db
 
 
@@ -35,3 +37,5 @@ def register_resources():
     restapi.add_resource(Node, '/node/<string:node_id>')
     restapi.add_resource(ClusterList, '/cluster')
     restapi.add_resource(Cluster, '/cluster/<string:cluster_id>')
+    restapi.add_resource(ProviderResource, "/provider/<string:provider_id>", endpoint="provider")
+    restapi.add_resource(ProviderListResource, "/provider", endpoint="providerlist")

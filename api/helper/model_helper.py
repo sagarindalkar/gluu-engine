@@ -52,7 +52,7 @@ class BaseModelHelper(object):
     #: URL to image's Dockerfile. Must be overriden in subclass.
     dockerfile = ""
 
-    def __init__(self, cluster, salt_master_ipaddr, docker_base_url=""):
+    def __init__(self, cluster, provider, salt_master_ipaddr):
         assert self.setup_class, "setup_class must be set"
         assert self.node_class, "node_class must be set"
         assert self.image, "image attribute cannot be empty"
@@ -60,16 +60,19 @@ class BaseModelHelper(object):
 
         self.salt_master_ipaddr = salt_master_ipaddr
         self.cluster = cluster
+        self.provider = provider
 
         self.node = self.node_class()
         self.node.cluster_id = cluster.id
+        self.node.provider_id = provider.id
         self.node.name = "{}_{}_{}".format(self.image, self.cluster.id,
                                            randrange(101, 999))
 
         _, self.logpath = tempfile.mkstemp(
             suffix=".log", prefix=self.image + "-build-")
         self.logger = create_file_logger(self.logpath, name=self.node.name)
-        self.docker = DockerHelper(logger=self.logger, base_url=docker_base_url)
+        self.docker = DockerHelper(logger=self.logger,
+                                   base_url=self.provider.base_url)
         self.salt = SaltHelper()
 
     def prepare_node_attrs(self):

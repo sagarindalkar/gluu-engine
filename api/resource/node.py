@@ -31,7 +31,7 @@ from api.helper.model_helper import OxAuthModelHelper
 from api.helper.model_helper import OxTrustModelHelper
 from api.helper.docker_helper import DockerHelper
 from api.helper.salt_helper import SaltHelper
-from api.reqparser import node_reqparser
+from api.reqparser import node_req
 from api.setup.oxauth_setup import OxAuthSetup
 from api.setup.oxtrust_setup import OxTrustSetup
 from api.setup.ldap_setup import ldapSetup
@@ -91,14 +91,14 @@ class Node(Resource):
             return {"code": 404, "message": "Node not found"}, 404
 
         cluster = db.get(node.cluster_id, "clusters")
+        provider = db.get(node.provider_id, "providers")
 
         if node.type == "ldap":
             setup_obj = ldapSetup(node, cluster)
             setup_obj.stop()
 
         # remove container
-        docker_base_url = current_app.config["DOCKER_HOST"]
-        docker = DockerHelper(base_url=docker_base_url)
+        docker = DockerHelper(base_url=provider.base_url)
         docker.remove_container(node.id)
 
         # unregister minion
@@ -165,20 +165,25 @@ status of the cluster node is available.""",
         parameters=[
             {
                 "name": "cluster",
-                "description": "The ID of the cluster--must exist",
+                "description": "The ID of the cluster",
                 "required": True,
-                "allowMultiple": False,
-                "dataType": 'string',
-                "paramType": "form"
+                "dataType": "string",
+                "paramType": "form",
             },
             {
                 "name": "node_type",
-                "description": "ldap | oxauth | oxtrust",
+                "description": "one of 'ldap', 'oxauth', or 'oxtrust'",
                 "required": True,
-                "allowMultiple": False,
-                "dataType": 'string',
-                "paramType": "form"
-            }
+                "dataType": "string",
+                "paramType": "form",
+            },
+            {
+                "name": "provider_id",
+                "description": "The ID of the provider",
+                "required": True,
+                "dataType": "string",
+                "paramType": "form",
+            },
         ],
         responseMessages=[
             {
@@ -201,18 +206,22 @@ status of the cluster node is available.""",
         summary='TODO'
     )
     def post(self):
-        params = node_reqparser.parse_args()
+        params = node_req.parse_args()
         salt_master_ipaddr = current_app.config["SALT_MASTER_IPADDR"]
-        docker_base_url = current_app.config["DOCKER_HOST"]
 
         # check node type
         if params.node_type not in ("ldap", "oxauth", "oxtrust"):
             abort(400)
 
-        # check that cluster id is valid else return with message and code
+        # check that cluster ID is valid else return with message and code
         cluster = db.get(params.cluster, "clusters")
         if not cluster:
-            abort(400)
+            return {"code": 400, "message": "invalid cluster ID"}, 400
+
+        # check that provider ID is valid else return with message and code
+        provider = db.get(params.provider_id, "providers")
+        if not provider:
+            return {"code": 400, "message": "invalid provider ID"}, 400
 
         if params.node_type == "ldap":
             # checks if this new node will exceed max. allowed LDAP nodes
@@ -224,10 +233,7 @@ status of the cluster node is available.""",
         elif params.node_type == "oxtrust":
             helper_class = OxTrustModelHelper
 
-        helper = helper_class(cluster, salt_master_ipaddr, docker_base_url)
+        helper = helper_class(cluster, provider, salt_master_ipaddr)
         print "build logpath: %s" % helper.logpath
         helper.setup()
-
-        # Returns the HTTP response as ACCEPTED
-        # TODO: what's the best way to monitor the result?
         return {}, 202

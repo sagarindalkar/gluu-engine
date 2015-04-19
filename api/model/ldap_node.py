@@ -33,6 +33,7 @@ class ldapNode(BaseModel):
         'id': fields.String(attribute='Node unique identifier'),
         'type': fields.String(attribute='Node type'),
         'cluster_id': fields.String(attribute='Cluster ID'),
+        'provider_id': fields.String(attribute='Provider ID'),
         'local_hostname': fields.String(attribute='Local hostname of the node (not the cluster hostname).'),
         'ip': fields.String(attribute='IP address of the node'),
         'ldap_binddn': fields.String(attribute='LDAP super user Bind DN. Probably should leave it default cn=directory manager.'),
@@ -43,11 +44,17 @@ class ldapNode(BaseModel):
     }
 
     def __init__(self):
-        self.install_dir = ""
+        self.id = ''
+        self.cluster_id = ""
+        self.provider_id = ""
+        self.name = ''
         self.ldap_type = "opendj"
-
         self.local_hostname = ""
         self.ip = ""
+        self.type = 'ldap'
+
+        # Filesystem path to Java truststore
+        self.defaultTrustStoreFN = '/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/security/cacerts'
 
         # Filesystem path of the opendj-setup.properties template
         self.ldap_setup_properties = "api/templates/salt/opendj/opendj-setup.properties"
@@ -99,9 +106,6 @@ class ldapNode(BaseModel):
             "api/templates/salt/opendj/schema/100-user.ldif",
         ]
 
-        # Full path of template init file
-        self.init_file = '%s/static/opendj/opendj' % self.install_dir
-
         # Full path of the destination of the init script
         self.ldap_start_script = '/etc/init.d/opendj'
 
@@ -111,8 +115,6 @@ class ldapNode(BaseModel):
 
         # Full path to openssl command
         self.opensslCommand = '/usr/bin/openssl'
-
-        self.outputFolder = '/tmp'
 
         self.ldif_base = 'api/templates/salt/opendj/ldif/base.ldif'
         self.ldif_appliance = 'api/templates/salt/opendj/ldif/appliance.ldif'
@@ -137,9 +139,4 @@ class ldapNode(BaseModel):
             self.ldif_scripts,
         ]
 
-        self.id = ''
-        self.name = ''
-        self.type = 'ldap'
-        self.cluster_name = ""
-        self.defaultTrustStoreFN = '/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/security/cacerts'
         self.indexJson = "api/templates/salt/opendj/opendj_index.json"

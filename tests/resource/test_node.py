@@ -1,24 +1,5 @@
 import json
 
-# import pytest
-
-
-# @pytest.skip("unstable API")
-# def test_node_post(app, db, cluster):
-#     from api.model import ldapNode
-
-#     db.persist(cluster, "clusters")
-
-#     resp = app.test_client().post(
-#         "/node",
-#         data={"cluster": cluster.id, "node_type": "ldap"},
-#     )
-#     actual_data = json.loads(resp.data)
-
-#     assert resp.status_code == 201
-#     for field in ldapNode.resource_fields.keys():
-#         assert field in actual_data
-
 
 def test_node_get(app, cluster, db, ldap_node):
     db.persist(ldap_node, "nodes")
@@ -68,7 +49,9 @@ def test_node_get_list_empty(app):
     assert actual_data == []
 
 
-def test_node_delete(app, db, cluster, ldap_node):
+def test_node_delete(app, db, cluster, provider, ldap_node):
+    db.persist(provider, "providers")
+    ldap_node.provider_id = provider.id
     db.persist(ldap_node, "nodes")
     cluster.add_node(ldap_node)
     db.persist(cluster, "clusters")

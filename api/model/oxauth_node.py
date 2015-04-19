@@ -34,11 +34,13 @@ class oxauthNode(BaseModel):
         "type": fields.String(attribute="Node type"),
         "ip": fields.String(attribute="Node IP address"),
         "cluster_id": fields.String(attribute="Cluster ID"),
+        "provider_id": fields.String(attribute="Provider ID"),
     }
 
     def __init__(self):
         self.id = ""
         self.cluster_id = ""
+        self.provider_id = ""
         self.name = ""
         self.ip = ""
         self.type = "oxauth"

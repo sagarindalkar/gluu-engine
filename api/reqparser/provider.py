@@ -19,8 +19,15 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from flask.ext.restful import reqparse
+from flask_restful import reqparse
+
 
 provider_req = reqparse.RequestParser()
-provider_req.add_argument("base_url", location="form", required=True,
-                          help="URL to Docker API, could be unix socket or HTTP")
+provider_req.add_argument(
+    "name", location="form", required=True,
+    help="Unique name of provider consists of alphanums, _, and - characters",
+)
+provider_req.add_argument(
+    "base_url", location="form", required=True,
+    help="URL to Docker API, could be unix socket or HTTP",
+)

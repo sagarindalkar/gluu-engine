@@ -76,5 +76,8 @@ def oxtrust_node(cluster):
 def provider():
     from api.model import Provider
 
-    provider = Provider({"base_url": "unix:///var/run/docker.sock"})
+    provider = Provider({
+        "base_url": "unix:///var/run/docker.sock",
+        "name": "local",
+    })
     return provider

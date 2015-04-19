@@ -87,6 +87,13 @@ class ProviderListResource(Resource):
         nickname="postprovider",
         parameters=[
             {
+                "name": "name",
+                "description": "Provider name",
+                "required": True,
+                "dataType": "string",
+                "paramType": "form"
+            },
+            {
                 "name": "base_url",
                 "description": "URL to Docker API, could be unix socket or HTTP",
                 "required": True,

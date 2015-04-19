@@ -3,6 +3,7 @@ def test_provider_list_post(app):
         "/provider",
         data={
             "base_url": "unix:///var/run/docker.sock",
+            "name": "local",
         },
     )
     assert resp.status_code == 201

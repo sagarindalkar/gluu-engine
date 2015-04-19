@@ -36,11 +36,14 @@ class Provider(BaseModel):
     resource_fields = {
         "id": fields.String(attribute="Provider unique identifier"),
         "base_url": fields.String(
-            attribute="URL to Docker API, could be unix socket or HTTP"),
+            attribute="URL to Docker API, could be unix socket or HTTP",
+        ),
+        "name": fields.String(attribute="Provider name"),
     }
 
     def __init__(self, fields=None):
         fields = fields or {}
 
         self.id = str(uuid.uuid4())
-        self.base_url = fields.get("base_url")
+        self.base_url = fields.get("base_url", "")
+        self.name = fields.get("name", "")

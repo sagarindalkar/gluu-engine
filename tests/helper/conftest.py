@@ -2,10 +2,10 @@ import pytest
 
 
 @pytest.fixture(scope="session")
-def docker_helper(request, app):
+def docker_helper(request, app, provider):
     from api.helper.docker_helper import DockerHelper
 
-    helper = DockerHelper(base_url=app.config["DOCKER_HOST"])
+    helper = DockerHelper(base_url=provider.base_url)
 
     def teardown():
         helper.docker.close()

@@ -95,7 +95,7 @@ class ProviderListResource(Resource):
             },
             {
                 "name": "base_url",
-                "description": "URL to Docker API, could be unix socket or HTTP",
+                "description": "URL to Docker API, could be unix socket or tcp",
                 "required": True,
                 "dataType": "string",
                 "paramType": "form"

@@ -42,7 +42,7 @@ def cluster():
     return cluster
 
 
-@pytest.fixture()
+@pytest.fixture(scope="session")
 def ldap_node(cluster):
     from api.model import ldapNode
 
@@ -62,7 +62,7 @@ def oxauth_node(cluster):
     return node
 
 
-@pytest.fixture()
+@pytest.fixture(scope="session")
 def oxtrust_node(cluster):
     from api.model import oxtrustNode
 
@@ -72,7 +72,7 @@ def oxtrust_node(cluster):
     return node
 
 
-@pytest.fixture()
+@pytest.fixture(scope="session")
 def provider():
     from api.model import Provider
 

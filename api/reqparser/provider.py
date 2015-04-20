@@ -29,5 +29,5 @@ provider_req.add_argument(
 )
 provider_req.add_argument(
     "base_url", location="form", required=True,
-    help="URL to Docker API, could be unix socket or HTTP",
+    help="URL to Docker API, could be unix socket or tcp",
 )

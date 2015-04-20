@@ -18,9 +18,6 @@ class Config(object):
     # Is there any better place to put this path
     #DOCKER_REPO = 'https://raw.githubusercontent.com/GluuFederation/gluu-docker/master/ubuntu/14.04'
 
-    # Default docker host
-    DOCKER_HOST = os_env.get("DOCKER_HOST", 'unix:///var/run/docker.sock')
-
 
 class ProdConfig(Config):
     """Production configuration."""

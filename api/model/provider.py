@@ -36,7 +36,7 @@ class Provider(BaseModel):
     resource_fields = {
         "id": fields.String(attribute="Provider unique identifier"),
         "base_url": fields.String(
-            attribute="URL to Docker API, could be unix socket or HTTP",
+            attribute="URL to Docker API, could be unix socket or tcp",
         ),
         "name": fields.String(attribute="Provider name"),
     }

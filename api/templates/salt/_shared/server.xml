@@ -18,7 +18,7 @@
   <Service name="Catalina">
 
 
-  <Connector port="8443" address="%(ip)s"
+  <Connector port="8443" address="localhost"
         protocol="HTTP/1.1" scheme="https" secure="true"
         clientAuth="false" sslProtocol="TLS" SSLEnabled="true"
         keystoreFile="%(shibJksFn)s"
@@ -26,17 +26,17 @@
         truststoreFile="%(shibJksFn)s"
         truststorePass="%(shibJksPass)s" truststoreType="JKS"/>
 
-  <Connector port="8009" address="%(ip)s" protocol="AJP/1.3"
+  <Connector port="8009" address="localhost" protocol="AJP/1.3"
         redirectPort="8443" tomcatAuthentication="false" />
 
-    <Engine name="Catalina" defaultHost="%(ip)s">
+    <Engine name="Catalina" defaultHost="localhost">
 
       <Realm className="org.apache.catalina.realm.LockOutRealm">
         <Realm className="org.apache.catalina.realm.UserDatabaseRealm"
                resourceName="UserDatabase"/>
       </Realm>
 
-      <Host name="%(ip)s"  appBase="webapps"
+      <Host name="localhost"  appBase="webapps"
         unpackWARs="true" autoDeploy="false"
             xmlValidation="false" xmlNamespaceAware="false">
 

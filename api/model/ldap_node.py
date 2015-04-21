@@ -56,9 +56,6 @@ class ldapNode(BaseModel):
         # Filesystem path to Java truststore
         self.defaultTrustStoreFN = '/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/security/cacerts'
 
-        # Filesystem path of the opendj-setup.properties template
-        self.ldap_setup_properties = "api/templates/salt/opendj/opendj-setup.properties"
-
         # Filesystem path of the public certificate for OpenDJ
         self.openDjCertFn = '/etc/certs/opendj.crt'
 
@@ -99,13 +96,6 @@ class ldapNode(BaseModel):
         # Full path of template schema to copy to the opendj server
         self.schemaFolder = "%s/template/config/schema" % self.ldapBaseFolder
         self.org_custom_schema = "%s/config/schema/100-user.ldif" % self.ldapBaseFolder
-        self.schemaFiles = [
-            "api/templates/salt/opendj/schema/101-ox.ldif",
-            "api/templates/salt/opendj/schema/77-customAttributes.ldif",
-            "api/templates/salt/opendj/schema/96-eduperson.ldif",
-            "api/templates/salt/opendj/schema/100-user.ldif",
-        ]
-
         # Full path of the destination of the init script
         self.ldap_start_script = '/etc/init.d/opendj'
 
@@ -116,18 +106,46 @@ class ldapNode(BaseModel):
         # Full path to openssl command
         self.opensslCommand = '/usr/bin/openssl'
 
-        self.ldif_base = 'api/templates/salt/opendj/ldif/base.ldif'
-        self.ldif_appliance = 'api/templates/salt/opendj/ldif/appliance.ldif'
-        self.ldif_attributes = 'api/templates/salt/opendj/ldif/attributes.ldif'
-        self.ldif_scopes = 'api/templates/salt/opendj/ldif/scopes.ldif'
-        self.ldif_clients = 'api/templates/salt/opendj/ldif/clients.ldif'
-        self.ldif_people = 'api/templates/salt/opendj/ldif/people.ldif'
-        self.ldif_groups = 'api/templates/salt/opendj/ldif/groups.ldif'
-        self.ldif_site = 'api/templates/salt/opendj/ldif/o_site.ldif'
-        self.ldif_scripts = 'api/templates/salt/opendj/ldif/scripts.ldif'
+    @property
+    def ldif_base(self):
+        return 'api/templates/salt/opendj/ldif/base.ldif'
 
+    @property
+    def ldif_appliance(self):
+        return 'api/templates/salt/opendj/ldif/appliance.ldif'
+
+    @property
+    def ldif_attributes(self):
+        return 'api/templates/salt/opendj/ldif/attributes.ldif'
+
+    @property
+    def ldif_scopes(self):
+        return 'api/templates/salt/opendj/ldif/scopes.ldif'
+
+    @property
+    def ldif_clients(self):
+        return 'api/templates/salt/opendj/ldif/clients.ldif'
+
+    @property
+    def ldif_people(self):
+        return 'api/templates/salt/opendj/ldif/people.ldif'
+
+    @property
+    def ldif_groups(self):
+        return 'api/templates/salt/opendj/ldif/groups.ldif'
+
+    @property
+    def ldif_site(self):
+        return 'api/templates/salt/opendj/ldif/o_site.ldif'
+
+    @property
+    def ldif_scripts(self):
+        return 'api/templates/salt/opendj/ldif/scripts.ldif'
+
+    @property
+    def ldif_files(self):
         # List of initial ldif files
-        self.ldif_files = [
+        return [
             self.ldif_base,
             self.ldif_appliance,
             self.ldif_attributes,
@@ -139,4 +157,20 @@ class ldapNode(BaseModel):
             self.ldif_scripts,
         ]
 
-        self.indexJson = "api/templates/salt/opendj/opendj_index.json"
+    @property
+    def indexJson(self):
+        return "api/templates/salt/opendj/opendj_index.json"
+
+    @property
+    def ldap_setup_properties(self):
+        # Filesystem path of the opendj-setup.properties template
+        return "api/templates/salt/opendj/opendj-setup.properties"
+
+    @property
+    def schemaFiles(self):
+        return [
+            "api/templates/salt/opendj/schema/101-ox.ldif",
+            "api/templates/salt/opendj/schema/77-customAttributes.ldif",
+            "api/templates/salt/opendj/schema/96-eduperson.ldif",
+            "api/templates/salt/opendj/schema/100-user.ldif",
+        ]

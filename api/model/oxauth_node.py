@@ -23,10 +23,12 @@ from flask_restful_swagger import swagger
 from flask.ext.restful import fields
 
 from api.model.base import BaseModel
+from api.model.base import HTTPDMixin
+from api.model.base import TomcatMixin
 
 
 @swagger.model
-class oxauthNode(BaseModel):
+class oxauthNode(HTTPDMixin, TomcatMixin, BaseModel):
     # Swager Doc
     resource_fields = {
         "id": fields.String(attribute="Node unique identifier"),
@@ -48,29 +50,27 @@ class oxauthNode(BaseModel):
         self.defaultTrustStoreFN = '/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/security/cacerts'
         self.ldap_binddn = 'cn=directory manager'
 
-        self.tomcat_home = "/opt/tomcat"
-        self.tomcat_conf_dir = "/opt/tomcat/conf"
-
         self.openssl_cmd = "/usr/bin/openssl"
         self.keytool_cmd = "/usr/bin/keytool"
         self.cert_folder = "/etc/certs"
-        self.httpd_key = "/etc/certs/httpd.key"
-        self.httpd_key_orig = "/etc/certs/httpd.key.orig"
-        self.httpd_csr = "/etc/certs/httpd.csr"
-        self.httpd_crt = "/etc/certs/httpd.crt"
-
         self.oxauth_lib = "/opt/tomcat/webapps/oxauth/WEB-INF/lib"
 
-        # the following template should be copied to tomcat conf directory
-        self.oxauth_errors_json = "api/templates/salt/oxauth/oxauth-errors.json"
+    @property
+    def oxauth_errors_json(self):
+        return "api/templates/salt/oxauth/oxauth-errors.json"
 
-        # the following templates should be rendered and copied
-        # to tomcat conf directory
-        self.oxauth_ldap_properties = "api/templates/salt/oxauth/oxauth-ldap.properties"
-        self.oxauth_config_xml = "api/templates/salt/oxauth/oxauth-config.xml"
-        self.oxauth_static_conf_json = "api/templates/salt/oxauth/oxauth-static-conf.json"
-        self.tomcat_server_xml = "api/templates/salt/_shared/server.xml"
+    @property
+    def oxauth_ldap_properties(self):
+        return "api/templates/salt/oxauth/oxauth-ldap.properties"
 
-        # the following template should be rendered and copied
-        # to apache2 conf directory
-        self.apache2_ssl_conf = "api/templates/salt/_shared/https_gluu.conf"
+    @property
+    def oxauth_config_xml(self):
+        return "api/templates/salt/oxauth/oxauth-config.xml"
+
+    @property
+    def oxauth_static_conf_json(self):
+        return "api/templates/salt/oxauth/oxauth-static-conf.json"
+
+    @property
+    def oxauth_https_conf(self):
+        return "api/templates/salt/oxauth/oxauth-https.conf"

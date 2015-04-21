@@ -161,6 +161,8 @@ class BaseModelHelper(object):
                 self.logger.error("Failed to start the {!r} container".format(self.node.name))
         except Exception:
             self.logger.error(exc_traceback())
+            self.docker.remove_container(self.node.id)
+            self.salt.unregister_minion(self.node.id)
 
 
 class LdapModelHelper(BaseModelHelper):

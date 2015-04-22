@@ -275,8 +275,9 @@ class OxAuthSetup(BaseSetup):
         self.logger.info("starting httpd")
         self.saltlocal.cmd(
             self.node.id,
-            ["cmd.run", "cmd.run", "cmd.run"],
+            ["cmd.run", "cmd.run", "cmd.run", "cmd.run"],
             [["a2enmod ssl headers proxy proxy_http proxy_ajp"],
+             ["a2dissite 000-default"],
              ["a2ensite oxauth-https"],
              ["service apache2 start"]],
         )

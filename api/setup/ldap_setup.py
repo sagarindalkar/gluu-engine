@@ -414,4 +414,5 @@ class ldapSetup(BaseSetup):
             # executable may not exist or minion is unreachable
             if exc.code == 2:
                 pass
-            print exc_traceback()
+            else:
+                print exc_traceback()

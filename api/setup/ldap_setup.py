@@ -59,54 +59,32 @@ class ldapSetup(BaseSetup):
             "inumOrgFN": self.cluster.inumOrgFN,
         }
 
+        # render schema templates
         for schema_file in self.node.schemaFiles:
-            # render templates
-            with codecs.open(schema_file, "r", encoding="utf-8") as fp:
-                rendered_content = fp.read() % ctx
-
-            file_basename = os.path.basename(schema_file)
-
-            # save to temporary file
-            local_dest = os.path.join(self.build_dir, file_basename)
-            with codecs.open(local_dest, "w", encoding="utf-8") as fp:
-                fp.write(rendered_content)
-
-            # copy to minion
-            remote_dest = os.path.join(self.node.schemaFolder, file_basename)
-            self.logger.info("copying {}".format(local_dest))
-            run("salt-cp {} {} {}".format(self.node.id, local_dest, remote_dest))
+            src = schema_file
+            dest = os.path.join(self.node.schemaFolder, os.path.basename(src))
+            self.render_template(src, dest, ctx)
 
     def setup_opendj(self):
         self.add_ldap_schema()
 
-        # opendj-setup.properties template destination
-        setupPropsFN = os.path.join(self.node.ldapBaseFolder,
-                                    'opendj-setup.properties')
-
-        with open(self.node.ldap_setup_properties, "r") as fp:
-            content = fp.read().format(
-                ldap_hostname=self.node.local_hostname,
-                ldap_port=self.node.ldap_port,
-                ldaps_port=self.node.ldaps_port,
-                ldap_jmx_port=self.node.ldap_jmx_port,
-                ldap_admin_port=self.node.ldap_admin_port,
-                ldap_binddn=self.node.ldap_binddn,
-                ldapPassFn=self.node.ldapPassFn,
-            )
-
-        # Copy opendj-setup.properties so user ldap can find it
-        # in /opt/opendj
-        self.logger.info("copying opendj-setup.properties")
-        self.saltlocal.cmd(
-            self.node.id,
-            "cmd.run",
-            ["echo '{}' > {}".format(content, setupPropsFN)],
-        )
+        src = self.node.ldap_setup_properties
+        dest = os.path.join(self.node.ldapBaseFolder, os.path.basename(src))
+        ctx = {
+            "ldap_hostname": self.node.local_hostname,
+            "ldap_port": self.node.ldap_port,
+            "ldaps_port": self.node.ldaps_port,
+            "ldap_jmx_port": self.node.ldap_jmx_port,
+            "ldap_admin_port": self.node.ldap_admin_port,
+            "ldap_binddn": self.node.ldap_binddn,
+            "ldapPassFn": self.node.ldapPassFn,
+        }
+        self.render_template(src, dest, ctx)
 
         setupCmd = " ".join([
             self.node.ldapSetupCommand,
             '--no-prompt', '--cli', '--acceptLicense', '--propertiesFilePath',
-            setupPropsFN,
+            dest,
         ])
 
         self.logger.info("running opendj setup")
@@ -202,22 +180,12 @@ class ldapSetup(BaseSetup):
             ["mkdir -p {}".format(ldifFolder)]
         )
 
+        # render templates
         for ldif_file in self.node.ldif_files:
-            # render templates
-            with codecs.open(ldif_file, "r", encoding="utf-8") as fp:
-                rendered_content = fp.read() % ctx
-
-            file_basename = os.path.basename(ldif_file)
-
-            # save to temporary file
-            local_dest = os.path.join(self.build_dir, file_basename)
-            with codecs.open(local_dest, "w", encoding="utf-8") as fp:
-                fp.write(rendered_content)
-
-            # copy to minion
-            remote_dest = os.path.join(ldifFolder, file_basename)
-            self.logger.info("copying {}".format(local_dest))
-            run("salt-cp {} {} {}".format(self.node.id, local_dest, remote_dest))
+            src = ldif_file
+            file_basename = os.path.basename(src)
+            dest = os.path.join(ldifFolder, file_basename)
+            self.render_template(src, dest, ctx)
 
             if file_basename == "o_site.ldif":
                 backend_id = "site"
@@ -226,7 +194,7 @@ class ldapSetup(BaseSetup):
 
             importCmd = " ".join([
                 self.node.importLdifCommand,
-                '--ldifFile', remote_dest,
+                '--ldifFile', dest,
                 '--backendID', backend_id,
                 '--hostname', self.node.local_hostname,
                 '--port', self.node.ldap_admin_port,
@@ -234,6 +202,7 @@ class ldapSetup(BaseSetup):
                 '-j', self.node.ldapPassFn,
                 '--append', '--trustAll',
             ])
+            self.logger.info("importing {}".format(file_basename))
             self.saltlocal.cmd(self.node.id, 'cmd.run', [importCmd])
             time.sleep(1)
 

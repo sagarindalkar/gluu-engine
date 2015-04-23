@@ -1,7 +1,7 @@
 import pytest
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture()
 def docker_helper(request, app, provider):
     from api.helper.docker_helper import DockerHelper
 

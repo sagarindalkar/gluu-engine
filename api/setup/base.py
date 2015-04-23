@@ -49,17 +49,18 @@ class BaseSetup(object):
     def setup(self):
         """Runs the actual setup. Must be overriden by subclass.
         """
-        pass
 
     def after_setup(self):
-        pass
+        """Callback executed after ``setup`` taking place.
+        """
 
     def remove_build_dir(self):
         self.logger.info("removing temporary build directory {}".format(self.build_dir))
         shutil.rmtree(self.build_dir)
 
     def before_setup(self):
-        pass
+        """Callback executed before ``setup`` taking place.
+        """
 
     def render_template(self, src, dest, ctx=None):
         ctx = ctx or {}

@@ -58,21 +58,21 @@ class oxtrustNode(HTTPDMixin, TomcatMixin, BaseModel):
         self.oxtrust_config_generation = "disabled"
 
     @property
-    def oxtrust_properties(self):
+    def oxtrust_properties(self):  # pragma: no cover
         return "api/templates/salt/oxtrust/oxTrust.properties"
 
     @property
-    def oxtrust_ldap_properties(self):
+    def oxtrust_ldap_properties(self):  # pragma: no cover
         return "api/templates/salt/oxtrust/oxTrustLdap.properties"
 
     @property
-    def oxtrust_log_rotation_configuration(self):
+    def oxtrust_log_rotation_configuration(self):  # pragma: no cover
         return "api/templates/salt/oxtrust/oxTrustLogRotationConfiguration.xml"
 
     @property
-    def oxtrust_cache_refresh_properties(self):
+    def oxtrust_cache_refresh_properties(self):  # pragma: no cover
         return "api/templates/salt/oxtrust/oxTrustCacheRefresh-template.properties.vm"
 
     @property
-    def oxtrust_https_conf(self):
+    def oxtrust_https_conf(self):  # pragma: no cover
         return "api/templates/salt/oxtrust/oxtrust-https.conf"

@@ -37,5 +37,5 @@ class TomcatMixin(object):
     tomcat_log_folder = "/opt/tomcat/logs"
 
     @property
-    def tomcat_server_xml(self):
+    def tomcat_server_xml(self):  # pragma: no cover
         return "api/templates/salt/_shared/server.xml"

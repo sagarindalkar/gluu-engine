@@ -56,21 +56,21 @@ class oxauthNode(HTTPDMixin, TomcatMixin, BaseModel):
         self.oxauth_lib = "/opt/tomcat/webapps/oxauth/WEB-INF/lib"
 
     @property
-    def oxauth_errors_json(self):
+    def oxauth_errors_json(self):  # pragma: no cover
         return "api/templates/salt/oxauth/oxauth-errors.json"
 
     @property
-    def oxauth_ldap_properties(self):
+    def oxauth_ldap_properties(self):  # pragma: no cover
         return "api/templates/salt/oxauth/oxauth-ldap.properties"
 
     @property
-    def oxauth_config_xml(self):
+    def oxauth_config_xml(self):  # pragma: no cover
         return "api/templates/salt/oxauth/oxauth-config.xml"
 
     @property
-    def oxauth_static_conf_json(self):
+    def oxauth_static_conf_json(self):  # pragma: no cover
         return "api/templates/salt/oxauth/oxauth-static-conf.json"
 
     @property
-    def oxauth_https_conf(self):
+    def oxauth_https_conf(self):  # pragma: no cover
         return "api/templates/salt/oxauth/oxauth-https.conf"

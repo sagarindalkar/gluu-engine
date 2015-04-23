@@ -18,10 +18,6 @@ def test_cluster_post(app, db):
             "city": "Austin",
             "state": "Texas",
             "admin_email": "john@example.com",
-            # "ldaps_port": "1636",
-            # "inumOrg": "Gluu",
-            # "inumOrgFN": "Gluu",
-            # "inumAppliance": "gluu",
             "admin_pw": "secret",
         },
     )
@@ -102,10 +98,6 @@ def test_cluster_update(app, db, cluster):
             "city": "Austin",
             "state": "Texas",
             "admin_email": "john@example.com",
-            # "ldaps_port": "1636",
-            # "inumOrg": "Gluu",
-            # "inumOrgFN": "Gluu",
-            # "inumAppliance": "gluu",
             "admin_pw": "secret",
         },
     )

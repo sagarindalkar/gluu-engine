@@ -26,7 +26,6 @@ import os.path
 import time
 
 from api.database import db
-from api.helper.common_helper import run
 from api.helper.common_helper import exc_traceback
 from api.setup.base import BaseSetup
 from api.setup.oxauth_setup import OxAuthSetup
@@ -42,7 +41,8 @@ class ldapSetup(BaseSetup):
             fp.write(self.cluster.decrypted_admin_pw)
 
         self.salt.cmd(
-            self.node.id, "cmd.run", ["mkdir -p {}".format(os.path.dirname(self.node.ldapPassFn))],
+            self.node.id, "cmd.run",
+            ["mkdir -p {}".format(os.path.dirname(self.node.ldapPassFn))],
         )
         self.salt.copy_file(self.node.id, local_dest, self.node.ldapPassFn)
 
@@ -66,8 +66,6 @@ class ldapSetup(BaseSetup):
             self.render_template(src, dest, ctx)
 
     def setup_opendj(self):
-        self.add_ldap_schema()
-
         src = self.node.ldap_setup_properties
         dest = os.path.join(self.node.ldapBaseFolder, os.path.basename(src))
         ctx = {
@@ -260,7 +258,6 @@ class ldapSetup(BaseSetup):
 
         base_dns = ("o=gluu", "o=site",)
         for base_dn in base_dns:
-            # try:
             enable_cmd = " ".join([
                 "/opt/opendj/bin/dsreplication", "enable",
                 "--host1", existing_node.local_hostname,
@@ -314,6 +311,7 @@ class ldapSetup(BaseSetup):
         start = time.time()
 
         self.write_ldap_pw()
+        self.add_ldap_schema()
         self.setup_opendj()
         self.configure_opendj()
         self.index_opendj()
@@ -331,8 +329,6 @@ class ldapSetup(BaseSetup):
             self.import_ldif()
 
         self.export_opendj_public_cert()
-
-        # TODO: 2-way password encryption so we can delete LDAP password file
         self.delete_ldap_pw()
 
         elapsed = time.time() - start
@@ -344,20 +340,12 @@ class ldapSetup(BaseSetup):
         """
         # Currently, we need to update oxAuth and oxTrust LDAP properties
         # TODO: use signals?
-        for node_id in self.cluster.oxauth_nodes:
-            node = db.get(node_id, "nodes")
-            if not node:
-                continue
-
-            setup_obj = OxAuthSetup(node, self.cluster, logger=self.logger)
+        for oxauth in self.cluster.get_oxauth_objects():
+            setup_obj = OxAuthSetup(oxauth, self.cluster, logger=self.logger)
             setup_obj.render_ldap_props_template()
 
-        for node_id in self.cluster.oxtrust_nodes:
-            node = db.get(node_id, "nodes")
-            if not node:
-                continue
-
-            setup_obj = OxTrustSetup(node, self.cluster, logger=self.logger)
+        for oxtrust in self.cluster.get_oxtrust_objects():
+            setup_obj = OxTrustSetup(oxtrust, self.cluster, logger=self.logger)
             setup_obj.render_ldap_props_template()
 
     def stop(self):
@@ -376,9 +364,12 @@ class ldapSetup(BaseSetup):
                     "--adminPasswordFile", self.node.ldapPassFn,
                     "-X", "-n", "--disableAll",
                 ])
-                run("salt {} cmd.run '{}'".format(self.node.id, disable_repl_cmd))
+                self.salt.cmd(self.node.id, "cmd.run", [disable_repl_cmd])
                 self.delete_ldap_pw()
-            run("salt {} cmd.run '{}/bin/stop-ds'".format(self.node.id, self.node.ldapBaseFolder))
+
+            # stop the server
+            stop_cmd = "{}/bin/stop-ds".format(self.node.ldapBaseFolder)
+            self.salt.cmd(self.node.id, "cmd.run", [stop_cmd])
         except SystemExit as exc:
             # executable may not exist or minion is unreachable
             if exc.code == 2:

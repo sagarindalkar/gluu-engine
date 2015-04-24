@@ -24,7 +24,7 @@ import codecs
 import os.path
 import time
 
-from api.database import db
+# from api.database import db
 from api.setup.base import BaseSetup
 
 
@@ -102,14 +102,14 @@ class OxAuthSetup(BaseSetup):
         self.logger.info("importing public certificate into Java truststore")
         self.salt.cmd(self.node.id, "cmd.run", [import_cmd])
 
-    def get_ldap_hosts(self):
-        ldap_hosts = []
-        for ldap_id in self.cluster.ldap_nodes:
-            ldap = db.get(ldap_id, "nodes")
-            if ldap:
-                ldap_host = "{}:{}".format(ldap.local_hostname, ldap.ldaps_port)
-                ldap_hosts.append(ldap_host)
-        return ldap_hosts
+    # def get_ldap_hosts(self):
+    #     ldap_hosts = []
+    #     for ldap_id in self.cluster.ldap_nodes:
+    #         ldap = db.get(ldap_id, "nodes")
+    #         if ldap:
+    #             ldap_host = "{}:{}".format(ldap.local_hostname, ldap.ldaps_port)
+    #             ldap_hosts.append(ldap_host)
+    #     return ldap_hosts
 
     def write_salt_file(self):
         self.logger.info("writing salt file")
@@ -234,7 +234,7 @@ class OxAuthSetup(BaseSetup):
         ctx = {
             "ldap_binddn": self.node.ldap_binddn,
             "encoded_ox_ldap_pw": self.cluster.encoded_ox_ldap_pw,
-            "ldap_hosts": ",".join(self.get_ldap_hosts()),
+            "ldap_hosts": ",".join(self.cluster.get_ldap_hosts()),
             "inumAppliance": self.cluster.inumAppliance,
             "certFolder": self.node.cert_folder,
         }

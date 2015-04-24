@@ -24,12 +24,13 @@ import os.path
 import time
 
 from api.setup.oxauth_setup import OxAuthSetup
-from api.database import db
+# from api.database import db
 
 
 class OxTrustSetup(OxAuthSetup):
     def import_oxauth_cert(self):
-        # imports oxauth cert into oxtrust cacerts to avoid "peer not authenticated" error
+        # imports oxauth cert into oxtrust cacerts to avoid
+        # "peer not authenticated" error
         cert_cmd = "echo -n | openssl s_client -connect {}:443 | " \
                    "sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' " \
                    "> /tmp/oxauth.cert".format(self.cluster.hostname_oxauth_cluster)
@@ -49,12 +50,7 @@ class OxTrustSetup(OxAuthSetup):
 
     def update_host_entries(self):
         self.logger.info("updating host entries in /etc/hosts")
-        for oxauth_id in self.cluster.oxauth_nodes:
-            oxauth = db.get(oxauth_id, "nodes")
-
-            if not oxauth:
-                continue
-
+        for oxauth in self.cluster.get_oxauth_objects():
             self.salt.cmd(
                 self.node.id,
                 "cmd.run",
@@ -109,7 +105,7 @@ class OxTrustSetup(OxAuthSetup):
         ctx = {
             "ldap_binddn": self.node.ldap_binddn,
             "encoded_ox_ldap_pw": self.cluster.encoded_ox_ldap_pw,
-            "ldap_hosts": ",".join(self.get_ldap_hosts()),
+            "ldap_hosts": ",".join(self.cluster.get_ldap_hosts()),
             "inumAppliance": self.cluster.inumAppliance,
         }
         self.render_template(src, dest, ctx)

@@ -75,7 +75,7 @@ class SaltHelper(object):
         return files
 
     def copy_file(self, tgt, src, dest):
-        self.client.cmd(tgt, "cp.recv", [self._load_files([src]), dest])
+        return self.client.cmd(tgt, "cp.recv", [self._load_files([src]), dest])
 
     def cmd(self, tgt, fun, arg=()):
-        self.client.cmd(tgt, fun, arg)
+        return self.client.cmd(tgt, fun, arg)

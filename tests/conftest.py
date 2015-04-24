@@ -39,6 +39,8 @@ def cluster():
     from api.model import GluuCluster
 
     cluster = GluuCluster()
+    cluster.hostname_oxauth_cluster = "oxauth.example.com"
+    cluster.hostname_oxtrust_cluster = "oxtrust.example.com"
     return cluster
 
 

@@ -12,3 +12,11 @@ def docker_helper(request, app, provider):
 
     request.addfinalizer(teardown)
     return helper
+
+
+@pytest.fixture(scope="session")
+def salt_helper():
+    from api.helper.salt_helper import SaltHelper
+
+    helper = SaltHelper()
+    return helper

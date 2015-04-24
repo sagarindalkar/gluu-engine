@@ -1,48 +1,100 @@
-import os.path
-import shutil
+def test_setup(monkeypatch, ldap_setup):
+    monkeypatch.setattr(
+        "salt.client.LocalClient.cmd",
+        lambda cls, tgt, fun, arg: None,
+    )
+    monkeypatch.setattr("time.sleep", lambda num: None)
+
+    # TODO: it might be better to split the tests
+    ldap_setup.setup()
 
 
-def test_write_ldap_pw(monkeypatch, ldap_node, cluster):
-    from api.setup.ldap_setup import ldapSetup
+def test_setup_with_replication(monkeypatch, ldap_setup, db):
+    from api.model.ldap_node import ldapNode
+
+    monkeypatch.setattr(
+        "salt.client.LocalClient.cmd",
+        lambda cls, tgt, fun, arg: None,
+    )
+    monkeypatch.setattr("time.sleep", lambda num: None)
+
+    peer_node = ldapNode()
+    ldap_setup.cluster.add_node(peer_node)
+    db.persist(peer_node, "nodes")
+    db.update(ldap_setup.cluster.id, ldap_setup.cluster, "clusters")
+
+    # TODO: it might be better to split the tests
+    ldap_setup.setup()
+
+
+def test_after_setup(monkeypatch, ldap_setup):
+    from api.database import db
+    from api.model.oxauth_node import oxauthNode
+    from api.model.oxtrust_node import oxtrustNode
 
     monkeypatch.setattr(
         "salt.client.LocalClient.cmd",
         lambda cls, tgt, fun, arg: None,
     )
 
+    oxauth = oxauthNode()
+    oxauth.id = "auth-123"
+    ldap_setup.cluster.add_node(oxauth)
+    db.persist(oxauth, "nodes")
+
+    oxtrust = oxtrustNode()
+    oxtrust.id = "trust-123"
+    ldap_setup.cluster.add_node(oxtrust)
+    db.persist(oxtrust, "nodes")
+
+    db.update(ldap_setup.cluster.id, ldap_setup.cluster, "clusters")
+    ldap_setup.after_setup()
+
+
+def test_stop(monkeypatch, ldap_setup):
     monkeypatch.setattr(
-        "api.helper.salt_helper.SaltHelper.copy_file",
-        lambda cls, tgt, src, dest: None,
+        "salt.client.LocalClient.cmd",
+        lambda cls, tgt, fun, arg: None,
     )
-
-    setup_obj = ldapSetup(ldap_node, cluster)
-    setup_obj.write_ldap_pw()
-
-    pw_file = os.path.join(setup_obj.build_dir, ".pw")
-
-    assert os.path.exists(pw_file) is True
-    assert cluster.decrypted_admin_pw in open(pw_file, "r").read()
-    shutil.rmtree(setup_obj.build_dir)
+    ldap_setup.stop()
 
 
-def test_add_ldap_schema(monkeypatch, ldap_node, cluster):
-    from api.setup.ldap_setup import ldapSetup
+def test_stop_with_replication(monkeypatch, ldap_setup):
+    from api.database import db
+    from api.model.ldap_node import ldapNode
 
     monkeypatch.setattr(
         "salt.client.LocalClient.cmd",
         lambda cls, tgt, fun, arg: None,
     )
 
+    node1 = ldapNode()
+    node1.id = "ldap-123"
+    db.persist(node1, "nodes")
+    ldap_setup.cluster.add_node(node1)
+
+    node2 = ldapNode()
+    node2.id = "ldap-456"
+    db.persist(node2, "nodes")
+    ldap_setup.cluster.add_node(node2)
+
+    db.update(ldap_setup.cluster.id, ldap_setup.cluster, "clusters")
+    ldap_setup.stop()
+
+
+def test_replicate_from(monkeypatch, ldap_setup, db):
+    from api.model.ldap_node import ldapNode
+
     monkeypatch.setattr(
-        "api.helper.salt_helper.SaltHelper.copy_file",
-        lambda cls, tgt, src, dest: None,
+        "salt.client.LocalClient.cmd",
+        lambda cls, tgt, fun, arg: None,
     )
+    monkeypatch.setattr("time.sleep", lambda num: None)
 
-    setup_obj = ldapSetup(ldap_node, cluster)
-    setup_obj.add_ldap_schema()
+    peer_node = ldapNode()
+    peer_node.id = "ldap-123"
+    db.persist(peer_node, "nodes")
+    ldap_setup.cluster.add_node(peer_node)
+    db.update(ldap_setup.cluster.id, ldap_setup.cluster, "clusters")
 
-    for schema in ldap_node.schemaFiles:
-        schema_file = os.path.join(setup_obj.build_dir,
-                                   os.path.basename(schema))
-        assert os.path.exists(schema_file) is True
-    shutil.rmtree(setup_obj.build_dir)
+    ldap_setup.replicate_from(peer_node)

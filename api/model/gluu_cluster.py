@@ -24,6 +24,7 @@ import uuid
 from flask_restful_swagger import swagger
 from flask.ext.restful import fields
 
+from api.database import db
 from api.model.base import BaseModel
 from api.helper.common_helper import get_quad
 from api.helper.common_helper import get_random_chars
@@ -181,3 +182,29 @@ class GluuCluster(BaseModel):
     @property
     def max_allowed_ldap_nodes(self):
         return 4
+
+    def get_ldap_hosts(self):
+        ldap_hosts = []
+        for ldap_id in self.ldap_nodes:
+            ldap = db.get(ldap_id, "nodes")
+            if ldap:
+                ldap_host = "{}:{}".format(ldap.local_hostname,
+                                           ldap.ldaps_port)
+                ldap_hosts.append(ldap_host)
+        return ldap_hosts
+
+    def get_oxauth_objects(self):
+        """Get available oxAuth objects (models).
+        """
+        return filter(
+            None,
+            [db.get(id_, "nodes") for id_ in self.oxauth_nodes],
+        )
+
+    def get_oxtrust_objects(self):
+        """Get available oxTrust objects (models).
+        """
+        return filter(
+            None,
+            [db.get(id_, "nodes") for id_ in self.oxtrust_nodes],
+        )

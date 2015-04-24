@@ -49,12 +49,17 @@ def test_node_get_list_empty(app):
     assert actual_data == []
 
 
-def test_node_delete(app, db, cluster, provider, ldap_node):
+def test_node_delete(monkeypatch, app, db, cluster, provider, ldap_node):
     db.persist(provider, "providers")
     ldap_node.provider_id = provider.id
     db.persist(ldap_node, "nodes")
     cluster.add_node(ldap_node)
     db.persist(cluster, "clusters")
+
+    monkeypatch.setattr(
+        "api.setup.ldap_setup.ldapSetup.stop",
+        lambda cls: None,
+    )
 
     resp = app.test_client().delete("/node/{}".format(ldap_node.id))
     assert resp.status_code == 204

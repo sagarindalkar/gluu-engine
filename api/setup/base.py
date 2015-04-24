@@ -27,7 +27,7 @@ import shutil
 import tempfile
 
 from api.log import create_file_logger
-from api.helper.common_helper import run
+from api.helper.salt_helper import SaltHelper
 
 
 class BaseSetup(object):
@@ -36,12 +36,7 @@ class BaseSetup(object):
     def __init__(self, node, cluster, logger=None):
         self.logger = logger or create_file_logger()
         self.build_dir = tempfile.mkdtemp()
-
-        # salt supresses the flask logger, hence we import salt inside
-        # this function as a workaround
-        import salt.client
-        self.saltlocal = salt.client.LocalClient()
-
+        self.salt = SaltHelper()
         self.node = node
         self.cluster = cluster
 
@@ -55,7 +50,8 @@ class BaseSetup(object):
         """
 
     def remove_build_dir(self):
-        self.logger.info("removing temporary build directory {}".format(self.build_dir))
+        self.logger.info("removing temporary build "
+                         "directory {}".format(self.build_dir))
         shutil.rmtree(self.build_dir)
 
     def before_setup(self):
@@ -74,4 +70,4 @@ class BaseSetup(object):
             fp.write(rendered_content)
 
         self.logger.info("rendering {}".format(file_basename))
-        run("salt-cp {} {} {}".format(self.node.id, local, dest))
+        self.salt.copy_file(self.node.id, local, dest)

@@ -20,6 +20,8 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import codecs
+import os
 
 
 class SaltHelper(object):
@@ -28,9 +30,11 @@ class SaltHelper(object):
         # this function as a workaround
         import salt.config
         import salt.key
+        import salt.client
 
-        salt_opts = salt.config.client_config("/etc/salt/master")
-        self.key_store = salt.key.Key(salt_opts)
+        opts = salt.config.client_config("/etc/salt/master")
+        self.key_store = salt.key.Key(opts)
+        self.client = salt.client.get_local_client(opts["conf_file"])
 
     def register_minion(self, key):
         """Registers a minion.
@@ -49,3 +53,29 @@ class SaltHelper(object):
     def is_minion_registered(self, key):
         keys = self.key_store.list_keys()
         return key in keys["minions"]
+
+    def _file_dict(self, fn_):
+        """Take a path and return the contents of the file as a string
+        """
+        with codecs.open(fn_, "r", encoding="utf-8") as fp:
+            data = fp.read()
+        return {fn_: data}
+
+    def _load_files(self, src):
+        """Parse the files indicated in ``src`` and load them into
+        a python object for transport.
+        """
+        files = {}
+        for fn_ in src:
+            if os.path.isfile(fn_):
+                files.update(self._file_dict(fn_))
+            elif os.path.isdir(fn_):
+                raise ValueError("{} is a directory, only files "
+                                 "are supported.".format(fn_))
+        return files
+
+    def copy_file(self, tgt, src, dest):
+        self.client.cmd(tgt, "cp.recv", [self._load_files([src]), dest])
+
+    def cmd(self, tgt, fun, arg=()):
+        self.client.cmd(tgt, fun, arg)

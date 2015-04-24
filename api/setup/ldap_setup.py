@@ -41,14 +41,14 @@ class ldapSetup(BaseSetup):
         with codecs.open(local_dest, "w", encoding="utf-8") as fp:
             fp.write(self.cluster.decrypted_admin_pw)
 
-        self.saltlocal.cmd(
+        self.salt.cmd(
             self.node.id, "cmd.run", ["mkdir -p {}".format(os.path.dirname(self.node.ldapPassFn))],
         )
-        run("salt-cp {} {} {}".format(self.node.id, local_dest, self.node.ldapPassFn))
+        self.salt.copy_file(self.node.id, local_dest, self.node.ldapPassFn)
 
     def delete_ldap_pw(self):
         self.logger.info("deleting temporary LDAP password")
-        self.saltlocal.cmd(
+        self.salt.cmd(
             self.node.id,
             'cmd.run',
             ['rm -f {}'.format(self.node.ldapPassFn)],
@@ -88,14 +88,14 @@ class ldapSetup(BaseSetup):
         ])
 
         self.logger.info("running opendj setup")
-        self.saltlocal.cmd(
+        self.salt.cmd(
             self.node.id,
             'cmd.run',
             ["{}".format(setupCmd)],
         )
 
         self.logger.info("running dsjavaproperties")
-        self.saltlocal.cmd(
+        self.salt.cmd(
             self.node.id,
             'cmd.run',
             [self.node.ldapDsJavaPropCommand],
@@ -125,7 +125,7 @@ class ldapSetup(BaseSetup):
                 '--bindPasswordFile', self.node.ldapPassFn,
             ] + changes)
             self.logger.info("configuring opendj config changes: {}".format(dsconfigCmd))
-            self.saltlocal.cmd(self.node.id, 'cmd.run', [dsconfigCmd])
+            self.salt.cmd(self.node.id, 'cmd.run', [dsconfigCmd])
             time.sleep(1)
 
     def index_opendj(self):
@@ -153,7 +153,7 @@ class ldapSetup(BaseSetup):
                         '-j', self.node.ldapPassFn,
                         '--trustAll', '--noPropertiesFile', '--no-prompt',
                     ])
-                    self.saltlocal.cmd(self.node.id, 'cmd.run', [indexCmd])
+                    self.salt.cmd(self.node.id, 'cmd.run', [indexCmd])
 
     def import_ldif(self):
         # template's context
@@ -174,7 +174,7 @@ class ldapSetup(BaseSetup):
         }
 
         ldifFolder = '%s/ldif' % self.node.ldapBaseFolder
-        self.saltlocal.cmd(
+        self.salt.cmd(
             self.node.id,
             "cmd.run",
             ["mkdir -p {}".format(ldifFolder)]
@@ -203,7 +203,7 @@ class ldapSetup(BaseSetup):
                 '--append', '--trustAll',
             ])
             self.logger.info("importing {}".format(file_basename))
-            self.saltlocal.cmd(self.node.id, 'cmd.run', [importCmd])
+            self.salt.cmd(self.node.id, 'cmd.run', [importCmd])
             time.sleep(1)
 
     def export_opendj_public_cert(self):
@@ -212,7 +212,7 @@ class ldapSetup(BaseSetup):
         openDjTruststoreFn = '%s/config/truststore' % self.node.ldapBaseFolder
         openDjPin = "`cat {}`".format(openDjPinFn)
 
-        self.saltlocal.cmd(
+        self.salt.cmd(
             self.node.id,
             ["cmd.run", "cmd.run"],
             [
@@ -231,7 +231,7 @@ class ldapSetup(BaseSetup):
             '-alias', 'server-cert',
             '-rfc',
         ])
-        self.saltlocal.cmd(self.node.id, 'cmd.run', [cmdsrt])
+        self.salt.cmd(self.node.id, 'cmd.run', [cmdsrt])
 
         # Import OpenDJ certificate into java truststore
         cmdstr = ' '.join([
@@ -242,7 +242,7 @@ class ldapSetup(BaseSetup):
             "-storepass", "changeit", "-noprompt",
         ])
         self.logger.info("importing OpenDJ certificate into Java truststore")
-        self.saltlocal.cmd(self.node.id, 'cmd.run', [cmdstr])
+        self.salt.cmd(self.node.id, 'cmd.run', [cmdstr])
 
     def get_existing_node(self, node_id):
         try:
@@ -282,7 +282,7 @@ class ldapSetup(BaseSetup):
             self.logger.info("enabling {!r} replication between {} and {}".format(
                 base_dn, existing_node.local_hostname, self.node.local_hostname,
             ))
-            self.saltlocal.cmd(self.node.id, "cmd.run", [enable_cmd])
+            self.salt.cmd(self.node.id, "cmd.run", [enable_cmd])
 
             # wait before initializing the replication to ensure it
             # has been enabled
@@ -303,7 +303,7 @@ class ldapSetup(BaseSetup):
             self.logger.info("initializing {!r} replication between {} and {}".format(
                 base_dn, existing_node.local_hostname, self.node.local_hostname,
             ))
-            self.saltlocal.cmd(self.node.id, "cmd.run", [init_cmd])
+            self.salt.cmd(self.node.id, "cmd.run", [init_cmd])
             time.sleep(5)
 
         # cleanups temporary password file

@@ -15,12 +15,17 @@ def test_remove_build_dir(ldap_node, cluster):
     assert os.path.exists(fake_setup.build_dir) is False
 
 
-def test_render_template(ldap_node, cluster):
+def test_render_template(monkeypatch, ldap_node, cluster):
     from api.setup.base import BaseSetup
 
     class FakeSetup(BaseSetup):
         def setup(self):
             pass
+
+    monkeypatch.setattr(
+        "api.helper.salt_helper.SaltHelper.copy_file",
+        lambda cls, tgt, src, dest: None,
+    )
 
     fake_setup = FakeSetup(ldap_node, cluster)
     src = "tests/setup/fake_template.txt"

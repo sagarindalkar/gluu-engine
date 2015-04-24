@@ -41,7 +41,7 @@ class OxTrustSetup(OxAuthSetup):
             "-keystore {}".format(self.node.defaultTrustStoreFN),
             "-storepass changeit -noprompt",
         ])
-        self.saltlocal.cmd(
+        self.salt.cmd(
             self.node.id,
             ["cmd.run", "cmd.run"],
             [[cert_cmd], [import_cmd]]
@@ -55,7 +55,7 @@ class OxTrustSetup(OxAuthSetup):
             if not oxauth:
                 continue
 
-            self.saltlocal.cmd(
+            self.salt.cmd(
                 self.node.id,
                 "cmd.run",
                 ["echo '{} {}' >> /etc/hosts".format(
@@ -68,8 +68,8 @@ class OxTrustSetup(OxAuthSetup):
         src = self.node.oxtrust_cache_refresh_properties
         dest_dir = os.path.join(self.node.tomcat_conf_dir, "template", "conf")
         dest = os.path.join(dest_dir, os.path.basename(src))
-        self.saltlocal.cmd(self.node.id, "cmd.run",
-                           ["mkdir -p {}".format(dest_dir)])
+        self.salt.cmd(self.node.id, "cmd.run",
+                      ["mkdir -p {}".format(dest_dir)])
         self.render_template(src, dest)
 
     def render_log_config_template(self):
@@ -129,7 +129,7 @@ class OxTrustSetup(OxAuthSetup):
 
     def start_httpd(self):
         self.logger.info("starting httpd")
-        self.saltlocal.cmd(
+        self.salt.cmd(
             self.node.id,
             ["cmd.run", "cmd.run", "cmd.run", "cmd.run"],
             [["a2enmod ssl headers proxy proxy_http proxy_ajp evasive"],

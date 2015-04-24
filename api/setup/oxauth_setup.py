@@ -25,7 +25,6 @@ import os.path
 import time
 
 from api.database import db
-from api.helper.common_helper import run
 from api.setup.base import BaseSetup
 
 
@@ -74,14 +73,14 @@ class OxAuthSetup(BaseSetup):
         ])
 
         self.logger.info("generating certificates for {}".format(suffix))
-        self.saltlocal.cmd(
+        self.salt.cmd(
             self.node.id,
             ["cmd.run", "cmd.run", "cmd.run", "cmd.run"],
             [[keypass_cmd], [key_cmd], [csr_cmd], [crt_cmd]],
         )
 
         self.logger.info("changing access to {} certificates".format(suffix))
-        self.saltlocal.cmd(
+        self.salt.cmd(
             self.node.id,
             ["cmd.run", "cmd.run", "cmd.run", "cmd.run"],
             [
@@ -101,7 +100,7 @@ class OxAuthSetup(BaseSetup):
         ])
 
         self.logger.info("importing public certificate into Java truststore")
-        self.saltlocal.cmd(self.node.id, "cmd.run", [import_cmd])
+        self.salt.cmd(self.node.id, "cmd.run", [import_cmd])
 
     def get_ldap_hosts(self):
         ldap_hosts = []
@@ -120,7 +119,7 @@ class OxAuthSetup(BaseSetup):
             fp.write("encodeSalt = {}".format(self.cluster.passkey))
 
         remote_dest = os.path.join(self.node.tomcat_conf_dir, "salt")
-        run("salt-cp {} {} {}".format(self.node.id, local_dest, remote_dest))
+        self.salt.copy_file(self.node.id, local_dest, remote_dest)
 
     def gen_openid_keys(self):
         openid_key_json_fn = os.path.join(self.node.cert_folder, "oxauth-web-keys.json")
@@ -141,10 +140,10 @@ class OxAuthSetup(BaseSetup):
         key_cmd = "java -cp {} org.xdi.oxauth.util.KeyGenerator > {}".format(
             classpath, openid_key_json_fn,
         )
-        self.saltlocal.cmd(self.node.id, "cmd.run", [key_cmd])
+        self.salt.cmd(self.node.id, "cmd.run", [key_cmd])
 
         self.logger.info("changing access to OpenID key file")
-        self.saltlocal.cmd(
+        self.salt.cmd(
             self.node.id,
             ["cmd.run", "cmd.run"],
             [["/bin/chown {0}:{0} {1}".format("tomcat", openid_key_json_fn)],
@@ -153,7 +152,7 @@ class OxAuthSetup(BaseSetup):
 
     def change_cert_access(self):
         self.logger.info("changing access to {}".format(self.node.cert_folder))
-        self.saltlocal.cmd(
+        self.salt.cmd(
             self.node.id,
             ["cmd.run", "cmd.run"],
             [["/bin/chown -R tomcat:tomcat {}".format(self.node.cert_folder)],
@@ -162,7 +161,7 @@ class OxAuthSetup(BaseSetup):
 
     def start_tomcat(self):
         self.logger.info("starting tomcat")
-        self.saltlocal.cmd(
+        self.salt.cmd(
             self.node.id,
             "cmd.run",
             ["{}/bin/catalina.sh start".format(self.node.tomcat_home)],
@@ -170,7 +169,7 @@ class OxAuthSetup(BaseSetup):
 
     def create_cert_dir(self):
         mkdir_cmd = "mkdir -p {}".format(self.node.cert_folder)
-        self.saltlocal.cmd(self.node.id, "cmd.run", [mkdir_cmd])
+        self.salt.cmd(self.node.id, "cmd.run", [mkdir_cmd])
 
     def gen_keystore(self, suffix, keystore_fn, keystore_pw, in_key,
                      in_cert, user, hostname):
@@ -186,7 +185,7 @@ class OxAuthSetup(BaseSetup):
             '-name', hostname,
             '-passout', 'pass:%s' % keystore_pw,
         ])
-        self.saltlocal.cmd(self.node.id, "cmd.run", [export_cmd])
+        self.salt.cmd(self.node.id, "cmd.run", [export_cmd])
 
         # Import p12 to keystore
         import_cmd = " ".join([
@@ -200,10 +199,10 @@ class OxAuthSetup(BaseSetup):
             '-keyalg', 'RSA',
             '-noprompt',
         ])
-        self.saltlocal.cmd(self.node.id, "cmd.run", [import_cmd])
+        self.salt.cmd(self.node.id, "cmd.run", [import_cmd])
 
         self.logger.info("changing access to keystore file")
-        self.saltlocal.cmd(
+        self.salt.cmd(
             self.node.id,
             ["cmd.run", "cmd.run", "cmd.run", "cmd.run"],
             [
@@ -274,7 +273,7 @@ class OxAuthSetup(BaseSetup):
 
     def start_httpd(self):
         self.logger.info("starting httpd")
-        self.saltlocal.cmd(
+        self.salt.cmd(
             self.node.id,
             ["cmd.run", "cmd.run", "cmd.run", "cmd.run"],
             [["a2enmod ssl headers proxy proxy_http proxy_ajp evasive"],

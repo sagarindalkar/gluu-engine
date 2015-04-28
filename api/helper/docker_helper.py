@@ -56,6 +56,9 @@ class DockerHelper(object):
         resp = self.docker.build(path, tag=tag, quiet=True,
                                  rm=True, forcerm=True, pull=False)
 
+        # XXX: timed out when building images, likely due to incorrect http
+        #      streaming method; this issue is disappeared when using
+        #      python 2.7.9 though
         output = ""
         while True:
             try:

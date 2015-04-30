@@ -23,9 +23,9 @@ from flask import url_for
 from flask_restful import Resource
 from flask_restful_swagger import swagger
 
-from api.database import db
-from api.reqparser import provider_req
-from api.model import Provider
+from gluuapi.database import db
+from gluuapi.reqparser import provider_req
+from gluuapi.model import Provider
 
 
 class ProviderResource(Resource):

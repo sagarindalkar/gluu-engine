@@ -24,8 +24,7 @@ import codecs
 import os.path
 import time
 
-# from api.database import db
-from api.setup.base import BaseSetup
+from gluuapi.setup.base import BaseSetup
 
 
 class OxAuthSetup(BaseSetup):

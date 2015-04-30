@@ -38,4 +38,4 @@ class TomcatMixin(object):
 
     @property
     def tomcat_server_xml(self):  # pragma: no cover
-        return "api/templates/salt/_shared/server.xml"
+        return "gluuapi/templates/salt/_shared/server.xml"

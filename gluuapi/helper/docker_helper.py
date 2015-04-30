@@ -29,7 +29,7 @@ import docker.errors
 import requests
 from docker import Client
 
-from api.log import create_file_logger
+from gluuapi.log import create_file_logger
 
 
 class DockerHelper(object):

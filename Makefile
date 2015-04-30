@@ -3,4 +3,4 @@ run:
 	@SALT_MASTER_IPADDR=${IP} ./run.py
 
 test:
-	@py.test tests --cov api --cov-report term-missing
+	@py.test tests --cov gluuapi --cov-report term-missing

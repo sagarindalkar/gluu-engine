@@ -4,10 +4,8 @@ import os
 
 from crochet import setup as crochet_setup
 
-from api.app import create_app
-from api.settings import DevConfig, ProdConfig
-
-HERE = os.path.abspath(os.path.dirname(__file__))
+from gluuapi.app import create_app
+from gluuapi.settings import DevConfig, ProdConfig
 
 if os.environ.get("API_ENV") == 'prod':
     app = create_app(ProdConfig)
@@ -18,11 +16,6 @@ if not os.environ.get("SALT_MASTER_IPADDR"):
     raise SystemExit("Unable to get salt-master IP address. "
                      "Make sure the SALT_MASTER_IPADDR "
                      "environment variable is set.")
-
-
-@app.before_first_request
-def bootstrap():
-    pass
 
 
 if __name__ == '__main__':

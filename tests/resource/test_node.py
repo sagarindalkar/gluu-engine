@@ -57,7 +57,7 @@ def test_node_delete(monkeypatch, app, db, cluster, provider, ldap_node):
     db.persist(cluster, "clusters")
 
     monkeypatch.setattr(
-        "api.setup.ldap_setup.ldapSetup.stop",
+        "gluuapi.setup.ldap_setup.ldapSetup.stop",
         lambda cls: None,
     )
 

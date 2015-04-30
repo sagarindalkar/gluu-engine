@@ -24,7 +24,7 @@ import uuid
 from flask_restful_swagger import swagger
 from flask.ext.restful import fields
 
-from api.model.base import BaseModel
+from gluuapi.model.base import BaseModel
 
 
 @swagger.model

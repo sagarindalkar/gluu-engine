@@ -1,5 +1,5 @@
 def test_database_init(app):
-    from api.database import Database
+    from gluuapi.database import Database
 
     db = Database(app)
     assert db.app == app

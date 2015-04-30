@@ -2,7 +2,7 @@ import json
 
 
 def test_cluster_post(app, db):
-    from api.model import GluuCluster
+    from gluuapi.model import GluuCluster
 
     resp = app.test_client().post(
         "/cluster",

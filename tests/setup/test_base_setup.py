@@ -2,7 +2,7 @@ import os.path
 
 
 def test_remove_build_dir(ldap_node, cluster):
-    from api.setup.base import BaseSetup
+    from gluuapi.setup.base import BaseSetup
 
     class FakeSetup(BaseSetup):
         def setup(self):
@@ -16,14 +16,14 @@ def test_remove_build_dir(ldap_node, cluster):
 
 
 def test_render_template(monkeypatch, ldap_node, cluster):
-    from api.setup.base import BaseSetup
+    from gluuapi.setup.base import BaseSetup
 
     class FakeSetup(BaseSetup):
         def setup(self):
             pass
 
     monkeypatch.setattr(
-        "api.helper.salt_helper.SaltHelper.copy_file",
+        "gluuapi.helper.salt_helper.SaltHelper.copy_file",
         lambda cls, tgt, src, dest: None,
     )
 

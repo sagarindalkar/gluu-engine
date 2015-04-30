@@ -23,8 +23,7 @@
 import os.path
 import time
 
-from api.setup.oxauth_setup import OxAuthSetup
-# from api.database import db
+from gluuapi.setup.oxauth_setup import OxAuthSetup
 
 
 class OxTrustSetup(OxAuthSetup):

@@ -28,7 +28,7 @@ def test_cluster_add_oxtrust_node(cluster, oxtrust_node):
 
 
 def test_cluster_add_unsupported_node():
-    from api.model import GluuCluster
+    from gluuapi.model import GluuCluster
 
     cluster = GluuCluster()
 
@@ -39,7 +39,7 @@ def test_cluster_add_unsupported_node():
 
 
 def test_cluster_as_dict():
-    from api.model import GluuCluster
+    from gluuapi.model import GluuCluster
 
     cluster = GluuCluster()
     actual = cluster.as_dict()
@@ -67,7 +67,7 @@ def test_cluster_remove_oxtrust_node(cluster, oxtrust_node):
 
 
 def test_cluster_remove_unsupported_node():
-    from api.model import GluuCluster
+    from gluuapi.model import GluuCluster
 
     cluster = GluuCluster()
 
@@ -94,7 +94,7 @@ def test_cluster_max_allowed_nodes(cluster):
 
 
 def test_decrypted_admin_pw():
-    from api.model import GluuCluster
+    from gluuapi.model import GluuCluster
 
     cluster = GluuCluster({"admin_pw": "secret"})
     assert cluster.decrypted_admin_pw == "secret"

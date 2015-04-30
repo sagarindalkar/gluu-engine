@@ -26,8 +26,8 @@ import os.path
 import shutil
 import tempfile
 
-from api.log import create_file_logger
-from api.helper.salt_helper import SaltHelper
+from gluuapi.log import create_file_logger
+from gluuapi.helper.salt_helper import SaltHelper
 
 
 class BaseSetup(object):

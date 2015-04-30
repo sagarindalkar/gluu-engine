@@ -5,14 +5,14 @@ import pytest
 
 @pytest.fixture(scope="session")
 def config():
-    from api.settings import TestConfig
+    from gluuapi.settings import TestConfig
     return TestConfig
 
 
 @pytest.fixture(scope="session")
 def app(request):
-    from api.app import create_app
-    from api.settings import TestConfig
+    from gluuapi.app import create_app
+    from gluuapi.settings import TestConfig
 
     app = create_app(TestConfig)
     return app
@@ -20,7 +20,7 @@ def app(request):
 
 @pytest.fixture()
 def db(request, app):
-    from api.database import db
+    from gluuapi.database import db
 
     db.init_app(app)
 
@@ -36,7 +36,7 @@ def db(request, app):
 
 @pytest.fixture()
 def cluster():
-    from api.model import GluuCluster
+    from gluuapi.model import GluuCluster
 
     cluster = GluuCluster()
     cluster.hostname_oxauth_cluster = "oxauth.example.com"
@@ -46,7 +46,7 @@ def cluster():
 
 @pytest.fixture()
 def ldap_node(cluster):
-    from api.model import ldapNode
+    from gluuapi.model import ldapNode
 
     node = ldapNode()
     node.id = "ldap_{}_123".format(cluster.id)
@@ -56,7 +56,7 @@ def ldap_node(cluster):
 
 @pytest.fixture()
 def oxauth_node(cluster):
-    from api.model import oxauthNode
+    from gluuapi.model import oxauthNode
 
     node = oxauthNode()
     node.id = "oxauth_{}_123".format(cluster.id)
@@ -66,7 +66,7 @@ def oxauth_node(cluster):
 
 @pytest.fixture()
 def oxtrust_node(cluster):
-    from api.model import oxtrustNode
+    from gluuapi.model import oxtrustNode
 
     node = oxtrustNode()
     node.id = "oxtrust_{}_123".format(cluster.id)
@@ -76,7 +76,7 @@ def oxtrust_node(cluster):
 
 @pytest.fixture()
 def provider():
-    from api.model import Provider
+    from gluuapi.model import Provider
 
     provider = Provider({
         "base_url": "unix:///var/run/docker.sock",

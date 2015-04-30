@@ -10,7 +10,7 @@ def test_setup(monkeypatch, ldap_setup):
 
 
 def test_setup_with_replication(monkeypatch, ldap_setup, db):
-    from api.model.ldap_node import ldapNode
+    from gluuapi.model.ldap_node import ldapNode
 
     monkeypatch.setattr(
         "salt.client.LocalClient.cmd",
@@ -28,9 +28,9 @@ def test_setup_with_replication(monkeypatch, ldap_setup, db):
 
 
 def test_after_setup(monkeypatch, ldap_setup):
-    from api.database import db
-    from api.model.oxauth_node import oxauthNode
-    from api.model.oxtrust_node import oxtrustNode
+    from gluuapi.database import db
+    from gluuapi.model.oxauth_node import oxauthNode
+    from gluuapi.model.oxtrust_node import oxtrustNode
 
     monkeypatch.setattr(
         "salt.client.LocalClient.cmd",
@@ -60,8 +60,8 @@ def test_stop(monkeypatch, ldap_setup):
 
 
 def test_stop_with_replication(monkeypatch, ldap_setup):
-    from api.database import db
-    from api.model.ldap_node import ldapNode
+    from gluuapi.database import db
+    from gluuapi.model.ldap_node import ldapNode
 
     monkeypatch.setattr(
         "salt.client.LocalClient.cmd",
@@ -83,7 +83,7 @@ def test_stop_with_replication(monkeypatch, ldap_setup):
 
 
 def test_replicate_from(monkeypatch, ldap_setup, db):
-    from api.model.ldap_node import ldapNode
+    from gluuapi.model.ldap_node import ldapNode
 
     monkeypatch.setattr(
         "salt.client.LocalClient.cmd",

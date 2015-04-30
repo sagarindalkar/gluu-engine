@@ -25,16 +25,16 @@ from flask import current_app
 from flask.ext.restful import Resource
 from flask_restful_swagger import swagger
 
-from api.database import db
-from api.helper.model_helper import LdapModelHelper
-from api.helper.model_helper import OxAuthModelHelper
-from api.helper.model_helper import OxTrustModelHelper
-from api.helper.docker_helper import DockerHelper
-from api.helper.salt_helper import SaltHelper
-from api.reqparser import node_req
-from api.setup.oxauth_setup import OxAuthSetup
-from api.setup.oxtrust_setup import OxTrustSetup
-from api.setup.ldap_setup import ldapSetup
+from gluuapi.database import db
+from gluuapi.helper.model_helper import LdapModelHelper
+from gluuapi.helper.model_helper import OxAuthModelHelper
+from gluuapi.helper.model_helper import OxTrustModelHelper
+from gluuapi.helper.docker_helper import DockerHelper
+from gluuapi.helper.salt_helper import SaltHelper
+from gluuapi.reqparser import node_req
+from gluuapi.setup.oxauth_setup import OxAuthSetup
+from gluuapi.setup.oxtrust_setup import OxTrustSetup
+from gluuapi.setup.ldap_setup import ldapSetup
 
 
 class Node(Resource):

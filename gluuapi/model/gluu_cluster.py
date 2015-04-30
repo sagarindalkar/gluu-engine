@@ -24,14 +24,14 @@ import uuid
 from flask_restful_swagger import swagger
 from flask.ext.restful import fields
 
-from api.database import db
-from api.model.base import BaseModel
-from api.helper.common_helper import get_quad
-from api.helper.common_helper import get_random_chars
-from api.helper.common_helper import encrypt_text
-from api.helper.common_helper import decrypt_text
-from api.helper.common_helper import generate_passkey
-from api.helper.common_helper import ldap_encode
+from gluuapi.database import db
+from gluuapi.model.base import BaseModel
+from gluuapi.helper.common_helper import get_quad
+from gluuapi.helper.common_helper import get_random_chars
+from gluuapi.helper.common_helper import encrypt_text
+from gluuapi.helper.common_helper import decrypt_text
+from gluuapi.helper.common_helper import generate_passkey
+from gluuapi.helper.common_helper import ldap_encode
 
 
 @swagger.model

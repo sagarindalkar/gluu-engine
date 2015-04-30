@@ -88,7 +88,7 @@ def test_run_container(monkeypatch, docker_helper):
 
 def test_build_gluubase(monkeypatch, docker_helper):
     monkeypatch.setattr(
-        "api.helper.docker_helper.DockerHelper.image_exists",
+        "gluuapi.helper.docker_helper.DockerHelper.image_exists",
         lambda cls, name: [{
             'Created': 1401926735,
             'Id': 'a9eb172552348a9a49180694790b33a1097f546456d041b6e82e4d',
@@ -103,15 +103,15 @@ def test_build_gluubase(monkeypatch, docker_helper):
 
 def test_build_gluubase_no_image(monkeypatch, docker_helper):
     monkeypatch.setattr(
-        "api.helper.docker_helper.DockerHelper.image_exists",
+        "gluuapi.helper.docker_helper.DockerHelper.image_exists",
         lambda cls, name: [],
     )
     monkeypatch.setattr(
-        "api.helper.docker_helper.DockerHelper.get_remote_files",
+        "gluuapi.helper.docker_helper.DockerHelper.get_remote_files",
         lambda cls, *files: "/tmp/gluuopendj",
     )
     monkeypatch.setattr(
-        "api.helper.docker_helper.DockerHelper.build_image",
+        "gluuapi.helper.docker_helper.DockerHelper.build_image",
         lambda cls, path, tag: True,
     )
     # not sure whether to monkeypatch of use fixture
@@ -121,11 +121,11 @@ def test_build_gluubase_no_image(monkeypatch, docker_helper):
 
 def test_setup_container_existing_image(monkeypatch, docker_helper):
     monkeypatch.setattr(
-        "api.helper.docker_helper.DockerHelper._build_gluubase",
+        "gluuapi.helper.docker_helper.DockerHelper._build_gluubase",
         lambda cls: True,
     )
     monkeypatch.setattr(
-        "api.helper.docker_helper.DockerHelper.image_exists",
+        "gluuapi.helper.docker_helper.DockerHelper.image_exists",
         lambda cls, name: [{
             'Created': 1401926735,
             'Id': 'a9eb172552348a9a49180694790b33a1097f546456d041b6e82e4d',
@@ -136,7 +136,7 @@ def test_setup_container_existing_image(monkeypatch, docker_helper):
         }],
     )
     monkeypatch.setattr(
-        "api.helper.docker_helper.DockerHelper.run_container",
+        "gluuapi.helper.docker_helper.DockerHelper.run_container",
         lambda cls, name, image: "123",
     )
 
@@ -149,7 +149,7 @@ def test_setup_container_existing_image(monkeypatch, docker_helper):
 
 def test_setup_container_no_gluubase(monkeypatch, docker_helper):
     monkeypatch.setattr(
-        "api.helper.docker_helper.DockerHelper._build_gluubase",
+        "gluuapi.helper.docker_helper.DockerHelper._build_gluubase",
         lambda cls: False,
     )
     container_id = docker_helper.setup_container(
@@ -161,19 +161,19 @@ def test_setup_container_no_gluubase(monkeypatch, docker_helper):
 
 def test_setup_container_failed(monkeypatch, docker_helper):
     monkeypatch.setattr(
-        "api.helper.docker_helper.DockerHelper._build_gluubase",
+        "gluuapi.helper.docker_helper.DockerHelper._build_gluubase",
         lambda cls: True,
     )
     monkeypatch.setattr(
-        "api.helper.docker_helper.DockerHelper.image_exists",
+        "gluuapi.helper.docker_helper.DockerHelper.image_exists",
         lambda cls, name: [],
     )
     monkeypatch.setattr(
-        "api.helper.docker_helper.DockerHelper.get_remote_files",
+        "gluuapi.helper.docker_helper.DockerHelper.get_remote_files",
         lambda cls, *files: "/tmp/gluuopendj",
     )
     monkeypatch.setattr(
-        "api.helper.docker_helper.DockerHelper.build_image",
+        "gluuapi.helper.docker_helper.DockerHelper.build_image",
         lambda cls, path, tag: False,
     )
     # not sure whether to monkeypatch of use fixture

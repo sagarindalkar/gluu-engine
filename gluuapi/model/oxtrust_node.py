@@ -19,16 +19,16 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from flask_restful import fields
 from flask_restful_swagger import swagger
-from flask.ext.restful import fields
 
-from api.model.base import BaseModel
-from api.model.base import HTTPDMixin
-from api.model.base import TomcatMixin
+from gluuapi.model.base import BaseModel
+from gluuapi.model.base import HTTPDMixin
+from gluuapi.model.base import TomcatMixin
 
 
 @swagger.model
-class oxauthNode(HTTPDMixin, TomcatMixin, BaseModel):
+class oxtrustNode(HTTPDMixin, TomcatMixin, BaseModel):
     # Swager Doc
     resource_fields = {
         "id": fields.String(attribute="Node unique identifier"),
@@ -44,33 +44,35 @@ class oxauthNode(HTTPDMixin, TomcatMixin, BaseModel):
         self.cluster_id = ""
         self.provider_id = ""
         self.name = ""
+        self.hostname = ""
         self.ip = ""
-        self.type = "oxauth"
+        self.type = "oxtrust"
 
-        self.defaultTrustStoreFN = '/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/security/cacerts'
         self.ldap_binddn = 'cn=directory manager'
-
         self.openssl_cmd = "/usr/bin/openssl"
         self.keytool_cmd = "/usr/bin/keytool"
         self.cert_folder = "/etc/certs"
-        self.oxauth_lib = "/opt/tomcat/webapps/oxauth/WEB-INF/lib"
+        self.defaultTrustStoreFN = '/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/security/cacerts'
+
+        # enabled if we have saml
+        self.oxtrust_config_generation = "disabled"
 
     @property
-    def oxauth_errors_json(self):  # pragma: no cover
-        return "api/templates/salt/oxauth/oxauth-errors.json"
+    def oxtrust_properties(self):  # pragma: no cover
+        return "gluuapi/templates/salt/oxtrust/oxTrust.properties"
 
     @property
-    def oxauth_ldap_properties(self):  # pragma: no cover
-        return "api/templates/salt/oxauth/oxauth-ldap.properties"
+    def oxtrust_ldap_properties(self):  # pragma: no cover
+        return "gluuapi/templates/salt/oxtrust/oxTrustLdap.properties"
 
     @property
-    def oxauth_config_xml(self):  # pragma: no cover
-        return "api/templates/salt/oxauth/oxauth-config.xml"
+    def oxtrust_log_rotation_configuration(self):  # pragma: no cover
+        return "gluuapi/templates/salt/oxtrust/oxTrustLogRotationConfiguration.xml"
 
     @property
-    def oxauth_static_conf_json(self):  # pragma: no cover
-        return "api/templates/salt/oxauth/oxauth-static-conf.json"
+    def oxtrust_cache_refresh_properties(self):  # pragma: no cover
+        return "gluuapi/templates/salt/oxtrust/oxTrustCacheRefresh-template.properties.vm"
 
     @property
-    def oxauth_https_conf(self):  # pragma: no cover
-        return "api/templates/salt/oxauth/oxauth-https.conf"
+    def oxtrust_https_conf(self):  # pragma: no cover
+        return "gluuapi/templates/salt/oxtrust/oxtrust-https.conf"

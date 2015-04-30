@@ -3,9 +3,9 @@ from flask import url_for
 from flask.ext.restful import Resource
 from flask_restful_swagger import swagger
 
-from api.model import GluuCluster
-from api.database import db
-from api.reqparser import cluster_reqparser
+from gluuapi.model import GluuCluster
+from gluuapi.database import db
+from gluuapi.reqparser import cluster_reqparser
 
 
 class Cluster(Resource):

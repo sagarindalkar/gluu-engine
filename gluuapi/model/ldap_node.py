@@ -23,7 +23,7 @@
 from flask_restful_swagger import swagger
 from flask.ext.restful import fields
 
-from api.model.base import BaseModel
+from gluuapi.model.base import BaseModel
 
 
 @swagger.model
@@ -108,39 +108,39 @@ class ldapNode(BaseModel):
 
     @property
     def ldif_base(self):  # pragma: no cover
-        return 'api/templates/salt/opendj/ldif/base.ldif'
+        return 'gluuapi/templates/salt/opendj/ldif/base.ldif'
 
     @property
     def ldif_appliance(self):  # pragma: no cover
-        return 'api/templates/salt/opendj/ldif/appliance.ldif'
+        return 'gluuapi/templates/salt/opendj/ldif/appliance.ldif'
 
     @property
     def ldif_attributes(self):  # pragma: no cover
-        return 'api/templates/salt/opendj/ldif/attributes.ldif'
+        return 'gluuapi/templates/salt/opendj/ldif/attributes.ldif'
 
     @property
     def ldif_scopes(self):  # pragma: no cover
-        return 'api/templates/salt/opendj/ldif/scopes.ldif'
+        return 'gluuapi/templates/salt/opendj/ldif/scopes.ldif'
 
     @property
     def ldif_clients(self):  # pragma: no cover
-        return 'api/templates/salt/opendj/ldif/clients.ldif'
+        return 'gluuapi/templates/salt/opendj/ldif/clients.ldif'
 
     @property
     def ldif_people(self):  # pragma: no cover
-        return 'api/templates/salt/opendj/ldif/people.ldif'
+        return 'gluuapi/templates/salt/opendj/ldif/people.ldif'
 
     @property
     def ldif_groups(self):  # pragma: no cover
-        return 'api/templates/salt/opendj/ldif/groups.ldif'
+        return 'gluuapi/templates/salt/opendj/ldif/groups.ldif'
 
     @property
     def ldif_site(self):  # pragma: no cover
-        return 'api/templates/salt/opendj/ldif/o_site.ldif'
+        return 'gluuapi/templates/salt/opendj/ldif/o_site.ldif'
 
     @property
     def ldif_scripts(self):  # pragma: no cover
-        return 'api/templates/salt/opendj/ldif/scripts.ldif'
+        return 'gluuapi/templates/salt/opendj/ldif/scripts.ldif'
 
     @property
     def ldif_files(self):  # pragma: no cover
@@ -159,18 +159,18 @@ class ldapNode(BaseModel):
 
     @property
     def indexJson(self):  # pragma: no cover
-        return "api/templates/salt/opendj/opendj_index.json"
+        return "gluuapi/templates/salt/opendj/opendj_index.json"
 
     @property
     def ldap_setup_properties(self):  # pragma: no cover
         # Filesystem path of the opendj-setup.properties template
-        return "api/templates/salt/opendj/opendj-setup.properties"
+        return "gluuapi/templates/salt/opendj/opendj-setup.properties"
 
     @property
     def schemaFiles(self):  # pragma: no cover
         return [
-            "api/templates/salt/opendj/schema/101-ox.ldif",
-            "api/templates/salt/opendj/schema/77-customAttributes.ldif",
-            "api/templates/salt/opendj/schema/96-eduperson.ldif",
-            "api/templates/salt/opendj/schema/100-user.ldif",
+            "gluuapi/templates/salt/opendj/schema/101-ox.ldif",
+            "gluuapi/templates/salt/opendj/schema/77-customAttributes.ldif",
+            "gluuapi/templates/salt/opendj/schema/96-eduperson.ldif",
+            "gluuapi/templates/salt/opendj/schema/100-user.ldif",
         ]

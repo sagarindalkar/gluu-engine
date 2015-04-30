@@ -1,17 +1,18 @@
 # -*- coding: utf-8 -*-
 '''The app module, containing the app factory function.'''
 from flask import Flask
-from api.settings import ProdConfig
-from api.extensions import (
+
+from gluuapi.settings import ProdConfig
+from gluuapi.extensions import (
     restapi,
 )
-from api.resource.node import Node
-from api.resource.node import NodeList
-from api.resource.cluster import Cluster
-from api.resource.cluster import ClusterList
-from api.resource import ProviderResource
-from api.resource import ProviderListResource
-from api.database import db
+from gluuapi.resource.node import Node
+from gluuapi.resource.node import NodeList
+from gluuapi.resource.cluster import Cluster
+from gluuapi.resource.cluster import ClusterList
+from gluuapi.resource import ProviderResource
+from gluuapi.resource import ProviderListResource
+from gluuapi.database import db
 
 
 def create_app(config_object=ProdConfig):

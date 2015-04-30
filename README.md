@@ -81,7 +81,7 @@ $ SALT_MASTER_IPADDR=xxx.xxx.xxx.xxx env/bin/python run.py
 ## Testing
 
 ```
-$ env/bin/py.test tests --cov api --cov-report term-missing
+$ env/bin/py.test tests --cov gluuapi --cov-report term-missing
 ```
 
 ## Flask Swagger Docs

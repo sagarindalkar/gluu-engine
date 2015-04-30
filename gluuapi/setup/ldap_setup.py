@@ -25,11 +25,11 @@ import json
 import os.path
 import time
 
-from api.database import db
-from api.helper.common_helper import exc_traceback
-from api.setup.base import BaseSetup
-from api.setup.oxauth_setup import OxAuthSetup
-from api.setup.oxtrust_setup import OxTrustSetup
+from gluuapi.database import db
+from gluuapi.helper.common_helper import exc_traceback
+from gluuapi.setup.base import BaseSetup
+from gluuapi.setup.oxauth_setup import OxAuthSetup
+from gluuapi.setup.oxtrust_setup import OxTrustSetup
 
 
 class ldapSetup(BaseSetup):

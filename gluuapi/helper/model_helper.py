@@ -26,17 +26,17 @@ from random import randrange
 
 from crochet import run_in_reactor
 
-from api.database import db
-from api.model import ldapNode
-from api.model import oxauthNode
-from api.model import oxtrustNode
-from api.helper.common_helper import exc_traceback
-from api.helper.docker_helper import DockerHelper
-from api.helper.salt_helper import SaltHelper
-from api.setup.ldap_setup import ldapSetup
-from api.setup.oxauth_setup import OxAuthSetup
-from api.setup.oxtrust_setup import OxTrustSetup
-from api.log import create_file_logger
+from gluuapi.database import db
+from gluuapi.model import ldapNode
+from gluuapi.model import oxauthNode
+from gluuapi.model import oxtrustNode
+from gluuapi.helper.common_helper import exc_traceback
+from gluuapi.helper.docker_helper import DockerHelper
+from gluuapi.helper.salt_helper import SaltHelper
+from gluuapi.setup.ldap_setup import ldapSetup
+from gluuapi.setup.oxauth_setup import OxAuthSetup
+from gluuapi.setup.oxtrust_setup import OxTrustSetup
+from gluuapi.log import create_file_logger
 
 
 class BaseModelHelper(object):

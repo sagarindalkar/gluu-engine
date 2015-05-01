@@ -53,12 +53,10 @@ class DockerHelper(object):
         :param tag: Desired tag name.
         :returns: ``True`` if image successfully built, otherwise ``False``
         """
+        self.logger.info("building {} image".format(tag))
         resp = self.docker.build(path, tag=tag, quiet=True,
-                                 rm=True, forcerm=True, pull=False)
+                                 rm=True, forcerm=True)
 
-        # XXX: timed out when building images, likely due to incorrect http
-        #      streaming method; this issue is disappeared when using
-        #      python 2.7.9 though
         output = ""
         while True:
             try:
@@ -87,23 +85,19 @@ class DockerHelper(object):
         """
         container_id = ""
 
-        try:
-            self.logger.info("creating container named {!r}".format(name))
-            container = self.docker.create_container(image=image, name=name,
-                                                     detach=True, command=[],
-                                                     environment={"SALT_MASTER_IPADDR": os.environ.get("SALT_MASTER_IPADDR")})
-            container_id = container["Id"]
-            self.logger.info("container named {!r} has been created".format(name))
-        except docker.errors.APIError as exc:
-            err_code = exc.response.status_code
-            if err_code == 409:
-                self.logger.warn("container named {!r} is exist".format(name))
-            elif err_code == 404:
-                self.logger.warn("container named {!r} does not exist".format(name))
+        self.logger.info("creating container {!r}".format(name))
+        env = {
+            "SALT_MASTER_IPADDR": os.environ.get("SALT_MASTER_IPADDR"),
+        }
+        container = self.docker.create_container(
+            image=image, name=name, detach=True, environment=env,
+        )
+        container_id = container["Id"]
+        self.logger.info("container {!r} has been created".format(name))
 
         if container_id:
-            self.docker.start(container=container_id, publish_all_ports=True)
-            self.logger.info("container named {!r} with ID {!r} "
+            self.docker.start(container=container_id)
+            self.logger.info("container {!r} with ID {!r} "
                              "has been started".format(name, container_id))
         return container_id
 
@@ -137,9 +131,9 @@ class DockerHelper(object):
         build_succeed = True
 
         if not self.image_exists("gluubase"):
-            self.logger.info("building gluubase image")
             # There must be a better way than to hard code every file one by one
-            DOCKER_REPO = 'https://raw.githubusercontent.com/GluuFederation/gluu-docker/master/ubuntu/14.04'
+            DOCKER_REPO = 'https://raw.githubusercontent.com/GluuFederation' \
+                          '/gluu-docker/master/ubuntu/14.04'
             minion_file = DOCKER_REPO + '/gluubase/minion'
             supervisor_conf = DOCKER_REPO + '/gluubase/supervisord.conf'
             render = DOCKER_REPO + '/gluubase/render.sh'
@@ -181,7 +175,8 @@ class DockerHelper(object):
         :param container_id: Container ID; ideally the short format.
         :returns: Container's IP address.
         """
-        return self.docker.inspect_container(container_id)["NetworkSettings"]["IPAddress"]
+        info = self.docker.inspect_container(container_id)
+        return info["NetworkSettings"]["IPAddress"]
 
     def remove_container(self, container_id):
         """Removes container.
@@ -191,4 +186,5 @@ class DockerHelper(object):
         except docker.errors.APIError as exc:
             err_code = exc.response.status_code
             if err_code == 404:
-                self.logger.warn("container {!r} does not exist".format(container_id))
+                self.logger.warn(
+                    "container {!r} does not exist".format(container_id))

@@ -52,7 +52,7 @@ def test_build_image_success(monkeypatch, docker_helper):
 
     monkeypatch.setattr(
         "docker.Client.build",
-        lambda cls, path, tag, quiet, rm, forcerm, pull: gen(stream_output),
+        lambda cls, path, tag, quiet, rm, forcerm: gen(stream_output),
     )
     assert docker_helper.build_image("/tmp/abc", "abc") is True
 
@@ -69,7 +69,7 @@ def test_build_image_failed(monkeypatch, docker_helper):
 
     monkeypatch.setattr(
         "docker.Client.build",
-        lambda cls, path, tag, quiet, rm, forcerm, pull: gen(stream_output),
+        lambda cls, path, tag, quiet, rm, forcerm: gen(stream_output),
     )
     assert docker_helper.build_image("/tmp/abc", "abc") is False
 
@@ -77,12 +77,9 @@ def test_build_image_failed(monkeypatch, docker_helper):
 def test_run_container(monkeypatch, docker_helper):
     monkeypatch.setattr(
         "docker.Client.create_container",
-        lambda cls, image, name, detach, command, environment: {"Id": "123"},
+        lambda cls, image, name, detach, environment: {"Id": "123"},
     )
-    monkeypatch.setattr(
-        "docker.Client.start",
-        lambda cls, container, publish_all_ports: "",
-    )
+    monkeypatch.setattr("docker.Client.start", lambda cls, container: "")
     assert docker_helper.run_container("abc", "gluuopendj") == "123"
 
 

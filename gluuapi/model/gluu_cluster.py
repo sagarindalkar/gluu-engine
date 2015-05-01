@@ -185,8 +185,7 @@ class GluuCluster(BaseModel):
         for ldap_id in self.ldap_nodes:
             ldap = db.get(ldap_id, "nodes")
             if ldap:
-                ldap_host = "{}:{}".format(ldap.local_hostname,
-                                           ldap.ldaps_port)
+                ldap_host = "{}:{}".format(ldap.weave_ip, ldap.ldaps_port)
                 ldap_hosts.append(ldap_host)
         return ldap_hosts
 

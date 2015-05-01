@@ -54,7 +54,7 @@ class OxTrustSetup(OxAuthSetup):
                 self.node.id,
                 "cmd.run",
                 ["echo '{} {}' >> /etc/hosts".format(
-                    oxauth.ip,
+                    oxauth.weave_ip,
                     self.cluster.hostname_oxauth_cluster.split(":")[0],
                 )],
             )
@@ -115,7 +115,7 @@ class OxTrustSetup(OxAuthSetup):
         dest = os.path.join("/etc/apache2/sites-available", file_basename)
         ctx = {
             "hostname": self.cluster.hostname_oxtrust_cluster,
-            "ip": self.node.ip,
+            "ip": self.node.weave_ip,
             "httpdCertFn": self.node.httpd_crt,
             "httpdKeyFn": self.node.httpd_key,
             "admin_email": self.cluster.admin_email,

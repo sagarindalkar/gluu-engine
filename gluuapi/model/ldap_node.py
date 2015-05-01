@@ -34,7 +34,6 @@ class ldapNode(BaseModel):
         'type': fields.String(attribute='Node type'),
         'cluster_id': fields.String(attribute='Cluster ID'),
         'provider_id': fields.String(attribute='Provider ID'),
-        'local_hostname': fields.String(attribute='Local hostname of the node (not the cluster hostname).'),
         'ip': fields.String(attribute='IP address of the node'),
         'ldap_binddn': fields.String(attribute='LDAP super user Bind DN. Probably should leave it default cn=directory manager.'),
         'ldap_port': fields.String(attribute='Non SSL LDAP port (not used)'),
@@ -49,7 +48,6 @@ class ldapNode(BaseModel):
         self.provider_id = ""
         self.name = ''
         self.ldap_type = "opendj"
-        self.local_hostname = ""
         self.ip = ""
         self.weave_ip = ""
         self.weave_prefixlen = ""

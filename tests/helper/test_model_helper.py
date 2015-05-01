@@ -32,7 +32,6 @@ def test_ldap_model_helper(monkeypatch, cluster, provider):
 
     helper.prepare_node_attrs()
     assert helper.node.ip == ipaddr
-    assert helper.node.local_hostname == ipaddr
 
 
 def test_oxauth_model_helper(monkeypatch, cluster, provider):

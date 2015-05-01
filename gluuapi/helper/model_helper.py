@@ -209,7 +209,6 @@ class LdapModelHelper(BaseModelHelper):
         # a random port over 10,000. Note these ports will need to be
         # open between the ldap docker instances
         container_ip = self.docker.get_container_ip(self.node.id)
-        self.node.local_hostname = container_ip
         self.node.ip = container_ip
 
 

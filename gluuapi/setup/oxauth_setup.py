@@ -101,15 +101,6 @@ class OxAuthSetup(BaseSetup):
         self.logger.info("importing public certificate into Java truststore")
         self.salt.cmd(self.node.id, "cmd.run", [import_cmd])
 
-    # def get_ldap_hosts(self):
-    #     ldap_hosts = []
-    #     for ldap_id in self.cluster.ldap_nodes:
-    #         ldap = db.get(ldap_id, "nodes")
-    #         if ldap:
-    #             ldap_host = "{}:{}".format(ldap.local_hostname, ldap.ldaps_port)
-    #             ldap_hosts.append(ldap_host)
-    #     return ldap_hosts
-
     def write_salt_file(self):
         self.logger.info("writing salt file")
 
@@ -251,7 +242,7 @@ class OxAuthSetup(BaseSetup):
         src = self.node.tomcat_server_xml
         dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
         ctx = {
-            "ip": self.node.ip,
+            "ip": self.node.weave_ip,
             "shibJksPass": self.cluster.decrypted_admin_pw,
             "shibJksFn": self.cluster.shib_jks_fn,
         }
@@ -263,7 +254,7 @@ class OxAuthSetup(BaseSetup):
         dest = os.path.join("/etc/apache2/sites-available", file_basename)
         ctx = {
             "hostname": self.cluster.hostname_oxauth_cluster,
-            "ip": self.node.ip,
+            "ip": self.node.weave_ip,
             "httpdCertFn": self.node.httpd_crt,
             "httpdKeyFn": self.node.httpd_key,
             "admin_email": self.cluster.admin_email,

@@ -69,7 +69,7 @@ class ldapSetup(BaseSetup):
         src = self.node.ldap_setup_properties
         dest = os.path.join(self.node.ldapBaseFolder, os.path.basename(src))
         ctx = {
-            "ldap_hostname": self.node.local_hostname,
+            "ldap_hostname": self.node.weave_ip,
             "ldap_port": self.node.ldap_port,
             "ldaps_port": self.node.ldaps_port,
             "ldap_jmx_port": self.node.ldap_jmx_port,
@@ -117,7 +117,7 @@ class ldapSetup(BaseSetup):
         for changes in config_changes:
             dsconfigCmd = " ".join([
                 self.node.ldapDsconfigCommand, '--trustAll', '--no-prompt',
-                '--hostname', self.node.local_hostname,
+                '--hostname', self.node.weave_ip,
                 '--port', self.node.ldap_admin_port,
                 '--bindDN', '"%s"' % self.node.ldap_binddn,
                 '--bindPasswordFile', self.node.ldapPassFn,
@@ -145,7 +145,7 @@ class ldapSetup(BaseSetup):
                         '--index-name', attr_name,
                         '--set', 'index-type:%s' % index_type,
                         '--set', 'index-entry-limit:4000',
-                        '--hostName', self.node.local_hostname,
+                        '--hostName', self.node.weave_ip,
                         '--port', self.node.ldap_admin_port,
                         '--bindDN', '"%s"' % self.node.ldap_binddn,
                         '-j', self.node.ldapPassFn,
@@ -161,7 +161,7 @@ class ldapSetup(BaseSetup):
             "encoded_ldap_pw": self.cluster.encoded_ldap_pw,
             "encoded_ox_ldap_pw": self.cluster.encoded_ox_ldap_pw,
             "inumAppliance": self.cluster.inumAppliance,
-            "hostname": self.node.local_hostname,
+            "hostname": self.node.weave_ip,
             "hostname_oxauth_cluster": self.cluster.hostname_oxauth_cluster,
             "hostname_oxtrust_cluster": self.cluster.hostname_oxtrust_cluster,
             "ldaps_port": self.node.ldaps_port,
@@ -194,7 +194,7 @@ class ldapSetup(BaseSetup):
                 self.node.importLdifCommand,
                 '--ldifFile', dest,
                 '--backendID', backend_id,
-                '--hostname', self.node.local_hostname,
+                '--hostname', self.node.weave_ip,
                 '--port', self.node.ldap_admin_port,
                 '--bindDN', '"%s"' % self.node.ldap_binddn,
                 '-j', self.node.ldapPassFn,
@@ -234,7 +234,7 @@ class ldapSetup(BaseSetup):
         # Import OpenDJ certificate into java truststore
         cmdstr = ' '.join([
             "/usr/bin/keytool", "-import", "-trustcacerts", "-alias",
-            "{}_opendj".format(self.node.local_hostname),
+            "{}_opendj".format(self.node.weave_ip),
             "-file", self.node.openDjCertFn,
             "-keystore", self.node.defaultTrustStoreFN,
             "-storepass", "changeit", "-noprompt",
@@ -260,12 +260,12 @@ class ldapSetup(BaseSetup):
         for base_dn in base_dns:
             enable_cmd = " ".join([
                 "/opt/opendj/bin/dsreplication", "enable",
-                "--host1", existing_node.local_hostname,
+                "--host1", existing_node.weave_ip,
                 "--port1", existing_node.ldap_admin_port,
                 "--bindDN1", "'{}'".format(existing_node.ldap_binddn),
                 "--bindPasswordFile1", self.node.ldapPassFn,
                 "--replicationPort1", existing_node.ldap_replication_port,
-                "--host2", self.node.local_hostname,
+                "--host2", self.node.weave_ip,
                 "--port2", self.node.ldap_admin_port,
                 "--bindDN2", "'{}'".format(self.node.ldap_binddn),
                 "--bindPasswordFile2", self.node.ldapPassFn,
@@ -277,7 +277,7 @@ class ldapSetup(BaseSetup):
                 "-X", "-n",
             ])
             self.logger.info("enabling {!r} replication between {} and {}".format(
-                base_dn, existing_node.local_hostname, self.node.local_hostname,
+                base_dn, existing_node.weave_ip, self.node.weave_ip,
             ))
             self.salt.cmd(self.node.id, "cmd.run", [enable_cmd])
 
@@ -291,14 +291,14 @@ class ldapSetup(BaseSetup):
                 "--baseDN", "'{}'".format(base_dn),
                 "--adminUID", "admin",
                 "--adminPasswordFile", self.node.ldapPassFn,
-                "--hostSource", existing_node.local_hostname,
+                "--hostSource", existing_node.weave_ip,
                 "--portSource", existing_node.ldap_admin_port,
-                "--hostDestination", self.node.local_hostname,
+                "--hostDestination", self.node.weave_ip,
                 "--portDestination", self.node.ldap_admin_port,
                 "-X", "-n"
             ])
             self.logger.info("initializing {!r} replication between {} and {}".format(
-                base_dn, existing_node.local_hostname, self.node.local_hostname,
+                base_dn, existing_node.weave_ip, self.node.weave_ip,
             ))
             self.salt.cmd(self.node.id, "cmd.run", [init_cmd])
             time.sleep(5)
@@ -358,7 +358,7 @@ class ldapSetup(BaseSetup):
                 disable_repl_cmd = " ".join([
                     "{}/bin/dsreplication".format(self.node.ldapBaseFolder),
                     "disable",
-                    "--hostname", self.node.local_hostname,
+                    "--hostname", self.node.weave_ip,
                     "--port", self.node.ldap_admin_port,
                     "--adminUID", "admin",
                     "--adminPasswordFile", self.node.ldapPassFn,

@@ -1,6 +1,8 @@
 import re
 
-from flask.ext.restful import reqparse
+from flask_restful import reqparse
+from netaddr import AddrFormatError
+from netaddr import IPNetwork
 
 # regex pattern to validate email address
 EMAIL_RE_ = re.compile(r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)")
@@ -18,32 +20,34 @@ def admin_email(value, name):
     raise ValueError("The parameter {} is not valid email address".format(name))
 
 
-# Request parser for cluster POST and PUT requests
-cluster_reqparser = reqparse.RequestParser()
+def weave_network_type(value, name):
+    # checks whether IP network is valid
+    try:
+        IPNetwork(value)
+    except AddrFormatError:
+        raise ValueError(
+            "{} is not valid value for parameter {}".format(value, name))
+    return value
 
-cluster_reqparser.add_argument("name", type=str, location="form",
-                               required=True)
-cluster_reqparser.add_argument("description", type=str, location="form",
-                               required=True)
 
-cluster_reqparser.add_argument("hostname_ldap_cluster", type=str,
-                               location="form", required=True)
-cluster_reqparser.add_argument("hostname_oxauth_cluster", type=str,
-                               location="form", required=True)
-cluster_reqparser.add_argument("hostname_oxtrust_cluster", type=str,
-                               location="form", required=True)
+# Request parser for cluster POST request
+cluster_req = reqparse.RequestParser()
 
-cluster_reqparser.add_argument("orgName", type=str, location="form",
-                               required=True)
-cluster_reqparser.add_argument("orgShortName", type=str, location="form",
-                               required=True)
-cluster_reqparser.add_argument("countryCode", type=country_code,
-                               location="form", required=True)
-cluster_reqparser.add_argument("city", type=str, location="form",
-                               required=True)
-cluster_reqparser.add_argument("state", type=str, location="form",
-                               required=True)
-cluster_reqparser.add_argument("admin_email", type=admin_email,
-                               location="form", required=True)
-cluster_reqparser.add_argument("admin_pw", type=str, location="form",
-                               required=True)
+cluster_req.add_argument("name", location="form", required=True)
+cluster_req.add_argument("description", location="form")
+
+cluster_req.add_argument("hostname_ldap_cluster", location="form", required=True)
+cluster_req.add_argument("hostname_oxauth_cluster", location="form", required=True)
+cluster_req.add_argument("hostname_oxtrust_cluster", location="form", required=True)
+
+cluster_req.add_argument("orgName", location="form", required=True)
+cluster_req.add_argument("orgShortName", location="form", required=True)
+cluster_req.add_argument("countryCode", type=country_code,
+                         location="form", required=True)
+cluster_req.add_argument("city", location="form", required=True)
+cluster_req.add_argument("state", location="form", required=True)
+cluster_req.add_argument("admin_email", type=admin_email,
+                         location="form", required=True)
+cluster_req.add_argument("admin_pw", location="form", required=True)
+cluster_req.add_argument("weave_ip_network", type=weave_network_type,
+                         location="form", required=True)

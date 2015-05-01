@@ -41,6 +41,7 @@ def cluster():
     cluster = GluuCluster()
     cluster.hostname_oxauth_cluster = "oxauth.example.com"
     cluster.hostname_oxtrust_cluster = "oxtrust.example.com"
+    cluster.weave_ip_network = "10.20.10.1/24"
     return cluster
 
 

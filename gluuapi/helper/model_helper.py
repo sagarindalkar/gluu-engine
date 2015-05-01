@@ -133,6 +133,18 @@ class BaseModelHelper(object):
                 # container ID in short format
                 self.node.id = container_id[:12]
 
+                # attach weave IP to container
+                self.logger.info("assigning weave IP address")
+                addr, prefixlen = self.cluster.reserve_ip_addr()
+                self.salt.cmd(
+                    self.provider.hostname,
+                    "cmd.run",
+                    ["weave attach {}/{} {}".format(addr, prefixlen,
+                                                    self.node.id)],
+                )
+                self.node.weave_ip = addr
+                self.node.weave_prefixlen = prefixlen
+
                 # runs callback to prepare node attributes;
                 # warning: don't override node.id attribute!
                 self.prepare_node_attrs()
@@ -152,17 +164,33 @@ class BaseModelHelper(object):
                 # minion is not connected
                 else:
                     self.logger.error("minion {} is unreachable".format(self.node.id))
-                    self.logger.info("destroying minion {}".format(self.node.id))
-                    self.docker.remove_container(self.node.id)
-                    self.salt.unregister_minion(self.node.id)
+                    self.on_setup_error()
 
             # container is not running
             else:
                 self.logger.error("Failed to start the {!r} container".format(self.node.name))
         except Exception:
             self.logger.error(exc_traceback())
-            self.docker.remove_container(self.node.id)
-            self.salt.unregister_minion(self.node.id)
+            self.on_setup_error()
+
+    def on_setup_error(self):
+        self.logger.info("destroying minion {}".format(self.node.id))
+
+        # detach container from weave network
+        if self.node.weave_ip:
+            self.salt.cmd(
+                self.provider.hostname,
+                "cmd.run",
+                ["weave detach {}/{} {}".format(self.node.weave_ip,
+                                                self.node.weave_prefixlen,
+                                                self.node.id)],
+            )
+            self.cluster.unreserve_ip_addr(self.node.weave_ip)
+            self.node.weave_ip = ""
+            db.update(self.cluster.id, self.cluster, "clusters")
+
+        self.docker.remove_container(self.node.id)
+        self.salt.unregister_minion(self.node.id)
 
 
 class LdapModelHelper(BaseModelHelper):
@@ -206,5 +234,5 @@ class OxTrustModelHelper(BaseModelHelper):
 
     def prepare_node_attrs(self):
         container_ip = self.docker.get_container_ip(self.node.id)
-        self.node.hostname = container_ip
+        # self.node.hostname = container_ip
         self.node.ip = container_ip

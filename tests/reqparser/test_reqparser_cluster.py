@@ -30,3 +30,14 @@ def test_invalid_admin_email(email):
     with pytest.raises(ValueError):
         result = admin_email(email, "admin_email")
         assert "admin_email" in result
+
+
+def test_weave_network_type():
+    from gluuapi.reqparser.cluster import weave_network_type
+    assert weave_network_type("10.20.10.1/24", "weave_ip_network") == "10.20.10.1/24"
+
+
+def test_invalid_weave_network_type():
+    from gluuapi.reqparser.cluster import weave_network_type
+    with pytest.raises(ValueError):
+        weave_network_type("abc", "weave_ip_network")

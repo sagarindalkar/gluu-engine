@@ -5,7 +5,7 @@ from flask_restful_swagger import swagger
 
 from gluuapi.model import GluuCluster
 from gluuapi.database import db
-from gluuapi.reqparser import cluster_reqparser
+from gluuapi.reqparser import cluster_req
 
 
 class Cluster(Resource):
@@ -63,132 +63,11 @@ class Cluster(Resource):
         db.delete(cluster_id, "clusters")
         return {}, 204
 
-    @swagger.operation(
-        notes='update a cluster',
-        nickname='editcluster',
-        parameters=[
-            {
-                "name": "name",
-                "description": "Name of the cluster",
-                "required": True,
-                "allowMultiple": False,
-                "dataType": 'string',
-                "paramType": "form"
-            },
-            {
-                "name": "description",
-                "description": "Description of the purpose of the cluster.",
-                "required": True,
-                "allowMultiple": False,
-                "dataType": 'string',
-                "paramType": "form"
-            },
-            {
-                "name": "orgName",
-                "description": "Full name of the Organization",
-                "required": True,
-                "allowMultiple": False,
-                "dataType": 'string',
-                "paramType": "form"
-            },
-            {
-                "name": "orgShortName",
-                "description": "Short word or abbreviation for the organization",
-                "required": True,
-                "allowMultiple": False,
-                "dataType": 'string',
-                "paramType": "form"
-            },
-            {
-                "name": "city",
-                "description": "City for self-signed certificates.",
-                "required": True,
-                "allowMultiple": False,
-                "dataType": 'string',
-                "paramType": "form"
-            },
-            {
-                "name": "state",
-                "description": "State or province for self-signed certificates.",
-                "required": True,
-                "allowMultiple": False,
-                "dataType": 'string',
-                "paramType": "form"
-            },
-            {
-                "name": "countryCode",
-                "description": "ISO 3166-1 two-character country code for self-signed certificates.",
-                "required": True,
-                "allowMultiple": False,
-                "dataType": 'string',
-                "paramType": "form"
-            },
-            {
-                "name": "admin_email",
-                "description": "Admin email for the self-signed certifcates.",
-                "required": True,
-                "allowMultiple": False,
-                "dataType": 'string',
-                "paramType": "form"
-            },
-            {
-                "name": "hostname_ldap_cluster",
-                "description": "Hostname to use for the LDAP cluster",
-                "required": True,
-                "allowMultiple": False,
-                "dataType": 'string',
-                "paramType": "form"
-            },
-            {
-                "name": "hostname_oxauth_cluster",
-                "description": "Hostname to use for the oxAuth authentication APIs",
-                "required": True,
-                "allowMultiple": False,
-                "dataType": 'string',
-                "paramType": "form"
-            },
-            {
-                "name": "hostname_oxtrust_cluster",
-                "description": "Hostname to use for the oxTrust admin interface website.",
-                "required": True,
-                "allowMultiple": False,
-                "dataType": 'string',
-                "paramType": "form"
-            },
-        ],
-        responseMessages=[
-            {
-                "code": 200,
-                "message": "Cluster updated"
-            },
-            {
-                "code": 404,
-                "message": "Cluster not found",
-            },
-            {
-                "code": 500,
-                "message": "Internal Server Error",
-            },
-        ],
-        summary='TODO'
-    )
-    def put(self, cluster_id):
-        cluster = db.get(cluster_id, "clusters")
-        if not cluster:
-            return {"code": 404, "message": "Cluster not found"}, 404
-
-        params = cluster_reqparser.parse_args()
-
-        cluster.set_fields(params)
-        db.update(cluster_id, cluster, "clusters")
-        return cluster.as_dict()
-
 
 class ClusterList(Resource):
     @swagger.operation(
         notes='Gives cluster info/state',
         nickname='listcluster',
-        # responseClass=GluuCluster,
         parameters=[],
         responseMessages=[
             {
@@ -221,7 +100,7 @@ class ClusterList(Resource):
             {
                 "name": "description",
                 "description": "Description of the purpose of the cluster.",
-                "required": True,
+                "required": False,
                 "allowMultiple": False,
                 "dataType": 'string',
                 "paramType": "form"
@@ -306,6 +185,13 @@ class ClusterList(Resource):
                 "dataType": 'string',
                 "paramType": "form"
             },
+            {
+                "name": "weave_ip_network",
+                "description": "The IP address for weave network, e.g. 10.20.10.0/24",
+                "required": True,
+                "dataType": "string",
+                "paramType": "form",
+            },
         ],
         responseMessages=[
             {
@@ -320,7 +206,7 @@ class ClusterList(Resource):
         summary='Create a new cluster'
     )
     def post(self):
-        params = cluster_reqparser.parse_args()
+        params = cluster_req.parse_args()
         cluster = GluuCluster(fields=params)
         db.persist(cluster, "clusters")
 

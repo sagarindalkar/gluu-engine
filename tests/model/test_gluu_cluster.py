@@ -77,18 +77,6 @@ def test_cluster_remove_unsupported_node():
         cluster.remove_node(node)
 
 
-def test_cluster_set_fields(cluster):
-    data = {"name": "hello"}
-    cluster.set_fields(data)
-    assert cluster.name == "hello"
-
-
-def test_cluster_set_none_fields(cluster):
-    data = {"random": None}
-    cluster.set_fields(data)
-    assert hasattr(cluster, "random") is False
-
-
 def test_cluster_max_allowed_nodes(cluster):
     assert cluster.max_allowed_ldap_nodes == 4
 
@@ -98,3 +86,20 @@ def test_decrypted_admin_pw():
 
     cluster = GluuCluster({"admin_pw": "secret"})
     assert cluster.decrypted_admin_pw == "secret"
+
+
+def test_ip_addr_available(cluster):
+    # fills up reserved IP address using fake values
+    cluster.reserved_ip_addrs = [ip for ip in range(254)]
+    assert cluster.ip_addr_available is False
+
+    cluster.reserved_ip_addrs.pop()
+    assert cluster.ip_addr_available is True
+
+
+def test_reserve_ip_addr(cluster):
+    assert cluster.reserve_ip_addr() == tuple(["10.20.10.1", 24])
+
+
+def test_unreserve_ip_addr(cluster):
+    assert cluster.unreserve_ip_addr("10.20.10.1") is None

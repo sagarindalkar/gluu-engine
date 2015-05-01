@@ -19,53 +19,56 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import itertools
 import uuid
 
 from flask_restful_swagger import swagger
-from flask.ext.restful import fields
+from flask_restful import fields as rest_fields
+from netaddr import IPNetwork
+from netaddr import IPSet
 
 from gluuapi.database import db
 from gluuapi.model.base import BaseModel
-from gluuapi.helper.common_helper import get_quad
-from gluuapi.helper.common_helper import get_random_chars
-from gluuapi.helper.common_helper import encrypt_text
-from gluuapi.helper.common_helper import decrypt_text
-from gluuapi.helper.common_helper import generate_passkey
-from gluuapi.helper.common_helper import ldap_encode
+from gluuapi.helper import get_quad
+from gluuapi.helper import get_random_chars
+from gluuapi.helper import encrypt_text
+from gluuapi.helper import decrypt_text
+from gluuapi.helper import generate_passkey
+from gluuapi.helper import ldap_encode
 
 
 @swagger.model
 class GluuCluster(BaseModel):
     # Swager Doc
     resource_fields = {
-        'id': fields.String(attribute='GluuCluster unique identifier'),
-        'name': fields.String(attribute='GluuCluster name'),
-        'description': fields.String(attribute='Description of cluster'),
-        'ldap_nodes': fields.List(fields.String, attribute='Ids of ldap nodes'),  # noqa
-        'oxauth_nodes': fields.List(fields.String, attribute='Ids of oxauth nodes'),  # noqa
-        'oxtrust_nodes': fields.List(fields.String, attribute='Ids of oxtrust nodes'),  # noqa
-        'hostname_ldap_cluster': fields.String,
-        'hostname_oxauth_cluster': fields.String,
-        'hostname_oxtrust_cluster': fields.String,
-        'ldaps_port': fields.String,
-        'orgName': fields.String(attribute='Name of org for X.509 certificate'),  # noqa
-        'orgShortName': fields.String(attribute='Short name of org for X.509 certificate'),  # noqa
-        'countryCode': fields.String(attribute='ISO 3166-1 alpha-2 country code'),  # noqa
-        'city': fields.String(attribute='City for X.509 certificate'),
-        'state': fields.String(attribute='State or province for X.509 certificate'),  # noqa
-        'admin_email': fields.String(attribute='Admin email address for X.509 certificate'),  # noqa
-        # 'encrypted_pw': fields.String(attribute='Secret for ldap cn=directory manager, and oxTrust admin'),
-        # 'ldap_replication_admin_pw': fields.String(attribute='Password for LDAP replication admin'),
-        'baseInum': fields.String(attribute='Unique identifier for domain'),
-        'inumOrg': fields.String(attribute='Unique identifier for organization'),  # noqa
-        'inumOrgFN': fields.String(attribute='Unique organization identifier sans special characters.'),  # noqa
-        'inumAppliance': fields.String(attribute='Unique identifier for cluster'),  # noqa
-        'inumApplianceFN': fields.String(attribute='Unique cluster identifier sans special characters.'),  # noqa
+        'id': rest_fields.String(attribute='GluuCluster unique identifier'),
+        'name': rest_fields.String(attribute='GluuCluster name'),
+        'description': rest_fields.String(attribute='Description of cluster'),
+        'ldap_nodes': rest_fields.List(rest_fields.String, attribute='Ids of ldap nodes'),  # noqa
+        'oxauth_nodes': rest_fields.List(rest_fields.String, attribute='Ids of oxauth nodes'),  # noqa
+        'oxtrust_nodes': rest_fields.List(rest_fields.String, attribute='Ids of oxtrust nodes'),  # noqa
+        'hostname_ldap_cluster': rest_fields.String,
+        'hostname_oxauth_cluster': rest_fields.String,
+        'hostname_oxtrust_cluster': rest_fields.String,
+        'ldaps_port': rest_fields.String,
+        'orgName': rest_fields.String(attribute='Name of org for X.509 certificate'),  # noqa
+        'orgShortName': rest_fields.String(attribute='Short name of org for X.509 certificate'),  # noqa
+        'countryCode': rest_fields.String(attribute='ISO 3166-1 alpha-2 country code'),  # noqa
+        'city': rest_fields.String(attribute='City for X.509 certificate'),
+        'state': rest_fields.String(attribute='State or province for X.509 certificate'),  # noqa
+        'admin_email': rest_fields.String(attribute='Admin email address for X.509 certificate'),  # noqa
+        'baseInum': rest_fields.String(attribute='Unique identifier for domain'),
+        'inumOrg': rest_fields.String(attribute='Unique identifier for organization'),  # noqa
+        'inumOrgFN': rest_fields.String(attribute='Unique organization identifier sans special characters.'),  # noqa
+        'inumAppliance': rest_fields.String(attribute='Unique identifier for cluster'),  # noqa
+        'inumApplianceFN': rest_fields.String(attribute='Unique cluster identifier sans special characters.'),  # noqa
+        'weave_ip_network': rest_fields.String(attribute='Weave IP network'),  # noqa
     }
 
     def __init__(self, fields=None):
         fields = fields or {}
 
+        # GluuCluster unique identifier
         self.id = "{}".format(uuid.uuid4())
         self.name = fields.get("name")
         self.description = fields.get("description")
@@ -115,6 +118,8 @@ class GluuCluster(BaseModel):
         # key store
         self.encoded_shib_jks_pw = self.admin_pw
         self.shib_jks_fn = "/etc/certs/shibIDP.jks"
+        self.weave_ip_network = fields.get("weave_ip_network", "")
+        self.reserved_ip_addrs = []
 
     def add_node(self, node):
         """Adds node into current cluster.
@@ -171,14 +176,6 @@ class GluuCluster(BaseModel):
     def decrypted_admin_pw(self):
         return decrypt_text(self.admin_pw, self.passkey)
 
-    def set_fields(self, data=None):
-        data = data or {}
-        for attr, val in data.items():
-            # skip field that is None
-            if val is None:
-                continue
-            setattr(self, attr, val)
-
     @property
     def max_allowed_ldap_nodes(self):
         return 4
@@ -208,3 +205,49 @@ class GluuCluster(BaseModel):
             None,
             [db.get(id_, "nodes") for id_ in self.oxtrust_nodes],
         )
+
+    def reserve_ip_addr(self):
+        """Picks first available IP address from weave network.
+
+        If there's no available IP address anymore, ``IndexError``
+        will be raised. To prevent this error, catch the exception
+        or checks the value ``GluuCluster.ip_addr_available`` first
+        before trying to call this method.
+
+        :returns: A 2-elements tuple consists of IP address and network prefix,
+                  e.g. ``("10.10.10.1", 24)``.
+        """
+        # represents a pool of IP addresses
+        pool = IPNetwork(self.weave_ip_network)
+
+        # a generator holds possible IP addresses range
+        ip_range = IPSet(pool.iter_hosts()) ^ IPSet(self.reserved_ip_addrs)
+
+        # retrieves first IP address from ``ip_range`` generator
+        ip_addr = list(itertools.islice(ip_range, 1))[0]
+
+        # register the IP address so it will be excluded
+        # from possible IP range in subsequent requests
+        self.reserved_ip_addrs.append(str(ip_addr))
+
+        # weave IP address for container expects a traditional CIDR,
+        # e.g. 10.10.10.1/24, hence we return the actual IP and
+        # its prefix length
+        return str(ip_addr), pool.prefixlen
+
+    def unreserve_ip_addr(self, addr):
+        try:
+            self.reserved_ip_addrs.remove(addr)
+        except ValueError:
+            # we don't care about missing element
+            pass
+
+    @property
+    def ip_addr_available(self):
+        """Checks whether there's available IP address in weave network.
+
+        :returns: A boolean represents whether there's available IP address.
+        """
+        range_size = IPSet(IPNetwork(self.weave_ip_network).iter_hosts()).size
+        reserved_size = len(self.reserved_ip_addrs)
+        return reserved_size < range_size

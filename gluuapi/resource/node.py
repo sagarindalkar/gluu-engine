@@ -97,19 +97,30 @@ class Node(Resource):
             setup_obj = ldapSetup(node, cluster)
             setup_obj.stop()
 
-        # remove container
         docker = DockerHelper(base_url=provider.docker_base_url)
+        salt = SaltHelper()
+
+        # detach container from weave network
+        salt.cmd(
+            provider.hostname,
+            "cmd.run",
+            ["weave detach {}/{} {}".format(node.weave_ip,
+                                            node.weave_prefixlen,
+                                            node.id)],
+        )
+
+        # remove container
         docker.remove_container(node.id)
 
         # unregister minion
-        salt_helper = SaltHelper()
-        salt_helper.unregister_minion(node.id)
+        salt.unregister_minion(node.id)
 
         # remove node
         db.delete(node_id, "nodes")
 
         # removes reference from cluster, if any
         cluster.remove_node(node)
+        cluster.unreserve_ip_addr(node.weave_ip)
         db.update(cluster.id, cluster, "clusters")
 
         # TODO: move to helper?
@@ -217,6 +228,9 @@ status of the cluster node is available.""",
         cluster = db.get(params.cluster, "clusters")
         if not cluster:
             return {"code": 400, "message": "invalid cluster ID"}, 400
+
+        if not cluster.ip_addr_available:
+            return {"code": 403, "message": "running out of weave IP"}, 403
 
         # check that provider ID is valid else return with message and code
         provider = db.get(params.provider_id, "providers")

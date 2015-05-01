@@ -46,6 +46,8 @@ class oxtrustNode(HTTPDMixin, TomcatMixin, BaseModel):
         self.name = ""
         self.hostname = ""
         self.ip = ""
+        self.weave_ip = ""
+        self.weave_prefixlen = ""
         self.type = "oxtrust"
 
         self.ldap_binddn = 'cn=directory manager'

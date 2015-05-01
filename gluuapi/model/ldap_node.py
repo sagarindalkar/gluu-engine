@@ -51,6 +51,8 @@ class ldapNode(BaseModel):
         self.ldap_type = "opendj"
         self.local_hostname = ""
         self.ip = ""
+        self.weave_ip = ""
+        self.weave_prefixlen = ""
         self.type = 'ldap'
 
         # Filesystem path to Java truststore

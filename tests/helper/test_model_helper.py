@@ -81,4 +81,3 @@ def test_oxtrust_model_helper(monkeypatch, cluster, provider):
 
     helper.prepare_node_attrs()
     assert helper.node.ip == ipaddr
-    assert helper.node.hostname == ipaddr

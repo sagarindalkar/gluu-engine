@@ -19,15 +19,28 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import re
+
 from flask_restful import reqparse
+
+# regex pattern for hostname as defined by RFC 952 and RFC 1123
+HOSTNAME_RE = re.compile('^(?![0-9]+$)(?!-)[a-zA-Z0-9-]{,63}(?<!-)$')
+
+
+def hostname_type(value, name):
+    if HOSTNAME_RE.match(value):
+        return value
+
+    raise ValueError(
+        "{} is not a valid value for {} parameter".format(value, name))
 
 
 provider_req = reqparse.RequestParser()
 provider_req.add_argument(
-    "name", location="form", required=True,
-    help="Unique name of provider consists of alphanums, _, and - characters",
+    "hostname", type=hostname_type, location="form", required=True,
+    help="Hostname of the provider",
 )
 provider_req.add_argument(
-    "base_url", location="form", required=True,
+    "docker_base_url", location="form", required=True,
     help="URL to Docker API, could be unix socket or tcp",
 )

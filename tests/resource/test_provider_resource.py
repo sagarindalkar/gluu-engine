@@ -2,8 +2,8 @@ def test_provider_list_post(app):
     resp = app.test_client().post(
         "/provider",
         data={
-            "base_url": "unix:///var/run/docker.sock",
-            "name": "local",
+            "docker_base_url": "unix:///var/run/docker.sock",
+            "hostname": "local",
         },
     )
     assert resp.status_code == 201

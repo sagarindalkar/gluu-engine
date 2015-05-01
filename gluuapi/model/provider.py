@@ -34,16 +34,14 @@ class Provider(BaseModel):
     Docker host could be any reachable machine, either local or remote.
     """
     resource_fields = {
-        "id": fields.String(attribute="Provider unique identifier"),
-        "base_url": fields.String(
-            attribute="URL to Docker API, could be unix socket or tcp",
-        ),
-        "name": fields.String(attribute="Provider name"),
+        "id": fields.String,
+        "docker_base_url": fields.String,
+        "hostname": fields.String,
     }
 
     def __init__(self, fields=None):
         fields = fields or {}
 
         self.id = str(uuid.uuid4())
-        self.base_url = fields.get("base_url", "")
-        self.name = fields.get("name", "")
+        self.docker_base_url = fields.get("docker_base_url", "")
+        self.hostname = fields.get("hostname", "")

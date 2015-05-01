@@ -71,8 +71,8 @@ class BaseModelHelper(object):
         _, self.logpath = tempfile.mkstemp(
             suffix=".log", prefix=self.image + "-build-")
         self.logger = create_file_logger(self.logpath, name=self.node.name)
-        self.docker = DockerHelper(logger=self.logger,
-                                   base_url=self.provider.base_url)
+        self.docker = DockerHelper(
+            logger=self.logger, base_url=self.provider.docker_base_url)
         self.salt = SaltHelper()
 
     def prepare_node_attrs(self):

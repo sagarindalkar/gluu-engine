@@ -5,7 +5,7 @@ import pytest
 def docker_helper(request, app, provider):
     from gluuapi.helper.docker_helper import DockerHelper
 
-    helper = DockerHelper(base_url=provider.base_url)
+    helper = DockerHelper(base_url=provider.docker_base_url)
 
     def teardown():
         helper.docker.close()

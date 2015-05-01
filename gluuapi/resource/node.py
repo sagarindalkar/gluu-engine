@@ -98,7 +98,7 @@ class Node(Resource):
             setup_obj.stop()
 
         # remove container
-        docker = DockerHelper(base_url=provider.base_url)
+        docker = DockerHelper(base_url=provider.docker_base_url)
         docker.remove_container(node.id)
 
         # unregister minion

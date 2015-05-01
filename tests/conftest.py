@@ -79,7 +79,7 @@ def provider():
     from gluuapi.model import Provider
 
     provider = Provider({
-        "base_url": "unix:///var/run/docker.sock",
-        "name": "local",
+        "docker_base_url": "unix:///var/run/docker.sock",
+        "hostname": "local",
     })
     return provider

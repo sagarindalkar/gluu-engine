@@ -26,6 +26,7 @@ from flask_restful_swagger import swagger
 from gluuapi.database import db
 from gluuapi.reqparser import provider_req
 from gluuapi.model import Provider
+from gluuapi.helper import SaltHelper
 
 
 class ProviderResource(Resource):
@@ -87,15 +88,15 @@ class ProviderListResource(Resource):
         nickname="postprovider",
         parameters=[
             {
-                "name": "name",
-                "description": "Provider name",
+                "name": "hostname",
+                "description": "Hostname of the provider",
                 "required": True,
                 "dataType": "string",
                 "paramType": "form"
             },
             {
-                "name": "base_url",
-                "description": "URL to Docker API, could be unix socket or tcp",
+                "name": "docker_base_url",
+                "description": "URL to Docker API, could be unix socket (e.g. unix:///var/run/docker.sock) for localhost or tcp (10.10.10.1:2375) for remote host",
                 "required": True,
                 "dataType": "string",
                 "paramType": "form"
@@ -120,6 +121,10 @@ class ProviderListResource(Resource):
         params = provider_req.parse_args()
         provider = Provider(fields=params)
         db.persist(provider, "providers")
+
+        # register provider so we can execute weave commands later on
+        salt = SaltHelper()
+        salt.register_minion(provider.hostname)
 
         headers = {
             "Location": url_for("provider", provider_id=provider.id),

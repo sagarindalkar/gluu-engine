@@ -248,29 +248,29 @@ class OxAuthSetup(BaseSetup):
         }
         self.render_template(src, dest, ctx)
 
-    def render_https_conf_template(self):
-        src = self.node.oxauth_https_conf
-        file_basename = os.path.basename(src)
-        dest = os.path.join("/etc/apache2/sites-available", file_basename)
-        ctx = {
-            "hostname": self.cluster.hostname_oxauth_cluster,
-            "ip": self.node.weave_ip,
-            "httpdCertFn": self.node.httpd_crt,
-            "httpdKeyFn": self.node.httpd_key,
-            "admin_email": self.cluster.admin_email,
-        }
-        self.render_template(src, dest, ctx)
+    # def render_https_conf_template(self):
+    #     src = self.node.oxauth_https_conf
+    #     file_basename = os.path.basename(src)
+    #     dest = os.path.join("/etc/apache2/sites-available", file_basename)
+    #     ctx = {
+    #         "hostname": self.cluster.hostname_oxauth_cluster,
+    #         "ip": self.node.weave_ip,
+    #         "httpdCertFn": self.node.httpd_crt,
+    #         "httpdKeyFn": self.node.httpd_key,
+    #         "admin_email": self.cluster.admin_email,
+    #     }
+    #     self.render_template(src, dest, ctx)
 
-    def start_httpd(self):
-        self.logger.info("starting httpd")
-        self.salt.cmd(
-            self.node.id,
-            ["cmd.run", "cmd.run", "cmd.run", "cmd.run"],
-            [["a2enmod ssl headers proxy proxy_http proxy_ajp evasive"],
-             ["a2dissite 000-default"],
-             ["a2ensite oxauth-https"],
-             ["service apache2 start"]],
-        )
+    # def start_httpd(self):
+    #     self.logger.info("starting httpd")
+    #     self.salt.cmd(
+    #         self.node.id,
+    #         ["cmd.run", "cmd.run", "cmd.run", "cmd.run"],
+    #         [["a2enmod ssl headers proxy proxy_http proxy_ajp evasive"],
+    #          ["a2dissite 000-default"],
+    #          ["a2ensite oxauth-https"],
+    #          ["service apache2 start"]],
+    #     )
 
     def setup(self):
         start = time.time()
@@ -285,10 +285,10 @@ class OxAuthSetup(BaseSetup):
         self.render_ldap_props_template()
         self.render_static_conf_template()
         self.render_server_xml_template()
-        self.render_https_conf_template()
+        # self.render_https_conf_template()
         self.write_salt_file()
 
-        self.gen_cert("httpd", self.cluster.decrypted_admin_pw, "www-data", hostname)
+        # self.gen_cert("httpd", self.cluster.decrypted_admin_pw, "www-data", hostname)
         self.gen_cert("shibIDP", self.cluster.decrypted_admin_pw, "tomcat", hostname)
 
         # IDP keystore
@@ -305,8 +305,8 @@ class OxAuthSetup(BaseSetup):
         # configure tomcat to run oxauth war file
         self.start_tomcat()
 
-        # enable sites, mods, and start httpd
-        self.start_httpd()
+        # # enable sites, mods, and start httpd
+        # self.start_httpd()
 
         self.gen_openid_keys()
         self.change_cert_access()

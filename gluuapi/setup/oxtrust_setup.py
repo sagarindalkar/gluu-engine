@@ -48,6 +48,7 @@ class OxTrustSetup(OxAuthSetup):
         )
 
     def update_host_entries(self):
+        # TODO: perhaps we can use docker --add-host when creating container?
         self.logger.info("updating host entries in /etc/hosts")
         for oxauth in self.cluster.get_oxauth_objects():
             self.salt.cmd(
@@ -109,29 +110,29 @@ class OxTrustSetup(OxAuthSetup):
         }
         self.render_template(src, dest, ctx)
 
-    def render_https_conf_template(self):
-        src = self.node.oxtrust_https_conf
-        file_basename = os.path.basename(src)
-        dest = os.path.join("/etc/apache2/sites-available", file_basename)
-        ctx = {
-            "hostname": self.cluster.hostname_oxtrust_cluster,
-            "ip": self.node.weave_ip,
-            "httpdCertFn": self.node.httpd_crt,
-            "httpdKeyFn": self.node.httpd_key,
-            "admin_email": self.cluster.admin_email,
-        }
-        self.render_template(src, dest, ctx)
+    # def render_https_conf_template(self):
+    #     src = self.node.oxtrust_https_conf
+    #     file_basename = os.path.basename(src)
+    #     dest = os.path.join("/etc/apache2/sites-available", file_basename)
+    #     ctx = {
+    #         "hostname": self.cluster.hostname_oxtrust_cluster,
+    #         "ip": self.node.weave_ip,
+    #         "httpdCertFn": self.node.httpd_crt,
+    #         "httpdKeyFn": self.node.httpd_key,
+    #         "admin_email": self.cluster.admin_email,
+    #     }
+    #     self.render_template(src, dest, ctx)
 
-    def start_httpd(self):
-        self.logger.info("starting httpd")
-        self.salt.cmd(
-            self.node.id,
-            ["cmd.run", "cmd.run", "cmd.run", "cmd.run"],
-            [["a2enmod ssl headers proxy proxy_http proxy_ajp evasive"],
-             ["a2dissite 000-default"],
-             ["a2ensite oxtrust-https"],
-             ["service apache2 start"]],
-        )
+    # def start_httpd(self):
+    #     self.logger.info("starting httpd")
+    #     self.salt.cmd(
+    #         self.node.id,
+    #         ["cmd.run", "cmd.run", "cmd.run", "cmd.run"],
+    #         [["a2enmod ssl headers proxy proxy_http proxy_ajp evasive"],
+    #          ["a2dissite 000-default"],
+    #          ["a2ensite oxtrust-https"],
+    #          ["service apache2 start"]],
+    #     )
 
     def setup(self):
         start = time.time()
@@ -149,10 +150,10 @@ class OxTrustSetup(OxAuthSetup):
         self.render_props_template()
         self.render_ldap_props_template()
         self.render_server_xml_template()
-        self.render_https_conf_template()
+        # self.render_https_conf_template()
         self.write_salt_file()
 
-        self.gen_cert("httpd", self.cluster.decrypted_admin_pw, "www-data", hostname)
+        # self.gen_cert("httpd", self.cluster.decrypted_admin_pw, "www-data", hostname)
         self.gen_cert("shibIDP", self.cluster.decrypted_admin_pw, "tomcat", hostname)
 
         # IDP keystore
@@ -171,8 +172,8 @@ class OxTrustSetup(OxAuthSetup):
         # FIXME: cannot found "facter" and "check_ssl" commands
         self.start_tomcat()
 
-        # enable sites, mods, and start httpd
-        self.start_httpd()
+        # # enable sites, mods, and start httpd
+        # self.start_httpd()
 
         self.change_cert_access()
 

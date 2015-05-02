@@ -23,12 +23,11 @@ from flask_restful_swagger import swagger
 from flask.ext.restful import fields
 
 from gluuapi.model.base import BaseModel
-from gluuapi.model.base import HTTPDMixin
 from gluuapi.model.base import TomcatMixin
 
 
 @swagger.model
-class oxauthNode(HTTPDMixin, TomcatMixin, BaseModel):
+class oxauthNode(TomcatMixin, BaseModel):
     # Swager Doc
     resource_fields = {
         "id": fields.String(attribute="Node unique identifier"),
@@ -73,6 +72,6 @@ class oxauthNode(HTTPDMixin, TomcatMixin, BaseModel):
     def oxauth_static_conf_json(self):  # pragma: no cover
         return "gluuapi/templates/salt/oxauth/oxauth-static-conf.json"
 
-    @property
-    def oxauth_https_conf(self):  # pragma: no cover
-        return "gluuapi/templates/salt/oxauth/oxauth-https.conf"
+    # @property
+    # def oxauth_https_conf(self):  # pragma: no cover
+    #     return "gluuapi/templates/salt/oxauth/oxauth-https.conf"

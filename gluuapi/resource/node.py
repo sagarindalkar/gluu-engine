@@ -20,21 +20,24 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from flask import abort
+# from flask import abort
 from flask import current_app
 from flask.ext.restful import Resource
 from flask_restful_swagger import swagger
 
 from gluuapi.database import db
-from gluuapi.helper.model_helper import LdapModelHelper
-from gluuapi.helper.model_helper import OxAuthModelHelper
-from gluuapi.helper.model_helper import OxTrustModelHelper
-from gluuapi.helper.docker_helper import DockerHelper
-from gluuapi.helper.salt_helper import SaltHelper
 from gluuapi.reqparser import node_req
-from gluuapi.setup.oxauth_setup import OxAuthSetup
-from gluuapi.setup.oxtrust_setup import OxTrustSetup
-from gluuapi.setup.ldap_setup import ldapSetup
+
+from gluuapi.helper import DockerHelper
+from gluuapi.helper import SaltHelper
+from gluuapi.helper import LdapModelHelper
+from gluuapi.helper import OxAuthModelHelper
+from gluuapi.helper import OxTrustModelHelper
+from gluuapi.helper import HttpdModelHelper
+
+from gluuapi.setup import OxAuthSetup
+from gluuapi.setup import OxTrustSetup
+from gluuapi.setup import ldapSetup
 
 
 class Node(Resource):
@@ -183,7 +186,7 @@ status of the cluster node is available.""",
             },
             {
                 "name": "node_type",
-                "description": "one of 'ldap', 'oxauth', or 'oxtrust'",
+                "description": "one of 'ldap', 'oxauth', 'oxtrust', or 'httpd'",
                 "required": True,
                 "dataType": "string",
                 "paramType": "form",
@@ -219,11 +222,6 @@ status of the cluster node is available.""",
     def post(self):
         params = node_req.parse_args()
         salt_master_ipaddr = current_app.config["SALT_MASTER_IPADDR"]
-
-        # check node type
-        if params.node_type not in ("ldap", "oxauth", "oxtrust"):
-            abort(400)
-
         # check that cluster ID is valid else return with message and code
         cluster = db.get(params.cluster, "clusters")
         if not cluster:
@@ -246,6 +244,8 @@ status of the cluster node is available.""",
             helper_class = OxAuthModelHelper
         elif params.node_type == "oxtrust":
             helper_class = OxTrustModelHelper
+        elif params.node_type == "httpd":
+            helper_class = HttpdModelHelper
 
         helper = helper_class(cluster, provider, salt_master_ipaddr)
         print "build logpath: %s" % helper.logpath

@@ -19,9 +19,33 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from .salt_helper import SaltHelper  # noqa
-from .docker_helper import DockerHelper  # noqa
-from .model_helper import LdapModelHelper  # noqa
-from .model_helper import OxAuthModelHelper  # noqa
-from .model_helper import OxTrustModelHelper  # noqa
-from .model_helper import HttpdModelHelper  # noqa
+from flask_restful import fields as rest_fields
+from flask_restful_swagger import swagger
+
+from gluuapi.model.base import BaseModel
+
+
+@swagger.model
+class HttpdNode(BaseModel):
+    resource_fields = {
+        "id": rest_fields.String,
+        "cluster_id": rest_fields.String,
+        "provider_id": rest_fields.String,
+        "ip": rest_fields.String,
+        "weave_ip": rest_fields.String,
+        "name": rest_fields.String,
+    }
+
+    def __init__(self):
+        self.id = ""
+        self.name = ""
+        self.ip = ""
+        self.weave_ip = ""
+        self.weave_prefixlen = ""
+        self.cluster_id = ""
+        self.provider_id = ""
+        self.type = "httpd"
+
+    @property
+    def https_conf(self):
+        return "gluuapi/templates/salt/httpd/gluu_https.conf"

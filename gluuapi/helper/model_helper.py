@@ -30,13 +30,15 @@ from gluuapi.database import db
 from gluuapi.model import ldapNode
 from gluuapi.model import oxauthNode
 from gluuapi.model import oxtrustNode
-from gluuapi.helper.common_helper import exc_traceback
+from gluuapi.model import HttpdNode
 from gluuapi.helper.docker_helper import DockerHelper
 from gluuapi.helper.salt_helper import SaltHelper
-from gluuapi.setup.ldap_setup import ldapSetup
-from gluuapi.setup.oxauth_setup import OxAuthSetup
-from gluuapi.setup.oxtrust_setup import OxTrustSetup
+from gluuapi.setup import ldapSetup
+from gluuapi.setup import OxAuthSetup
+from gluuapi.setup import OxTrustSetup
+from gluuapi.setup import HttpdSetup
 from gluuapi.log import create_file_logger
+from gluuapi.utils import exc_traceback
 
 
 class BaseModelHelper(object):
@@ -230,6 +232,19 @@ class OxTrustModelHelper(BaseModelHelper):
     image = "gluuoxtrust"
     dockerfile = "https://raw.githubusercontent.com/GluuFederation" \
                  "/gluu-docker/master/ubuntu/14.04/gluuoxtrust/Dockerfile"
+
+    def prepare_node_attrs(self):
+        container_ip = self.docker.get_container_ip(self.node.id)
+        # self.node.hostname = container_ip
+        self.node.ip = container_ip
+
+
+class HttpdModelHelper(BaseModelHelper):
+    setup_class = HttpdSetup
+    node_class = HttpdNode
+    image = "gluuhttpd"
+    dockerfile = "https://raw.githubusercontent.com/GluuFederation" \
+                 "/gluu-docker/master/ubuntu/14.04/gluuhttpd/Dockerfile"
 
     def prepare_node_attrs(self):
         container_ip = self.docker.get_container_ip(self.node.id)

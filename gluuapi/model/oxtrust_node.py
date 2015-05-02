@@ -23,12 +23,11 @@ from flask_restful import fields
 from flask_restful_swagger import swagger
 
 from gluuapi.model.base import BaseModel
-from gluuapi.model.base import HTTPDMixin
 from gluuapi.model.base import TomcatMixin
 
 
 @swagger.model
-class oxtrustNode(HTTPDMixin, TomcatMixin, BaseModel):
+class oxtrustNode(TomcatMixin, BaseModel):
     # Swager Doc
     resource_fields = {
         "id": fields.String(attribute="Node unique identifier"),
@@ -75,6 +74,6 @@ class oxtrustNode(HTTPDMixin, TomcatMixin, BaseModel):
     def oxtrust_cache_refresh_properties(self):  # pragma: no cover
         return "gluuapi/templates/salt/oxtrust/oxTrustCacheRefresh-template.properties.vm"
 
-    @property
-    def oxtrust_https_conf(self):  # pragma: no cover
-        return "gluuapi/templates/salt/oxtrust/oxtrust-https.conf"
+    # @property
+    # def oxtrust_https_conf(self):  # pragma: no cover
+    #     return "gluuapi/templates/salt/oxtrust/oxtrust-https.conf"

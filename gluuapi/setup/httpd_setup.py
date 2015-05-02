@@ -19,9 +19,16 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from .salt_helper import SaltHelper  # noqa
-from .docker_helper import DockerHelper  # noqa
-from .model_helper import LdapModelHelper  # noqa
-from .model_helper import OxAuthModelHelper  # noqa
-from .model_helper import OxTrustModelHelper  # noqa
-from .model_helper import HttpdModelHelper  # noqa
+import time
+
+from gluuapi.setup.base import BaseSetup
+
+
+class HttpdSetup(BaseSetup):
+    def setup(self):
+        self.logger.info("HTTPd setup is started")
+        start = time.time()
+
+        elapsed = time.time() - start
+        self.logger.info("LDAP setup is finished ({} seconds)".format(elapsed))
+        return True

@@ -29,12 +29,12 @@ from netaddr import IPSet
 
 from gluuapi.database import db
 from gluuapi.model.base import BaseModel
-from gluuapi.helper import get_quad
-from gluuapi.helper import get_random_chars
-from gluuapi.helper import encrypt_text
-from gluuapi.helper import decrypt_text
-from gluuapi.helper import generate_passkey
-from gluuapi.helper import ldap_encode
+from gluuapi.utils import get_quad
+from gluuapi.utils import get_random_chars
+from gluuapi.utils import encrypt_text
+from gluuapi.utils import decrypt_text
+from gluuapi.utils import generate_passkey
+from gluuapi.utils import ldap_encode
 
 
 @swagger.model
@@ -47,6 +47,7 @@ class GluuCluster(BaseModel):
         'ldap_nodes': rest_fields.List(rest_fields.String, attribute='Ids of ldap nodes'),  # noqa
         'oxauth_nodes': rest_fields.List(rest_fields.String, attribute='Ids of oxauth nodes'),  # noqa
         'oxtrust_nodes': rest_fields.List(rest_fields.String, attribute='Ids of oxtrust nodes'),  # noqa
+        'httpd_nodes': rest_fields.List(rest_fields.String, attribute='Ids of httpd nodes'),  # noqa
         'hostname_ldap_cluster': rest_fields.String,
         'hostname_oxauth_cluster': rest_fields.String,
         'hostname_oxtrust_cluster': rest_fields.String,
@@ -75,6 +76,7 @@ class GluuCluster(BaseModel):
         self.ldap_nodes = []
         self.oxauth_nodes = []
         self.oxtrust_nodes = []
+        self.httpd_nodes = []
         self.hostname_ldap_cluster = fields.get("hostname_ldap_cluster")
         self.hostname_oxauth_cluster = fields.get("hostname_oxauth_cluster")
         self.hostname_oxtrust_cluster = fields.get("hostname_oxtrust_cluster")
@@ -169,6 +171,7 @@ class GluuCluster(BaseModel):
             "ldap": self.ldap_nodes,
             "oxauth": self.oxauth_nodes,
             "oxtrust": self.oxtrust_nodes,
+            "httpd": self.httpd_nodes,
         }
         return node_type_map
 

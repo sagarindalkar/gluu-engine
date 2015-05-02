@@ -26,7 +26,7 @@ import os.path
 import time
 
 from gluuapi.database import db
-from gluuapi.helper.common_helper import exc_traceback
+from gluuapi.utils import exc_traceback
 from gluuapi.setup.base import BaseSetup
 from gluuapi.setup.oxauth_setup import OxAuthSetup
 from gluuapi.setup.oxtrust_setup import OxTrustSetup

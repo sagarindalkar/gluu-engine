@@ -106,7 +106,7 @@ class ClusterList(Resource):
                 "paramType": "form"
             },
             {
-                "name": "orgName",
+                "name": "org_name",
                 "description": "Full name of the Organization",
                 "required": True,
                 "allowMultiple": False,
@@ -114,7 +114,7 @@ class ClusterList(Resource):
                 "paramType": "form"
             },
             {
-                "name": "orgShortName",
+                "name": "org_short_name",
                 "description": "Short word or abbreviation for the organization",
                 "required": True,
                 "allowMultiple": False,
@@ -138,7 +138,7 @@ class ClusterList(Resource):
                 "paramType": "form"
             },
             {
-                "name": "countryCode",
+                "name": "country_code",
                 "description": "ISO 3166-1 two-character country code for self-signed certificates.",
                 "required": True,
                 "allowMultiple": False,
@@ -154,28 +154,12 @@ class ClusterList(Resource):
                 "paramType": "form"
             },
             {
-                "name": "hostname_ldap_cluster",
-                "description": "Hostname to use for the LDAP cluster",
+                "name": "ox_cluster_hostname",
+                "description": "Hostname to use for the admin interface website.",
                 "required": True,
                 "allowMultiple": False,
                 "dataType": 'string',
-                "paramType": "form"
-            },
-            {
-                "name": "hostname_oxauth_cluster",
-                "description": "Hostname to use for the oxAuth authentication APIs",
-                "required": True,
-                "allowMultiple": False,
-                "dataType": 'string',
-                "paramType": "form"
-            },
-            {
-                "name": "hostname_oxtrust_cluster",
-                "description": "Hostname to use for the oxTrust admin interface website.",
-                "required": True,
-                "allowMultiple": False,
-                "dataType": 'string',
-                "paramType": "form"
+                "paramType": "form",
             },
             {
                 "name": "admin_pw",

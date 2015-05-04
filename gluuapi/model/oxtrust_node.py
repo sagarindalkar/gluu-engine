@@ -19,7 +19,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from flask_restful import fields
+from flask_restful.fields import String
 from flask_restful_swagger import swagger
 
 from gluuapi.model.base import BaseModel
@@ -27,15 +27,16 @@ from gluuapi.model.base import TomcatMixin
 
 
 @swagger.model
-class oxtrustNode(TomcatMixin, BaseModel):
+class OxtrustNode(TomcatMixin, BaseModel):
     # Swager Doc
     resource_fields = {
-        "id": fields.String(attribute="Node unique identifier"),
-        "name": fields.String(attribute="Node name"),
-        "type": fields.String(attribute="Node type"),
-        "ip": fields.String(attribute="Node IP address"),
-        "cluster_id": fields.String(attribute="Cluster ID"),
-        "provider_id": fields.String(attribute="Provider ID"),
+        "id": String(attribute="Node unique identifier"),
+        "name": String(attribute="Node name"),
+        "type": String(attribute="Node type"),
+        "ip": String(attribute="Node IP address"),
+        "cluster_id": String(attribute="Cluster ID"),
+        "provider_id": String(attribute="Provider ID"),
+        "weave_ip": String,
     }
 
     def __init__(self):
@@ -50,10 +51,8 @@ class oxtrustNode(TomcatMixin, BaseModel):
         self.type = "oxtrust"
 
         self.ldap_binddn = 'cn=directory manager'
-        self.openssl_cmd = "/usr/bin/openssl"
-        self.keytool_cmd = "/usr/bin/keytool"
         self.cert_folder = "/etc/certs"
-        self.defaultTrustStoreFN = '/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/security/cacerts'
+        self.truststore_fn = '/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/security/cacerts'
 
         # enabled if we have saml
         self.oxtrust_config_generation = "disabled"
@@ -73,7 +72,3 @@ class oxtrustNode(TomcatMixin, BaseModel):
     @property
     def oxtrust_cache_refresh_properties(self):  # pragma: no cover
         return "gluuapi/templates/salt/oxtrust/oxTrustCacheRefresh-template.properties.vm"
-
-    # @property
-    # def oxtrust_https_conf(self):  # pragma: no cover
-    #     return "gluuapi/templates/salt/oxtrust/oxtrust-https.conf"

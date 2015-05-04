@@ -90,7 +90,7 @@ def test_decrypted_admin_pw():
 
 def test_ip_addr_available(cluster):
     # fills up reserved IP address using fake values
-    cluster.reserved_ip_addrs = [ip for ip in range(254)]
+    cluster.reserved_ip_addrs = [ip for ip in range(253)]
     assert cluster.ip_addr_available is False
 
     cluster.reserved_ip_addrs.pop()

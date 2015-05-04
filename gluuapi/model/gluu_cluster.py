@@ -23,7 +23,8 @@ import itertools
 import uuid
 
 from flask_restful_swagger import swagger
-from flask_restful import fields as rest_fields
+from flask_restful.fields import List
+from flask_restful.fields import String
 from netaddr import IPNetwork
 from netaddr import IPSet
 
@@ -41,29 +42,27 @@ from gluuapi.utils import ldap_encode
 class GluuCluster(BaseModel):
     # Swager Doc
     resource_fields = {
-        'id': rest_fields.String(attribute='GluuCluster unique identifier'),
-        'name': rest_fields.String(attribute='GluuCluster name'),
-        'description': rest_fields.String(attribute='Description of cluster'),
-        'ldap_nodes': rest_fields.List(rest_fields.String, attribute='Ids of ldap nodes'),  # noqa
-        'oxauth_nodes': rest_fields.List(rest_fields.String, attribute='Ids of oxauth nodes'),  # noqa
-        'oxtrust_nodes': rest_fields.List(rest_fields.String, attribute='Ids of oxtrust nodes'),  # noqa
-        'httpd_nodes': rest_fields.List(rest_fields.String, attribute='Ids of httpd nodes'),  # noqa
-        'hostname_ldap_cluster': rest_fields.String,
-        'hostname_oxauth_cluster': rest_fields.String,
-        'hostname_oxtrust_cluster': rest_fields.String,
-        'ldaps_port': rest_fields.String,
-        'orgName': rest_fields.String(attribute='Name of org for X.509 certificate'),  # noqa
-        'orgShortName': rest_fields.String(attribute='Short name of org for X.509 certificate'),  # noqa
-        'countryCode': rest_fields.String(attribute='ISO 3166-1 alpha-2 country code'),  # noqa
-        'city': rest_fields.String(attribute='City for X.509 certificate'),
-        'state': rest_fields.String(attribute='State or province for X.509 certificate'),  # noqa
-        'admin_email': rest_fields.String(attribute='Admin email address for X.509 certificate'),  # noqa
-        'baseInum': rest_fields.String(attribute='Unique identifier for domain'),
-        'inumOrg': rest_fields.String(attribute='Unique identifier for organization'),  # noqa
-        'inumOrgFN': rest_fields.String(attribute='Unique organization identifier sans special characters.'),  # noqa
-        'inumAppliance': rest_fields.String(attribute='Unique identifier for cluster'),  # noqa
-        'inumApplianceFN': rest_fields.String(attribute='Unique cluster identifier sans special characters.'),  # noqa
-        'weave_ip_network': rest_fields.String(attribute='Weave IP network'),  # noqa
+        'id': String(attribute='GluuCluster unique identifier'),
+        'name': String(attribute='GluuCluster name'),
+        'description': String(attribute='Description of cluster'),
+        'ldap_nodes': List(String, attribute='Ids of ldap nodes'),  # noqa
+        'oxauth_nodes': List(String, attribute='Ids of oxauth nodes'),  # noqa
+        'oxtrust_nodes': List(String, attribute='Ids of oxtrust nodes'),  # noqa
+        'httpd_nodes': List(String, attribute='Ids of httpd nodes'),  # noqa
+        'ox_cluster_hostname': String,
+        'ldaps_port': String,
+        'org_name': String(attribute='Name of org for X.509 certificate'),  # noqa
+        'org_short_name': String(attribute='Short name of org for X.509 certificate'),  # noqa
+        'country_code': String(attribute='ISO 3166-1 alpha-2 country code'),  # noqa
+        'city': String(attribute='City for X.509 certificate'),
+        'state': String(attribute='State or province for X.509 certificate'),  # noqa
+        'admin_email': String(attribute='Admin email address for X.509 certificate'),  # noqa
+        'base_inum': String(attribute='Unique identifier for domain'),
+        'inum_org': String(attribute='Unique identifier for organization'),  # noqa
+        'inum_org_fn': String(attribute='Unique organization identifier sans special characters.'),  # noqa
+        'inum_appliance': String(attribute='Unique identifier for cluster'),  # noqa
+        'inum_appliance_fn': String(attribute='Unique cluster identifier sans special characters.'),  # noqa
+        'weave_ip_network': String(attribute='Weave IP network'),  # noqa
     }
 
     def __init__(self, fields=None):
@@ -77,15 +76,13 @@ class GluuCluster(BaseModel):
         self.oxauth_nodes = []
         self.oxtrust_nodes = []
         self.httpd_nodes = []
-        self.hostname_ldap_cluster = fields.get("hostname_ldap_cluster")
-        self.hostname_oxauth_cluster = fields.get("hostname_oxauth_cluster")
-        self.hostname_oxtrust_cluster = fields.get("hostname_oxtrust_cluster")
+        self.ox_cluster_hostname = fields.get("ox_cluster_hostname")
         self.ldaps_port = "1636"
 
         # X.509 Certificate Information
-        self.orgName = fields.get("orgName")
-        self.orgShortName = fields.get("orgShortName")
-        self.countryCode = fields.get("countryCode")
+        self.org_name = fields.get("org_name")
+        self.org_short_name = fields.get("org_short_name")
+        self.country_code = fields.get("country_code")
         self.city = fields.get("city")
         self.state = fields.get("state")
         self.admin_email = fields.get("admin_email")
@@ -100,27 +97,27 @@ class GluuCluster(BaseModel):
         self.encoded_ox_ldap_pw = self.admin_pw
 
         # Inums
-        self.baseInum = '@!%s.%s.%s.%s' % tuple([get_quad() for i in xrange(4)])
+        self.base_inum = '@!%s.%s.%s.%s' % tuple([get_quad() for i in xrange(4)])
 
         org_quads = '%s.%s' % tuple([get_quad() for i in xrange(2)])
-        self.inumOrg = '%s!0001!%s' % (self.baseInum, org_quads)
+        self.inum_org = '%s!0001!%s' % (self.base_inum, org_quads)
 
         appliance_quads = '%s.%s' % tuple([get_quad() for i in xrange(2)])
-        self.inumAppliance = '%s!0002!%s' % (self.baseInum, appliance_quads)
+        self.inum_appliance = '%s!0002!%s' % (self.base_inum, appliance_quads)
 
-        self.inumOrgFN = self.inumOrg.replace('@', '').replace('!', '').replace('.', '')
-        self.inumApplianceFN = self.inumAppliance.replace('@', '').replace('!', '').replace('.', '')
+        self.inum_org_fn = self.inum_org.replace('@', '').replace('!', '').replace('.', '')
+        self.inum_appliance_fn = self.inum_appliance.replace('@', '').replace('!', '').replace('.', '')
 
         # ox-related attrs
         client_quads = '%s.%s' % tuple([get_quad() for i in xrange(2)])
-        self.oxauth_client_id = '%s!0008!%s' % (self.baseInum, client_quads)
+        self.oxauth_client_id = '%s!0008!%s' % (self.base_inum, client_quads)
         oxauth_client_pw = get_random_chars()
         self.oxauth_client_encoded_pw = encrypt_text(oxauth_client_pw, self.passkey)
 
         # key store
         self.encoded_shib_jks_pw = self.admin_pw
         self.shib_jks_fn = "/etc/certs/shibIDP.jks"
-        self.weave_ip_network = fields.get("weave_ip_network", "")
+        self.weave_ip_network = fields.get("weave_ip_network", "10.2.1.0/24")
         self.reserved_ip_addrs = []
 
     def add_node(self, node):
@@ -208,6 +205,19 @@ class GluuCluster(BaseModel):
             [db.get(id_, "nodes") for id_ in self.oxtrust_nodes],
         )
 
+    def get_httpd_objects(self):
+        return filter(
+            None,
+            [db.get(id_, "nodes") for id_ in self.httpd_nodes],
+        )
+
+    @property
+    def exposed_weave_ip(self):
+        pool = IPNetwork(self.weave_ip_network)
+        # get the last element of host IP address
+        addr = list(itertools.islice(pool.iter_hosts(), pool.size - 3, pool.size))[0]
+        return str(addr), pool.prefixlen
+
     def reserve_ip_addr(self):
         """Picks first available IP address from weave network.
 
@@ -222,8 +232,8 @@ class GluuCluster(BaseModel):
         # represents a pool of IP addresses
         pool = IPNetwork(self.weave_ip_network)
 
-        # a generator holds possible IP addresses range
-        ip_range = IPSet(pool.iter_hosts()) ^ IPSet(self.reserved_ip_addrs)
+        # a generator holds possible IP addresses range, excluding exposed weave IP
+        ip_range = IPSet(pool.iter_hosts()) ^ IPSet(self.reserved_ip_addrs) ^ IPSet([self.exposed_weave_ip[0]])
 
         # retrieves first IP address from ``ip_range`` generator
         ip_addr = list(itertools.islice(ip_range, 1))[0]
@@ -252,4 +262,5 @@ class GluuCluster(BaseModel):
         """
         range_size = IPSet(IPNetwork(self.weave_ip_network).iter_hosts()).size
         reserved_size = len(self.reserved_ip_addrs)
-        return reserved_size < range_size
+        exposed_ip_len = 1
+        return reserved_size + exposed_ip_len < range_size

@@ -1,7 +1,7 @@
 from flask.ext.restful import reqparse
 
 node_req = reqparse.RequestParser()
-node_req.add_argument("cluster", location="form", required=True,
+node_req.add_argument("cluster_id", location="form", required=True,
                       help="Cluster ID to which this node will be added")
 node_req.add_argument("node_type", location="form", required=True,
                       choices=["ldap", "oxauth", "oxtrust", "httpd"],

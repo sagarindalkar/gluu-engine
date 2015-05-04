@@ -5,9 +5,9 @@ import pytest
 
 @pytest.fixture()
 def ldap_setup(request, ldap_node, cluster):
-    from gluuapi.setup.ldap_setup import ldapSetup
+    from gluuapi.setup import LdapSetup
 
-    setup_obj = ldapSetup(ldap_node, cluster)
+    setup_obj = LdapSetup(ldap_node, cluster)
 
     def teardown():
         shutil.rmtree(setup_obj.build_dir)
@@ -18,9 +18,9 @@ def ldap_setup(request, ldap_node, cluster):
 
 @pytest.fixture()
 def oxauth_setup(request, oxauth_node, cluster):
-    from gluuapi.setup.ldap_setup import OxAuthSetup
+    from gluuapi.setup import OxauthSetup
 
-    setup_obj = OxAuthSetup(oxauth_node, cluster)
+    setup_obj = OxauthSetup(oxauth_node, cluster)
 
     def teardown():
         shutil.rmtree(setup_obj.build_dir)
@@ -31,9 +31,9 @@ def oxauth_setup(request, oxauth_node, cluster):
 
 @pytest.fixture()
 def oxtrust_setup(request, oxtrust_node, cluster):
-    from gluuapi.setup.oxtrust_setup import OxTrustSetup
+    from gluuapi.setup import OxtrustSetup
 
-    setup_obj = OxTrustSetup(oxtrust_node, cluster)
+    setup_obj = OxtrustSetup(oxtrust_node, cluster)
 
     def teardown():
         shutil.rmtree(setup_obj.build_dir)

@@ -27,15 +27,15 @@ from random import randrange
 from crochet import run_in_reactor
 
 from gluuapi.database import db
-from gluuapi.model import ldapNode
-from gluuapi.model import oxauthNode
-from gluuapi.model import oxtrustNode
+from gluuapi.model import LdapNode
+from gluuapi.model import OxauthNode
+from gluuapi.model import OxtrustNode
 from gluuapi.model import HttpdNode
 from gluuapi.helper.docker_helper import DockerHelper
 from gluuapi.helper.salt_helper import SaltHelper
-from gluuapi.setup import ldapSetup
-from gluuapi.setup import OxAuthSetup
-from gluuapi.setup import OxTrustSetup
+from gluuapi.setup import LdapSetup
+from gluuapi.setup import OxauthSetup
+from gluuapi.setup import OxtrustSetup
 from gluuapi.setup import HttpdSetup
 from gluuapi.log import create_file_logger
 from gluuapi.utils import exc_traceback
@@ -144,6 +144,8 @@ class BaseModelHelper(object):
                     ["weave attach {}/{} {}".format(addr, prefixlen,
                                                     self.node.id)],
                 )
+                db.update(self.cluster.id, self.cluster, "clusters")
+
                 self.node.weave_ip = addr
                 self.node.weave_prefixlen = prefixlen
 
@@ -196,8 +198,8 @@ class BaseModelHelper(object):
 
 
 class LdapModelHelper(BaseModelHelper):
-    setup_class = ldapSetup
-    node_class = ldapNode
+    setup_class = LdapSetup
+    node_class = LdapNode
     image = "gluuopendj"
     dockerfile = "https://raw.githubusercontent.com/GluuFederation" \
                  "/gluu-docker/master/ubuntu/14.04/gluuopendj/Dockerfile"
@@ -214,9 +216,9 @@ class LdapModelHelper(BaseModelHelper):
         self.node.ip = container_ip
 
 
-class OxAuthModelHelper(BaseModelHelper):
-    setup_class = OxAuthSetup
-    node_class = oxauthNode
+class OxauthModelHelper(BaseModelHelper):
+    setup_class = OxauthSetup
+    node_class = OxauthNode
     image = "gluuoxauth"
     dockerfile = "https://raw.githubusercontent.com/GluuFederation" \
                  "/gluu-docker/master/ubuntu/14.04/gluuoxauth/Dockerfile"
@@ -226,9 +228,9 @@ class OxAuthModelHelper(BaseModelHelper):
         self.node.ip = container_ip
 
 
-class OxTrustModelHelper(BaseModelHelper):
-    setup_class = OxTrustSetup
-    node_class = oxtrustNode
+class OxtrustModelHelper(BaseModelHelper):
+    setup_class = OxtrustSetup
+    node_class = OxtrustNode
     image = "gluuoxtrust"
     dockerfile = "https://raw.githubusercontent.com/GluuFederation" \
                  "/gluu-docker/master/ubuntu/14.04/gluuoxtrust/Dockerfile"

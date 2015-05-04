@@ -27,80 +27,7 @@ import time
 from gluuapi.setup.base import BaseSetup
 
 
-class OxAuthSetup(BaseSetup):
-    def gen_cert(self, suffix, password, user, hostname):
-        key_with_password = "{}/{}.key.orig".format(self.node.cert_folder, suffix)
-        key = "{}/{}.key".format(self.node.cert_folder, suffix)
-        csr = "{}/{}.csr".format(self.node.cert_folder, suffix)
-        crt = "{}/{}.crt".format(self.node.cert_folder, suffix)
-
-        # command to create key with password file
-        keypass_cmd = " ".join([
-            self.node.openssl_cmd, "genrsa", "-des3",
-            "-out", key_with_password,
-            "-passout", "pass:{}".format(password), "2048",
-        ])
-
-        # command to create key file
-        key_cmd = " ".join([
-            self.node.openssl_cmd, "rsa",
-            "-in", key_with_password, "-passin",
-            "pass:{}".format(password),
-            "-out", key,
-        ])
-
-        # command to create csr file
-        csr_cmd = " ".join([
-            self.node.openssl_cmd, "req", "-new",
-            "-key", key,
-            "-out", csr,
-            "-subj", "/CN=%s/O=%s/C=%s/ST=%s/L=%s" % (
-                hostname,
-                self.cluster.orgName,
-                self.cluster.countryCode,
-                self.cluster.state,
-                self.cluster.city,
-            )])
-
-        # command to create crt file
-        crt_cmd = " ".join([
-            self.node.openssl_cmd, "x509", "-req",
-            "-days", "365",
-            "-in", csr,
-            "-signkey", key,
-            "-out", crt,
-        ])
-
-        self.logger.info("generating certificates for {}".format(suffix))
-        self.salt.cmd(
-            self.node.id,
-            ["cmd.run", "cmd.run", "cmd.run", "cmd.run"],
-            [[keypass_cmd], [key_cmd], [csr_cmd], [crt_cmd]],
-        )
-
-        self.logger.info("changing access to {} certificates".format(suffix))
-        self.salt.cmd(
-            self.node.id,
-            ["cmd.run", "cmd.run", "cmd.run", "cmd.run"],
-            [
-                ["/bin/chown {0}:{0} {1}".format(user, key_with_password)],
-                ["/bin/chmod 700 {}".format(key_with_password)],
-                ["/bin/chown {0}:{0} {1}".format(user, key)],
-                ["/bin/chmod 700 {}".format(key)],
-            ],
-        )
-
-        import_cmd = " ".join([
-            "/usr/bin/keytool", "-import", "-trustcacerts",
-            "-alias", "{}_{}".format(hostname, suffix),
-            "-file", crt,
-            "-keystore", self.node.defaultTrustStoreFN,
-            "-storepass", "changeit", "-noprompt",
-        ])
-
-        self.logger.info("importing public certificate into Java truststore")
-        self.salt.cmd(self.node.id, "cmd.run", [import_cmd])
-
+class OxauthSetup(BaseSetup):
     def write_salt_file(self):
         self.logger.info("writing salt file")
 
@@ -136,17 +63,8 @@ class OxAuthSetup(BaseSetup):
         self.salt.cmd(
             self.node.id,
             ["cmd.run", "cmd.run"],
-            [["/bin/chown {0}:{0} {1}".format("tomcat", openid_key_json_fn)],
-             ["/bin/chmod 700 {}".format(openid_key_json_fn)]],
-        )
-
-    def change_cert_access(self):
-        self.logger.info("changing access to {}".format(self.node.cert_folder))
-        self.salt.cmd(
-            self.node.id,
-            ["cmd.run", "cmd.run"],
-            [["/bin/chown -R tomcat:tomcat {}".format(self.node.cert_folder)],
-             ["/bin/chmod -R 500 {}".format(self.node.cert_folder)]],
+            [["chown {0}:{0} {1}".format("tomcat", openid_key_json_fn)],
+             ["chmod 700 {}".format(openid_key_json_fn)]],
         )
 
     def start_tomcat(self):
@@ -157,18 +75,14 @@ class OxAuthSetup(BaseSetup):
             ["{}/bin/catalina.sh start".format(self.node.tomcat_home)],
         )
 
-    def create_cert_dir(self):
-        mkdir_cmd = "mkdir -p {}".format(self.node.cert_folder)
-        self.salt.cmd(self.node.id, "cmd.run", [mkdir_cmd])
-
     def gen_keystore(self, suffix, keystore_fn, keystore_pw, in_key,
-                     in_cert, user, hostname):
+                     in_cert, user, group, hostname):
         self.logger.info("Creating keystore %s" % suffix)
 
         # Convert key to pkcs12
         pkcs_fn = '%s/%s.pkcs12' % (self.node.cert_folder, suffix)
         export_cmd = " ".join([
-            self.node.openssl_cmd, 'pkcs12', '-export',
+            'openssl', 'pkcs12', '-export',
             '-inkey', in_key,
             '-in', in_cert,
             '-out', pkcs_fn,
@@ -179,7 +93,7 @@ class OxAuthSetup(BaseSetup):
 
         # Import p12 to keystore
         import_cmd = " ".join([
-            self.node.keytool_cmd, '-importkeystore',
+            'keytool', '-importkeystore',
             '-srckeystore', '%s/%s.pkcs12' % (self.node.cert_folder, suffix),
             '-srcstorepass', keystore_pw,
             '-srcstoretype', 'PKCS12',
@@ -196,10 +110,10 @@ class OxAuthSetup(BaseSetup):
             self.node.id,
             ["cmd.run", "cmd.run", "cmd.run", "cmd.run"],
             [
-                ["/bin/chown {0}:{0}".format(user), pkcs_fn],
-                ["/bin/chmod 700 {}".format(pkcs_fn)],
-                ["/bin/chown {0}:{0}".format(user), keystore_fn],
-                ["/bin/chmod 700 {}".format(keystore_fn)],
+                ["chown {}:{} {}".format(user, group, pkcs_fn)],
+                ["chmod 700 {}".format(pkcs_fn)],
+                ["chown {}:{} {}".format(user, group, keystore_fn)],
+                ["chmod 700 {}".format(keystore_fn)],
             ],
         )
 
@@ -212,9 +126,9 @@ class OxAuthSetup(BaseSetup):
         src = self.node.oxauth_config_xml
         dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
         ctx = {
-            "hostname_oxauth_cluster": self.cluster.hostname_oxauth_cluster,
-            "inumAppliance": self.cluster.inumAppliance,
-            "inumOrg": self.cluster.inumOrg,
+            "ox_cluster_hostname": self.cluster.ox_cluster_hostname,
+            "inumAppliance": self.cluster.inum_appliance,
+            "inumOrg": self.cluster.inum_org,
         }
         self.render_template(src, dest, ctx)
 
@@ -225,7 +139,7 @@ class OxAuthSetup(BaseSetup):
             "ldap_binddn": self.node.ldap_binddn,
             "encoded_ox_ldap_pw": self.cluster.encoded_ox_ldap_pw,
             "ldap_hosts": ",".join(self.cluster.get_ldap_hosts()),
-            "inumAppliance": self.cluster.inumAppliance,
+            "inumAppliance": self.cluster.inum_appliance,
             "certFolder": self.node.cert_folder,
         }
         self.render_template(src, dest, ctx)
@@ -234,7 +148,7 @@ class OxAuthSetup(BaseSetup):
         src = self.node.oxauth_static_conf_json
         dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
         ctx = {
-            "inumOrg": self.cluster.inumOrg,
+            "inumOrg": self.cluster.inum_org,
         }
         self.render_template(src, dest, ctx)
 
@@ -242,41 +156,17 @@ class OxAuthSetup(BaseSetup):
         src = self.node.tomcat_server_xml
         dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
         ctx = {
-            "ip": self.node.weave_ip,
+            "address": self.node.weave_ip,
             "shibJksPass": self.cluster.decrypted_admin_pw,
             "shibJksFn": self.cluster.shib_jks_fn,
         }
         self.render_template(src, dest, ctx)
 
-    # def render_https_conf_template(self):
-    #     src = self.node.oxauth_https_conf
-    #     file_basename = os.path.basename(src)
-    #     dest = os.path.join("/etc/apache2/sites-available", file_basename)
-    #     ctx = {
-    #         "hostname": self.cluster.hostname_oxauth_cluster,
-    #         "ip": self.node.weave_ip,
-    #         "httpdCertFn": self.node.httpd_crt,
-    #         "httpdKeyFn": self.node.httpd_key,
-    #         "admin_email": self.cluster.admin_email,
-    #     }
-    #     self.render_template(src, dest, ctx)
-
-    # def start_httpd(self):
-    #     self.logger.info("starting httpd")
-    #     self.salt.cmd(
-    #         self.node.id,
-    #         ["cmd.run", "cmd.run", "cmd.run", "cmd.run"],
-    #         [["a2enmod ssl headers proxy proxy_http proxy_ajp evasive"],
-    #          ["a2dissite 000-default"],
-    #          ["a2ensite oxauth-https"],
-    #          ["service apache2 start"]],
-    #     )
-
     def setup(self):
         start = time.time()
         self.logger.info("oxAuth setup is started")
 
-        hostname = self.cluster.hostname_oxauth_cluster.split(":")[0]
+        hostname = self.cluster.ox_cluster_hostname.split(":")[0]
         self.create_cert_dir()
 
         # render config templates
@@ -285,11 +175,10 @@ class OxAuthSetup(BaseSetup):
         self.render_ldap_props_template()
         self.render_static_conf_template()
         self.render_server_xml_template()
-        # self.render_https_conf_template()
         self.write_salt_file()
 
-        # self.gen_cert("httpd", self.cluster.decrypted_admin_pw, "www-data", hostname)
-        self.gen_cert("shibIDP", self.cluster.decrypted_admin_pw, "tomcat", hostname)
+        self.gen_cert("shibIDP", self.cluster.decrypted_admin_pw,
+                      "tomcat", "tomcat", hostname)
 
         # IDP keystore
         self.gen_keystore(
@@ -299,17 +188,15 @@ class OxAuthSetup(BaseSetup):
             "{}/shibIDP.key".format(self.node.cert_folder),
             "{}/shibIDP.crt".format(self.node.cert_folder),
             "tomcat",
+            "tomcat",
             hostname,
         )
 
         # configure tomcat to run oxauth war file
         self.start_tomcat()
 
-        # # enable sites, mods, and start httpd
-        # self.start_httpd()
-
         self.gen_openid_keys()
-        self.change_cert_access()
+        self.change_cert_access("tomcat", "tomcat")
 
         elapsed = time.time() - start
         self.logger.info("oxAuth setup is finished ({} seconds)".format(elapsed))

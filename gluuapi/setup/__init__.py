@@ -19,7 +19,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from .ldap_setup import ldapSetup  # noqa
-from .oxauth_setup import OxAuthSetup  # noqa
-from .oxtrust_setup import OxTrustSetup  # noqa
+from .ldap_setup import LdapSetup  # noqa
+from .oxauth_setup import OxauthSetup  # noqa
+from .oxtrust_setup import OxtrustSetup  # noqa
 from .httpd_setup import HttpdSetup  # noqa

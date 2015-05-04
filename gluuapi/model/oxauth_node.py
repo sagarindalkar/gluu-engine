@@ -20,22 +20,23 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 from flask_restful_swagger import swagger
-from flask.ext.restful import fields
+from flask_restful.fields import String
 
 from gluuapi.model.base import BaseModel
 from gluuapi.model.base import TomcatMixin
 
 
 @swagger.model
-class oxauthNode(TomcatMixin, BaseModel):
+class OxauthNode(TomcatMixin, BaseModel):
     # Swager Doc
     resource_fields = {
-        "id": fields.String(attribute="Node unique identifier"),
-        "name": fields.String(attribute="Node name"),
-        "type": fields.String(attribute="Node type"),
-        "ip": fields.String(attribute="Node IP address"),
-        "cluster_id": fields.String(attribute="Cluster ID"),
-        "provider_id": fields.String(attribute="Provider ID"),
+        "id": String(attribute="Node unique identifier"),
+        "name": String(attribute="Node name"),
+        "type": String(attribute="Node type"),
+        "ip": String(attribute="Node IP address"),
+        "cluster_id": String(attribute="Cluster ID"),
+        "provider_id": String(attribute="Provider ID"),
+        "weave_ip": String,
     }
 
     def __init__(self):
@@ -48,11 +49,9 @@ class oxauthNode(TomcatMixin, BaseModel):
         self.weave_prefixlen = ""
         self.type = "oxauth"
 
-        self.defaultTrustStoreFN = '/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/security/cacerts'
+        self.truststore_fn = '/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/security/cacerts'
         self.ldap_binddn = 'cn=directory manager'
 
-        self.openssl_cmd = "/usr/bin/openssl"
-        self.keytool_cmd = "/usr/bin/keytool"
         self.cert_folder = "/etc/certs"
         self.oxauth_lib = "/opt/tomcat/webapps/oxauth/WEB-INF/lib"
 
@@ -71,7 +70,3 @@ class oxauthNode(TomcatMixin, BaseModel):
     @property
     def oxauth_static_conf_json(self):  # pragma: no cover
         return "gluuapi/templates/salt/oxauth/oxauth-static-conf.json"
-
-    # @property
-    # def oxauth_https_conf(self):  # pragma: no cover
-    #     return "gluuapi/templates/salt/oxauth/oxauth-https.conf"

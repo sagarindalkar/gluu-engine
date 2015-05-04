@@ -1,25 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <issuer>https://%(hostname_oxauth_cluster)s</issuer>
-    <login-page>https://%(hostname_oxauth_cluster)s/oxauth/login</login-page>
-    <authorization-page>https://%(hostname_oxauth_cluster)s/oxauth/authorize</authorization-page>
-    <base-endpoint>https://%(hostname_oxauth_cluster)s/oxauth/seam/resource/restv1</base-endpoint>
-    <authorization-endpoint>https://%(hostname_oxauth_cluster)s/oxauth/seam/resource/restv1/oxauth/authorize</authorization-endpoint>
-    <token-endpoint>https://%(hostname_oxauth_cluster)s/oxauth/seam/resource/restv1/oxauth/token</token-endpoint>
-    <userinfo-endpoint>https://%(hostname_oxauth_cluster)s/oxauth/seam/resource/restv1/oxauth/userinfo</userinfo-endpoint>
-    <clientinfo-endpoint>https://%(hostname_oxauth_cluster)s/oxauth/seam/resource/restv1/oxauth/clientinfo</clientinfo-endpoint>
-    <check-session-iframe>https://%(hostname_oxauth_cluster)s/oxauth/opiframe</check-session-iframe>
-    <end-session-endpoint>https://%(hostname_oxauth_cluster)s/oxauth/seam/resource/restv1/oxauth/end_session</end-session-endpoint>
-    <jwks-uri>https://%(hostname_oxauth_cluster)s/oxauth/seam/resource/restv1/oxauth/jwks</jwks-uri>
-    <registration-endpoint>https://%(hostname_oxauth_cluster)s/oxauth/seam/resource/restv1/oxauth/register</registration-endpoint>
-    <validate-token-endpoint>https://%(hostname_oxauth_cluster)s/oxauth/seam/resource/restv1/oxauth/validate</validate-token-endpoint>
-    <federation-metadata-endpoint>https://%(hostname_oxauth_cluster)s/oxauth/seam/resource/restv1/oxauth/federationmetadata</federation-metadata-endpoint>
-    <federation-endpoint>https://%(hostname_oxauth_cluster)s/oxauth/seam/resource/restv1/oxauth/federation</federation-endpoint>
-    <openid-discovery-endpoint>https://%(hostname_oxauth_cluster)s/.well-known/webfinger</openid-discovery-endpoint>
-    <openid-configuration-endpoint>https://%(hostname_oxauth_cluster)s/.well-known/openid-configuration</openid-configuration-endpoint>
-    <id-generation-endpoint>https://%(hostname_oxauth_cluster)s/oxauth/seam/resource/restv1/id</id-generation-endpoint>
-    <introspection-endpoint>https://%(hostname_oxauth_cluster)s/oxauth/seam/resource/restv1/introspection</introspection-endpoint>
-    <uma-configuration-endpoint>https://%(hostname_oxauth_cluster)s/oxauth/seam/resource/restv1/oxauth/uma-configuration</uma-configuration-endpoint>
+    <issuer>https://%(ox_cluster_hostname)s</issuer>
+    <login-page>https://%(ox_cluster_hostname)s/oxauth/login</login-page>
+    <authorization-page>https://%(ox_cluster_hostname)s/oxauth/authorize</authorization-page>
+    <base-endpoint>https://%(ox_cluster_hostname)s/oxauth/seam/resource/restv1</base-endpoint>
+    <authorization-endpoint>https://%(ox_cluster_hostname)s/oxauth/seam/resource/restv1/oxauth/authorize</authorization-endpoint>
+    <token-endpoint>https://%(ox_cluster_hostname)s/oxauth/seam/resource/restv1/oxauth/token</token-endpoint>
+    <userinfo-endpoint>https://%(ox_cluster_hostname)s/oxauth/seam/resource/restv1/oxauth/userinfo</userinfo-endpoint>
+    <clientinfo-endpoint>https://%(ox_cluster_hostname)s/oxauth/seam/resource/restv1/oxauth/clientinfo</clientinfo-endpoint>
+    <check-session-iframe>https://%(ox_cluster_hostname)s/oxauth/opiframe</check-session-iframe>
+    <end-session-endpoint>https://%(ox_cluster_hostname)s/oxauth/seam/resource/restv1/oxauth/end_session</end-session-endpoint>
+    <jwks-uri>https://%(ox_cluster_hostname)s/oxauth/seam/resource/restv1/oxauth/jwks</jwks-uri>
+    <registration-endpoint>https://%(ox_cluster_hostname)s/oxauth/seam/resource/restv1/oxauth/register</registration-endpoint>
+    <validate-token-endpoint>https://%(ox_cluster_hostname)s/oxauth/seam/resource/restv1/oxauth/validate</validate-token-endpoint>
+    <federation-metadata-endpoint>https://%(ox_cluster_hostname)s/oxauth/seam/resource/restv1/oxauth/federationmetadata</federation-metadata-endpoint>
+    <federation-endpoint>https://%(ox_cluster_hostname)s/oxauth/seam/resource/restv1/oxauth/federation</federation-endpoint>
+    <openid-discovery-endpoint>https://%(ox_cluster_hostname)s/.well-known/webfinger</openid-discovery-endpoint>
+    <openid-configuration-endpoint>https://%(ox_cluster_hostname)s/.well-known/openid-configuration</openid-configuration-endpoint>
+    <id-generation-endpoint>https://%(ox_cluster_hostname)s/oxauth/seam/resource/restv1/id</id-generation-endpoint>
+    <introspection-endpoint>https://%(ox_cluster_hostname)s/oxauth/seam/resource/restv1/introspection</introspection-endpoint>
+    <uma-configuration-endpoint>https://%(ox_cluster_hostname)s/oxauth/seam/resource/restv1/oxauth/uma-configuration</uma-configuration-endpoint>
 
     <appliance-inum>%(inumAppliance)s</appliance-inum>
 
@@ -260,7 +260,7 @@
     <oxOpenIDConnectVersion>openidconnect-1.0</oxOpenIDConnectVersion>
 
     <organization-inum>%(inumOrg)s</organization-inum>
-    <oxID>https://%(hostname_oxauth_cluster)s/oxid/service/gluu/inum</oxID>
+    <oxID>https://%(ox_cluster_hostname)s/oxid/service/gluu/inum</oxID>
 
     <dynamic-registration-enabled>true</dynamic-registration-enabled>
     <!-- Value in seconds or 0 if they do not expire -->

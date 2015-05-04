@@ -38,18 +38,18 @@ def db(request, app):
 def cluster():
     from gluuapi.model import GluuCluster
 
-    cluster = GluuCluster()
-    cluster.hostname_oxauth_cluster = "oxauth.example.com"
-    cluster.hostname_oxtrust_cluster = "oxtrust.example.com"
-    cluster.weave_ip_network = "10.20.10.1/24"
+    cluster = GluuCluster({
+        "ox_cluster_hostname": "ox.example.com",
+        "weave_ip_network": "10.20.10.0/24",
+    })
     return cluster
 
 
 @pytest.fixture()
 def ldap_node(cluster):
-    from gluuapi.model import ldapNode
+    from gluuapi.model import LdapNode
 
-    node = ldapNode()
+    node = LdapNode()
     node.id = "ldap_{}_123".format(cluster.id)
     node.cluster_id = cluster.id
     return node
@@ -57,9 +57,9 @@ def ldap_node(cluster):
 
 @pytest.fixture()
 def oxauth_node(cluster):
-    from gluuapi.model import oxauthNode
+    from gluuapi.model import OxauthNode
 
-    node = oxauthNode()
+    node = OxauthNode()
     node.id = "oxauth_{}_123".format(cluster.id)
     node.cluster_id = cluster.id
     return node
@@ -67,9 +67,9 @@ def oxauth_node(cluster):
 
 @pytest.fixture()
 def oxtrust_node(cluster):
-    from gluuapi.model import oxtrustNode
+    from gluuapi.model import OxtrustNode
 
-    node = oxtrustNode()
+    node = OxtrustNode()
     node.id = "oxtrust_{}_123".format(cluster.id)
     node.cluster_id = cluster.id
     return node

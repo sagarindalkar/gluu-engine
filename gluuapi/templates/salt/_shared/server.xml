@@ -26,7 +26,7 @@
         truststoreFile="%(shibJksFn)s"
         truststorePass="%(shibJksPass)s" truststoreType="JKS"/>
 
-  <Connector port="8009" address="localhost" protocol="AJP/1.3"
+  <Connector port="8009" address="%(address)s" protocol="AJP/1.3"
         redirectPort="8443" tomcatAuthentication="false" />
 
     <Engine name="Catalina" defaultHost="localhost">

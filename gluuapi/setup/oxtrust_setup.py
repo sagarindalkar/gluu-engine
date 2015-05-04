@@ -23,22 +23,22 @@
 import os.path
 import time
 
-from gluuapi.setup.oxauth_setup import OxAuthSetup
+from gluuapi.setup.oxauth_setup import OxauthSetup
 
 
-class OxTrustSetup(OxAuthSetup):
-    def import_oxauth_cert(self):
-        # imports oxauth cert into oxtrust cacerts to avoid
+class OxtrustSetup(OxauthSetup):
+    def import_httpd_cert(self):
+        # imports httpd cert into oxtrust cacerts to avoid
         # "peer not authenticated" error
         cert_cmd = "echo -n | openssl s_client -connect {}:443 | " \
                    "sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' " \
-                   "> /tmp/oxauth.cert".format(self.cluster.hostname_oxauth_cluster)
+                   "> /tmp/ox.cert".format(self.cluster.ox_cluster_hostname)
 
         import_cmd = " ".join([
             "keytool -importcert -trustcacerts",
-            "-alias '{}'".format(self.cluster.hostname_oxauth_cluster),
-            "-file /tmp/oxauth.cert",
-            "-keystore {}".format(self.node.defaultTrustStoreFN),
+            "-alias '{}'".format(self.cluster.ox_cluster_hostname),
+            "-file /tmp/ox.cert",
+            "-keystore {}".format(self.node.truststore_fn),
             "-storepass changeit -noprompt",
         ])
         self.salt.cmd(
@@ -48,15 +48,14 @@ class OxTrustSetup(OxAuthSetup):
         )
 
     def update_host_entries(self):
-        # TODO: perhaps we can use docker --add-host when creating container?
         self.logger.info("updating host entries in /etc/hosts")
-        for oxauth in self.cluster.get_oxauth_objects():
+        for httpd in self.cluster.get_httpd_objects():
             self.salt.cmd(
                 self.node.id,
                 "cmd.run",
                 ["echo '{} {}' >> /etc/hosts".format(
-                    oxauth.weave_ip,
-                    self.cluster.hostname_oxauth_cluster.split(":")[0],
+                    httpd.weave_ip,
+                    self.cluster.ox_cluster_hostname.split(":")[0],
                 )],
             )
 
@@ -80,22 +79,21 @@ class OxTrustSetup(OxAuthSetup):
         src = self.node.oxtrust_properties
         dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
         ctx = {
-            "inumAppliance": self.cluster.inumAppliance,
-            "inumOrg": self.cluster.inumOrg,
-            "orgName": self.cluster.orgName,
-            "orgShortName": self.cluster.orgShortName,
+            "inumAppliance": self.cluster.inum_appliance,
+            "inumOrg": self.cluster.inum_org,
+            "orgName": self.cluster.org_name,
+            "orgShortName": self.cluster.org_short_name,
             "admin_email": self.cluster.admin_email,
-            "hostname_oxtrust_cluster": self.cluster.hostname_oxtrust_cluster,
+            "ox_cluster_hostname": self.cluster.ox_cluster_hostname,
             "shibJksFn": self.cluster.shib_jks_fn,
             "shibJksPass": self.cluster.decrypted_admin_pw,
-            "inumOrgFN": self.cluster.inumOrgFN,
+            "inumOrgFN": self.cluster.inum_org_fn,
             "oxTrustConfigGeneration": self.node.oxtrust_config_generation,
             "encoded_shib_jks_pw": self.cluster.encoded_shib_jks_pw,
             "encoded_ox_ldap_pw": self.cluster.encoded_ox_ldap_pw,
-            "hostname_oxauth_cluster": self.cluster.hostname_oxauth_cluster,
             "oxauth_client_id": self.cluster.oxauth_client_id,
             "oxauthClient_encoded_pw": self.cluster.oxauth_client_encoded_pw,
-            "inumApplianceFN": self.cluster.inumApplianceFN,
+            "inumApplianceFN": self.cluster.inum_appliance_fn,
         }
         self.render_template(src, dest, ctx)
 
@@ -106,43 +104,16 @@ class OxTrustSetup(OxAuthSetup):
             "ldap_binddn": self.node.ldap_binddn,
             "encoded_ox_ldap_pw": self.cluster.encoded_ox_ldap_pw,
             "ldap_hosts": ",".join(self.cluster.get_ldap_hosts()),
-            "inumAppliance": self.cluster.inumAppliance,
+            "inumAppliance": self.cluster.inum_appliance,
         }
         self.render_template(src, dest, ctx)
-
-    # def render_https_conf_template(self):
-    #     src = self.node.oxtrust_https_conf
-    #     file_basename = os.path.basename(src)
-    #     dest = os.path.join("/etc/apache2/sites-available", file_basename)
-    #     ctx = {
-    #         "hostname": self.cluster.hostname_oxtrust_cluster,
-    #         "ip": self.node.weave_ip,
-    #         "httpdCertFn": self.node.httpd_crt,
-    #         "httpdKeyFn": self.node.httpd_key,
-    #         "admin_email": self.cluster.admin_email,
-    #     }
-    #     self.render_template(src, dest, ctx)
-
-    # def start_httpd(self):
-    #     self.logger.info("starting httpd")
-    #     self.salt.cmd(
-    #         self.node.id,
-    #         ["cmd.run", "cmd.run", "cmd.run", "cmd.run"],
-    #         [["a2enmod ssl headers proxy proxy_http proxy_ajp evasive"],
-    #          ["a2dissite 000-default"],
-    #          ["a2ensite oxtrust-https"],
-    #          ["service apache2 start"]],
-    #     )
 
     def setup(self):
         start = time.time()
         self.logger.info("oxTrust setup is started")
 
-        hostname = self.cluster.hostname_oxtrust_cluster.split(":")[0]
+        hostname = self.cluster.ox_cluster_hostname.split(":")[0]
         self.create_cert_dir()
-
-        # update host entries
-        self.update_host_entries()
 
         # render config templates
         self.render_cache_props_template()
@@ -150,11 +121,10 @@ class OxTrustSetup(OxAuthSetup):
         self.render_props_template()
         self.render_ldap_props_template()
         self.render_server_xml_template()
-        # self.render_https_conf_template()
         self.write_salt_file()
 
-        # self.gen_cert("httpd", self.cluster.decrypted_admin_pw, "www-data", hostname)
-        self.gen_cert("shibIDP", self.cluster.decrypted_admin_pw, "tomcat", hostname)
+        self.gen_cert("shibIDP", self.cluster.decrypted_admin_pw,
+                      "tomcat", "tomcat", hostname)
 
         # IDP keystore
         self.gen_keystore(
@@ -164,19 +134,17 @@ class OxTrustSetup(OxAuthSetup):
             "{}/shibIDP.key".format(self.node.cert_folder),
             "{}/shibIDP.crt".format(self.node.cert_folder),
             "tomcat",
+            "tomcat",
             hostname,
         )
-        self.import_oxauth_cert()
 
         # Configure tomcat to run oxtrust war file
         # FIXME: cannot found "facter" and "check_ssl" commands
         self.start_tomcat()
 
-        # # enable sites, mods, and start httpd
-        # self.start_httpd()
-
-        self.change_cert_access()
+        self.change_cert_access("tomcat", "tomcat")
 
         elapsed = time.time() - start
-        self.logger.info("oxTrust setup is finished ({} seconds)".format(elapsed))
+        self.logger.info(
+            "oxTrust setup is finished ({} seconds)".format(elapsed))
         return True

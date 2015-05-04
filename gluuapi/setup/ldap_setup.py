@@ -28,11 +28,11 @@ import time
 from gluuapi.database import db
 from gluuapi.utils import exc_traceback
 from gluuapi.setup.base import BaseSetup
-from gluuapi.setup.oxauth_setup import OxAuthSetup
-from gluuapi.setup.oxtrust_setup import OxTrustSetup
+from gluuapi.setup.oxauth_setup import OxauthSetup
+from gluuapi.setup.oxtrust_setup import OxtrustSetup
 
 
-class ldapSetup(BaseSetup):
+class LdapSetup(BaseSetup):
     def write_ldap_pw(self):
         self.logger.info("writing temporary LDAP password")
 
@@ -42,32 +42,32 @@ class ldapSetup(BaseSetup):
 
         self.salt.cmd(
             self.node.id, "cmd.run",
-            ["mkdir -p {}".format(os.path.dirname(self.node.ldapPassFn))],
+            ["mkdir -p {}".format(os.path.dirname(self.node.ldap_pass_fn))],
         )
-        self.salt.copy_file(self.node.id, local_dest, self.node.ldapPassFn)
+        self.salt.copy_file(self.node.id, local_dest, self.node.ldap_pass_fn)
 
     def delete_ldap_pw(self):
         self.logger.info("deleting temporary LDAP password")
         self.salt.cmd(
             self.node.id,
             'cmd.run',
-            ['rm -f {}'.format(self.node.ldapPassFn)],
+            ['rm -f {}'.format(self.node.ldap_pass_fn)],
         )
 
     def add_ldap_schema(self):
         ctx = {
-            "inumOrgFN": self.cluster.inumOrgFN,
+            "inumOrgFN": self.cluster.inum_org_fn,
         }
 
         # render schema templates
-        for schema_file in self.node.schemaFiles:
+        for schema_file in self.node.schema_files:
             src = schema_file
-            dest = os.path.join(self.node.schemaFolder, os.path.basename(src))
+            dest = os.path.join(self.node.schema_folder, os.path.basename(src))
             self.render_template(src, dest, ctx)
 
     def setup_opendj(self):
         src = self.node.ldap_setup_properties
-        dest = os.path.join(self.node.ldapBaseFolder, os.path.basename(src))
+        dest = os.path.join(self.node.ldap_base_folder, os.path.basename(src))
         ctx = {
             "ldap_hostname": self.node.weave_ip,
             "ldap_port": self.node.ldap_port,
@@ -75,12 +75,12 @@ class ldapSetup(BaseSetup):
             "ldap_jmx_port": self.node.ldap_jmx_port,
             "ldap_admin_port": self.node.ldap_admin_port,
             "ldap_binddn": self.node.ldap_binddn,
-            "ldapPassFn": self.node.ldapPassFn,
+            "ldapPassFn": self.node.ldap_pass_fn,
         }
         self.render_template(src, dest, ctx)
 
         setupCmd = " ".join([
-            self.node.ldapSetupCommand,
+            self.node.ldap_setup_command,
             '--no-prompt', '--cli', '--acceptLicense', '--propertiesFilePath',
             dest,
         ])
@@ -96,14 +96,14 @@ class ldapSetup(BaseSetup):
         self.salt.cmd(
             self.node.id,
             'cmd.run',
-            [self.node.ldapDsJavaPropCommand],
+            [self.node.ldap_ds_java_prop_command],
         )
 
         # wait for opendj being started before proceeding to next step
         self.logger.info(
             "warming up opendj server; "
-            "sleeping for {} seconds".format(self.node.ldapStartTimeOut))
-        time.sleep(self.node.ldapStartTimeOut)
+            "sleeping for {} seconds".format(self.node.ldap_start_timeout))
+        time.sleep(self.node.ldap_start_timeout)
 
     def configure_opendj(self):
         config_changes = [
@@ -116,11 +116,11 @@ class ldapSetup(BaseSetup):
 
         for changes in config_changes:
             dsconfigCmd = " ".join([
-                self.node.ldapDsconfigCommand, '--trustAll', '--no-prompt',
+                self.node.ldap_dsconfig_command, '--trustAll', '--no-prompt',
                 '--hostname', self.node.weave_ip,
                 '--port', self.node.ldap_admin_port,
                 '--bindDN', '"%s"' % self.node.ldap_binddn,
-                '--bindPasswordFile', self.node.ldapPassFn,
+                '--bindPasswordFile', self.node.ldap_pass_fn,
             ] + changes)
             self.logger.info("configuring opendj config changes: {}".format(dsconfigCmd))
             self.salt.cmd(self.node.id, 'cmd.run', [dsconfigCmd])
@@ -138,7 +138,7 @@ class ldapSetup(BaseSetup):
                 for index_type in index_types:
                     self.logger.info("creating %s index for attribute %s" % (index_type, attr_name))
                     indexCmd = " ".join([
-                        self.node.ldapDsconfigCommand,
+                        self.node.ldap_dsconfig_command,
                         'create-local-db-index',
                         '--backend-name', 'userRoot',
                         '--type', 'generic',
@@ -148,7 +148,7 @@ class ldapSetup(BaseSetup):
                         '--hostName', self.node.weave_ip,
                         '--port', self.node.ldap_admin_port,
                         '--bindDN', '"%s"' % self.node.ldap_binddn,
-                        '-j', self.node.ldapPassFn,
+                        '-j', self.node.ldap_pass_fn,
                         '--trustAll', '--noPropertiesFile', '--no-prompt',
                     ])
                     self.salt.cmd(self.node.id, 'cmd.run', [indexCmd])
@@ -160,18 +160,17 @@ class ldapSetup(BaseSetup):
             "oxauthClient_encoded_pw": self.cluster.oxauth_client_encoded_pw,
             "encoded_ldap_pw": self.cluster.encoded_ldap_pw,
             "encoded_ox_ldap_pw": self.cluster.encoded_ox_ldap_pw,
-            "inumAppliance": self.cluster.inumAppliance,
+            "inumAppliance": self.cluster.inum_appliance,
             "hostname": self.node.weave_ip,
-            "hostname_oxauth_cluster": self.cluster.hostname_oxauth_cluster,
-            "hostname_oxtrust_cluster": self.cluster.hostname_oxtrust_cluster,
+            "ox_cluster_hostname": self.cluster.ox_cluster_hostname,
             "ldaps_port": self.node.ldaps_port,
             "ldap_binddn": self.node.ldap_binddn,
-            "inumOrg": self.cluster.inumOrg,
-            "inumOrgFN": self.cluster.inumOrgFN,
-            "orgName": self.cluster.orgName,
+            "inumOrg": self.cluster.inum_org,
+            "inumOrgFN": self.cluster.inum_org_fn,
+            "orgName": self.cluster.org_name,
         }
 
-        ldifFolder = '%s/ldif' % self.node.ldapBaseFolder
+        ldifFolder = '%s/ldif' % self.node.ldap_base_folder
         self.salt.cmd(
             self.node.id,
             "cmd.run",
@@ -191,13 +190,13 @@ class ldapSetup(BaseSetup):
                 backend_id = "userRoot"
 
             importCmd = " ".join([
-                self.node.importLdifCommand,
+                self.node.import_ldif_command,
                 '--ldifFile', dest,
                 '--backendID', backend_id,
                 '--hostname', self.node.weave_ip,
                 '--port', self.node.ldap_admin_port,
                 '--bindDN', '"%s"' % self.node.ldap_binddn,
-                '-j', self.node.ldapPassFn,
+                '-j', self.node.ldap_pass_fn,
                 '--append', '--trustAll',
             ])
             self.logger.info("importing {}".format(file_basename))
@@ -206,26 +205,26 @@ class ldapSetup(BaseSetup):
 
     def export_opendj_public_cert(self):
         # Load password to acces OpenDJ truststore
-        openDjPinFn = '%s/config/keystore.pin' % self.node.ldapBaseFolder
-        openDjTruststoreFn = '%s/config/truststore' % self.node.ldapBaseFolder
+        openDjPinFn = '%s/config/keystore.pin' % self.node.ldap_base_folder
+        openDjTruststoreFn = '%s/config/truststore' % self.node.ldap_base_folder
         openDjPin = "`cat {}`".format(openDjPinFn)
 
         self.salt.cmd(
             self.node.id,
             ["cmd.run", "cmd.run"],
             [
-                ["mkdir -p {}".format(os.path.dirname(self.node.openDjCertFn))],
-                ["touch {}".format(self.node.openDjCertFn)],
+                ["mkdir -p {}".format(os.path.dirname(self.node.opendj_cert_fn))],
+                ["touch {}".format(self.node.opendj_cert_fn)],
             ],
         )
 
         # Export public OpenDJ certificate
         self.logger.info("exporting OpenDJ certificate")
         cmdsrt = ' '.join([
-            self.node.keytoolCommand, '-exportcert',
+            self.node.keytool_command, '-exportcert',
             '-keystore', openDjTruststoreFn,
             '-storepass', openDjPin,
-            '-file', self.node.openDjCertFn,
+            '-file', self.node.opendj_cert_fn,
             '-alias', 'server-cert',
             '-rfc',
         ])
@@ -235,8 +234,8 @@ class ldapSetup(BaseSetup):
         cmdstr = ' '.join([
             "/usr/bin/keytool", "-import", "-trustcacerts", "-alias",
             "{}_opendj".format(self.node.weave_ip),
-            "-file", self.node.openDjCertFn,
-            "-keystore", self.node.defaultTrustStoreFN,
+            "-file", self.node.opendj_cert_fn,
+            "-keystore", self.node.truststore_fn,
             "-storepass", "changeit", "-noprompt",
         ])
         self.logger.info("importing OpenDJ certificate into Java truststore")
@@ -251,7 +250,7 @@ class ldapSetup(BaseSetup):
             self.logger.warn(exc)
 
     def replicate_from(self, existing_node):
-        setup_obj = ldapSetup(existing_node, self.cluster, logger=self.logger)
+        setup_obj = LdapSetup(existing_node, self.cluster, logger=self.logger)
 
         # creates temporary password file
         setup_obj.write_ldap_pw()
@@ -263,15 +262,15 @@ class ldapSetup(BaseSetup):
                 "--host1", existing_node.weave_ip,
                 "--port1", existing_node.ldap_admin_port,
                 "--bindDN1", "'{}'".format(existing_node.ldap_binddn),
-                "--bindPasswordFile1", self.node.ldapPassFn,
+                "--bindPasswordFile1", self.node.ldap_pass_fn,
                 "--replicationPort1", existing_node.ldap_replication_port,
                 "--host2", self.node.weave_ip,
                 "--port2", self.node.ldap_admin_port,
                 "--bindDN2", "'{}'".format(self.node.ldap_binddn),
-                "--bindPasswordFile2", self.node.ldapPassFn,
+                "--bindPasswordFile2", self.node.ldap_pass_fn,
                 "--replicationPort2", self.node.ldap_replication_port,
                 "--adminUID", "admin",
-                "--adminPasswordFile", self.node.ldapPassFn,
+                "--adminPasswordFile", self.node.ldap_pass_fn,
                 "--baseDN", "'{}'".format(base_dn),
                 "--secureReplication1", "--secureReplication2",
                 "-X", "-n",
@@ -290,7 +289,7 @@ class ldapSetup(BaseSetup):
                 "/opt/opendj/bin/dsreplication", "initialize",
                 "--baseDN", "'{}'".format(base_dn),
                 "--adminUID", "admin",
-                "--adminPasswordFile", self.node.ldapPassFn,
+                "--adminPasswordFile", self.node.ldap_pass_fn,
                 "--hostSource", existing_node.weave_ip,
                 "--portSource", existing_node.ldap_admin_port,
                 "--hostDestination", self.node.weave_ip,
@@ -341,11 +340,11 @@ class ldapSetup(BaseSetup):
         # Currently, we need to update oxAuth and oxTrust LDAP properties
         # TODO: use signals?
         for oxauth in self.cluster.get_oxauth_objects():
-            setup_obj = OxAuthSetup(oxauth, self.cluster, logger=self.logger)
+            setup_obj = OxauthSetup(oxauth, self.cluster, logger=self.logger)
             setup_obj.render_ldap_props_template()
 
         for oxtrust in self.cluster.get_oxtrust_objects():
-            setup_obj = OxTrustSetup(oxtrust, self.cluster, logger=self.logger)
+            setup_obj = OxtrustSetup(oxtrust, self.cluster, logger=self.logger)
             setup_obj.render_ldap_props_template()
 
     def stop(self):
@@ -356,19 +355,19 @@ class ldapSetup(BaseSetup):
             if len(self.cluster.ldap_nodes) > 1:
                 self.write_ldap_pw()
                 disable_repl_cmd = " ".join([
-                    "{}/bin/dsreplication".format(self.node.ldapBaseFolder),
+                    "{}/bin/dsreplication".format(self.node.ldap_base_folder),
                     "disable",
                     "--hostname", self.node.weave_ip,
                     "--port", self.node.ldap_admin_port,
                     "--adminUID", "admin",
-                    "--adminPasswordFile", self.node.ldapPassFn,
+                    "--adminPasswordFile", self.node.ldap_pass_fn,
                     "-X", "-n", "--disableAll",
                 ])
                 self.salt.cmd(self.node.id, "cmd.run", [disable_repl_cmd])
                 self.delete_ldap_pw()
 
             # stop the server
-            stop_cmd = "{}/bin/stop-ds".format(self.node.ldapBaseFolder)
+            stop_cmd = "{}/bin/stop-ds".format(self.node.ldap_base_folder)
             self.salt.cmd(self.node.id, "cmd.run", [stop_cmd])
         except SystemExit as exc:
             # executable may not exist or minion is unreachable

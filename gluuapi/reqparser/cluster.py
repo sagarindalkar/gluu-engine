@@ -35,14 +35,10 @@ cluster_req = reqparse.RequestParser()
 
 cluster_req.add_argument("name", location="form", required=True)
 cluster_req.add_argument("description", location="form")
-
-cluster_req.add_argument("hostname_ldap_cluster", location="form", required=True)
-cluster_req.add_argument("hostname_oxauth_cluster", location="form", required=True)
-cluster_req.add_argument("hostname_oxtrust_cluster", location="form", required=True)
-
-cluster_req.add_argument("orgName", location="form", required=True)
-cluster_req.add_argument("orgShortName", location="form", required=True)
-cluster_req.add_argument("countryCode", type=country_code,
+cluster_req.add_argument("ox_cluster_hostname", location="form", required=True)
+cluster_req.add_argument("org_name", location="form", required=True)
+cluster_req.add_argument("org_short_name", location="form", required=True)
+cluster_req.add_argument("country_code", type=country_code,
                          location="form", required=True)
 cluster_req.add_argument("city", location="form", required=True)
 cluster_req.add_argument("state", location="form", required=True)

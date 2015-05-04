@@ -20,7 +20,6 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-# from flask import abort
 from flask import current_app
 from flask.ext.restful import Resource
 from flask_restful_swagger import swagger
@@ -31,13 +30,13 @@ from gluuapi.reqparser import node_req
 from gluuapi.helper import DockerHelper
 from gluuapi.helper import SaltHelper
 from gluuapi.helper import LdapModelHelper
-from gluuapi.helper import OxAuthModelHelper
-from gluuapi.helper import OxTrustModelHelper
+from gluuapi.helper import OxauthModelHelper
+from gluuapi.helper import OxtrustModelHelper
 from gluuapi.helper import HttpdModelHelper
 
-from gluuapi.setup import OxAuthSetup
-from gluuapi.setup import OxTrustSetup
-from gluuapi.setup import ldapSetup
+from gluuapi.setup import OxauthSetup
+from gluuapi.setup import OxtrustSetup
+from gluuapi.setup import LdapSetup
 
 
 class Node(Resource):
@@ -97,7 +96,7 @@ class Node(Resource):
         provider = db.get(node.provider_id, "providers")
 
         if node.type == "ldap":
-            setup_obj = ldapSetup(node, cluster)
+            setup_obj = LdapSetup(node, cluster)
             setup_obj.stop()
 
         docker = DockerHelper(base_url=provider.docker_base_url)
@@ -135,7 +134,7 @@ class Node(Resource):
                 if not oxauth_node:
                     continue
 
-                setup_obj = OxAuthSetup(oxauth_node, cluster)
+                setup_obj = OxauthSetup(oxauth_node, cluster)
                 setup_obj.render_ldap_props_template()
 
             for oxtrust_node_id in cluster.oxtrust_nodes:
@@ -143,7 +142,7 @@ class Node(Resource):
                 if not oxtrust_node:
                     continue
 
-                setup_obj = OxTrustSetup(oxtrust_node, cluster)
+                setup_obj = OxtrustSetup(oxtrust_node, cluster)
                 setup_obj.render_ldap_props_template()
         return {}, 204
 
@@ -178,7 +177,7 @@ status of the cluster node is available.""",
         nickname='postnode',
         parameters=[
             {
-                "name": "cluster",
+                "name": "cluster_id",
                 "description": "The ID of the cluster",
                 "required": True,
                 "dataType": "string",
@@ -222,8 +221,8 @@ status of the cluster node is available.""",
     def post(self):
         params = node_req.parse_args()
         salt_master_ipaddr = current_app.config["SALT_MASTER_IPADDR"]
-        # check that cluster ID is valid else return with message and code
-        cluster = db.get(params.cluster, "clusters")
+
+        cluster = db.get(params.cluster_id, "clusters")
         if not cluster:
             return {"code": 400, "message": "invalid cluster ID"}, 400
 
@@ -241,13 +240,14 @@ status of the cluster node is available.""",
                 return {"code": 403, "message": "max. allowed LDAP nodes is reached"}, 403
             helper_class = LdapModelHelper
         elif params.node_type == "oxauth":
-            helper_class = OxAuthModelHelper
+            helper_class = OxauthModelHelper
         elif params.node_type == "oxtrust":
-            helper_class = OxTrustModelHelper
+            helper_class = OxtrustModelHelper
         elif params.node_type == "httpd":
             helper_class = HttpdModelHelper
 
         helper = helper_class(cluster, provider, salt_master_ipaddr)
-        print "build logpath: %s" % helper.logpath
         helper.setup()
+
+        print "build logpath: %s" % helper.logpath
         return {}, 202

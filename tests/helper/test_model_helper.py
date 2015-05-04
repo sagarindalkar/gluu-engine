@@ -12,8 +12,8 @@ def test_base_model_helper_init(cluster, provider):
 
 def test_ldap_model_helper(monkeypatch, cluster, provider):
     from gluuapi.helper.model_helper import LdapModelHelper
-    from gluuapi.setup.ldap_setup import ldapSetup
-    from gluuapi.model.ldap_node import ldapNode
+    from gluuapi.setup import LdapSetup
+    from gluuapi.model import LdapNode
 
     ipaddr = "172.17.0.4"
     monkeypatch.setattr(
@@ -23,8 +23,8 @@ def test_ldap_model_helper(monkeypatch, cluster, provider):
     helper = LdapModelHelper(cluster, provider, "127.0.0.1")
 
     # some sanity checks
-    assert helper.setup_class == ldapSetup
-    assert helper.node_class == ldapNode
+    assert helper.setup_class == LdapSetup
+    assert helper.node_class == LdapNode
     assert helper.image == "gluuopendj"
     assert helper.dockerfile == "https://raw.githubusercontent.com" \
                                 "/GluuFederation/gluu-docker/master" \
@@ -35,20 +35,20 @@ def test_ldap_model_helper(monkeypatch, cluster, provider):
 
 
 def test_oxauth_model_helper(monkeypatch, cluster, provider):
-    from gluuapi.helper.model_helper import OxAuthModelHelper
-    from gluuapi.setup.oxauth_setup import OxAuthSetup
-    from gluuapi.model.oxauth_node import oxauthNode
+    from gluuapi.helper import OxauthModelHelper
+    from gluuapi.setup import OxauthSetup
+    from gluuapi.model import OxauthNode
 
     ipaddr = "172.17.0.4"
     monkeypatch.setattr(
         "docker.Client.inspect_container",
         lambda cls, container: {"NetworkSettings": {"IPAddress": ipaddr}},
     )
-    helper = OxAuthModelHelper(cluster, provider, "127.0.0.1")
+    helper = OxauthModelHelper(cluster, provider, "127.0.0.1")
 
     # some sanity checks
-    assert helper.setup_class == OxAuthSetup
-    assert helper.node_class == oxauthNode
+    assert helper.setup_class == OxauthSetup
+    assert helper.node_class == OxauthNode
     assert helper.image == "gluuoxauth"
     assert helper.dockerfile == "https://raw.githubusercontent.com" \
                                 "/GluuFederation/gluu-docker/master" \
@@ -59,20 +59,20 @@ def test_oxauth_model_helper(monkeypatch, cluster, provider):
 
 
 def test_oxtrust_model_helper(monkeypatch, cluster, provider):
-    from gluuapi.helper.model_helper import OxTrustModelHelper
-    from gluuapi.setup.oxtrust_setup import OxTrustSetup
-    from gluuapi.model.oxtrust_node import oxtrustNode
+    from gluuapi.helper import OxtrustModelHelper
+    from gluuapi.setup import OxtrustSetup
+    from gluuapi.model import OxtrustNode
 
     ipaddr = "172.17.0.4"
     monkeypatch.setattr(
         "docker.Client.inspect_container",
         lambda cls, container: {"NetworkSettings": {"IPAddress": ipaddr}},
     )
-    helper = OxTrustModelHelper(cluster, provider, "127.0.0.1")
+    helper = OxtrustModelHelper(cluster, provider, "127.0.0.1")
 
     # some sanity checks
-    assert helper.setup_class == OxTrustSetup
-    assert helper.node_class == oxtrustNode
+    assert helper.setup_class == OxtrustSetup
+    assert helper.node_class == OxtrustNode
     assert helper.image == "gluuoxtrust"
     assert helper.dockerfile == "https://raw.githubusercontent.com" \
                                 "/GluuFederation/gluu-docker/master" \

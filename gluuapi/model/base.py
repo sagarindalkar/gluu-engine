@@ -13,16 +13,6 @@ class BaseModel(object):
         }
 
 
-class HTTPDMixin(object):
-    """HTTPDMixin provides common attributes for httpd-related functionality.
-    """
-
-    httpd_key = "/etc/certs/httpd.key"
-    httpd_key_orig = "/etc/certs/httpd.key.orig"
-    httpd_csr = "/etc/certs/httpd.csr"
-    httpd_crt = "/etc/certs/httpd.crt"
-
-
 class TomcatMixin(object):
     """TomcatMixin provides common attributes for tomcat-related functionality.
     """

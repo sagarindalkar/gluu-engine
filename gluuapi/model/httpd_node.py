@@ -19,7 +19,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from flask_restful import fields as rest_fields
+from flask_restful.fields import String
 from flask_restful_swagger import swagger
 
 from gluuapi.model.base import BaseModel
@@ -28,12 +28,13 @@ from gluuapi.model.base import BaseModel
 @swagger.model
 class HttpdNode(BaseModel):
     resource_fields = {
-        "id": rest_fields.String,
-        "cluster_id": rest_fields.String,
-        "provider_id": rest_fields.String,
-        "ip": rest_fields.String,
-        "weave_ip": rest_fields.String,
-        "name": rest_fields.String,
+        "id": String,
+        "cluster_id": String,
+        "provider_id": String,
+        "ip": String,
+        "weave_ip": String,
+        "name": String,
+        "type": String,
     }
 
     def __init__(self):
@@ -45,6 +46,12 @@ class HttpdNode(BaseModel):
         self.cluster_id = ""
         self.provider_id = ""
         self.type = "httpd"
+
+        self.cert_folder = "/etc/certs"
+        self.httpd_key = "/etc/certs/httpd.key"
+        self.httpd_key_orig = "/etc/certs/httpd.key.orig"
+        self.httpd_csr = "/etc/certs/httpd.csr"
+        self.httpd_crt = "/etc/certs/httpd.crt"
 
     @property
     def https_conf(self):

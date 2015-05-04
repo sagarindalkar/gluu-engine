@@ -88,7 +88,15 @@ class HttpdSetup(BaseSetup):
             "cmd.run",
             ["weave expose {}/{}".format(addr, prefixlen)],
         )
+
+        # expose port 80
         iptables_cmd = "iptables -t nat -A PREROUTING -p tcp " \
                        "-i eth0 --dport 80 -j DNAT " \
                        "--to-destination {}:80".format(self.node.weave_ip)
+        self.salt.cmd(self.provider.hostname, "cmd.run", [iptables_cmd])
+
+        # expose port 443
+        iptables_cmd = "iptables -t nat -A PREROUTING -p tcp " \
+                       "-i eth0 --dport 443 -j DNAT " \
+                       "--to-destination {}:443".format(self.node.weave_ip)
         self.salt.cmd(self.provider.hostname, "cmd.run", [iptables_cmd])

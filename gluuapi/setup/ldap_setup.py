@@ -26,7 +26,6 @@ import os.path
 import time
 
 from gluuapi.database import db
-from gluuapi.utils import exc_traceback
 from gluuapi.setup.base import BaseSetup
 from gluuapi.setup.oxauth_setup import OxauthSetup
 from gluuapi.setup.oxtrust_setup import OxtrustSetup
@@ -334,11 +333,7 @@ class LdapSetup(BaseSetup):
         self.logger.info("LDAP setup is finished ({} seconds)".format(elapsed))
         return True
 
-    def after_setup(self):
-        """Runs post-setup.
-        """
-        # Currently, we need to update oxAuth and oxTrust LDAP properties
-        # TODO: use signals?
+    def render_ox_ldap_props(self):
         for oxauth in self.cluster.get_oxauth_objects():
             setup_obj = OxauthSetup(oxauth, self.cluster, logger=self.logger)
             setup_obj.render_ldap_props_template()
@@ -347,31 +342,30 @@ class LdapSetup(BaseSetup):
             setup_obj = OxtrustSetup(oxtrust, self.cluster, logger=self.logger)
             setup_obj.render_ldap_props_template()
 
-    def stop(self):
-        try:
-            # since LDAP nodes are replicated if there's more than 1 node,
-            # we need to disable the replication agreement first before
-            # before stopping the opendj server
-            if len(self.cluster.ldap_nodes) > 1:
-                self.write_ldap_pw()
-                disable_repl_cmd = " ".join([
-                    "{}/bin/dsreplication".format(self.node.ldap_base_folder),
-                    "disable",
-                    "--hostname", self.node.weave_ip,
-                    "--port", self.node.ldap_admin_port,
-                    "--adminUID", "admin",
-                    "--adminPasswordFile", self.node.ldap_pass_fn,
-                    "-X", "-n", "--disableAll",
-                ])
-                self.salt.cmd(self.node.id, "cmd.run", [disable_repl_cmd])
-                self.delete_ldap_pw()
+    def after_setup(self):
+        """Runs post-setup.
+        """
+        self.render_ox_ldap_props()
 
-            # stop the server
-            stop_cmd = "{}/bin/stop-ds".format(self.node.ldap_base_folder)
-            self.salt.cmd(self.node.id, "cmd.run", [stop_cmd])
-        except SystemExit as exc:
-            # executable may not exist or minion is unreachable
-            if exc.code == 2:
-                pass
-            else:
-                print exc_traceback()
+    def teardown(self):
+        # since LDAP nodes are replicated if there's more than 1 node,
+        # we need to disable the replication agreement first before
+        # before stopping the opendj server
+        if len(self.cluster.ldap_nodes) > 1:
+            self.write_ldap_pw()
+            disable_repl_cmd = " ".join([
+                "{}/bin/dsreplication".format(self.node.ldap_base_folder),
+                "disable",
+                "--hostname", self.node.weave_ip,
+                "--port", self.node.ldap_admin_port,
+                "--adminUID", "admin",
+                "--adminPasswordFile", self.node.ldap_pass_fn,
+                "-X", "-n", "--disableAll",
+            ])
+            self.salt.cmd(self.node.id, "cmd.run", [disable_repl_cmd])
+            self.delete_ldap_pw()
+
+        # stop the server
+        stop_cmd = "{}/bin/stop-ds".format(self.node.ldap_base_folder)
+        self.salt.cmd(self.node.id, "cmd.run", [stop_cmd])
+        self.render_ox_ldap_props()

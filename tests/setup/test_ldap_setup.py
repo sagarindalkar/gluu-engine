@@ -56,7 +56,7 @@ def test_stop(monkeypatch, ldap_setup):
         "salt.client.LocalClient.cmd",
         lambda cls, tgt, fun, arg: None,
     )
-    ldap_setup.stop()
+    ldap_setup.teardown()
 
 
 def test_stop_with_replication(monkeypatch, ldap_setup):
@@ -79,7 +79,7 @@ def test_stop_with_replication(monkeypatch, ldap_setup):
     ldap_setup.cluster.add_node(node2)
 
     db.update(ldap_setup.cluster.id, ldap_setup.cluster, "clusters")
-    ldap_setup.stop()
+    ldap_setup.teardown()
 
 
 def test_replicate_from(monkeypatch, ldap_setup, db):

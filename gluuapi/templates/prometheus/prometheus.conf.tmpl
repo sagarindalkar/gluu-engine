@@ -29,18 +29,24 @@ job: {
   }
 }
 
+{% for cluster in clusters %}
 job: {
-  name: "container-metrics-collector"
+  name: "{{cluster.name}}-container-metrics-collector"
   scrape_interval: "5s"
 
   # The targets for this job.
-  target_group: { {% for ip in weave_ip %}
-    target: "http://{{ ip }}:9100/metrics"{% endfor %}
+  target_group: { {% for node in cluster.nodes %}
+    target: "http://{{ node.weave_ip }}:9100/metrics"{% endfor %}
     labels: {
       label: {
         name: "group"
-        value: "production"
+        value: "{{cluster.deploytype}}"
+      }
+      label: {
+        name: "cluster"
+        value: "{{cluster.name}}"
       }
     }
   }
 }
+{% endfor %}

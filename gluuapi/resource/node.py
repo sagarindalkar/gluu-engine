@@ -37,6 +37,7 @@ from gluuapi.helper import HttpdModelHelper
 from gluuapi.setup import OxauthSetup
 from gluuapi.setup import OxtrustSetup
 from gluuapi.setup import LdapSetup
+from gluuapi.setup import HttpdSetup
 
 
 class Node(Resource):
@@ -98,6 +99,9 @@ class Node(Resource):
         if node.type == "ldap":
             setup_obj = LdapSetup(node, cluster)
             setup_obj.stop()
+        elif node.type == "httpd":
+            setup_obj = HttpdSetup(node, cluster)
+            setup_obj.teardown()
 
         docker = DockerHelper(base_url=provider.docker_base_url)
         salt = SaltHelper()

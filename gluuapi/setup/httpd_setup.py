@@ -100,3 +100,16 @@ class HttpdSetup(BaseSetup):
                        "-i eth0 --dport 443 -j DNAT " \
                        "--to-destination {}:443".format(self.node.weave_ip)
         self.salt.cmd(self.provider.hostname, "cmd.run", [iptables_cmd])
+
+    def teardown(self):
+        # unexpose port 80
+        iptables_cmd = "iptables -t nat -D PREROUTING -p tcp " \
+                       "-i eth0 --dport 80 -j DNAT " \
+                       "--to-destination {}:80".format(self.node.weave_ip)
+        self.salt.cmd(self.provider.hostname, "cmd.run", [iptables_cmd])
+
+        # unexpose port 443
+        iptables_cmd = "iptables -t nat -D PREROUTING -p tcp " \
+                       "-i eth0 --dport 443 -j DNAT " \
+                       "--to-destination {}:443".format(self.node.weave_ip)
+        self.salt.cmd(self.provider.hostname, "cmd.run", [iptables_cmd])

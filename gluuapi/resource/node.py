@@ -34,9 +34,8 @@ from gluuapi.helper import OxauthModelHelper
 from gluuapi.helper import OxtrustModelHelper
 from gluuapi.helper import HttpdModelHelper
 
-from gluuapi.setup import OxauthSetup
-from gluuapi.setup import OxtrustSetup
 from gluuapi.setup import LdapSetup
+from gluuapi.setup import HttpdSetup
 
 
 class Node(Resource):
@@ -95,21 +94,8 @@ class Node(Resource):
         cluster = db.get(node.cluster_id, "clusters")
         provider = db.get(node.provider_id, "providers")
 
-        if node.type == "ldap":
-            setup_obj = LdapSetup(node, cluster)
-            setup_obj.stop()
-
         docker = DockerHelper(base_url=provider.docker_base_url)
         salt = SaltHelper()
-
-        # detach container from weave network
-        salt.cmd(
-            provider.hostname,
-            "cmd.run",
-            ["weave detach {}/{} {}".format(node.weave_ip,
-                                            node.weave_prefixlen,
-                                            node.id)],
-        )
 
         # remove container
         docker.remove_container(node.id)
@@ -125,25 +111,12 @@ class Node(Resource):
         cluster.unreserve_ip_addr(node.weave_ip)
         db.update(cluster.id, cluster, "clusters")
 
-        # TODO: move to helper?
         if node.type == "ldap":
-            # Currently, we need to update oxAuth and oxTrust LDAP properties
-            # TODO: use signals?
-            for oxauth_node_id in cluster.oxauth_nodes:
-                oxauth_node = db.get(oxauth_node_id, "nodes")
-                if not oxauth_node:
-                    continue
-
-                setup_obj = OxauthSetup(oxauth_node, cluster)
-                setup_obj.render_ldap_props_template()
-
-            for oxtrust_node_id in cluster.oxtrust_nodes:
-                oxtrust_node = db.get(oxtrust_node_id, "nodes")
-                if not oxtrust_node:
-                    continue
-
-                setup_obj = OxtrustSetup(oxtrust_node, cluster)
-                setup_obj.render_ldap_props_template()
+            setup_obj = LdapSetup(node, cluster)
+            setup_obj.teardown()
+        elif node.type == "httpd":
+            setup_obj = HttpdSetup(node, cluster)
+            setup_obj.teardown()
         return {}, 204
 
 

@@ -84,3 +84,13 @@ def provider():
         "hostname": "local",
     })
     return provider
+
+
+@pytest.fixture()
+def httpd_node(cluster):
+    from gluuapi.model import HttpdNode
+
+    node = HttpdNode()
+    node.id = "httpd_{}_123".format(cluster.id)
+    node.cluster_id = cluster.id
+    return node

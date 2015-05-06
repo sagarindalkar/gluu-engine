@@ -35,6 +35,9 @@ class Database(object):
         if app is not None:
             self.init_app(app)
 
+        # shortcut to ``tinydb.where``
+        self.where = tinydb.where
+
     def init_app(self, app):
         app.config.setdefault("DATABASE_URI", "")
         app.extensions = getattr(app, "extensions", {})
@@ -57,7 +60,7 @@ class Database(object):
     def get(self, identifier, table_name):
         obj = None
         table = self.db.table(table_name)
-        data = table.get(tinydb.where("id") == identifier)
+        data = table.get(db.where("id") == identifier)
 
         if data:
             obj = jsonpickle.decode(json.dumps(data))
@@ -81,7 +84,7 @@ class Database(object):
 
     def delete(self, identifier, table_name):
         table = self.db.table(table_name)
-        table.remove(tinydb.where("id") == identifier)
+        table.remove(self.where("id") == identifier)
         return True
 
     def update(self, identifier, obj, table_name):
@@ -92,8 +95,13 @@ class Database(object):
         data = json.loads(encoded)
 
         table = self.db.table(table_name)
-        table.update(data, tinydb.where("id") == identifier)
+        table.update(data, self.where("id") == identifier)
         return True
+
+    def search_from_table(self, table_name, condition):
+        table = self.db.table(table_name)
+        data = table.search(condition)
+        return [jsonpickle.decode(json.dumps(item)) for item in data]
 
 
 # shortcut to database object

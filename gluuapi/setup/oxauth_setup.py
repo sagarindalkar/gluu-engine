@@ -135,10 +135,15 @@ class OxauthSetup(BaseSetup):
     def render_ldap_props_template(self):
         src = self.node.oxauth_ldap_properties
         dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
+
+        ldap_hosts = ",".join([
+            "{}:{}".format(ldap.weave_ip, ldap.ldaps_port)
+            for ldap in self.cluster.get_ldap_objects()
+        ])
         ctx = {
             "ldap_binddn": self.node.ldap_binddn,
             "encoded_ox_ldap_pw": self.cluster.encoded_ox_ldap_pw,
-            "ldap_hosts": ",".join(self.cluster.get_ldap_hosts()),
+            "ldap_hosts": ldap_hosts,
             "inumAppliance": self.cluster.inum_appliance,
             "certFolder": self.node.cert_folder,
         }

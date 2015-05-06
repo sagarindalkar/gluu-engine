@@ -180,36 +180,31 @@ class GluuCluster(BaseModel):
     def max_allowed_ldap_nodes(self):
         return 4
 
-    def get_ldap_hosts(self):
-        ldap_hosts = []
-        for ldap_id in self.ldap_nodes:
-            ldap = db.get(ldap_id, "nodes")
-            if ldap:
-                ldap_host = "{}:{}".format(ldap.weave_ip, ldap.ldaps_port)
-                ldap_hosts.append(ldap_host)
-        return ldap_hosts
+    def get_ldap_objects(self):
+        """Get available ldap objects (models).
+        """
+        return self.get_node_objects(type_="ldap")
 
     def get_oxauth_objects(self):
         """Get available oxAuth objects (models).
         """
-        return filter(
-            None,
-            [db.get(id_, "nodes") for id_ in self.oxauth_nodes],
-        )
+        return self.get_node_objects(type_="oxauth")
 
     def get_oxtrust_objects(self):
         """Get available oxTrust objects (models).
         """
-        return filter(
-            None,
-            [db.get(id_, "nodes") for id_ in self.oxtrust_nodes],
-        )
+        return self.get_node_objects(type_="oxtrust")
 
     def get_httpd_objects(self):
-        return filter(
-            None,
-            [db.get(id_, "nodes") for id_ in self.httpd_nodes],
-        )
+        """Get available httpd objects (models).
+        """
+        return self.get_node_objects(type_="httpd")
+
+    def get_node_objects(self, type_=""):
+        condition = db.where("cluster_id") == self.id
+        if type_:
+            condition = (condition) & (db.where("type") == type_)
+        return db.search_from_table("nodes", condition)
 
     @property
     def exposed_weave_ip(self):

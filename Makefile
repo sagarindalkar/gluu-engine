@@ -1,6 +1,12 @@
 IP=`hostname -I | cut -d ' ' -f 1`
 run:
-	@SALT_MASTER_IPADDR=${IP} ./run.py
+	@SALT_MASTER_IPADDR=${IP} gluuapi
 
 test:
-	@py.test tests --cov gluuapi --cov-report term-missing
+	@tox
+
+develop:
+	@python setup.py develop
+
+install:
+	@python setup.py install

@@ -156,6 +156,10 @@ class BaseModelHelper(object):
                 self.prepare_minion()
                 if self.salt.is_minion_registered(self.node.id):
                     setup_obj = self.setup_class(self.node, self.cluster, self.logger)
+
+                    self.logger.info("{} setup is started".format(self.image))
+                    start = time.time()
+
                     setup_obj.before_setup()
 
                     if setup_obj.setup():
@@ -164,6 +168,11 @@ class BaseModelHelper(object):
 
                     setup_obj.after_setup()
                     setup_obj.remove_build_dir()
+
+                    elapsed = time.time() - start
+                    self.logger.info(
+                        "{} setup is finished ({} seconds)".format(
+                            self.image, elapsed))
 
                 # minion is not connected
                 else:

@@ -1,20 +1,22 @@
 # -*- coding: utf-8 -*-
 import os
-
-os_env = os.environ
+# os_env = os.environ
 
 
 class Config(object):
-    SECRET_KEY = os_env.get('API_SECRET', 'blablabla')  # TODO: Change me
+    # SECRET_KEY = os_env.get('API_SECRET', 'blablabla')  # TODO: Change me
     APP_DIR = os.path.abspath(os.path.dirname(__file__))  # This directory
     PROJECT_ROOT = os.path.abspath(os.path.join(APP_DIR, os.pardir))
-    BCRYPT_LOG_ROUNDS = 13
+    # BCRYPT_LOG_ROUNDS = 13
     PORT = 8080
-    DATA_DIR = os.path.expanduser('~') + '/gfdata'
-    CLUSTER_FILE = DATA_DIR + '/cluster.json'
-    DB = os.path.join(PROJECT_ROOT, "db")
+    # DATA_DIR = os.path.expanduser('~') + '/.gluu-cluster'
+    DATA_DIR = os.environ.get(
+        "DATA_DIR",
+        os.path.expanduser('~') + '/.gluu-cluster')
+    # CLUSTER_FILE = DATA_DIR + '/cluster.json'
+    # DB = os.path.join(PROJECT_ROOT, "db")
     DATABASE_URI = os.path.join(DATA_DIR, "db", "db.json")
-    SALT_MASTER_IPADDR = os_env.get("SALT_MASTER_IPADDR", "")
+    SALT_MASTER_IPADDR = os.environ.get("SALT_MASTER_IPADDR", "")
     # Is there any better place to put this path
     #DOCKER_REPO = 'https://raw.githubusercontent.com/GluuFederation/gluu-docker/master/ubuntu/14.04'
 
@@ -30,12 +32,12 @@ class DevConfig(Config):
     ENV = 'dev'
     DEBUG = True
     RELOADER = False
-    DATABASE_URI = os.path.join(Config.PROJECT_ROOT, "db", "db_dev.json")
+    DATABASE_URI = os.path.join(Config.DATA_DIR, "db", "db_dev.json")
 
 
 class TestConfig(Config):
     TESTING = True
     DEBUG = True
-    BCRYPT_LOG_ROUNDS = 1  # For faster tests
-    DB = os.path.join(Config.PROJECT_ROOT, "dbtest")
-    DATABASE_URI = os.path.join(Config.PROJECT_ROOT, "db", "db_test.json")
+    # BCRYPT_LOG_ROUNDS = 1  # For faster tests
+    # DB = os.path.join(Config.PROJECT_ROOT, "dbtest")
+    DATABASE_URI = os.path.join(Config.DATA_DIR, "db", "db_test.json")

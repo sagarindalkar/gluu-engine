@@ -168,9 +168,6 @@ class OxauthSetup(BaseSetup):
         self.render_template(src, dest, ctx)
 
     def setup(self):
-        start = time.time()
-        self.logger.info("oxAuth setup is started")
-
         hostname = self.cluster.ox_cluster_hostname.split(":")[0]
         self.create_cert_dir()
 
@@ -202,7 +199,4 @@ class OxauthSetup(BaseSetup):
 
         self.gen_openid_keys()
         self.change_cert_access("tomcat", "tomcat")
-
-        elapsed = time.time() - start
-        self.logger.info("oxAuth setup is finished ({} seconds)".format(elapsed))
         return True

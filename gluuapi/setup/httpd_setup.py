@@ -20,7 +20,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 import os.path
-import time
 
 from gluuapi.setup.base import BaseSetup
 from gluuapi.setup.oxtrust_setup import OxtrustSetup
@@ -32,9 +31,11 @@ class HttpdSetup(BaseSetup):
         file_basename = os.path.basename(src)
         dest = os.path.join("/etc/apache2/sites-available", file_basename)
 
+        oxauth_ip = ""
         for oxauth in self.cluster.get_oxauth_objects():
             oxauth_ip = oxauth.weave_ip
 
+        oxtrust_ip = ""
         for oxtrust in self.cluster.get_oxtrust_objects():
             oxtrust_ip = oxtrust.weave_ip
 
@@ -61,18 +62,12 @@ class HttpdSetup(BaseSetup):
         )
 
     def setup(self):
-        self.logger.info("HTTPd setup is started")
-        start = time.time()
-
         hostname = self.cluster.ox_cluster_hostname.split(":")[0]
         self.create_cert_dir()
         self.gen_cert("httpd", self.cluster.decrypted_admin_pw, "www-data", "www-data", hostname)
         self.change_cert_access("www-data", "www-data")
         self.render_https_conf_template(hostname)
         self.start_httpd()
-
-        elapsed = time.time() - start
-        self.logger.info("HTTPd setup is finished ({} seconds)".format(elapsed))
         return True
 
     def after_setup(self):

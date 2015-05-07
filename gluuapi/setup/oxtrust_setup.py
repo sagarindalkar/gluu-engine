@@ -21,7 +21,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 import os.path
-import time
 
 from gluuapi.setup.oxauth_setup import OxauthSetup
 
@@ -123,9 +122,6 @@ class OxtrustSetup(OxauthSetup):
         self.render_template(src, dest, ctx)
 
     def setup(self):
-        start = time.time()
-        self.logger.info("oxTrust setup is started")
-
         hostname = self.cluster.ox_cluster_hostname.split(":")[0]
         self.create_cert_dir()
 
@@ -157,8 +153,4 @@ class OxtrustSetup(OxauthSetup):
         self.start_tomcat()
 
         self.change_cert_access("tomcat", "tomcat")
-
-        elapsed = time.time() - start
-        self.logger.info(
-            "oxTrust setup is finished ({} seconds)".format(elapsed))
         return True

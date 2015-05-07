@@ -221,6 +221,4 @@ status of the cluster node is available.""",
 
         helper = helper_class(cluster, provider, salt_master_ipaddr)
         helper.setup()
-
-        print "build logpath: %s" % helper.logpath
-        return {}, 202
+        return {"log": helper.logpath}, 202

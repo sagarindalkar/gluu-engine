@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # The MIT License (MIT)
 #
 # Copyright (c) 2015 Gluu
@@ -20,5 +19,28 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import os
 
-__version__ = "0.1.0"
+from crochet import setup as crochet_setup
+
+from gluuapi.app import create_app
+from gluuapi.settings import DevConfig
+from gluuapi.settings import ProdConfig
+
+
+def main():
+    if os.environ.get("API_ENV") == 'prod':
+        app = create_app(ProdConfig)
+    else:
+        app = create_app(DevConfig)
+
+    if not os.environ.get("SALT_MASTER_IPADDR"):
+        raise SystemExit("Unable to get salt-master IP address. "
+                         "Make sure the SALT_MASTER_IPADDR "
+                         "environment variable is set.")
+
+    crochet_setup()
+    app.run(host='0.0.0.0', port=app.config['PORT'])
+
+if __name__ == '__main__':
+    main()

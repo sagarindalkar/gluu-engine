@@ -65,7 +65,7 @@ $ pip install virtualenv
 $ git clone https://github.com/GluuFederation/gluu-flask.git
 $ cd gluu-flask
 $ virtualenv env
-$ env/bin/pip install -r requirements.txt
+$ env/bin/python setup.py install
 ```
 
 ## Run
@@ -75,14 +75,19 @@ and make sure `SALT_MASTER_IPADDR` environment variable is set and
 pointed to salt-master IP address.
 
 ```
-$ SALT_MASTER_IPADDR=xxx.xxx.xxx.xxx env/bin/python run.py
+$ SALT_MASTER_IPADDR=xxx.xxx.xxx.xxx env/bin/python gluuapi
 ```
 
 ## Testing
 
+Testcases are running using ``pytest`` executed by ``tox``.
+
 ```
-$ env/bin/py.test tests --cov gluuapi --cov-report term-missing
+$ pip install tox
+$ tox
 ```
+
+See `tox.ini` for details.
 
 ## Flask Swagger Docs
 

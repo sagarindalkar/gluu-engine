@@ -305,9 +305,6 @@ class LdapSetup(BaseSetup):
         setup_obj.delete_ldap_pw()
 
     def setup(self):
-        self.logger.info("LDAP setup is started")
-        start = time.time()
-
         self.write_ldap_pw()
         self.add_ldap_schema()
         self.setup_opendj()
@@ -328,9 +325,6 @@ class LdapSetup(BaseSetup):
 
         self.export_opendj_public_cert()
         self.delete_ldap_pw()
-
-        elapsed = time.time() - start
-        self.logger.info("LDAP setup is finished ({} seconds)".format(elapsed))
         return True
 
     def render_ox_ldap_props(self):

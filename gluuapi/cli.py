@@ -40,7 +40,7 @@ def main():
                          "environment variable is set.")
 
     crochet_setup()
-    app.run(host='0.0.0.0', port=app.config['PORT'])
+    app.run(port=app.config['PORT'])
 
 if __name__ == '__main__':
     main()

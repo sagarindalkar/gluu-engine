@@ -41,23 +41,32 @@ class OxtrustSetup(OxauthSetup):
             "-keystore {}".format(self.node.truststore_fn),
             "-storepass changeit -noprompt",
         ])
+        self.logger.info("importing httpd cert")
         self.salt.cmd(
             self.node.id,
             ["cmd.run", "cmd.run"],
             [[cert_cmd], [import_cmd]]
         )
 
-    def update_host_entries(self):
-        self.logger.info("updating host entries in /etc/hosts")
+    def delete_httpd_cert(self):
+        delete_cmd = " ".join([
+            "keytool -delete",
+            "-alias {}".format(self.cluster.ox_cluster_hostname),
+            "-keystore {}".format(self.node.truststore_fn),
+            "-storepass changeit -noprompt",
+        ])
+        self.logger.info("deleting httpd cert")
+        self.salt.cmd(self.node.id, "cmd.run", [delete_cmd])
+
+    def add_host_entries(self):
         for httpd in self.cluster.get_httpd_objects():
-            self.salt.cmd(
-                self.node.id,
-                "cmd.run",
-                ["echo '{} {}' >> /etc/hosts".format(
-                    httpd.weave_ip,
-                    self.cluster.ox_cluster_hostname.split(":")[0],
-                )],
-            )
+            self.logger.info("updating oxTrust host entries in /etc/hosts")
+            # add the entry only if line is not exist in /etc/hosts
+            grep_cmd = "grep -q '^{0} {1}$' /etc/hosts " \
+                       "|| echo '{0} {1}' >> /etc/hosts" \
+                       .format(httpd.weave_ip,
+                               self.cluster.ox_cluster_hostname)
+            self.salt.cmd(self.node.id, "cmd.run", [grep_cmd])
 
     def render_cache_props_template(self):
         src = self.node.oxtrust_cache_refresh_properties

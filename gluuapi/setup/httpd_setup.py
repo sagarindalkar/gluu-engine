@@ -78,7 +78,7 @@ class HttpdSetup(BaseSetup):
     def after_setup(self):
         for oxtrust in self.cluster.get_oxtrust_objects():
             setup_obj = OxtrustSetup(oxtrust, self.cluster, logger=self.logger)
-            setup_obj.update_host_entries()
+            setup_obj.add_host_entries()
             setup_obj.import_httpd_cert()
 
         # expose the IP
@@ -113,3 +113,7 @@ class HttpdSetup(BaseSetup):
                        "-i eth0 --dport 443 -j DNAT " \
                        "--to-destination {}:443".format(self.node.weave_ip)
         self.salt.cmd(self.provider.hostname, "cmd.run", [iptables_cmd])
+
+        for oxtrust in self.cluster.get_oxtrust_objects():
+            setup_obj = OxtrustSetup(oxtrust, self.cluster)
+            setup_obj.delete_httpd_cert()

@@ -33,6 +33,7 @@ from gluuapi.model import OxtrustNode
 from gluuapi.model import HttpdNode
 from gluuapi.helper.docker_helper import DockerHelper
 from gluuapi.helper.salt_helper import SaltHelper
+from gluuapi.helper.prometheus_helper import PrometheusHelper
 from gluuapi.setup import LdapSetup
 from gluuapi.setup import OxauthSetup
 from gluuapi.setup import OxtrustSetup
@@ -164,6 +165,9 @@ class BaseModelHelper(object):
 
                     setup_obj.after_setup()
                     setup_obj.remove_build_dir()
+                    #updating prometheus 
+                    prometheus = PrometheusHelper()
+                    prometheus.update()
 
                 # minion is not connected
                 else:

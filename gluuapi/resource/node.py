@@ -29,6 +29,7 @@ from gluuapi.reqparser import node_req
 
 from gluuapi.helper import DockerHelper
 from gluuapi.helper import SaltHelper
+from gluuapi.helper import PrometheusHelper
 from gluuapi.helper import LdapModelHelper
 from gluuapi.helper import OxauthModelHelper
 from gluuapi.helper import OxtrustModelHelper
@@ -99,6 +100,9 @@ class Node(Resource):
 
         # remove container
         docker.remove_container(node.id)
+        #updating prometheus 
+        prometheus = PrometheusHelper()
+        prometheus.update()
 
         # unregister minion
         salt.unregister_minion(node.id)

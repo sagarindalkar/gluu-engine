@@ -7,7 +7,7 @@ global {
   labels: {
     label: {
       name: "monitor"
-      value: "codelab-monitor"
+      value: "gluu-monitor"
     }
   }
 
@@ -20,7 +20,7 @@ job: {
   # The job name is added as a label `job={job-name}` to any timeseries scraped from this job.
   name: "prometheus"
   # Override the global default and scrape targets from this job every 5 seconds.
-  scrape_interval: "5s"
+  scrape_interval: "15s"
 
   # Let's define a group of targets to scrape for this job. In this case, only one.
   target_group: {
@@ -30,18 +30,15 @@ job: {
 }
 
 {% for cluster in clusters %}
+{% set nodes = cluster.get_node_objects() %}
 job: {
   name: "{{cluster.name}}-container-metrics-collector"
-  scrape_interval: "5s"
+  scrape_interval: "15s"
 
   # The targets for this job.
-  target_group: { {% for node in cluster.nodes %}
+  target_group: { {% for node in nodes %}
     target: "http://{{ node.weave_ip }}:9100/metrics"{% endfor %}
     labels: {
-      label: {
-        name: "group"
-        value: "{{cluster.deploytype}}"
-      }
       label: {
         name: "cluster"
         value: "{{cluster.name}}"

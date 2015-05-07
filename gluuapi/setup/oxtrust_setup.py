@@ -26,6 +26,22 @@ from gluuapi.setup.oxauth_setup import OxauthSetup
 
 
 class OxtrustSetup(OxauthSetup):
+    @property
+    def oxtrust_properties(self):  # pragma: no cover
+        return self.get_template_path("salt/oxtrust/oxTrust.properties")
+
+    @property
+    def oxtrust_ldap_properties(self):  # pragma: no cover
+        return self.get_template_path("salt/oxtrust/oxTrustLdap.properties")
+
+    @property
+    def oxtrust_log_rotation_configuration(self):  # pragma: no cover
+        return self.get_template_path("salt/oxtrust/oxTrustLogRotationConfiguration.xml")
+
+    @property
+    def oxtrust_cache_refresh_properties(self):  # pragma: no cover
+        return self.get_template_path("salt/oxtrust/oxTrustCacheRefresh-template.properties.vm")
+
     def import_httpd_cert(self):
         # imports httpd cert into oxtrust cacerts to avoid
         # "peer not authenticated" error
@@ -68,7 +84,7 @@ class OxtrustSetup(OxauthSetup):
             self.salt.cmd(self.node.id, "cmd.run", [grep_cmd])
 
     def render_cache_props_template(self):
-        src = self.node.oxtrust_cache_refresh_properties
+        src = self.oxtrust_cache_refresh_properties
         dest_dir = os.path.join(self.node.tomcat_conf_dir, "template", "conf")
         dest = os.path.join(dest_dir, os.path.basename(src))
         self.salt.cmd(self.node.id, "cmd.run",
@@ -76,7 +92,7 @@ class OxtrustSetup(OxauthSetup):
         self.render_template(src, dest)
 
     def render_log_config_template(self):
-        src = self.node.oxtrust_log_rotation_configuration
+        src = self.oxtrust_log_rotation_configuration
         dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
         ctx = {
             "tomcat_log_folder": self.node.tomcat_log_folder,
@@ -84,7 +100,7 @@ class OxtrustSetup(OxauthSetup):
         self.render_template(src, dest, ctx)
 
     def render_props_template(self):
-        src = self.node.oxtrust_properties
+        src = self.oxtrust_properties
         dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
         ctx = {
             "inumAppliance": self.cluster.inum_appliance,
@@ -106,7 +122,7 @@ class OxtrustSetup(OxauthSetup):
         self.render_template(src, dest, ctx)
 
     def render_ldap_props_template(self):
-        src = self.node.oxtrust_ldap_properties
+        src = self.oxtrust_ldap_properties
         dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
 
         ldap_hosts = ",".join([

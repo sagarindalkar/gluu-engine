@@ -28,6 +28,26 @@ from gluuapi.setup.base import BaseSetup
 
 
 class OxauthSetup(BaseSetup):
+    @property
+    def oxauth_errors_json(self):  # pragma: no cover
+        return self.get_template_path("salt/oxauth/oxauth-errors.json")
+
+    @property
+    def oxauth_ldap_properties(self):  # pragma: no cover
+        return self.get_template_path("salt/oxauth/oxauth-ldap.properties")
+
+    @property
+    def oxauth_config_xml(self):  # pragma: no cover
+        return self.get_template_path("salt/oxauth/oxauth-config.xml")
+
+    @property
+    def oxauth_static_conf_json(self):  # pragma: no cover
+        return self.get_template_path("salt/oxauth/oxauth-static-conf.json")
+
+    @property
+    def tomcat_server_xml(self):  # pragma: no cover
+        return self.get_template_path("salt/_shared/server.xml")
+
     def write_salt_file(self):
         self.logger.info("writing salt file")
 
@@ -118,12 +138,12 @@ class OxauthSetup(BaseSetup):
         )
 
     def render_errors_template(self):
-        src = self.node.oxauth_errors_json
+        src = self.oxauth_errors_json
         dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
         self.render_template(src, dest)
 
     def render_config_template(self):
-        src = self.node.oxauth_config_xml
+        src = self.oxauth_config_xml
         dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
         ctx = {
             "ox_cluster_hostname": self.cluster.ox_cluster_hostname,
@@ -133,7 +153,7 @@ class OxauthSetup(BaseSetup):
         self.render_template(src, dest, ctx)
 
     def render_ldap_props_template(self):
-        src = self.node.oxauth_ldap_properties
+        src = self.oxauth_ldap_properties
         dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
 
         ldap_hosts = ",".join([
@@ -150,7 +170,7 @@ class OxauthSetup(BaseSetup):
         self.render_template(src, dest, ctx)
 
     def render_static_conf_template(self):
-        src = self.node.oxauth_static_conf_json
+        src = self.oxauth_static_conf_json
         dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
         ctx = {
             "inumOrg": self.cluster.inum_org,
@@ -158,7 +178,7 @@ class OxauthSetup(BaseSetup):
         self.render_template(src, dest, ctx)
 
     def render_server_xml_template(self):
-        src = self.node.tomcat_server_xml
+        src = self.tomcat_server_xml
         dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
         ctx = {
             "address": self.node.weave_ip,

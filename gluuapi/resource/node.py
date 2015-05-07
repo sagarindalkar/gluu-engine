@@ -86,6 +86,8 @@ class Node(Resource):
         summary='TODO'
     )
     def delete(self, node_id):
+        template_dir = current_app.config["TEMPLATES_DIR"]
+
         node = db.get(node_id, "nodes")
 
         if not node:
@@ -97,12 +99,6 @@ class Node(Resource):
         docker = DockerHelper(base_url=provider.docker_base_url)
         salt = SaltHelper()
 
-        # remove container
-        docker.remove_container(node.id)
-
-        # unregister minion
-        salt.unregister_minion(node.id)
-
         # remove node
         db.delete(node_id, "nodes")
 
@@ -112,11 +108,14 @@ class Node(Resource):
         db.update(cluster.id, cluster, "clusters")
 
         if node.type == "ldap":
-            setup_obj = LdapSetup(node, cluster)
+            setup_obj = LdapSetup(node, cluster, template_dir=template_dir)
             setup_obj.teardown()
         elif node.type == "httpd":
-            setup_obj = HttpdSetup(node, cluster)
+            setup_obj = HttpdSetup(node, cluster, template_dir=template_dir)
             setup_obj.teardown()
+
+        docker.remove_container(node.id)
+        salt.unregister_minion(node.id)
         return {}, 204
 
 
@@ -194,6 +193,7 @@ status of the cluster node is available.""",
     def post(self):
         params = node_req.parse_args()
         salt_master_ipaddr = current_app.config["SALT_MASTER_IPADDR"]
+        template_dir = current_app.config["TEMPLATES_DIR"]
 
         cluster = db.get(params.cluster_id, "clusters")
         if not cluster:
@@ -219,6 +219,6 @@ status of the cluster node is available.""",
         elif params.node_type == "httpd":
             helper_class = HttpdModelHelper
 
-        helper = helper_class(cluster, provider, salt_master_ipaddr)
+        helper = helper_class(cluster, provider, salt_master_ipaddr, template_dir)
         helper.setup()
         return {"log": helper.logpath}, 202

@@ -20,6 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+
 class BaseModel(object):
     """Base class for model.
 
@@ -33,21 +34,3 @@ class BaseModel(object):
             k: v for k, v in self.__dict__.items()
             if k in fields
         }
-
-
-class TomcatMixin(object):
-    """TomcatMixin provides common attributes for tomcat-related functionality.
-    """
-
-    #: Directory where tomcat is installed to.
-    tomcat_home = "/opt/tomcat"
-
-    #: Directory where tomcat config files are stored in.
-    tomcat_conf_dir = "/opt/tomcat/conf"
-
-    #: Directory where tomcat log files are stored in.
-    tomcat_log_folder = "/opt/tomcat/logs"
-
-    @property
-    def tomcat_server_xml(self):  # pragma: no cover
-        return "gluuapi/templates/salt/_shared/server.xml"

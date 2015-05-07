@@ -54,7 +54,7 @@ class BaseModelHelper(object):
     #: URL to image's Dockerfile. Must be overriden in subclass.
     dockerfile = ""
 
-    def __init__(self, cluster, provider, salt_master_ipaddr):
+    def __init__(self, cluster, provider, salt_master_ipaddr, template_dir):
         assert self.setup_class, "setup_class must be set"
         assert self.node_class, "node_class must be set"
         assert self.image, "image attribute cannot be empty"
@@ -76,6 +76,7 @@ class BaseModelHelper(object):
         self.docker = DockerHelper(
             logger=self.logger, base_url=self.provider.docker_base_url)
         self.salt = SaltHelper()
+        self.template_dir = template_dir
 
     def prepare_node_attrs(self):
         """Prepares changes to node's attributes (if any).
@@ -155,7 +156,7 @@ class BaseModelHelper(object):
 
                 self.prepare_minion()
                 if self.salt.is_minion_registered(self.node.id):
-                    setup_obj = self.setup_class(self.node, self.cluster, self.logger)
+                    setup_obj = self.setup_class(self.node, self.cluster, self.logger, self.template_dir)
 
                     self.logger.info("{} setup is started".format(self.image))
                     start = time.time()

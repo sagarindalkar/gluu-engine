@@ -23,11 +23,10 @@ from flask_restful.fields import String
 from flask_restful_swagger import swagger
 
 from gluuapi.model.base import BaseModel
-from gluuapi.model.base import TomcatMixin
 
 
 @swagger.model
-class OxtrustNode(TomcatMixin, BaseModel):
+class OxtrustNode(BaseModel):
     # Swager Doc
     resource_fields = {
         "id": String(attribute="Node unique identifier"),
@@ -57,18 +56,6 @@ class OxtrustNode(TomcatMixin, BaseModel):
         # enabled if we have saml
         self.oxtrust_config_generation = "disabled"
 
-    @property
-    def oxtrust_properties(self):  # pragma: no cover
-        return "gluuapi/templates/salt/oxtrust/oxTrust.properties"
-
-    @property
-    def oxtrust_ldap_properties(self):  # pragma: no cover
-        return "gluuapi/templates/salt/oxtrust/oxTrustLdap.properties"
-
-    @property
-    def oxtrust_log_rotation_configuration(self):  # pragma: no cover
-        return "gluuapi/templates/salt/oxtrust/oxTrustLogRotationConfiguration.xml"
-
-    @property
-    def oxtrust_cache_refresh_properties(self):  # pragma: no cover
-        return "gluuapi/templates/salt/oxtrust/oxTrustCacheRefresh-template.properties.vm"
+        self.tomcat_home = "/opt/tomcat"
+        self.tomcat_conf_dir = "/opt/tomcat/conf"
+        self.tomcat_log_folder = "/opt/tomcat/logs"

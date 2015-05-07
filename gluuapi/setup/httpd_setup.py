@@ -26,8 +26,12 @@ from gluuapi.setup.oxtrust_setup import OxtrustSetup
 
 
 class HttpdSetup(BaseSetup):
+    @property
+    def https_conf(self):
+        return self.get_template_path("salt/httpd/gluu_https.conf")
+
     def render_https_conf_template(self, hostname):
-        src = self.node.https_conf
+        src = self.https_conf
         file_basename = os.path.basename(src)
         dest = os.path.join("/etc/apache2/sites-available", file_basename)
 
@@ -72,7 +76,8 @@ class HttpdSetup(BaseSetup):
 
     def after_setup(self):
         for oxtrust in self.cluster.get_oxtrust_objects():
-            setup_obj = OxtrustSetup(oxtrust, self.cluster, logger=self.logger)
+            setup_obj = OxtrustSetup(oxtrust, self.cluster, logger=self.logger,
+                                     template_dir=self.template_dir)
             setup_obj.add_host_entries()
             setup_obj.import_httpd_cert()
 
@@ -110,5 +115,6 @@ class HttpdSetup(BaseSetup):
         self.salt.cmd(self.provider.hostname, "cmd.run", [iptables_cmd])
 
         for oxtrust in self.cluster.get_oxtrust_objects():
-            setup_obj = OxtrustSetup(oxtrust, self.cluster)
+            setup_obj = OxtrustSetup(oxtrust, self.cluster,
+                                     template_dir=self.template_dir)
             setup_obj.delete_httpd_cert()

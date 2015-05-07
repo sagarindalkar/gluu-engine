@@ -40,6 +40,7 @@ class Config(object):
     SALT_MASTER_IPADDR = os.environ.get("SALT_MASTER_IPADDR", "")
     # Is there any better place to put this path
     #DOCKER_REPO = 'https://raw.githubusercontent.com/GluuFederation/gluu-docker/master/ubuntu/14.04'
+    TEMPLATES_DIR = os.path.join(APP_DIR, "templates")
 
 
 class ProdConfig(Config):

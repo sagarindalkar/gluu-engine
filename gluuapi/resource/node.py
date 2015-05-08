@@ -100,9 +100,6 @@ class Node(Resource):
 
         # remove container
         docker.remove_container(node.id)
-        #updating prometheus 
-        prometheus = PrometheusHelper()
-        prometheus.update()
 
         # unregister minion
         salt.unregister_minion(node.id)
@@ -121,6 +118,10 @@ class Node(Resource):
         elif node.type == "httpd":
             setup_obj = HttpdSetup(node, cluster)
             setup_obj.teardown()
+
+        #updating prometheus
+        prometheus = PrometheusHelper()
+        prometheus.update()
         return {}, 204
 
 

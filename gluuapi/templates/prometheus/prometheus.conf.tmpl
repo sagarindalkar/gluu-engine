@@ -30,20 +30,78 @@ job: {
 }
 
 {% for cluster in clusters %}
-{% set nodes = cluster.get_node_objects() %}
+{% set ldaps = cluster.get_ldap_objects() %}
+{% set oxauths = cluster.get_oxauth_objects() %}
+{% set oxtrusts = cluster.get_oxtrust_objects() %}
+{% set httpds = cluster.get_httpd_objects() %}
 job: {
   name: "{{cluster.name}}-container-metrics-collector"
   scrape_interval: "15s"
 
   # The targets for this job.
-  target_group: { {% for node in nodes %}
-    target: "http://{{ node.weave_ip }}:9100/metrics"{% endfor %}
+  {% if ldaps is defined %}
+  {% set type = ldaps[0].type %}
+  target_group: { {% for ldap in ldaps %}
+    target: "http://{{ ldap.weave_ip }}:9100/metrics"{% endfor %}
     labels: {
+    label: {
+        name: "type"
+        value: "{{ type }}"
+      }
       label: {
         name: "cluster"
-        value: "{{cluster.name}}"
+        value: "{{ cluster.name }}"
       }
     }
   }
+  {% endif %}
+  {% if oxauths is defined %}
+  {% set type = oxauths[0].type %}
+  target_group: { {% for oxauth in oxauths %}
+    target: "http://{{ oxauth.weave_ip }}:9100/metrics"{% endfor %}
+    labels: {
+    label: {
+        name: "type"
+        value: "{{ type }}"
+      }
+      label: {
+        name: "cluster"
+        value: "{{ cluster.name }}"
+      }
+    }
+  }
+  {% endif %}
+  {% if oxtrusts is defined %}
+  {% set type = oxtrusts[0].type %}
+  target_group: { {% for oxtrust in oxtrusts %}
+    target: "http://{{ oxtrust.weave_ip }}:9100/metrics"{% endfor %}
+    labels: {
+    label: {
+        name: "type"
+        value: "{{ type }}"
+      }
+      label: {
+        name: "cluster"
+        value: "{{ cluster.name }}"
+      }
+    }
+  }
+  {% endif %}
+  {% if httpds is defined %}
+  {% set type = httpds[0].type %}
+  target_group: { {% for httpd in httpds %}
+    target: "http://{{ httpd.weave_ip }}:9100/metrics"{% endfor %}
+    labels: {
+    label: {
+        name: "type"
+        value: "{{ type }}"
+      }
+      label: {
+        name: "cluster"
+        value: "{{ cluster.name }}"
+      }
+    }
+  }
+  {% endif %}
 }
 {% endfor %}

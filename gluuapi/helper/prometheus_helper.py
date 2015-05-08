@@ -30,7 +30,7 @@ class PrometheusHelper(object):
         self.template = 'gluuapi/templates/prometheus/prometheus.conf.tmpl'
         self.target_path = '/etc/gluu/prometheus/prometheus.conf' #TODO: must come from flask config
         self.docker = Client("unix:///var/run/docker.sock")
-        self.prometheus_cid = "/var/run/prometheus.cid"
+        self.prometheus_cid = "/var/run/prometheus.cid" #TODO: must come from flask config
 
     def __load_clusters(self):
         self.clusters = db.all("clusters")

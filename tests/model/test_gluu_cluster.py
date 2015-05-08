@@ -167,3 +167,14 @@ def test_get_ldap_objects(db, cluster, ldap_node):
 
     assert len(data) == 1
     assert data[0].type == ldap_node.type
+
+
+def test_exposed_weave_ip():
+    from gluuapi.model import GluuCluster
+
+    cluster = GluuCluster()
+    cluster.weave_ip_network = "10.2.1.0/24"
+
+    addr, prefixlen = cluster.exposed_weave_ip
+    assert addr == "10.2.1.254"
+    assert prefixlen == 24

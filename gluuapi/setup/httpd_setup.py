@@ -81,14 +81,6 @@ class HttpdSetup(BaseSetup):
             setup_obj.add_host_entries()
             setup_obj.import_httpd_cert()
 
-        # expose the IP
-        addr, prefixlen = self.cluster.exposed_weave_ip
-        self.salt.cmd(
-            self.provider.hostname,
-            "cmd.run",
-            ["weave expose {}/{}".format(addr, prefixlen)],
-        )
-
         # expose port 80
         iptables_cmd = "iptables -t nat -A PREROUTING -p tcp " \
                        "-i eth0 --dport 80 -j DNAT " \

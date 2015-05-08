@@ -68,7 +68,7 @@ class OxauthSetup(BaseSetup):
         classpath = ":".join([
             "{}/classes".format(web_inf),
             "{}/lib/bcprov-jdk16-1.46.jar".format(web_inf),
-            "{}/lib/oxauth-model-2.1.0.Final.jar".format(web_inf),
+            "{}/lib/oxauth-model-2.2.0.Final.jar".format(web_inf),
             "{}/lib/jettison-1.3.jar".format(web_inf),
             "{}/lib/commons-lang-2.6.jar".format(web_inf),
             "{}/lib/log4j-1.2.14.jar".format(web_inf),

@@ -61,6 +61,11 @@ def test_node_delete(monkeypatch, app, db, cluster, provider, ldap_node):
         lambda cls: None,
     )
 
+    monkeypatch.setattr(
+        "gluuapi.helper.prometheus_helper.PrometheusHelper.update",
+        lambda cls: None,
+    )
+
     resp = app.test_client().delete("/node/{}".format(ldap_node.id))
     assert resp.status_code == 204
 

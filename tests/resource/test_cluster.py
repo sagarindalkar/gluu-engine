@@ -78,3 +78,25 @@ def test_cluster_delete(app, db, cluster):
 def test_cluster_delete_failed(app):
     resp = app.test_client().delete("/cluster/random-invalid-id")
     assert resp.status_code == 404
+
+
+def test_cluster_post_max_cluster_reached(app, db, cluster):
+    db.persist(cluster, "clusters")
+
+    resp = app.test_client().post(
+        "/cluster",
+        data={
+            "name": "test-cluster-1",
+            "description": "test cluster",
+            "ox_cluster_hostname": "ox.example.com",
+            "org_name": "Gluu Federation",
+            "org_short_name": "Gluu",
+            "country_code": "US",
+            "city": "Austin",
+            "state": "Texas",
+            "admin_email": "john@example.com",
+            "admin_pw": "secret",
+            "weave_ip_network": "10.20.10.1/24",
+        },
+    )
+    assert resp.status_code == 403

@@ -208,10 +208,18 @@ class ClusterList(Resource):
                 "code": 500,
                 "message": "Internal Server Error",
             },
+            {
+                "code": 403,
+                "message": "Forbidden",
+            },
         ],
         summary='Create a new cluster'
     )
     def post(self):
+        # limit to 1 cluster for now
+        if len(db.all("clusters")) >= 1:
+            return {"code": 403, "message": "cannot add more cluster"}, 403
+
         params = cluster_req.parse_args()
         cluster = GluuCluster(fields=params)
         db.persist(cluster, "clusters")

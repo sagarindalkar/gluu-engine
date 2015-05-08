@@ -23,11 +23,10 @@ from flask_restful_swagger import swagger
 from flask_restful.fields import String
 
 from gluuapi.model.base import BaseModel
-from gluuapi.model.base import TomcatMixin
 
 
 @swagger.model
-class OxauthNode(TomcatMixin, BaseModel):
+class OxauthNode(BaseModel):
     # Swager Doc
     resource_fields = {
         "id": String(attribute="Node unique identifier"),
@@ -55,18 +54,6 @@ class OxauthNode(TomcatMixin, BaseModel):
         self.cert_folder = "/etc/certs"
         self.oxauth_lib = "/opt/tomcat/webapps/oxauth/WEB-INF/lib"
 
-    @property
-    def oxauth_errors_json(self):  # pragma: no cover
-        return "gluuapi/templates/salt/oxauth/oxauth-errors.json"
-
-    @property
-    def oxauth_ldap_properties(self):  # pragma: no cover
-        return "gluuapi/templates/salt/oxauth/oxauth-ldap.properties"
-
-    @property
-    def oxauth_config_xml(self):  # pragma: no cover
-        return "gluuapi/templates/salt/oxauth/oxauth-config.xml"
-
-    @property
-    def oxauth_static_conf_json(self):  # pragma: no cover
-        return "gluuapi/templates/salt/oxauth/oxauth-static-conf.json"
+        self.tomcat_home = "/opt/tomcat"
+        self.tomcat_conf_dir = "/opt/tomcat/conf"
+        self.tomcat_log_folder = "/opt/tomcat/logs"

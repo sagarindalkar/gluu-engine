@@ -1,6 +1,6 @@
 # The MIT License (MIT)
 #
-# Copyright (c) 2014 Gluu
+# Copyright (c) 2015 Gluu
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -50,10 +50,13 @@ class Database(object):
                          "application. Ensure you have called init_app first."
 
         if not self._db:
-            try:
-                os.makedirs(os.path.dirname(self.app.config["DATABASE_URI"]))
-            except OSError:
-                pass
+            if not os.path.exists(self.app.config["DATABASE_URI"]):
+                try:
+                    os.makedirs(
+                        os.path.dirname(self.app.config["DATABASE_URI"])
+                    )
+                except OSError:
+                    pass
             self._db = tinydb.TinyDB(self.app.config["DATABASE_URI"])
         return self._db
 

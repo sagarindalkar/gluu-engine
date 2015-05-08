@@ -1,16 +1,17 @@
 import pytest
 
 
-def test_base_model_helper_init(cluster, provider):
+def test_base_model_helper_init(app, cluster, provider):
     from gluuapi.helper.model_helper import BaseModelHelper
 
     # instantiating BaseModelHelper without overriding any
     # required attrs (e.g. ``setup_class``) raises AssertionError
     with pytest.raises(AssertionError):
-        BaseModelHelper(cluster, provider, "127.0.0.1")
+        BaseModelHelper(cluster, provider, "127.0.0.1",
+                        template_dir=app.config["TEMPLATES_DIR"])
 
 
-def test_ldap_model_helper(monkeypatch, cluster, provider):
+def test_ldap_model_helper(monkeypatch, app, cluster, provider):
     from gluuapi.helper.model_helper import LdapModelHelper
     from gluuapi.setup import LdapSetup
     from gluuapi.model import LdapNode
@@ -20,7 +21,8 @@ def test_ldap_model_helper(monkeypatch, cluster, provider):
         "docker.Client.inspect_container",
         lambda cls, container: {"NetworkSettings": {"IPAddress": ipaddr}},
     )
-    helper = LdapModelHelper(cluster, provider, "127.0.0.1")
+    helper = LdapModelHelper(cluster, provider, "127.0.0.1",
+                             template_dir=app.config["TEMPLATES_DIR"])
 
     # some sanity checks
     assert helper.setup_class == LdapSetup
@@ -34,7 +36,7 @@ def test_ldap_model_helper(monkeypatch, cluster, provider):
     assert helper.node.ip == ipaddr
 
 
-def test_oxauth_model_helper(monkeypatch, cluster, provider):
+def test_oxauth_model_helper(monkeypatch, app, cluster, provider):
     from gluuapi.helper import OxauthModelHelper
     from gluuapi.setup import OxauthSetup
     from gluuapi.model import OxauthNode
@@ -44,7 +46,8 @@ def test_oxauth_model_helper(monkeypatch, cluster, provider):
         "docker.Client.inspect_container",
         lambda cls, container: {"NetworkSettings": {"IPAddress": ipaddr}},
     )
-    helper = OxauthModelHelper(cluster, provider, "127.0.0.1")
+    helper = OxauthModelHelper(cluster, provider, "127.0.0.1",
+                               template_dir=app.config["TEMPLATES_DIR"])
 
     # some sanity checks
     assert helper.setup_class == OxauthSetup
@@ -58,7 +61,7 @@ def test_oxauth_model_helper(monkeypatch, cluster, provider):
     assert helper.node.ip == ipaddr
 
 
-def test_oxtrust_model_helper(monkeypatch, cluster, provider):
+def test_oxtrust_model_helper(monkeypatch, app, cluster, provider):
     from gluuapi.helper import OxtrustModelHelper
     from gluuapi.setup import OxtrustSetup
     from gluuapi.model import OxtrustNode
@@ -68,7 +71,8 @@ def test_oxtrust_model_helper(monkeypatch, cluster, provider):
         "docker.Client.inspect_container",
         lambda cls, container: {"NetworkSettings": {"IPAddress": ipaddr}},
     )
-    helper = OxtrustModelHelper(cluster, provider, "127.0.0.1")
+    helper = OxtrustModelHelper(cluster, provider, "127.0.0.1",
+                                template_dir=app.config["TEMPLATES_DIR"])
 
     # some sanity checks
     assert helper.setup_class == OxtrustSetup

@@ -21,12 +21,27 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 import os.path
-import time
 
 from gluuapi.setup.oxauth_setup import OxauthSetup
 
 
 class OxtrustSetup(OxauthSetup):
+    @property
+    def oxtrust_properties(self):  # pragma: no cover
+        return self.get_template_path("salt/oxtrust/oxTrust.properties")
+
+    @property
+    def oxtrust_ldap_properties(self):  # pragma: no cover
+        return self.get_template_path("salt/oxtrust/oxTrustLdap.properties")
+
+    @property
+    def oxtrust_log_rotation_configuration(self):  # pragma: no cover
+        return self.get_template_path("salt/oxtrust/oxTrustLogRotationConfiguration.xml")
+
+    @property
+    def oxtrust_cache_refresh_properties(self):  # pragma: no cover
+        return self.get_template_path("salt/oxtrust/oxTrustCacheRefresh-template.properties.vm")
+
     def import_httpd_cert(self):
         # imports httpd cert into oxtrust cacerts to avoid
         # "peer not authenticated" error
@@ -41,26 +56,35 @@ class OxtrustSetup(OxauthSetup):
             "-keystore {}".format(self.node.truststore_fn),
             "-storepass changeit -noprompt",
         ])
+        self.logger.info("importing httpd cert")
         self.salt.cmd(
             self.node.id,
             ["cmd.run", "cmd.run"],
             [[cert_cmd], [import_cmd]]
         )
 
-    def update_host_entries(self):
-        self.logger.info("updating host entries in /etc/hosts")
+    def delete_httpd_cert(self):
+        delete_cmd = " ".join([
+            "keytool -delete",
+            "-alias {}".format(self.cluster.ox_cluster_hostname),
+            "-keystore {}".format(self.node.truststore_fn),
+            "-storepass changeit -noprompt",
+        ])
+        self.logger.info("deleting httpd cert")
+        self.salt.cmd(self.node.id, "cmd.run", [delete_cmd])
+
+    def add_host_entries(self):
         for httpd in self.cluster.get_httpd_objects():
-            self.salt.cmd(
-                self.node.id,
-                "cmd.run",
-                ["echo '{} {}' >> /etc/hosts".format(
-                    httpd.weave_ip,
-                    self.cluster.ox_cluster_hostname.split(":")[0],
-                )],
-            )
+            self.logger.info("updating oxTrust host entries in /etc/hosts")
+            # add the entry only if line is not exist in /etc/hosts
+            grep_cmd = "grep -q '^{0} {1}$' /etc/hosts " \
+                       "|| echo '{0} {1}' >> /etc/hosts" \
+                       .format(httpd.weave_ip,
+                               self.cluster.ox_cluster_hostname)
+            self.salt.cmd(self.node.id, "cmd.run", [grep_cmd])
 
     def render_cache_props_template(self):
-        src = self.node.oxtrust_cache_refresh_properties
+        src = self.oxtrust_cache_refresh_properties
         dest_dir = os.path.join(self.node.tomcat_conf_dir, "template", "conf")
         dest = os.path.join(dest_dir, os.path.basename(src))
         self.salt.cmd(self.node.id, "cmd.run",
@@ -68,7 +92,7 @@ class OxtrustSetup(OxauthSetup):
         self.render_template(src, dest)
 
     def render_log_config_template(self):
-        src = self.node.oxtrust_log_rotation_configuration
+        src = self.oxtrust_log_rotation_configuration
         dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
         ctx = {
             "tomcat_log_folder": self.node.tomcat_log_folder,
@@ -76,7 +100,7 @@ class OxtrustSetup(OxauthSetup):
         self.render_template(src, dest, ctx)
 
     def render_props_template(self):
-        src = self.node.oxtrust_properties
+        src = self.oxtrust_properties
         dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
         ctx = {
             "inumAppliance": self.cluster.inum_appliance,
@@ -98,7 +122,7 @@ class OxtrustSetup(OxauthSetup):
         self.render_template(src, dest, ctx)
 
     def render_ldap_props_template(self):
-        src = self.node.oxtrust_ldap_properties
+        src = self.oxtrust_ldap_properties
         dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
 
         ldap_hosts = ",".join([
@@ -114,9 +138,6 @@ class OxtrustSetup(OxauthSetup):
         self.render_template(src, dest, ctx)
 
     def setup(self):
-        start = time.time()
-        self.logger.info("oxTrust setup is started")
-
         hostname = self.cluster.ox_cluster_hostname.split(":")[0]
         self.create_cert_dir()
 
@@ -148,8 +169,4 @@ class OxtrustSetup(OxauthSetup):
         self.start_tomcat()
 
         self.change_cert_access("tomcat", "tomcat")
-
-        elapsed = time.time() - start
-        self.logger.info(
-            "oxTrust setup is finished ({} seconds)".format(elapsed))
         return True

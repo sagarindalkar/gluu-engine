@@ -34,9 +34,10 @@ from gluuapi.helper.salt_helper import SaltHelper
 class BaseSetup(object):
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, node, cluster, logger=None):
+    def __init__(self, node, cluster, logger=None, template_dir=""):
         self.logger = logger or create_file_logger()
         self.build_dir = tempfile.mkdtemp()
+        self.template_dir = template_dir
         self.salt = SaltHelper()
         self.node = node
         self.cluster = cluster
@@ -148,3 +149,7 @@ class BaseSetup(object):
             [["chown -R {}:{} {}".format(user, group, self.node.cert_folder)],
              ["chmod -R 500 {}".format(self.node.cert_folder)]],
         )
+
+    def get_template_path(self, path):
+        template_path = os.path.join(self.template_dir, path)
+        return template_path

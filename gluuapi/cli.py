@@ -19,14 +19,28 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import os
 
-from flask.ext.restful import reqparse
+from crochet import setup as crochet_setup
 
-node_req = reqparse.RequestParser()
-node_req.add_argument("cluster_id", location="form", required=True,
-                      help="Cluster ID to which this node will be added")
-node_req.add_argument("node_type", location="form", required=True,
-                      choices=["ldap", "oxauth", "oxtrust", "httpd"],
-                      help="one of 'ldap', 'oxauth', 'oxtrust', or 'httpd'")
-node_req.add_argument("provider_id", location="form", required=True,
-                      help="Provider ID to which this node will be added")
+from gluuapi.app import create_app
+from gluuapi.settings import DevConfig
+from gluuapi.settings import ProdConfig
+
+
+def main():
+    if os.environ.get("API_ENV") == 'prod':
+        app = create_app(ProdConfig)
+    else:
+        app = create_app(DevConfig)
+
+    if not os.environ.get("SALT_MASTER_IPADDR"):
+        raise SystemExit("Unable to get salt-master IP address. "
+                         "Make sure the SALT_MASTER_IPADDR "
+                         "environment variable is set.")
+
+    crochet_setup()
+    app.run(port=app.config['PORT'])
+
+if __name__ == '__main__':
+    main()

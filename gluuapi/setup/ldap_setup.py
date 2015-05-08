@@ -32,6 +32,75 @@ from gluuapi.setup.oxtrust_setup import OxtrustSetup
 
 
 class LdapSetup(BaseSetup):
+    @property
+    def ldif_base(self):  # pragma: no cover
+        return self.get_template_path('salt/opendj/ldif/base.ldif')
+
+    @property
+    def ldif_appliance(self):  # pragma: no cover
+        return self.get_template_path('salt/opendj/ldif/appliance.ldif')
+
+    @property
+    def ldif_attributes(self):  # pragma: no cover
+        return self.get_template_path('salt/opendj/ldif/attributes.ldif')
+
+    @property
+    def ldif_scopes(self):  # pragma: no cover
+        return self.get_template_path('salt/opendj/ldif/scopes.ldif')
+
+    @property
+    def ldif_clients(self):  # pragma: no cover
+        return self.get_template_path('salt/opendj/ldif/clients.ldif')
+
+    @property
+    def ldif_people(self):  # pragma: no cover
+        return self.get_template_path('salt/opendj/ldif/people.ldif')
+
+    @property
+    def ldif_groups(self):  # pragma: no cover
+        return self.get_template_path('salt/opendj/ldif/groups.ldif')
+
+    @property
+    def ldif_site(self):  # pragma: no cover
+        return self.get_template_path('salt/opendj/ldif/o_site.ldif')
+
+    @property
+    def ldif_scripts(self):  # pragma: no cover
+        return self.get_template_path('salt/opendj/ldif/scripts.ldif')
+
+    @property
+    def ldif_files(self):  # pragma: no cover
+        # List of initial ldif files
+        return [
+            self.ldif_base,
+            self.ldif_appliance,
+            self.ldif_attributes,
+            self.ldif_scopes,
+            self.ldif_clients,
+            self.ldif_people,
+            self.ldif_groups,
+            self.ldif_site,
+            self.ldif_scripts,
+        ]
+
+    @property
+    def index_json(self):  # pragma: no cover
+        return self.get_template_path("salt/opendj/opendj_index.json")
+
+    @property
+    def ldap_setup_properties(self):  # pragma: no cover
+        return self.get_template_path("salt/opendj/opendj-setup.properties")
+
+    @property
+    def schema_files(self):  # pragma: no cover
+        templates = [
+            "salt/opendj/schema/101-ox.ldif",
+            "salt/opendj/schema/77-customAttributes.ldif",
+            "salt/opendj/schema/96-eduperson.ldif",
+            "salt/opendj/schema/100-user.ldif",
+        ]
+        return map(self.get_template_path, templates)
+
     def write_ldap_pw(self):
         self.logger.info("writing temporary LDAP password")
 
@@ -59,13 +128,13 @@ class LdapSetup(BaseSetup):
         }
 
         # render schema templates
-        for schema_file in self.node.schema_files:
+        for schema_file in self.schema_files:
             src = schema_file
             dest = os.path.join(self.node.schema_folder, os.path.basename(src))
             self.render_template(src, dest, ctx)
 
     def setup_opendj(self):
-        src = self.node.ldap_setup_properties
+        src = self.ldap_setup_properties
         dest = os.path.join(self.node.ldap_base_folder, os.path.basename(src))
         ctx = {
             "ldap_hostname": self.node.weave_ip,
@@ -126,7 +195,7 @@ class LdapSetup(BaseSetup):
             time.sleep(1)
 
     def index_opendj(self):
-        with open(self.node.indexJson, 'r') as fp:
+        with open(self.index_json, 'r') as fp:
             index_json = json.load(fp)
 
         if index_json:
@@ -177,7 +246,7 @@ class LdapSetup(BaseSetup):
         )
 
         # render templates
-        for ldif_file in self.node.ldif_files:
+        for ldif_file in self.ldif_files:
             src = ldif_file
             file_basename = os.path.basename(src)
             dest = os.path.join(ldifFolder, file_basename)
@@ -305,9 +374,6 @@ class LdapSetup(BaseSetup):
         setup_obj.delete_ldap_pw()
 
     def setup(self):
-        self.logger.info("LDAP setup is started")
-        start = time.time()
-
         self.write_ldap_pw()
         self.add_ldap_schema()
         self.setup_opendj()
@@ -328,18 +394,17 @@ class LdapSetup(BaseSetup):
 
         self.export_opendj_public_cert()
         self.delete_ldap_pw()
-
-        elapsed = time.time() - start
-        self.logger.info("LDAP setup is finished ({} seconds)".format(elapsed))
         return True
 
     def render_ox_ldap_props(self):
         for oxauth in self.cluster.get_oxauth_objects():
-            setup_obj = OxauthSetup(oxauth, self.cluster, logger=self.logger)
+            setup_obj = OxauthSetup(oxauth, self.cluster, logger=self.logger,
+                                    template_dir=self.template_dir)
             setup_obj.render_ldap_props_template()
 
         for oxtrust in self.cluster.get_oxtrust_objects():
-            setup_obj = OxtrustSetup(oxtrust, self.cluster, logger=self.logger)
+            setup_obj = OxtrustSetup(oxtrust, self.cluster, logger=self.logger,
+                                     template_dir=self.template_dir)
             setup_obj.render_ldap_props_template()
 
     def after_setup(self):
@@ -351,19 +416,18 @@ class LdapSetup(BaseSetup):
         # since LDAP nodes are replicated if there's more than 1 node,
         # we need to disable the replication agreement first before
         # before stopping the opendj server
-        if len(self.cluster.ldap_nodes) > 1:
-            self.write_ldap_pw()
-            disable_repl_cmd = " ".join([
-                "{}/bin/dsreplication".format(self.node.ldap_base_folder),
-                "disable",
-                "--hostname", self.node.weave_ip,
-                "--port", self.node.ldap_admin_port,
-                "--adminUID", "admin",
-                "--adminPasswordFile", self.node.ldap_pass_fn,
-                "-X", "-n", "--disableAll",
-            ])
-            self.salt.cmd(self.node.id, "cmd.run", [disable_repl_cmd])
-            self.delete_ldap_pw()
+        self.write_ldap_pw()
+        disable_repl_cmd = " ".join([
+            "{}/bin/dsreplication".format(self.node.ldap_base_folder),
+            "disable",
+            "--hostname", self.node.weave_ip,
+            "--port", self.node.ldap_admin_port,
+            "--adminUID", "admin",
+            "--adminPasswordFile", self.node.ldap_pass_fn,
+            "-X", "-n", "--disableAll",
+        ])
+        self.salt.cmd(self.node.id, "cmd.run", [disable_repl_cmd])
+        self.delete_ldap_pw()
 
         # stop the server
         stop_cmd = "{}/bin/stop-ds".format(self.node.ldap_base_folder)

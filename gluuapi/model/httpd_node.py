@@ -52,7 +52,3 @@ class HttpdNode(BaseModel):
         self.httpd_key_orig = "/etc/certs/httpd.key.orig"
         self.httpd_csr = "/etc/certs/httpd.csr"
         self.httpd_crt = "/etc/certs/httpd.crt"
-
-    @property
-    def https_conf(self):
-        return "gluuapi/templates/salt/httpd/gluu_https.conf"

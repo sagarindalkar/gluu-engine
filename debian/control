@@ -1,0 +1,13 @@
+Source: gluu-flask
+Section: base
+Priority: optional
+Maintainer: Gluu Developers <noresponse@gluu.org>
+XSBC-Original-Maintainer: Adrin Alves <noresponse@gluu.org>
+Build-Depends: debhelper (>= 8.0.0)
+Standards-Version: 3.9.4
+Homepage: http://www.gluu.org
+
+Package: gluu-flask
+Architecture: amd64
+Depends: 
+Description: Gluu Flask

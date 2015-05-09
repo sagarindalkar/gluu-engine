@@ -5,8 +5,8 @@
 override_dh_auto_build:
 		python setup.py build
 override_dh_auto_install:
-		find ./debian/gluu-flask -name "*.gitignore" -delete
 		python setup.py install --root=debian/gluu-flask
 override_dh_auto_clean:
 		python setup.py clean
 override_dh_auto_test:
+override_dh_usrlocal:

@@ -1,25 +1,12 @@
 #!/usr/bin/make -f
-# -*- makefile -*-
-
-# Uncomment this to turn on verbose mode.
-#export DH_VERBOSE=1
-
-#export DH_ALWAYS_EXCLUDE=GIT:.gitignore
-
 %:
-	dh $@ 
+	dh $@ --with python2
 
-override_dh_install:
-	dh_install
-	find ./debian/gluu-server -name "*.gitignore" -delete
-
-override_dh_perl:
-override_dh_link:
-override_dh_strip:
-override_dh_compress:
-override_dh_makeshlibs:
-override_dh_shlibdeps:
-
-override_dh_fixperms:
-	dh_fixperms
-	#chmod 544 ./debian/gluu-flask
+override_dh_auto_build:
+		python setup.py build
+override_dh_auto_install:
+		find ./debian/gluu-flask -name "*.gitignore" -delete
+		python setup.py install --root=debian/gluu-flask
+override_dh_auto_clean:
+		python setup.py clean
+override_dh_auto_test:

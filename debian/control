@@ -6,6 +6,9 @@ XSBC-Original-Maintainer: Adrin Alves <noresponse@gluu.org>
 Build-Depends: debhelper (>= 9.0.0),
 		python,
 		python-tox,
+		libzmq-dev,
+	 	swig,
+		libssl-dev
 #python-all (>= 2.6.6-3~),
 #python-setuptools,
 XS-Python-Version: >=2.7
@@ -14,7 +17,7 @@ Homepage: http://www.gluu.org
 
 Package: gluu-flask
 Architecture: all
-Depends: ${misc:Depends},${python:Depends}
+Depends: ${misc:Depends},${python:Depends}, openssl
 Description: Gluu Server Flask Management API Server
  The goal is to use Salt, Docker, and Flask to build
  a new cluster recipe for the Gluu Server that will

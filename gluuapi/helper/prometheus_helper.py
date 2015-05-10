@@ -20,14 +20,17 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import os.path
+
 from gluuapi.database import db
 from jinja2 import Template
 from docker import Client
 
 class PrometheusHelper(object):
-    def __init__(self):
+    def __init__(self, template_dir):
         self.clusters = []
-        self.template = 'gluuapi/templates/prometheus/prometheus.conf.tmpl'
+        self.template_dir = template_dir
+        self.template = self.get_template_path('prometheus/prometheus.conf.tmpl')
         self.target_path = '/etc/gluu/prometheus/prometheus.conf' #TODO: must come from flask config
         self.docker = Client("unix:///var/run/docker.sock")
         self.prometheus_cid = "/var/run/prometheus.cid" #TODO: must come from flask config
@@ -52,3 +55,7 @@ class PrometheusHelper(object):
         self.__load_clusters()
         self.__render()
         self.__restart()
+
+    def get_template_path(self, path):
+        template_path = os.path.join(self.template_dir, path)
+        return template_path

@@ -119,7 +119,7 @@ class Node(Resource):
         salt.unregister_minion(node.id)
 
         #updating prometheus
-        prometheus = PrometheusHelper()
+        prometheus = PrometheusHelper(template_dir=template_dir)
         prometheus.update()
 
         return {}, 204

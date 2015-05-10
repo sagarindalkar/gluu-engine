@@ -170,8 +170,8 @@ class BaseModelHelper(object):
 
                     setup_obj.after_setup()
                     setup_obj.remove_build_dir()
-                    #updating prometheus 
-                    prometheus = PrometheusHelper()
+                    #updating prometheus
+                    prometheus = PrometheusHelper(template_dir=self.template_dir)
                     prometheus.update()
 
                     elapsed = time.time() - start

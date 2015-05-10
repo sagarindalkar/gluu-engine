@@ -5,6 +5,8 @@ Maintainer: Gluu Developers <noresponse@gluu.org>
 XSBC-Original-Maintainer: Adrin Alves <noresponse@gluu.org>
 Build-Depends: debhelper (>= 9.0.0),
 		python,
+		python-dev,
+		openssl,
 		python-tox,
 		libzmq-dev,
 	 	swig,

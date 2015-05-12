@@ -11,8 +11,7 @@ Build-Depends: debhelper (>= 9.0.0),
 		libzmq-dev,
 	 	swig,
 		libssl-dev
-#python-all (>= 2.6.6-3~),
-#python-setuptools,
+Build-Conflicts: python-requests
 XS-Python-Version: >=2.7
 Standards-Version: 3.9.5
 Homepage: http://www.gluu.org

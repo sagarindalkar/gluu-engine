@@ -63,7 +63,7 @@ class OxauthSetup(BaseSetup):
 
         self.logger.info("generating OpenID key file")
         # waiting for oxauth.war to be unpacked
-        time.sleep(2)
+        time.sleep(5)
         web_inf = "/opt/tomcat/webapps/oxauth/WEB-INF"
         classpath = ":".join([
             "{}/classes".format(web_inf),

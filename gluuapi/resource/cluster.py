@@ -226,11 +226,10 @@ class ClusterList(Resource):
         db.persist(cluster, "clusters")
 
         # expose the weave IP
-        import socket
         addr, prefixlen = cluster.exposed_weave_ip
         salt = SaltHelper()
         salt.cmd(
-            socket.gethostname(),
+            salt.get_fqhostname(),
             "cmd.run",
             ["weave expose {}/{}".format(addr, prefixlen)],
         )

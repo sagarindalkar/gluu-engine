@@ -28,7 +28,9 @@ HOSTNAME_RE = re.compile('^(?![0-9]+$)(?!-)[a-zA-Z0-9-]{,63}(?<!-)$')
 
 
 def hostname_type(value, name):
-    if HOSTNAME_RE.match(value):
+    # some provider like AWS uses dotted hostname,
+    # e.g. ip-172-31-24-54.ec2.internal
+    if all(HOSTNAME_RE.match(v) for v in value.split(".")):
         return value
 
     raise ValueError(

@@ -79,3 +79,7 @@ class SaltHelper(object):
 
     def cmd(self, tgt, fun, arg=()):
         return self.client.cmd(tgt, fun, arg)
+
+    def get_fqhostname(self):
+        import salt.utils.network
+        return salt.utils.network.get_fqhostname()

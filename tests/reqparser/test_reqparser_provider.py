@@ -9,6 +9,7 @@ import pytest
     '',
     'a',
     '0--0',
+    'ip-172-31-24-54.ec2.internal',
 ])
 def test_hostname_type(hostname):
     from gluuapi.reqparser.provider import hostname_type

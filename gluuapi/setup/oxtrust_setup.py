@@ -73,15 +73,17 @@ class OxtrustSetup(OxauthSetup):
         self.logger.info("deleting httpd cert")
         self.salt.cmd(self.node.id, "cmd.run", [delete_cmd])
 
-    def add_host_entries(self):
-        for httpd in self.cluster.get_httpd_objects():
-            self.logger.info("updating oxTrust host entries in /etc/hosts")
-            # add the entry only if line is not exist in /etc/hosts
-            grep_cmd = "grep -q '^{0} {1}$' /etc/hosts " \
-                       "|| echo '{0} {1}' >> /etc/hosts" \
-                       .format(httpd.weave_ip,
-                               self.cluster.ox_cluster_hostname)
-            self.salt.cmd(self.node.id, "cmd.run", [grep_cmd])
+    def add_host_entries(self, httpd):
+        # currently we need to add httpd container hostname
+        # to prevent "peer not authenticated" raised by oxTrust;
+        # TODO: use a real DNS
+        self.logger.info("updating oxTrust host entries in /etc/hosts")
+        # add the entry only if line is not exist in /etc/hosts
+        grep_cmd = "grep -q '^{0} {1}$' /etc/hosts " \
+                   "|| echo '{0} {1}' >> /etc/hosts" \
+                   .format(httpd.weave_ip,
+                           self.cluster.ox_cluster_hostname)
+        self.salt.cmd(self.node.id, "cmd.run", [grep_cmd])
 
     def render_cache_props_template(self):
         src = self.oxtrust_cache_refresh_properties
@@ -118,6 +120,7 @@ class OxtrustSetup(OxauthSetup):
             "oxauth_client_id": self.cluster.oxauth_client_id,
             "oxauthClient_encoded_pw": self.cluster.oxauth_client_encoded_pw,
             "inumApplianceFN": self.cluster.inum_appliance_fn,
+            "truststore_fn": self.node.truststore_fn,
         }
         self.render_template(src, dest, ctx)
 

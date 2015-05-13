@@ -94,8 +94,8 @@ class LdapSetup(BaseSetup):
     @property
     def schema_files(self):  # pragma: no cover
         templates = [
-            "salt/opendj/schema/101-ox.ldif",
             "salt/opendj/schema/77-customAttributes.ldif",
+            "salt/opendj/schema/101-ox.ldif",
             "salt/opendj/schema/96-eduperson.ldif",
             "salt/opendj/schema/100-user.ldif",
         ]
@@ -413,21 +413,20 @@ class LdapSetup(BaseSetup):
         self.render_ox_ldap_props()
 
     def teardown(self):
-        # since LDAP nodes are replicated if there's more than 1 node,
-        # we need to disable the replication agreement first before
-        # before stopping the opendj server
-        self.write_ldap_pw()
-        disable_repl_cmd = " ".join([
-            "{}/bin/dsreplication".format(self.node.ldap_base_folder),
-            "disable",
-            "--hostname", self.node.weave_ip,
-            "--port", self.node.ldap_admin_port,
-            "--adminUID", "admin",
-            "--adminPasswordFile", self.node.ldap_pass_fn,
-            "-X", "-n", "--disableAll",
-        ])
-        self.salt.cmd(self.node.id, "cmd.run", [disable_repl_cmd])
-        self.delete_ldap_pw()
+        # stop the replication agreement
+        if len(self.cluster.get_ldap_objects()) > 0:
+            self.write_ldap_pw()
+            disable_repl_cmd = " ".join([
+                "{}/bin/dsreplication".format(self.node.ldap_base_folder),
+                "disable",
+                "--hostname", self.node.weave_ip,
+                "--port", self.node.ldap_admin_port,
+                "--adminUID", "admin",
+                "--adminPasswordFile", self.node.ldap_pass_fn,
+                "-X", "-n", "--disableAll",
+            ])
+            self.salt.cmd(self.node.id, "cmd.run", [disable_repl_cmd])
+            self.delete_ldap_pw()
 
         # stop the server
         stop_cmd = "{}/bin/stop-ds".format(self.node.ldap_base_folder)

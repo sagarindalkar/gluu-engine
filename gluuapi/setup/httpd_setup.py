@@ -68,7 +68,8 @@ class HttpdSetup(BaseSetup):
     def setup(self):
         hostname = self.cluster.ox_cluster_hostname.split(":")[0]
         self.create_cert_dir()
-        self.gen_cert("httpd", self.cluster.decrypted_admin_pw, "www-data", "www-data", hostname)
+        self.gen_cert("httpd", self.cluster.decrypted_admin_pw,
+                      "www-data", "www-data", hostname)
         self.change_cert_access("www-data", "www-data")
         self.render_https_conf_template(hostname)
         self.start_httpd()
@@ -78,7 +79,7 @@ class HttpdSetup(BaseSetup):
         for oxtrust in self.cluster.get_oxtrust_objects():
             setup_obj = OxtrustSetup(oxtrust, self.cluster, logger=self.logger,
                                      template_dir=self.template_dir)
-            setup_obj.add_host_entries()
+            setup_obj.add_host_entries(self.node)
             setup_obj.import_httpd_cert()
 
         # expose port 80

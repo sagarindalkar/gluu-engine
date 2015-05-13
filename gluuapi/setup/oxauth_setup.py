@@ -59,11 +59,16 @@ class OxauthSetup(BaseSetup):
         self.salt.copy_file(self.node.id, local_dest, remote_dest)
 
     def gen_openid_keys(self):
-        openid_key_json_fn = os.path.join(self.node.cert_folder, "oxauth-web-keys.json")
-
         self.logger.info("generating OpenID key file")
+
+        unpack_cmd = "unzip -q /opt/tomcat/webapps/oxauth.war " \
+                     "-d /opt/tomcat/webapps/oxauth"
+        self.salt.cmd(self.node.id, "cmd.run", [unpack_cmd])
+
         # waiting for oxauth.war to be unpacked
         time.sleep(5)
+
+        openid_key_json_fn = os.path.join(self.node.cert_folder, "oxauth-web-keys.json")
         web_inf = "/opt/tomcat/webapps/oxauth/WEB-INF"
         classpath = ":".join([
             "{}/classes".format(web_inf),
@@ -74,7 +79,9 @@ class OxauthSetup(BaseSetup):
             "{}/lib/log4j-1.2.14.jar".format(web_inf),
             "{}/lib/commons-codec-1.5.jar".format(web_inf),
         ])
-        key_cmd = "java -cp {} org.xdi.oxauth.util.KeyGenerator > {}".format(
+        # one of Java class prints a line of log message, which breaks the JSON,
+        # hence we start reading from second line
+        key_cmd = "java -cp {} org.xdi.oxauth.util.KeyGenerator | tail -n +2 > {}".format(
             classpath, openid_key_json_fn,
         )
         self.salt.cmd(self.node.id, "cmd.run", [key_cmd])
@@ -214,9 +221,10 @@ class OxauthSetup(BaseSetup):
             hostname,
         )
 
+        self.gen_openid_keys()
+
         # configure tomcat to run oxauth war file
         self.start_tomcat()
 
-        self.gen_openid_keys()
         self.change_cert_access("tomcat", "tomcat")
         return True

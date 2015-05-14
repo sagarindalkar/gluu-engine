@@ -106,6 +106,10 @@ class Database(object):
         data = table.search(condition)
         return [jsonpickle.decode(json.dumps(item)) for item in data]
 
+    def count_from_table(self, table_name, condition):
+        table = self.db.table(table_name)
+        return table.count(condition)
+
 
 # shortcut to database object
 db = Database()

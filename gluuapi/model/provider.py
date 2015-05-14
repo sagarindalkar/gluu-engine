@@ -24,6 +24,7 @@ import uuid
 from flask_restful_swagger import swagger
 from flask.ext.restful import fields
 
+from gluuapi.database import db
 from gluuapi.model.base import BaseModel
 
 
@@ -45,3 +46,8 @@ class Provider(BaseModel):
         self.id = str(uuid.uuid4())
         self.docker_base_url = fields.get("docker_base_url", "")
         self.hostname = fields.get("hostname", "")
+
+    @property
+    def nodes_count(self):
+        condition = db.where("provider_id") == self.id
+        return db.count_from_table("nodes", condition)

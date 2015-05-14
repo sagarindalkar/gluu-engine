@@ -70,6 +70,10 @@ class ProviderResource(Resource):
                 "code": 500,
                 "message": "Internal Server Error",
             },
+            {
+                "code": 403,
+                "message": "Access denied",
+            },
         ],
         summary='TODO'
     )
@@ -78,7 +82,14 @@ class ProviderResource(Resource):
         if not provider:
             return {"code": 404, "message": "Provider not found"}, 404
 
+        if provider.nodes_count:
+            msg = "Cannot delete provider while having nodes " \
+                  "deployed on this provider"
+            return {"code": 403, "message": msg}
+
         db.delete(provider_id, "providers")
+        salt = SaltHelper()
+        salt.unregister_minion(provider.hostname)
         return {}, 204
 
 

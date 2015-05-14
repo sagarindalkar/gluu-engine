@@ -130,7 +130,8 @@ class LdapSetup(BaseSetup):
         # render schema templates
         for schema_file in self.schema_files:
             src = schema_file
-            dest = os.path.join(self.node.schema_folder, os.path.basename(src))
+            basename = os.path.basename(src)
+            dest = os.path.join(self.node.schema_folder, basename)
             self.render_template(src, dest, ctx)
 
     def setup_opendj(self):

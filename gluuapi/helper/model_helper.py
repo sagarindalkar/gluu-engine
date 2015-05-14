@@ -86,15 +86,15 @@ class BaseModelHelper(object):
         should be avoided.
         """
 
-    def prepare_minion(self):
+    def prepare_minion(self, connect_delay=10, exec_delay=15):
         """Waits for minion to connect before doing any remote execution.
         """
         # wait for 10 seconds to make sure minion connected
         # and sent its key to master
         # TODO: there must be a way around this
-        self.logger.info("Waiting for minion to connect; "
-                         "sleeping for 10 seconds")
-        time.sleep(10)
+        self.logger.info("Waiting for minion to connect; sleeping for "
+                         "{} seconds".format(connect_delay))
+        time.sleep(connect_delay)
 
         # register the container as minion
         self.salt.register_minion(self.node.id)
@@ -102,9 +102,9 @@ class BaseModelHelper(object):
         # delay the remote execution
         # see https://github.com/saltstack/salt/issues/13561
         # TODO: there must be a way around this
-        self.logger.info("Preparing remote execution; "
-                         "sleeping for 15 seconds")
-        time.sleep(15)
+        self.logger.info("Preparing remote execution; sleeping for "
+                         "{} seconds".format(exec_delay))
+        time.sleep(exec_delay)
 
     def before_save(self):
         """Callback before saving to database.
@@ -124,7 +124,7 @@ class BaseModelHelper(object):
         db.update(self.cluster.id, self.cluster, "clusters")
 
     @run_in_reactor
-    def setup(self):
+    def setup(self, connect_delay=10, exec_delay=15):
         """Runs the node setup.
         """
         try:
@@ -155,7 +155,7 @@ class BaseModelHelper(object):
                 # warning: don't override node.id attribute!
                 self.prepare_node_attrs()
 
-                self.prepare_minion()
+                self.prepare_minion(connect_delay, exec_delay)
                 if self.salt.is_minion_registered(self.node.id):
                     setup_obj = self.setup_class(self.node, self.cluster, self.logger, self.template_dir)
 

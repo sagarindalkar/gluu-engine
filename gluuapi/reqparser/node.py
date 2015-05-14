@@ -30,3 +30,5 @@ node_req.add_argument("node_type", location="form", required=True,
                       help="one of 'ldap', 'oxauth', 'oxtrust', or 'httpd'")
 node_req.add_argument("provider_id", location="form", required=True,
                       help="Provider ID to which this node will be added")
+node_req.add_argument("connect_delay", location="form", type=int, default=10)
+node_req.add_argument("exec_delay", location="form", type=int, default=15)

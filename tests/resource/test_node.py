@@ -73,3 +73,20 @@ def test_node_delete(monkeypatch, app, db, cluster, provider, ldap_node):
 def test_node_delete_failed(app):
     resp = app.test_client().delete("/node/random-invalid-id")
     assert resp.status_code == 404
+
+
+def test_node_post_custom_delay(app, db, cluster, provider):
+    db.persist(cluster, "clusters")
+    db.persist(provider, "providers")
+
+    resp = app.test_client().post(
+        "/node",
+        data={
+            "cluster_id": cluster.id,
+            "provider_id": provider.id,
+            "node_type": "httpd",
+            "connect_delay": "not-a-number",
+            "exec_delay": "not-a-number",
+        },
+    )
+    assert resp.status_code == 400

@@ -226,5 +226,5 @@ status of the cluster node is available.""",
             helper_class = HttpdModelHelper
 
         helper = helper_class(cluster, provider, salt_master_ipaddr, template_dir)
-        helper.setup()
+        helper.setup(params.connect_delay, params.exec_delay)
         return {"log": helper.logpath}, 202

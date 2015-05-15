@@ -31,6 +31,15 @@ from gluuapi.reqparser import cluster_req
 from gluuapi.helper import SaltHelper
 
 
+def format_cluster_resp(cluster):
+    item = cluster.as_dict()
+    item["ldap_nodes"] = [node.id for node in cluster.get_ldap_objects()]
+    item["httpd_nodes"] = [node.id for node in cluster.get_httpd_objects()]
+    item["oxauth_nodes"] = [node.id for node in cluster.get_oxauth_objects()]
+    item["oxtrust_nodes"] = [node.id for node in cluster.get_oxtrust_objects()]
+    return item
+
+
 class Cluster(Resource):
     @swagger.operation(
         notes='Gives cluster info/state',
@@ -53,10 +62,10 @@ class Cluster(Resource):
         summary='TODO'
     )
     def get(self, cluster_id):
-        obj = db.get(cluster_id, "clusters")
-        if not obj:
+        cluster = db.get(cluster_id, "clusters")
+        if not cluster:
             return {"code": 404, "message": "Cluster not found"}, 404
-        return obj.as_dict()
+        return format_cluster_resp(cluster)
 
     @swagger.operation(
         notes='delete a cluster',
@@ -105,8 +114,8 @@ class ClusterList(Resource):
         summary='TODO'
     )
     def get(self):
-        obj_list = db.all("clusters")
-        return [item.as_dict() for item in obj_list]
+        clusters = db.all("clusters")
+        return [format_cluster_resp(cluster) for cluster in clusters]
 
     @swagger.operation(
         notes='Creates a new cluster',
@@ -237,4 +246,4 @@ class ClusterList(Resource):
         headers = {
             "Location": url_for("cluster", cluster_id=cluster.id),
         }
-        return cluster.as_dict(), 201, headers
+        return format_cluster_resp(cluster), 201, headers

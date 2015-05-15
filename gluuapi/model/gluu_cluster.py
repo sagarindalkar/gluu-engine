@@ -23,7 +23,6 @@ import itertools
 import uuid
 
 from flask_restful_swagger import swagger
-from flask_restful.fields import List
 from flask_restful.fields import String
 from netaddr import IPNetwork
 from netaddr import IPSet
@@ -45,10 +44,6 @@ class GluuCluster(BaseModel):
         'id': String(attribute='GluuCluster unique identifier'),
         'name': String(attribute='GluuCluster name'),
         'description': String(attribute='Description of cluster'),
-        'ldap_nodes': List(String, attribute='Ids of ldap nodes'),  # noqa
-        'oxauth_nodes': List(String, attribute='Ids of oxauth nodes'),  # noqa
-        'oxtrust_nodes': List(String, attribute='Ids of oxtrust nodes'),  # noqa
-        'httpd_nodes': List(String, attribute='Ids of httpd nodes'),  # noqa
         'ox_cluster_hostname': String,
         'ldaps_port': String,
         'org_name': String(attribute='Name of org for X.509 certificate'),  # noqa
@@ -119,58 +114,6 @@ class GluuCluster(BaseModel):
         self.shib_jks_fn = "/etc/certs/shibIDP.jks"
         self.weave_ip_network = fields.get("weave_ip_network", "10.2.1.0/24")
         self.reserved_ip_addrs = []
-
-    def add_node(self, node):
-        """Adds node into current cluster.
-
-        ``Node.type`` determines where to put the node to.
-        For example, node with ``ldap`` type will be appended to
-        ``GluuCluster.ldap_nodes``.
-
-        List of supported node types:
-
-        * ``ldap``
-        * ``oxauth``
-        * ``oxtrust``
-
-        :param node: an instance of any supported Node class.
-        """
-        node_type = getattr(node, "type")
-        node_attr = self.node_type_map.get(node_type)
-        if node_attr is None:
-            raise ValueError("{!r} node is not supported".format(node_type))
-        node_attr.append(node.id)
-
-    def remove_node(self, node):
-        """Removes node from current cluster.
-
-        ``Node.type`` determines where to remove the node from.
-        For example, node with ``ldap`` type will be removed from
-        ``GluuCluster.ldap_nodes``.
-
-        List of supported node types:
-
-        * ``ldap``
-        * ``oxauth``
-        * ``oxtrust``
-
-        :param node: an instance of any supported Node class.
-        """
-        node_type = getattr(node, "type")
-        node_attr = self.node_type_map.get(node_type)
-        if node_attr is None:
-            raise ValueError("{!r} node is not supported".format(node_type))
-        node_attr.remove(node.id)
-
-    @property
-    def node_type_map(self):
-        node_type_map = {
-            "ldap": self.ldap_nodes,
-            "oxauth": self.oxauth_nodes,
-            "oxtrust": self.oxtrust_nodes,
-            "httpd": self.httpd_nodes,
-        }
-        return node_type_map
 
     @property
     def decrypted_admin_pw(self):

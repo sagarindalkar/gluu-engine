@@ -114,14 +114,11 @@ class BaseModelHelper(object):
         """
 
     def save(self):
-        """Saves node and updates the cluster where node belongs to.
+        """Saves node.
         """
         # Runs pre-save callback
         self.before_save()
-
         db.persist(self.node, "nodes")
-        self.cluster.add_node(self.node)
-        db.update(self.cluster.id, self.cluster, "clusters")
 
     @run_in_reactor
     def setup(self, connect_delay=10, exec_delay=15):

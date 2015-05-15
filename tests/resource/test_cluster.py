@@ -35,12 +35,7 @@ def test_cluster_post(monkeypatch, app, db):
 def test_cluster_get(app, config, cluster, db):
     db.persist(cluster, "clusters")
     resp = app.test_client().get("/cluster/{}".format(cluster.id))
-    actual_data = json.loads(resp.data)
-
     assert resp.status_code == 200
-    assert cluster.as_dict() == actual_data
-    for field in cluster.resource_fields.keys():
-        assert field in actual_data
 
 
 def test_cluster_get_invalid_id(app):
@@ -58,11 +53,6 @@ def test_cluster_get_list(app, db, cluster):
 
     assert resp.status_code == 200
     assert len(actual_data) == 1
-
-    fields = cluster.resource_fields.keys()
-    for item in actual_data:
-        for field in fields:
-            assert field in item
 
 
 def test_cluster_get_list_empty(app):

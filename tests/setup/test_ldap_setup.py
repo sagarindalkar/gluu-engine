@@ -19,7 +19,6 @@ def test_setup_with_replication(monkeypatch, ldap_setup, db):
     monkeypatch.setattr("time.sleep", lambda num: None)
 
     peer_node = LdapNode()
-    ldap_setup.cluster.add_node(peer_node)
     db.persist(peer_node, "nodes")
     db.update(ldap_setup.cluster.id, ldap_setup.cluster, "clusters")
 
@@ -39,12 +38,10 @@ def test_after_setup(monkeypatch, ldap_setup):
 
     oxauth = OxauthNode()
     oxauth.id = "auth-123"
-    ldap_setup.cluster.add_node(oxauth)
     db.persist(oxauth, "nodes")
 
     oxtrust = OxtrustNode()
     oxtrust.id = "trust-123"
-    ldap_setup.cluster.add_node(oxtrust)
     db.persist(oxtrust, "nodes")
 
     db.update(ldap_setup.cluster.id, ldap_setup.cluster, "clusters")
@@ -71,12 +68,10 @@ def test_stop_with_replication(monkeypatch, ldap_setup):
     node1 = LdapNode()
     node1.id = "ldap-123"
     db.persist(node1, "nodes")
-    ldap_setup.cluster.add_node(node1)
 
     node2 = LdapNode()
     node2.id = "ldap-456"
     db.persist(node2, "nodes")
-    ldap_setup.cluster.add_node(node2)
 
     db.update(ldap_setup.cluster.id, ldap_setup.cluster, "clusters")
     ldap_setup.teardown()
@@ -94,7 +89,6 @@ def test_replicate_from(monkeypatch, ldap_setup, db):
     peer_node = LdapNode()
     peer_node.id = "ldap-123"
     db.persist(peer_node, "nodes")
-    ldap_setup.cluster.add_node(peer_node)
-    db.update(ldap_setup.cluster.id, ldap_setup.cluster, "clusters")
 
+    db.update(ldap_setup.cluster.id, ldap_setup.cluster, "clusters")
     ldap_setup.replicate_from(peer_node)

@@ -3,7 +3,6 @@ import json
 
 def test_node_get(app, cluster, db, ldap_node):
     db.persist(ldap_node, "nodes")
-    cluster.add_node(ldap_node)
     db.persist(cluster, "clusters")
 
     resp = app.test_client().get("/node/{}".format(ldap_node.id))
@@ -25,7 +24,6 @@ def test_node_get_invalid_id(app):
 
 def test_node_get_list(app, db, cluster, ldap_node):
     db.persist(ldap_node, "nodes")
-    cluster.add_node(ldap_node)
     db.persist(cluster, "clusters")
 
     resp = app.test_client().get("/node")
@@ -53,7 +51,6 @@ def test_node_delete(monkeypatch, app, db, cluster, provider, ldap_node):
     db.persist(provider, "providers")
     ldap_node.provider_id = provider.id
     db.persist(ldap_node, "nodes")
-    cluster.add_node(ldap_node)
     db.persist(cluster, "clusters")
 
     monkeypatch.setattr(

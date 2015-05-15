@@ -381,14 +381,13 @@ class LdapSetup(BaseSetup):
         self.configure_opendj()
         self.index_opendj()
 
-        if self.cluster.ldap_nodes:
+        ldap_nodes = self.cluster.get_ldap_objects()
+        if ldap_nodes:
             # Initialize data from existing ldap node.
             # To create fully meshed replication, update the other ldap
             # nodes to use this new ldap node as a master.
-            for node_id in self.cluster.ldap_nodes:
-                existing_node = self.get_existing_node(node_id)
-                if existing_node:
-                    self.replicate_from(existing_node)
+            for node in ldap_nodes:
+                self.replicate_from(node)
         else:
             # If no ldap nodes exist, import auto-generated base ldif data
             self.import_ldif()

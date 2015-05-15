@@ -104,7 +104,6 @@ class Node(Resource):
         db.delete(node_id, "nodes")
 
         # removes reference from cluster, if any
-        cluster.remove_node(node)
         cluster.unreserve_ip_addr(node.weave_ip)
         db.update(cluster.id, cluster, "clusters")
 
@@ -215,7 +214,7 @@ status of the cluster node is available.""",
 
         if params.node_type == "ldap":
             # checks if this new node will exceed max. allowed LDAP nodes
-            if len(cluster.ldap_nodes) + 1 > cluster.max_allowed_ldap_nodes:
+            if len(cluster.get_ldap_objects()) >= cluster.max_allowed_ldap_nodes:
                 return {"code": 403, "message": "max. allowed LDAP nodes is reached"}, 403
             helper_class = LdapModelHelper
         elif params.node_type == "oxauth":

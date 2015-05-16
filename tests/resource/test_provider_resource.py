@@ -35,3 +35,10 @@ def test_provider_delete(app, db, provider):
 def test_provider_delete_not_found(app):
     resp = app.test_client().delete("/provider/random-id")
     assert resp.status_code == 404
+
+
+def test_provider_delete_having_nodes(app, db, provider, ldap_node):
+    db.persist(ldap_node, "nodes")
+    db.persist(provider, "providers")
+    resp = app.test_client().delete("/provider/{}".format(provider.id))
+    assert resp.status_code == 403

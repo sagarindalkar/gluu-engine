@@ -43,3 +43,17 @@ def oxtrust_setup(request, app, oxtrust_node, cluster):
 
     request.addfinalizer(teardown)
     return setup_obj
+
+
+@pytest.fixture()
+def httpd_setup(request, app, httpd_node, cluster):
+    from gluuapi.setup import HttpdSetup
+
+    setup_obj = HttpdSetup(httpd_node, cluster,
+                           template_dir=app.config["TEMPLATES_DIR"])
+
+    def teardown():
+        shutil.rmtree(setup_obj.build_dir)
+
+    request.addfinalizer(teardown)
+    return setup_obj

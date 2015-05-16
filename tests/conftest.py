@@ -46,32 +46,35 @@ def cluster():
 
 
 @pytest.fixture()
-def ldap_node(cluster):
+def ldap_node(cluster, provider):
     from gluuapi.model import LdapNode
 
     node = LdapNode()
     node.id = "ldap_{}_123".format(cluster.id)
     node.cluster_id = cluster.id
+    node.provider_id = provider.id
     return node
 
 
 @pytest.fixture()
-def oxauth_node(cluster):
+def oxauth_node(cluster, provider):
     from gluuapi.model import OxauthNode
 
     node = OxauthNode()
     node.id = "oxauth_{}_123".format(cluster.id)
     node.cluster_id = cluster.id
+    node.provider_id = provider.id
     return node
 
 
 @pytest.fixture()
-def oxtrust_node(cluster):
+def oxtrust_node(cluster, provider):
     from gluuapi.model import OxtrustNode
 
     node = OxtrustNode()
     node.id = "oxtrust_{}_123".format(cluster.id)
     node.cluster_id = cluster.id
+    node.provider_id = provider.id
     return node
 
 
@@ -87,10 +90,11 @@ def provider():
 
 
 @pytest.fixture()
-def httpd_node(cluster):
+def httpd_node(cluster, provider):
     from gluuapi.model import HttpdNode
 
     node = HttpdNode()
     node.id = "httpd_{}_123".format(cluster.id)
     node.cluster_id = cluster.id
+    node.provider_id = provider.id
     return node

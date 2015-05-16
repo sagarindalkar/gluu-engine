@@ -25,7 +25,6 @@ import json
 import os.path
 import time
 
-from gluuapi.database import db
 from gluuapi.setup.base import BaseSetup
 from gluuapi.setup.oxauth_setup import OxauthSetup
 from gluuapi.setup.oxtrust_setup import OxtrustSetup
@@ -309,14 +308,6 @@ class LdapSetup(BaseSetup):
         ])
         self.logger.info("importing OpenDJ certificate into Java truststore")
         self.salt.cmd(self.node.id, 'cmd.run', [cmdstr])
-
-    def get_existing_node(self, node_id):
-        try:
-            self.logger.info("getting existing node {}".format(node_id))
-            node = db.get(node_id, "nodes")
-            return node
-        except IndexError as exc:
-            self.logger.warn(exc)
 
     def replicate_from(self, existing_node):
         setup_obj = LdapSetup(existing_node, self.cluster, logger=self.logger)

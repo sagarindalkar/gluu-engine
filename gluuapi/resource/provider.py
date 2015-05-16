@@ -85,7 +85,7 @@ class ProviderResource(Resource):
         if provider.nodes_count:
             msg = "Cannot delete provider while having nodes " \
                   "deployed on this provider"
-            return {"code": 403, "message": msg}
+            return {"code": 403, "message": msg}, 403
 
         db.delete(provider_id, "providers")
         salt = SaltHelper()

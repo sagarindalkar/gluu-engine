@@ -11,8 +11,8 @@ the design of the gluu-flask component.
 ### Ubuntu packages
 
 ```
-$ sudo apt-get install libssl-dev python-dev swig
-$ sudo apt-get build-dep openssl
+sudo apt-get install -y libssl-dev python-dev swig libzmq3-dev
+sudo apt-get build-dep openssl
 ```
 
 ### Install docker
@@ -23,22 +23,10 @@ Follow these instructions to install the package for Ubuntu Trusty 14.04 managed
 For the impatient, just type:
 
 ```
-$ curl -sSL https://get.docker.com/ubuntu/ | sudo sh
+curl -sSL https://get.docker.com/ubuntu/ | sudo sh
 ```
-After install, you should see
 
-```
-$ sudo docker version
-Client version: 1.5.0
-Client API version: 1.17
-Go version (client): go1.4.1
-Git commit (client): a8a31ef
-OS/Arch (client): linux/amd64
-Server version: 1.5.0
-Server API version: 1.17
-Go version (server): go1.4.1
-Git commit (server): a8a31ef
-```
+Note: gluu-flask only supports docker v1.5.0 or above.
 
 ### Install salt-master
 
@@ -54,18 +42,19 @@ sudo apt-get install -y salt-master
 ### Install pip and virtualenv
 
 ```
-$ wget -q -O- https://bitbucket.org/pypa/setuptools/raw/bootstrap/ez_setup.py | python -
-$ wget -q -O- https://raw.github.com/pypa/pip/master/contrib/get-pip.py | python -
-$ export PATH="/usr/local/bin:$PATH"
-$ pip install virtualenv
+wget -q -O- https://bitbucket.org/pypa/setuptools/raw/bootstrap/ez_setup.py | python -
+wget -q -O- https://raw.github.com/pypa/pip/master/contrib/get-pip.py | python -
+pip install virtualenv
 ```
+
 ### Clone the project
 
 ```
-$ git clone https://github.com/GluuFederation/gluu-flask.git
-$ cd gluu-flask
-$ virtualenv env
-$ env/bin/python setup.py install
+git clone https://github.com/GluuFederation/gluu-flask.git
+cd gluu-flask
+virtualenv env
+source env/bin/activate
+python setup.py install
 ```
 
 ## Run
@@ -75,7 +64,7 @@ and make sure `SALT_MASTER_IPADDR` environment variable is set and
 pointed to salt-master IP address.
 
 ```
-$ SALT_MASTER_IPADDR=xxx.xxx.xxx.xxx env/bin/python gluuapi
+SALT_MASTER_IPADDR=xxx.xxx.xxx.xxx gluuapi
 ```
 
 ## Testing
@@ -83,8 +72,8 @@ $ SALT_MASTER_IPADDR=xxx.xxx.xxx.xxx env/bin/python gluuapi
 Testcases are running using ``pytest`` executed by ``tox``.
 
 ```
-$ pip install tox
-$ tox
+pip install tox
+tox
 ```
 
 See `tox.ini` for details.

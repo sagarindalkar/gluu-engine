@@ -23,3 +23,4 @@
 from .cluster import cluster_req  # noqa
 from .node import node_req  # noqa
 from .provider import provider_req  # noqa
+from .license import license_req  # noqa

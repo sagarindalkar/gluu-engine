@@ -19,34 +19,12 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-import re
 
 from flask_restful import reqparse
 
-# regex pattern for hostname as defined by RFC 952 and RFC 1123
-HOSTNAME_RE = re.compile('^(?![0-9]+$)(?!-)[a-zA-Z0-9-]{,63}(?<!-)$')
-
-
-def hostname_type(value, name):
-    # some provider like AWS uses dotted hostname,
-    # e.g. ip-172-31-24-54.ec2.internal
-    if all(HOSTNAME_RE.match(v) for v in value.split(".")):
-        return value
-
-    raise ValueError(
-        "{} is not a valid value for {} parameter".format(value, name))
-
-
-provider_req = reqparse.RequestParser()
-provider_req.add_argument(
-    "hostname", type=hostname_type, location="form", required=True,
-    help="Hostname FQDN of the provider",
-)
-provider_req.add_argument(
-    "docker_base_url", location="form", required=True,
-    help="URL to Docker API, could be unix socket or tcp",
-)
-provider_req.add_argument("license_id", location="form", default="")
-provider_req.add_argument("public_key", location="form", default="")
-provider_req.add_argument("public_password", location="form", default="")
-provider_req.add_argument("license_password", location="form", default="")
+license_req = reqparse.RequestParser()
+license_req.add_argument("name", location="form", default="")
+license_req.add_argument("code", location="form", required=True)
+# license_req.add_argument("public_key", location="form", required=True)
+# license_req.add_argument("public_password", location="form", required=True)
+# license_req.add_argument("license_password", location="form", required=True)

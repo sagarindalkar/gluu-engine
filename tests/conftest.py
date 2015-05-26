@@ -98,3 +98,14 @@ def httpd_node(cluster, provider):
     node.cluster_id = cluster.id
     node.provider_id = provider.id
     return node
+
+
+@pytest.fixture()
+def license():
+    from gluuapi.model import License
+
+    license = License({
+        "code": "code_abc",
+        "signed_license": "signed_license_abc"},
+    )
+    return license

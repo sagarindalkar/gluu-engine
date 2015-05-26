@@ -1,4 +1,7 @@
-def test_provider_list_post(app):
+import json
+
+
+def test_provider_list_post_master(app):
     resp = app.test_client().post(
         "/provider",
         data={
@@ -7,6 +10,85 @@ def test_provider_list_post(app):
         },
     )
     assert resp.status_code == 201
+    assert json.loads(resp.data)["type"] == "master"
+
+
+def test_provider_list_post_duplicated_master(app, db, provider):
+    db.persist(provider, "providers")
+    resp = app.test_client().post(
+        "/provider",
+        data={
+            "docker_base_url": "unix:///var/run/docker.sock",
+            "hostname": "local",
+        },
+    )
+    assert resp.status_code == 403
+
+
+def test_provider_list_post_consumer_missing_params(app):
+    resp = app.test_client().post(
+        "/provider",
+        data={
+            "docker_base_url": "unix:///var/run/docker.sock",
+            "hostname": "local",
+            "license_id": "123",
+        },
+    )
+    assert resp.status_code == 400
+
+
+def test_provider_list_post_consumer_duplicated(app, db, license, provider):
+    db.persist(license, "licenses")
+    # set as consumer
+    provider.license_id = license.id
+    db.persist(provider, "providers")
+    resp = app.test_client().post(
+        "/provider",
+        data={
+            "docker_base_url": "unix:///var/run/docker.sock",
+            "hostname": "local",
+            "license_id": license.id,
+            "public_key": "pubkey",
+            "public_password": "pubpasswd",
+            "license_password": "licensepasswd",
+        },
+    )
+    assert resp.status_code == 403
+
+
+def test_provider_list_post_license_notfound(app):
+    resp = app.test_client().post(
+        "/provider",
+        data={
+            "docker_base_url": "unix:///var/run/docker.sock",
+            "hostname": "local",
+            "license_id": "abc",
+            "public_key": "pubkey",
+            "public_password": "pubpasswd",
+            "license_password": "licensepasswd",
+        },
+    )
+    assert resp.status_code == 400
+
+
+def test_provider_list_post_invalid_license(monkeypatch, app, db, license):
+    monkeypatch.setattr(
+        "gluuapi.utils.decode_signed_license",
+        lambda sl, pk, pp, lp: {"valid": False},
+    )
+    db.persist(license, "licenses")
+    resp = app.test_client().post(
+        "/provider",
+        data={
+            "docker_base_url": "unix:///var/run/docker.sock",
+            "hostname": "local",
+            "license_id": license.id,
+            "public_key": "pubkey",
+            "public_password": "pubpasswd",
+            "license_password": "licensepasswd",
+        },
+    )
+    assert resp.status_code == 403
 
 
 def test_provider_list_get(app, db, provider):

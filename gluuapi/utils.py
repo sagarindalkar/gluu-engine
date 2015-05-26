@@ -22,6 +22,7 @@
 # SOFTWARE.
 import base64
 import hashlib
+import json
 import os
 import random
 import string
@@ -109,3 +110,33 @@ def exc_traceback():
         traceback.format_exception_only(*exc_info[:2]) +
         traceback.format_exception(*exc_info))
     return exc_string
+
+
+def decode_signed_license(signed_license, public_key,
+                          public_password, license_password,
+                          validator="/opt/gluu/oxd-license-validator.jar"):
+    """Gets license's metadata from a signed license.
+    """
+    cmd_output = run("java -jar {} {} {} {} {}".format(
+        validator,
+        signed_license,
+        public_key,
+        public_password,
+        license_password,
+    ), exit_on_error=False)
+
+    # output example:
+    #
+    #   Validator expects: java org.xdi.oxd.license.validator.LicenseValidator
+    #   {"valid":true,"metadata":{}}
+    #
+    # but we only care about the last line
+    meta = cmd_output.splitlines()[-1]
+
+    decoded_license = {}
+    try:
+        decoded_license = json.loads(meta)
+    except ValueError:
+        # validator may throws exception as the output, which is not a valid JSON
+        raise ValueError("Error parsing JSON output of {}".format(validator))
+    return decoded_license

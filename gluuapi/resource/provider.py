@@ -27,6 +27,13 @@ from gluuapi.database import db
 from gluuapi.reqparser import provider_req
 from gluuapi.model import Provider
 from gluuapi.helper import SaltHelper
+from gluuapi.utils import decode_signed_license
+
+
+def format_provider_resp(provider):
+    item = provider.as_dict()
+    item["type"] = provider.type
+    return item
 
 
 class ProviderResource(Resource):
@@ -52,7 +59,7 @@ class ProviderResource(Resource):
         obj = db.get(provider_id, "providers")
         if not obj:
             return {"code": 404, "message": "Provider not found"}, 404
-        return obj.as_dict()
+        return format_provider_resp(obj)
 
     @swagger.operation(
         notes="Deletes a provider",
@@ -112,6 +119,34 @@ class ProviderListResource(Resource):
                 "dataType": "string",
                 "paramType": "form"
             },
+            {
+                "name": "license_id",
+                "description": "ID of the license",
+                "required": False,
+                "dataType": "string",
+                "paramType": "form"
+            },
+            {
+                "name": "public_key",
+                "description": "Public key for license",
+                "required": False,
+                "dataType": "string",
+                "paramType": "form"
+            },
+            {
+                "name": "public_password",
+                "description": "Public password for license",
+                "required": False,
+                "dataType": "string",
+                "paramType": "form"
+            },
+            {
+                "name": "license_password",
+                "description": "License password",
+                "required": False,
+                "dataType": "string",
+                "paramType": "form"
+            },
         ],
         responseMessages=[
             {
@@ -123,6 +158,10 @@ class ProviderListResource(Resource):
                 "message": "Bad Request",
             },
             {
+                "code": 403,
+                "message": "Forbidden",
+            },
+            {
                 "code": 500,
                 "message": "Internal Server Error",
             },
@@ -130,6 +169,59 @@ class ProviderListResource(Resource):
     )
     def post(self):
         params = provider_req.parse_args()
+
+        if params.license_id:
+            # having license_id means provider is set as consumer;
+            # therefore, we need to check few things:
+            #
+            # 1. make sure ``public_key``, ``public_password``,
+            #    and ``license_password`` params are set
+            # 2. make sure license exists in database
+            # 3. license cannot be reuse
+            # 4. if license exists, checks whether it's valid and not expired
+            if not all([params.public_key, params.public_password,
+                        params.license_password]):
+                return {
+                    "code": 400,
+                    "message": "'public_key', 'public_password', and "
+                               "'license_password' parameters cannot be "
+                               "left blank when 'license_id' is set",
+                }, 400
+
+            # license cannot be reuse
+            licensed_count = db.count_from_table(
+                "providers", db.where("license_id") == params.license_id)
+            if licensed_count:
+                return {"code": 403, "message": "cannot reuse license"}, 403
+
+            license = db.get(params.license_id, "licenses")
+            if not license:
+                return {"code": 400, "message": "invalid license ID"}, 400
+
+            decoded_license = decode_signed_license(
+                # license.decrypted_signed_license,
+                # license.decrypted_public_key,
+                # license.decrypted_public_password,
+                # license.decrypted_license_password,
+                license.signed_license,
+                params.public_key,
+                params.public_password,
+                params.license_password,
+            )
+            # TODO: check expiration when oxd is updated
+            if not decoded_license["valid"]:
+                return {"code": 403, "message": "invalid license"}, 403
+        else:
+            # if we already have a master provider, rejects the request
+            master_count = db.count_from_table(
+                "providers", db.where("license_id"),
+            )
+            if master_count:
+                return {
+                    "code": 403,
+                    "message": "cannot add another master provider",
+                }, 403
+
         provider = Provider(fields=params)
         db.persist(provider, "providers")
 
@@ -140,7 +232,7 @@ class ProviderListResource(Resource):
         headers = {
             "Location": url_for("provider", provider_id=provider.id),
         }
-        return provider.as_dict(), 201, headers
+        return format_provider_resp(provider), 201, headers
 
     @swagger.operation(
         notes="Gives provider info/state",
@@ -158,4 +250,4 @@ class ProviderListResource(Resource):
     )
     def get(self):
         obj_list = db.all("providers")
-        return [item.as_dict() for item in obj_list]
+        return [format_provider_resp(item) for item in obj_list]

@@ -120,7 +120,6 @@ class Node(Resource):
         #updating prometheus
         prometheus = PrometheusHelper(template_dir=template_dir)
         prometheus.update()
-
         return {}, 204
 
 
@@ -199,6 +198,7 @@ status of the cluster node is available.""",
         params = node_req.parse_args()
         salt_master_ipaddr = current_app.config["SALT_MASTER_IPADDR"]
         template_dir = current_app.config["TEMPLATES_DIR"]
+        log_dir = current_app.config["LOG_DIR"]
 
         cluster = db.get(params.cluster_id, "clusters")
         if not cluster:
@@ -224,6 +224,7 @@ status of the cluster node is available.""",
         elif params.node_type == "httpd":
             helper_class = HttpdModelHelper
 
-        helper = helper_class(cluster, provider, salt_master_ipaddr, template_dir)
+        helper = helper_class(cluster, provider, salt_master_ipaddr,
+                              template_dir, log_dir)
         helper.setup(params.connect_delay, params.exec_delay)
         return {"log": helper.logpath}, 202

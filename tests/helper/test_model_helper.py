@@ -8,7 +8,9 @@ def test_base_model_helper_init(app, cluster, provider):
     # required attrs (e.g. ``setup_class``) raises AssertionError
     with pytest.raises(AssertionError):
         BaseModelHelper(cluster, provider, "127.0.0.1",
-                        template_dir=app.config["TEMPLATES_DIR"])
+                        template_dir=app.config["TEMPLATES_DIR"],
+                        log_dir=app.config["LOG_DIR"],
+                        )
 
 
 def test_ldap_model_helper(monkeypatch, app, cluster, provider):
@@ -22,7 +24,9 @@ def test_ldap_model_helper(monkeypatch, app, cluster, provider):
         lambda cls, container: {"NetworkSettings": {"IPAddress": ipaddr}},
     )
     helper = LdapModelHelper(cluster, provider, "127.0.0.1",
-                             template_dir=app.config["TEMPLATES_DIR"])
+                             template_dir=app.config["TEMPLATES_DIR"],
+                             log_dir=app.config["LOG_DIR"],
+                             )
 
     # some sanity checks
     assert helper.setup_class == LdapSetup
@@ -47,7 +51,9 @@ def test_oxauth_model_helper(monkeypatch, app, cluster, provider):
         lambda cls, container: {"NetworkSettings": {"IPAddress": ipaddr}},
     )
     helper = OxauthModelHelper(cluster, provider, "127.0.0.1",
-                               template_dir=app.config["TEMPLATES_DIR"])
+                               template_dir=app.config["TEMPLATES_DIR"],
+                               log_dir=app.config["LOG_DIR"],
+                               )
 
     # some sanity checks
     assert helper.setup_class == OxauthSetup
@@ -72,7 +78,9 @@ def test_oxtrust_model_helper(monkeypatch, app, cluster, provider):
         lambda cls, container: {"NetworkSettings": {"IPAddress": ipaddr}},
     )
     helper = OxtrustModelHelper(cluster, provider, "127.0.0.1",
-                                template_dir=app.config["TEMPLATES_DIR"])
+                                template_dir=app.config["TEMPLATES_DIR"],
+                                log_dir=app.config["LOG_DIR"],
+                                )
 
     # some sanity checks
     assert helper.setup_class == OxtrustSetup

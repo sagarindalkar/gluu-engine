@@ -41,6 +41,7 @@ class Config(object):
     # Is there any better place to put this path
     #DOCKER_REPO = 'https://raw.githubusercontent.com/GluuFederation/gluu-docker/master/ubuntu/14.04'
     TEMPLATES_DIR = os.path.join(APP_DIR, "templates")
+    LOG_DIR = os.environ.get("LOG_DIR", "/var/log/gluu")
 
 
 class ProdConfig(Config):
@@ -55,6 +56,7 @@ class DevConfig(Config):
     DEBUG = True
     RELOADER = False
     DATABASE_URI = os.path.join(Config.DATA_DIR, "db", "db_dev.json")
+    LOG_DIR = os.environ.get("LOG_DIR", "/tmp/gluu-dev")
 
 
 class TestConfig(Config):
@@ -63,3 +65,4 @@ class TestConfig(Config):
     # BCRYPT_LOG_ROUNDS = 1  # For faster tests
     # DB = os.path.join(Config.PROJECT_ROOT, "dbtest")
     DATABASE_URI = os.path.join(Config.DATA_DIR, "db", "db_test.json")
+    LOG_DIR = os.environ.get("LOG_DIR", "/tmp/gluu-test")

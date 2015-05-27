@@ -20,7 +20,6 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-import tempfile
 import time
 from random import randrange
 
@@ -39,6 +38,7 @@ from gluuapi.setup import OxauthSetup
 from gluuapi.setup import OxtrustSetup
 from gluuapi.setup import HttpdSetup
 from gluuapi.log import create_file_logger
+from gluuapi.log import create_tempfile
 from gluuapi.utils import exc_traceback
 
 
@@ -55,7 +55,8 @@ class BaseModelHelper(object):
     #: URL to image's Dockerfile. Must be overriden in subclass.
     dockerfile = ""
 
-    def __init__(self, cluster, provider, salt_master_ipaddr, template_dir):
+    def __init__(self, cluster, provider, salt_master_ipaddr,
+                 template_dir, log_dir):
         assert self.setup_class, "setup_class must be set"
         assert self.node_class, "node_class must be set"
         assert self.image, "image attribute cannot be empty"
@@ -71,8 +72,11 @@ class BaseModelHelper(object):
         self.node.name = "{}_{}_{}".format(self.image, self.cluster.id,
                                            randrange(101, 999))
 
-        _, self.logpath = tempfile.mkstemp(
-            suffix=".log", prefix=self.image + "-build-")
+        self.logpath = create_tempfile(
+            suffix=".log",
+            prefix=self.image + "-build-",
+            dir_=log_dir,
+        )
         self.logger = create_file_logger(self.logpath, name=self.node.name)
         self.docker = DockerHelper(
             logger=self.logger, base_url=self.provider.docker_base_url)

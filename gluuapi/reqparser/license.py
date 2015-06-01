@@ -19,12 +19,14 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
 from flask_restful import reqparse
 
+from gluuapi.reqparser.base import email_type
+
 license_req = reqparse.RequestParser()
-license_req.add_argument("name", location="form", default="")
 license_req.add_argument("code", location="form", required=True)
-# license_req.add_argument("public_key", location="form", required=True)
-# license_req.add_argument("public_password", location="form", required=True)
-# license_req.add_argument("license_password", location="form", required=True)
+license_req.add_argument("billing_email", location="form",
+                         type=email_type, required=True)
+license_req.add_argument("public_key", location="form", required=True)
+license_req.add_argument("public_password", location="form", required=True)
+license_req.add_argument("license_password", location="form", required=True)

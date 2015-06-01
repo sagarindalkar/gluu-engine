@@ -62,3 +62,9 @@ class Provider(BaseModel):
     def nodes_count(self):
         condition = db.where("provider_id") == self.id
         return db.count_from_table("nodes", condition)
+
+    def get_node_objects(self, type_=""):
+        condition = db.where("provider_id") == self.id
+        if type_:
+            condition = (condition) & (db.where("type") == type_)
+        return db.search_from_table("nodes", condition)

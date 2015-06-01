@@ -22,12 +22,15 @@
 # SOFTWARE.
 
 '''The app module, containing the app factory function.'''
+import os
+
 from flask import Flask
 
 from gluuapi.settings import ProdConfig
-from gluuapi.extensions import (
-    restapi,
-)
+from gluuapi.settings import DevConfig
+from gluuapi.settings import TestConfig
+from gluuapi.extensions import restapi
+# from gluuapi.extensions import mail
 from gluuapi.resource.node import Node
 from gluuapi.resource.node import NodeList
 from gluuapi.resource.cluster import Cluster
@@ -37,16 +40,30 @@ from gluuapi.resource import ProviderListResource
 from gluuapi.resource import LicenseResource
 from gluuapi.resource import LicenseListResource
 from gluuapi.database import db
+# from gluuapi.scheduler import scheduler
 
 
-def create_app(config_object=ProdConfig):
-    '''An application factory, as explained here:
-        http://flask.pocoo.org/docs/patterns/appfactories/
+def _get_config_object():
+    if os.environ.get("API_ENV") == "prod":
+        config = ProdConfig
+    if os.environ.get("API_ENV") == "test":
+        config = TestConfig
+    else:
+        config = DevConfig
+    return config
 
-    :param config_object: The configuration object to use.
-    '''
+
+def create_app():
     app = Flask(__name__)
-    app.config.from_object(config_object)
+    app.config.from_object(_get_config_object())
+
+    # loads custom ``settings.py`` from instance folder
+    app.instance_path = app.config["INSTANCE_DIR"]
+    app.config.from_pyfile(
+        os.path.join(app.instance_path, "settings.py"),
+        silent=True,
+    )
+
     register_resources()
     register_extensions(app)
     return app
@@ -55,6 +72,8 @@ def create_app(config_object=ProdConfig):
 def register_extensions(app):
     restapi.init_app(app)
     db.init_app(app)
+    # scheduler.init_app(app)
+    # mail.init_app(app)
 
 
 def register_resources():

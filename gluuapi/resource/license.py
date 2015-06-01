@@ -20,6 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from datetime import timedelta
 
 # import requests
 from flask import url_for
@@ -29,6 +30,13 @@ from flask_restful_swagger import swagger
 from gluuapi.database import db
 from gluuapi.model import License
 from gluuapi.reqparser import license_req
+from gluuapi.utils import decode_signed_license
+from gluuapi.utils import timestamp_millis
+from gluuapi.utils import timestamp_millis_to_datetime
+from gluuapi.utils import datetime_to_timestamp_millis
+# from gluuapi.scheduler import scheduler
+# from gluuapi.task import two_months_retention
+# from gluuapi.task import one_week_retention
 
 
 class LicenseResource(Resource):
@@ -88,11 +96,32 @@ class LicenseListResource(Resource):
                 "paramType": "form",
             },
             {
-                "name": "name",
-                "description": "License name",
-                "required": False,
+                "name": "billing_email",
+                "description": "Email address where expiration reminder will be sent to",
+                "required": True,
                 "dataType": "string",
                 "paramType": "form",
+            },
+            {
+                "name": "public_key",
+                "description": "Public key for license (won't be stored)",
+                "required": True,
+                "dataType": "string",
+                "paramType": "form"
+            },
+            {
+                "name": "public_password",
+                "description": "Public password for license (won't be stored)",
+                "required": True,
+                "dataType": "string",
+                "paramType": "form"
+            },
+            {
+                "name": "license_password",
+                "description": "License password (won't be stored)",
+                "required": True,
+                "dataType": "string",
+                "paramType": "form"
             },
         ],
         responseMessages=[
@@ -113,7 +142,6 @@ class LicenseListResource(Resource):
     )
     def post(self):
         params = license_req.parse_args()
-        params.signed_license = DUMMY_SIGNED_LICENSE
 
         # # FIXME: request for a license from https://license.gluu.org
         # resp = requests.post(
@@ -123,8 +151,51 @@ class LicenseListResource(Resource):
         # if resp.ok:
         #     params.signed_license = resp.json()["license"]
 
+        # TODO: populate from response given by license server
+        params.signed_license = DUMMY_SIGNED_LICENSE
+
+        decoded_license = decode_signed_license(
+            params.signed_license,
+            params.public_key,
+            params.public_password,
+            params.license_password,
+        )
+        params.valid = decoded_license["valid"]
+        params.metadata = decoded_license["metadata"]
+
+        # TODO: remove this dummy expiration_date
+        DUMMY_EXPIRATION_DATE = datetime_to_timestamp_millis(
+            timestamp_millis_to_datetime(timestamp_millis()) - timedelta(days=7)
+        )
+        params.metadata["expiration_date"] = DUMMY_EXPIRATION_DATE
+
         license = License(fields=params)
         db.persist(license, "licenses")
+
+        # if license.metadata["expiration_date"]:
+        #     # # add job to run every Monday within 60 days before license expire
+        #     # scheduler.add_job(
+        #     #     two_months_retention,
+        #     #     trigger="cron",
+        #     #     args=[license],
+        #     #     hour=9,
+        #     #     day_of_week="mon",
+        #     #     start_date=timestamp_millis_to_datetime(license.metadata["expiration_date"]) - timedelta(days=60),
+        #     #     end_date=timestamp_millis_to_datetime(license.metadata["expiration_date"]),
+        #     # )
+
+        #     # add job to run each day within 7 days before license expire
+        #     scheduler.add_job(
+        #         one_week_retention,
+        #         trigger="cron",
+        #         # args=[license.id],
+        #         args=[license],
+        #         # hour=9,
+        #         second=1,
+        #         start_date=timestamp_millis_to_datetime(license.metadata["expiration_date"]) - timedelta(days=7),
+        #         end_date=timestamp_millis_to_datetime(license.metadata["expiration_date"]),
+        #     )
+
         headers = {
             "Location": url_for("license", license_id=license.id),
         }

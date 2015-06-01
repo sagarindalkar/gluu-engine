@@ -19,36 +19,13 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-# import logging
-import os
+import re
 
-from crochet import setup as crochet_setup
-
-from gluuapi.app import create_app
-# from gluuapi.scheduler import scheduler
-from gluuapi.task import LicenseExpirationTask
+# regex pattern to validate email address
+EMAIL_RE_ = re.compile(r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)")
 
 
-def main():
-    if not os.environ.get("SALT_MASTER_IPADDR"):
-        raise SystemExit("Unable to get salt-master IP address. "
-                         "Make sure the SALT_MASTER_IPADDR "
-                         "environment variable is set.")
-
-    app = create_app()
-    crochet_setup()
-
-    # # logging handlers for apscheduler
-    # # useful for debugging erorrs in background jobs
-    # logging.getLogger("apscheduler.executors.default") \
-    #        .addHandler(logging.StreamHandler())
-
-    # with app.app_context():
-    #     scheduler.start()
-
-    let = LicenseExpirationTask()
-    let.start()
-
-    # runs the app
-    app.debug = False
-    app.run(port=app.config['PORT'])
+def email_type(value, name):
+    if EMAIL_RE_.match(value):
+        return value
+    raise ValueError("The parameter {} is not valid email address".format(name))

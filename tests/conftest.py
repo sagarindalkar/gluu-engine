@@ -12,9 +12,9 @@ def config():
 @pytest.fixture(scope="session")
 def app(request):
     from gluuapi.app import create_app
-    from gluuapi.settings import TestConfig
 
-    app = create_app(TestConfig)
+    os.environ["API_ENV"] = "test"
+    app = create_app()
     return app
 
 
@@ -103,9 +103,21 @@ def httpd_node(cluster, provider):
 @pytest.fixture()
 def license():
     from gluuapi.model import License
+    from gluuapi.utils import timestamp_millis
 
     license = License({
         "code": "code_abc",
-        "signed_license": "signed_license_abc"},
-    )
+        "signed_license": "signed_license_abc",
+        "valid": True,
+        "billing_email": "admin@example.com",
+        "metadata": {
+            "license_features": None,
+            "thread_count": 9,
+            "license_name": None,
+            "multi_server": True,
+            "license_count_limit": 0,
+            "expiration_date": timestamp_millis(),
+            "license_type": "PAID",
+        },
+    })
     return license

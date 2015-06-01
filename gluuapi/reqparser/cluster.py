@@ -19,27 +19,20 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
-import re
+# import re
 
 from flask_restful import reqparse
 from netaddr import AddrFormatError
 from netaddr import IPNetwork
 
-# regex pattern to validate email address
-EMAIL_RE_ = re.compile(r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)")
+# backward-compat
+from gluuapi.reqparser.base import email_type as admin_email
 
 
 def country_code(value, name):
     if len(value) == 2:
         return value
     raise ValueError("The parameter {} requires 2 letters value".format(name))
-
-
-def admin_email(value, name):
-    if EMAIL_RE_.match(value):
-        return value
-    raise ValueError("The parameter {} is not valid email address".format(name))
 
 
 def weave_network_type(value, name):

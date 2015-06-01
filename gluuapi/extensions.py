@@ -26,6 +26,7 @@ in app.py
 """
 from flask.ext.restful import Api
 from flask_restful_swagger import swagger
+from flask_mail import Mail
 
 restapi = swagger.docs(
     Api(),
@@ -33,3 +34,5 @@ restapi = swagger.docs(
     api_spec_url='/api/spec',
     description='gluu cluster API',
 )
+
+mail = Mail()

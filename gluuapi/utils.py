@@ -30,6 +30,8 @@ import subprocess
 import sys
 import traceback
 import uuid
+import time
+from datetime import datetime
 
 from M2Crypto.EVP import Cipher
 
@@ -137,6 +139,25 @@ def decode_signed_license(signed_license, public_key,
     try:
         decoded_license = json.loads(meta)
     except ValueError:
-        # validator may throws exception as the output, which is not a valid JSON
+        # validator may throws exception as the output,
+        # which is not a valid JSON
         raise ValueError("Error parsing JSON output of {}".format(validator))
     return decoded_license
+
+
+def timestamp_millis():
+    """Time in milliseconds since the EPOCH.
+    """
+    return time.time() * 1000
+
+
+def datetime_to_timestamp_millis(dt):
+    """Converts datetime to time in milliseconds since the EPOCH.
+    """
+    return time.mktime(dt.timetuple()) * 1000
+
+
+def timestamp_millis_to_datetime(ts):
+    """Converts time in milliseconds since the EPOCH to datetime object.
+    """
+    return datetime.utcfromtimestamp(ts / 1000)

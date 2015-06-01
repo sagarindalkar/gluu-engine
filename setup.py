@@ -45,6 +45,9 @@ setup(
         "jsonpickle",
         "netaddr",
         "m2crypto",
+        "apscheduler",
+        "redislite",
+        "flask-mail",
     ],
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",

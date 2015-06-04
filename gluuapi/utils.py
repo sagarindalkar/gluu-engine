@@ -33,6 +33,7 @@ import uuid
 import time
 from datetime import datetime
 
+import requests
 from M2Crypto.EVP import Cipher
 
 # Default charset
@@ -143,6 +144,14 @@ def decode_signed_license(signed_license, public_key,
         # which is not a valid JSON
         raise ValueError("Error parsing JSON output of {}".format(validator))
     return decoded_license
+
+
+def retrieve_signed_license(code):
+    resp = requests.post(
+        "https://license.gluu.org/oxLicense/rest/generate",
+        data={"licenseId": code},
+    )
+    return resp
 
 
 def timestamp_millis():

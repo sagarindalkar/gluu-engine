@@ -20,10 +20,11 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-from datetime import timedelta
+# from datetime import timedelta
 
 # import requests
 from flask import url_for
+from flask import current_app
 from flask_restful import Resource
 from flask_restful_swagger import swagger
 
@@ -31,9 +32,10 @@ from gluuapi.database import db
 from gluuapi.model import License
 from gluuapi.reqparser import license_req
 from gluuapi.utils import decode_signed_license
-from gluuapi.utils import timestamp_millis
-from gluuapi.utils import timestamp_millis_to_datetime
-from gluuapi.utils import datetime_to_timestamp_millis
+from gluuapi.utils import retrieve_signed_license
+# from gluuapi.utils import timestamp_millis
+# from gluuapi.utils import timestamp_millis_to_datetime
+# from gluuapi.utils import datetime_to_timestamp_millis
 
 
 class LicenseResource(Resource):
@@ -62,22 +64,6 @@ class LicenseResource(Resource):
         if not license:
             return {"code": 404, "message": "License not found"}, 404
         return license.as_dict()
-
-
-# TODO: remove this when https://license.gluu.org/rest/generate is available
-DUMMY_SIGNED_LICENSE = (
-    "rO0ABXNyADFuZXQubmljaG9sYXN3aWxsaWFtcy5qYXZhLmxpY2Vuc2luZy5TaWduZWRMaWNlb"
-    "nNlioT/n36yaoQCAAJbAA5saWNlbnNlQ29udGVudHQAAltCWwAQc2lnbmF0dXJlQ29udGVudH"
-    "EAfgABeHB1cgACW0Ks8xf4BghU4AIAAHhwAAAAsH5UJYfDckbmYyhwgwZEdIBrWrPyWAZz/XK"
-    "LcjFHfGP9Z0ijcWSM4KfwVvQdixsrDXUI7LZGFw3NYvkXBc6PRAQnZc2cXCkk+ew8SjW+cF8s"
-    "ECF/GLwhQ+O2vszme07xZfnEkzVXDgtMGpkHuNXplWBV7TDHP0VAK2OMlHMlM2/7Y7kTIAdrY"
-    "Rk4RKSV91cIrYWO8j5B937jlnlAIK+vnHqSMawdcwEC9h9vn2nPNs3RdXEAfgADAAABAEC8eq"
-    "Bc+OplB6GSY9NSE/nSAiyVz+clVpM3bgrGDBasBRGgyQPLu/u0+f4/y0V41SfVpSeqKXX+9Jq"
-    "tPEIjnZGB2vSIyZzoCm7DaDwQjTN3GME4qx91n33NW+48mWNL1qfY6gIRwwmSRDc0BOQLz27H"
-    "C+QzGsX5Hp+I1HmkcUd0gHHBDrQuhRYw4lglcoTpuX5L4lMNVRGSvbpThpFbbCd1VfUqi9/AF"
-    "hEGZKlpPVQdVYyIpaJwIOrNZu4HfS5H4IJZQ+FlnisvZwEmEVMaEGLvvfxxPXlmpVdhbTnvO7"
-    "mXi4rVog3clMg7dHQLgZwRaeRfZHEHWFvQ8eW6de7FK4E="
-)
 
 
 class LicenseListResource(Resource):
@@ -131,6 +117,10 @@ class LicenseListResource(Resource):
                 "message": "Bad Request",
             },
             {
+                "code": 422,
+                "message": "Unprocessed Entity",
+            },
+            {
                 "code": 500,
                 "message": "Internal Server Error",
             }
@@ -140,16 +130,16 @@ class LicenseListResource(Resource):
     def post(self):
         params = license_req.parse_args()
 
-        # # FIXME: request for a license from https://license.gluu.org
-        # resp = requests.post(
-        #     "https://license.gluu.org/rest/generate",
-        #     params={"licenseId": params.code},
-        # )
-        # if resp.ok:
-        #     params.signed_license = resp.json()["license"]
+        resp = retrieve_signed_license(params.code)
+        if not resp.ok:
+            current_app.logger.warn(resp.text)
+            return {"code": 422, "message": "unable to retrieve license"}, 422
 
-        # TODO: populate from response given by license server
-        params.signed_license = DUMMY_SIGNED_LICENSE
+        params.signed_license = resp.json()["license"]
+
+        # ``signed_license`` might be a null value
+        if not params.signed_license:
+            return {"code": 422, "message": "invalid signed license (null value)"}, 422
 
         decoded_license = decode_signed_license(
             params.signed_license,
@@ -160,11 +150,11 @@ class LicenseListResource(Resource):
         params.valid = decoded_license["valid"]
         params.metadata = decoded_license["metadata"]
 
-        # TODO: remove this dummy expiration_date
-        DUMMY_EXPIRATION_DATE = datetime_to_timestamp_millis(
-            timestamp_millis_to_datetime(timestamp_millis()) - timedelta(days=7)
-        )
-        params.metadata["expiration_date"] = DUMMY_EXPIRATION_DATE
+        # # TODO: remove this dummy expiration_date
+        # DUMMY_EXPIRATION_DATE = datetime_to_timestamp_millis(
+        #     timestamp_millis_to_datetime(timestamp_millis()) - timedelta(days=7)
+        # )
+        # params.metadata["expiration_date"] = DUMMY_EXPIRATION_DATE
 
         license = License(fields=params)
         db.persist(license, "licenses")

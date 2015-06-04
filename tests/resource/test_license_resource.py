@@ -16,6 +16,17 @@ def test_license_list_get_empty(app):
 
 
 def test_license_list_post(monkeypatch, app):
+    class Response(object):
+        ok = True
+        text = ""
+
+        def json(self):
+            return {"license": "xyz"}
+
+    # monkeypatch ``requests.post`` directly as we cannot monkeypatch
+    # ``requests`` inside ``gluuapi.utils.retrieve_signed_license`` call
+    monkeypatch.setattr("requests.post", lambda url, data: Response())
+
     with codecs.open("tests/resource/validator_output.txt", encoding="utf-8") as fp:
         patch_output = fp.read()
 
@@ -38,6 +49,56 @@ def test_license_list_post(monkeypatch, app):
         },
     )
     assert resp.status_code == 201
+
+
+def test_license_list_post_notretrieved(monkeypatch, app):
+    class Response(object):
+        ok = False
+        text = ""
+
+        def json(self):
+            return {"license": "xyz"}
+
+    # monkeypatch ``requests.post`` directly as we cannot monkeypatch
+    # ``requests`` inside ``gluuapi.utils.retrieve_signed_license`` call
+    monkeypatch.setattr("requests.post", lambda url, data: Response())
+
+    resp = app.test_client().post(
+        "/license",
+        data={
+            "code": "abc",
+            "billing_email": "admin@example.com",
+            "public_key": "pubkey",
+            "public_password": "pubpasswd",
+            "license_password": "licensepasswd",
+        },
+    )
+    assert resp.status_code == 422
+
+
+def test_license_list_post_null(monkeypatch, app):
+    class Response(object):
+        ok = True
+        text = ""
+
+        def json(self):
+            return {"license": None}
+
+    # monkeypatch ``requests.post`` directly as we cannot monkeypatch
+    # ``requests`` inside ``gluuapi.utils.retrieve_signed_license`` call
+    monkeypatch.setattr("requests.post", lambda url, data: Response())
+
+    resp = app.test_client().post(
+        "/license",
+        data={
+            "code": "abc",
+            "billing_email": "admin@example.com",
+            "public_key": "pubkey",
+            "public_password": "pubpasswd",
+            "license_password": "licensepasswd",
+        },
+    )
+    assert resp.status_code == 422
 
 
 def test_license_get(app, db, license):

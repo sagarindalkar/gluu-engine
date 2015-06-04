@@ -21,8 +21,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 # from datetime import timedelta
-
-# import requests
 from flask import url_for
 from flask import current_app
 from flask_restful import Resource
@@ -118,7 +116,7 @@ class LicenseListResource(Resource):
             },
             {
                 "code": 422,
-                "message": "Unprocessed Entity",
+                "message": "Unprocessable Entity",
             },
             {
                 "code": 500,

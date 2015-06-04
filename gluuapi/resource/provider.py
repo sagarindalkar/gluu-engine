@@ -147,8 +147,18 @@ class ProviderListResource(Resource):
     )
     def post(self):
         params = provider_req.parse_args()
+        master_count = db.count_from_table(
+            "providers", db.where("license_id"),
+        )
 
         if params.license_id:
+            # if we dont have a master provider yet, rejects the request
+            if not master_count:
+                return {
+                    "code": 403,
+                    "message": "requires at least 1 master provider registered first",
+                }, 403
+
             # license cannot be reuse
             licensed_count = db.count_from_table(
                 "providers", db.where("license_id") == params.license_id)
@@ -169,9 +179,6 @@ class ProviderListResource(Resource):
 
         else:
             # if we already have a master provider, rejects the request
-            master_count = db.count_from_table(
-                "providers", db.where("license_id"),
-            )
             if master_count:
                 return {
                     "code": 403,

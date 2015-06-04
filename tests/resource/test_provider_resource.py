@@ -41,7 +41,9 @@ def test_provider_list_post_consumer_duplicated(app, db, license, provider):
     assert resp.status_code == 403
 
 
-def test_provider_list_post_license_notfound(app):
+def test_provider_list_post_license_notfound(app, db, provider):
+    # creates a master first
+    db.persist(provider, "providers")
     resp = app.test_client().post(
         "/provider",
         data={
@@ -53,7 +55,9 @@ def test_provider_list_post_license_notfound(app):
     assert resp.status_code == 400
 
 
-def test_provider_list_post_invalid_license(monkeypatch, app, db, license):
+def test_provider_list_post_invalid_license(monkeypatch, app, db, license, provider):
+    db.persist(provider, "providers")
+
     # makes the license as invalid
     license.valid = False
     db.persist(license, "licenses")
@@ -68,7 +72,22 @@ def test_provider_list_post_invalid_license(monkeypatch, app, db, license):
     assert resp.status_code == 403
 
 
-def test_provider_list_post_expired_license(monkeypatch, app, db, license):
+def test_provider_list_post_expired_license(monkeypatch, app, db, license, provider):
+    # creates a master first
+    db.persist(provider, "providers")
+    db.persist(license, "licenses")
+    resp = app.test_client().post(
+        "/provider",
+        data={
+            "docker_base_url": "unix:///var/run/docker.sock",
+            "hostname": "local",
+            "license_id": license.id,
+        },
+    )
+    assert resp.status_code == 403
+
+
+def test_provider_list_post_consumer_no_master(monkeypatch, app, db, license):
     db.persist(license, "licenses")
     resp = app.test_client().post(
         "/provider",

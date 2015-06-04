@@ -22,6 +22,7 @@
 # SOFTWARE.
 import os
 import logging
+import logging.config
 import tempfile
 
 
@@ -44,3 +45,38 @@ def create_tempfile(suffix="", prefix="tmp", dir_="/tmp"):
 
     _, fp = tempfile.mkstemp(suffix=suffix, prefix=prefix, dir=dir_)
     return fp
+
+
+def configure_global_logging():
+    log_config = {
+        "version": 1,
+        "disable_existing_loggers": True,
+        "formatters": {
+            "simple": {
+                "format": "%(asctime)s - %(name)s - %(levelname)s  - %(message)s",
+            },
+        },
+        "handlers": {
+            "console": {
+                "level": "INFO",
+                "class": "logging.StreamHandler",
+                "formatter": "simple"
+            },
+        },
+        "loggers": {
+            "gluuapi": {
+                "handlers": ["console"],
+                "propagate": True,
+                "level": "INFO",
+            },
+            "werkzeug": {
+                "handlers": ["console"],
+                "level": "INFO",
+            },
+            "twisted": {
+                "handlers": ["console"],
+                "level": "ERROR",
+            },
+        },
+    }
+    logging.config.dictConfig(log_config)

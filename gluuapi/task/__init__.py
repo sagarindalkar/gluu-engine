@@ -23,34 +23,23 @@ from crochet import run_in_reactor
 from twisted.internet.task import LoopingCall
 
 from gluuapi.database import db
-from gluuapi.helper import SaltHelper
 from gluuapi.utils import timestamp_millis
+from gluuapi.helper import SaltHelper
 
 import logging
-logging.getLogger("twisted") \
-       .addHandler(logging.StreamHandler())
+
+
+# Default interval when running periodic task (set to 1 day)
+_DEFAULT_INTERVAL = 60 * 60 * 24
 
 
 class LicenseExpirationTask(object):
     def __init__(self):
-        self._logger = None
+        self.logger = logging.getLogger(__name__ + "." + self.__class__.__name__)
         self.salt = SaltHelper()
 
-    @property
-    def logger(self):
-        if not self._logger:
-            fmt = logging.Formatter(
-                "%(asctime)s - %(name)s - %(levelname)s  - %(message)s")
-            handler = logging.StreamHandler()
-            handler.setFormatter(fmt)
-
-            self._logger = logging.getLogger(__name__ + "." + self.__class__.__name__)
-            self._logger.addHandler(handler)
-            self._logger.setLevel(logging.INFO)
-        return self._logger
-
     @run_in_reactor
-    def start(self, interval=10):
+    def start(self, interval=_DEFAULT_INTERVAL):
         # callback to handle error
         def on_error(failure):
             self.logger.error(failure.getTraceback())

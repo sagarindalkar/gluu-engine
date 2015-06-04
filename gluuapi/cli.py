@@ -19,12 +19,12 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-# import logging
 import os
 
 from crochet import setup as crochet_setup
 
 from gluuapi.app import create_app
+from gluuapi.log import configure_global_logging
 from gluuapi.task import LicenseExpirationTask
 
 
@@ -33,6 +33,8 @@ def main():
         raise SystemExit("Unable to get salt-master IP address. "
                          "Make sure the SALT_MASTER_IPADDR "
                          "environment variable is set.")
+
+    configure_global_logging()
 
     app = create_app()
     crochet_setup()

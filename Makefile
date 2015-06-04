@@ -10,6 +10,3 @@ develop:
 
 install:
 	@python setup.py install
-
-scheduler:
-	@gluuapi-scheduler

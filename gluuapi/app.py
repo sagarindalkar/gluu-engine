@@ -30,7 +30,6 @@ from gluuapi.settings import ProdConfig
 from gluuapi.settings import DevConfig
 from gluuapi.settings import TestConfig
 from gluuapi.extensions import restapi
-# from gluuapi.extensions import mail
 from gluuapi.resource.node import Node
 from gluuapi.resource.node import NodeList
 from gluuapi.resource.cluster import Cluster
@@ -40,7 +39,6 @@ from gluuapi.resource import ProviderListResource
 from gluuapi.resource import LicenseResource
 from gluuapi.resource import LicenseListResource
 from gluuapi.database import db
-# from gluuapi.scheduler import scheduler
 
 
 def _get_config_object():
@@ -72,8 +70,6 @@ def create_app():
 def register_extensions(app):
     restapi.init_app(app)
     db.init_app(app)
-    # scheduler.init_app(app)
-    # mail.init_app(app)
 
 
 def register_resources():

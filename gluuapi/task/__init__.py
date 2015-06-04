@@ -19,32 +19,6 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-# from flask_mail import Message
-
-# from gluuapi.extensions import mail
-# # from gluuapi.database import db
-# from gluuapi.utils import timestamp_millis_to_datetime
-
-
-# def two_months_retention(license):
-#     print("checking license about to expire within 60 days")
-
-
-# # def one_week_retention(license_id):
-# def one_week_retention(license):
-#     # license = db.get(license_id, "licenses")
-#     # if license:
-#     dt = timestamp_millis_to_datetime(license.metadata["expiration_date"])
-#     msg = Message(
-#         subject="License expiration reminder",
-#         body=" ".join([
-#             "Your license (ID: {}) is about to expire".format(license.id),
-#             "in {}".format(dt.strftime("%Y-%m-%d %H:%M:%I (UTC)")),
-#         ]),
-#         recipients=[license.billing_email],
-#     )
-#     print(msg)
-#     mail.send(msg)
 from crochet import run_in_reactor
 from twisted.internet.task import LoopingCall
 
@@ -115,3 +89,4 @@ class LicenseExpirationTask(object):
                 node.id,
             )
             self.salt.cmd(provider.hostname, "cmd.run", [detach_cmd])
+            self.logger.info("oxAuth node {} has been disabled".format(node.id))

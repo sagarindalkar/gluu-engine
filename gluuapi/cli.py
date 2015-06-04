@@ -25,7 +25,6 @@ import os
 from crochet import setup as crochet_setup
 
 from gluuapi.app import create_app
-# from gluuapi.scheduler import scheduler
 from gluuapi.task import LicenseExpirationTask
 
 
@@ -38,17 +37,8 @@ def main():
     app = create_app()
     crochet_setup()
 
-    # # logging handlers for apscheduler
-    # # useful for debugging erorrs in background jobs
-    # logging.getLogger("apscheduler.executors.default") \
-    #        .addHandler(logging.StreamHandler())
-
-    # with app.app_context():
-    #     scheduler.start()
-
     let = LicenseExpirationTask()
     let.start()
 
     # runs the app
-    app.debug = False
     app.run(port=app.config['PORT'])

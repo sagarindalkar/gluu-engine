@@ -34,9 +34,6 @@ from gluuapi.utils import decode_signed_license
 from gluuapi.utils import timestamp_millis
 from gluuapi.utils import timestamp_millis_to_datetime
 from gluuapi.utils import datetime_to_timestamp_millis
-# from gluuapi.scheduler import scheduler
-# from gluuapi.task import two_months_retention
-# from gluuapi.task import one_week_retention
 
 
 class LicenseResource(Resource):
@@ -171,30 +168,6 @@ class LicenseListResource(Resource):
 
         license = License(fields=params)
         db.persist(license, "licenses")
-
-        # if license.metadata["expiration_date"]:
-        #     # # add job to run every Monday within 60 days before license expire
-        #     # scheduler.add_job(
-        #     #     two_months_retention,
-        #     #     trigger="cron",
-        #     #     args=[license],
-        #     #     hour=9,
-        #     #     day_of_week="mon",
-        #     #     start_date=timestamp_millis_to_datetime(license.metadata["expiration_date"]) - timedelta(days=60),
-        #     #     end_date=timestamp_millis_to_datetime(license.metadata["expiration_date"]),
-        #     # )
-
-        #     # add job to run each day within 7 days before license expire
-        #     scheduler.add_job(
-        #         one_week_retention,
-        #         trigger="cron",
-        #         # args=[license.id],
-        #         args=[license],
-        #         # hour=9,
-        #         second=1,
-        #         start_date=timestamp_millis_to_datetime(license.metadata["expiration_date"]) - timedelta(days=7),
-        #         end_date=timestamp_millis_to_datetime(license.metadata["expiration_date"]),
-        #     )
 
         headers = {
             "Location": url_for("license", license_id=license.id),

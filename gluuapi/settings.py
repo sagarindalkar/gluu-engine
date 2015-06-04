@@ -38,7 +38,6 @@ class Config(object):
     SALT_MASTER_IPADDR = os.environ.get("SALT_MASTER_IPADDR", "")
     TEMPLATES_DIR = os.path.join(APP_DIR, "templates")
     LOG_DIR = os.environ.get("LOG_DIR", "/var/log/gluu")
-    SCHEDULE_DATABASE_URI = os.path.join(DATA_DIR, "schedule", "schedule.rdb")
     INSTANCE_DIR = os.path.join(DATA_DIR, "instance")
 
 
@@ -53,7 +52,6 @@ class DevConfig(Config):
     DEBUG = True
     DATABASE_URI = os.path.join(Config.DATA_DIR, "db", "db_dev.json")
     LOG_DIR = os.environ.get("LOG_DIR", "/tmp/gluu-dev")
-    SCHEDULE_DATABASE_URI = os.path.join(Config.DATA_DIR, "schedule", "schedule_dev.rdb")
 
 
 class TestConfig(Config):
@@ -61,4 +59,3 @@ class TestConfig(Config):
     DEBUG = True
     DATABASE_URI = os.path.join(Config.DATA_DIR, "db", "db_test.json")
     LOG_DIR = os.environ.get("LOG_DIR", "/tmp/gluu-test")
-    SCHEDULE_DATABASE_URI = os.path.join(Config.DATA_DIR, "schedule", "schedule_test.rdb")

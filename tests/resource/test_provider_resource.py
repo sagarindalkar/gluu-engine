@@ -27,9 +27,14 @@ def test_provider_list_post_duplicated_master(app, db, provider):
 
 def test_provider_list_post_consumer_duplicated(app, db, license, provider):
     db.persist(license, "licenses")
+
+    # creates a master first
+    db.persist(provider, "providers")
+
     # set as consumer
     provider.license_id = license.id
     db.persist(provider, "providers")
+
     resp = app.test_client().post(
         "/provider",
         data={

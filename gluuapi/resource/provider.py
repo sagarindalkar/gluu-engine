@@ -148,8 +148,9 @@ class ProviderListResource(Resource):
     def post(self):
         params = provider_req.parse_args()
         master_count = db.count_from_table(
-            "providers", db.where("license_id"),
+            "providers", db.where("license_id") == "",
         )
+        print(master_count)
 
         if params.license_id:
             # if we dont have a master provider yet, rejects the request

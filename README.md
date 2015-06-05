@@ -78,6 +78,13 @@ pointed to salt-master IP address.
 $ SALT_MASTER_IPADDR=xxx.xxx.xxx.xxx env/bin/python gluuapi
 ```
 
+Or, if you have make installed
+
+```
+$ source env/bin/activate
+$ make run
+```
+
 ## Testing
 
 Testcases are running using ``pytest`` executed by ``tox``.

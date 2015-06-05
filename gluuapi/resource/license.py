@@ -28,6 +28,7 @@ from flask_restful_swagger import swagger
 from gluuapi.database import db
 from gluuapi.model import License
 from gluuapi.reqparser import license_req
+from gluuapi.reqparser import edit_license_req
 from gluuapi.utils import decode_signed_license
 from gluuapi.utils import retrieve_signed_license
 
@@ -65,6 +66,82 @@ class LicenseResource(Resource):
             return {"code": 404, "message": "License not found"}, 404
         return format_license_resp(license)
 
+    @swagger.operation(
+        notes="",
+        nickname="editlicense",
+        parameters=[
+            {
+                "name": "public_key",
+                "description": "Public key for license (won't be stored)",
+                "required": True,
+                "dataType": "string",
+                "paramType": "form"
+            },
+            {
+                "name": "public_password",
+                "description": "Public password for license (won't be stored)",
+                "required": True,
+                "dataType": "string",
+                "paramType": "form"
+            },
+            {
+                "name": "license_password",
+                "description": "License password (won't be stored)",
+                "required": True,
+                "dataType": "string",
+                "paramType": "form"
+            },
+        ],
+        responseMessages=[
+            {
+                "code": 200,
+                "message": "License Updated",
+            },
+            {
+                "code": 400,
+                "message": "Bad Request",
+            },
+            {
+                "code": 404,
+                "message": "License Not Found",
+            },
+            {
+                "code": 422,
+                "message": "Unprocessable Entity",
+            },
+            {
+                "code": 500,
+                "message": "Internal Server Error",
+            }
+        ],
+        summary="Update existing license",
+    )
+    def put(self, license_id):
+        params = edit_license_req.parse_args()
+
+        license = db.get(license_id, "licenses")
+        if not license:
+            return {"code": 404, "message": "license not found"}, 404
+
+        resp = retrieve_signed_license(license.code)
+        if not resp.ok:
+            current_app.logger.warn(resp.text)
+            return {"code": 422, "message": "unable to retrieve license"}, 422
+
+        license.signed_license = resp.json()["license"]
+
+        decoded_license = decode_signed_license(
+            license.signed_license,
+            params.public_key,
+            params.public_password,
+            params.license_password,
+        )
+        license.valid = decoded_license["valid"]
+        license.metadata = decoded_license["metadata"]
+
+        db.update(license.id, license, "licenses")
+        return format_license_resp(license)
+
 
 class LicenseListResource(Resource):
     @swagger.operation(
@@ -74,13 +151,6 @@ class LicenseListResource(Resource):
             {
                 "name": "code",
                 "description": "License code (licenseId) retrieved from https://license.gluu.org",
-                "required": True,
-                "dataType": "string",
-                "paramType": "form",
-            },
-            {
-                "name": "billing_email",
-                "description": "Email address where expiration reminder will be sent to",
                 "required": True,
                 "dataType": "string",
                 "paramType": "form",

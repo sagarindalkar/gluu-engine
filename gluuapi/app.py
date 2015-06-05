@@ -42,9 +42,12 @@ from gluuapi.database import db
 
 
 def _get_config_object():
-    if os.environ.get("API_ENV") == "prod":
+    """Gets config class based on API_ENV environment variable.
+    """
+    api_env = os.environ.get("API_ENV")
+    if api_env == "prod":
         config = ProdConfig
-    if os.environ.get("API_ENV") == "test":
+    elif api_env == "test":
         config = TestConfig
     else:
         config = DevConfig

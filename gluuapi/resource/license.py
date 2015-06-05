@@ -20,7 +20,6 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-# from datetime import timedelta
 from flask import url_for
 from flask import current_app
 from flask_restful import Resource
@@ -31,9 +30,12 @@ from gluuapi.model import License
 from gluuapi.reqparser import license_req
 from gluuapi.utils import decode_signed_license
 from gluuapi.utils import retrieve_signed_license
-# from gluuapi.utils import timestamp_millis
-# from gluuapi.utils import timestamp_millis_to_datetime
-# from gluuapi.utils import datetime_to_timestamp_millis
+
+
+def format_license_resp(obj):
+    resp = obj.as_dict()
+    resp["expired"] = obj.expired
+    return resp
 
 
 class LicenseResource(Resource):
@@ -61,7 +63,7 @@ class LicenseResource(Resource):
         license = db.get(license_id, "licenses")
         if not license:
             return {"code": 404, "message": "License not found"}, 404
-        return license.as_dict()
+        return format_license_resp(license)
 
 
 class LicenseListResource(Resource):
@@ -135,10 +137,6 @@ class LicenseListResource(Resource):
 
         params.signed_license = resp.json()["license"]
 
-        # ``signed_license`` might be a null value
-        if not params.signed_license:
-            return {"code": 422, "message": "invalid signed license (null value)"}, 422
-
         decoded_license = decode_signed_license(
             params.signed_license,
             params.public_key,
@@ -148,19 +146,13 @@ class LicenseListResource(Resource):
         params.valid = decoded_license["valid"]
         params.metadata = decoded_license["metadata"]
 
-        # # TODO: remove this dummy expiration_date
-        # DUMMY_EXPIRATION_DATE = datetime_to_timestamp_millis(
-        #     timestamp_millis_to_datetime(timestamp_millis()) - timedelta(days=7)
-        # )
-        # params.metadata["expiration_date"] = DUMMY_EXPIRATION_DATE
-
         license = License(fields=params)
         db.persist(license, "licenses")
 
         headers = {
             "Location": url_for("license", license_id=license.id),
         }
-        return license.as_dict(), 201, headers
+        return format_license_resp(license), 201, headers
 
     @swagger.operation(
         notes='Gives license info/state',
@@ -180,4 +172,4 @@ class LicenseListResource(Resource):
     )
     def get(self):
         licenses = db.all("licenses")
-        return [license.as_dict() for license in licenses]
+        return [format_license_resp(license) for license in licenses]

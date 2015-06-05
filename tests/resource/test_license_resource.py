@@ -76,31 +76,6 @@ def test_license_list_post_notretrieved(monkeypatch, app):
     assert resp.status_code == 422
 
 
-def test_license_list_post_null(monkeypatch, app):
-    class Response(object):
-        ok = True
-        text = ""
-
-        def json(self):
-            return {"license": None}
-
-    # monkeypatch ``requests.post`` directly as we cannot monkeypatch
-    # ``requests`` inside ``gluuapi.utils.retrieve_signed_license`` call
-    monkeypatch.setattr("requests.post", lambda url, data: Response())
-
-    resp = app.test_client().post(
-        "/license",
-        data={
-            "code": "abc",
-            "billing_email": "admin@example.com",
-            "public_key": "pubkey",
-            "public_password": "pubpasswd",
-            "license_password": "licensepasswd",
-        },
-    )
-    assert resp.status_code == 422
-
-
 def test_license_get(app, db, license):
     db.persist(license, "licenses")
     resp = app.test_client().get("/license/{}".format(license.id))

@@ -214,3 +214,21 @@ def test_node_post(monkeypatch, app, db, cluster, provider,
         },
     )
     assert resp.status_code == 202
+
+
+def test_node_post_expired_license(app, db, provider, license, cluster):
+    db.persist(cluster, "clusters")
+    license.metadata["expiration_date"] -= 10
+    db.persist(license, "licenses")
+    provider.license_id = license.id
+    db.persist(provider, "providers")
+
+    resp = app.test_client().post(
+        "/node",
+        data={
+            "cluster_id": cluster.id,
+            "provider_id": provider.id,
+            "node_type": "httpd",
+        },
+    )
+    assert resp.status_code == 403

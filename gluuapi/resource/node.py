@@ -212,6 +212,13 @@ status of the cluster node is available.""",
         if not provider:
             return {"code": 400, "message": "invalid provider ID"}, 400
 
+        # if node is being deployed to consumer, check that provider
+        # is not having expired license, otherwise rejects the request
+        if provider.type == "consumer":
+            license = db.get(provider.license_id, "licenses")
+            if license and license.expired:
+                return {"code": 403, "message": "cannot deploy node to provider having expired license"}, 403
+
         if params.node_type == "ldap":
             # checks if this new node will exceed max. allowed LDAP nodes
             if len(cluster.get_ldap_objects()) >= cluster.max_allowed_ldap_nodes:

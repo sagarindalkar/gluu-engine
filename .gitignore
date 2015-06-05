@@ -57,3 +57,4 @@ dbtest
 api/templates/salt/_build
 oxd-client.log
 redis.log
+tmp

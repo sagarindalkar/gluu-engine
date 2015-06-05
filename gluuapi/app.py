@@ -41,10 +41,9 @@ from gluuapi.resource import LicenseListResource
 from gluuapi.database import db
 
 
-def _get_config_object():
+def _get_config_object(api_env=""):
     """Gets config class based on API_ENV environment variable.
     """
-    api_env = os.environ.get("API_ENV")
     if api_env == "prod":
         config = ProdConfig
     elif api_env == "test":
@@ -55,8 +54,10 @@ def _get_config_object():
 
 
 def create_app():
+    api_env = os.environ.get("API_ENV")
+
     app = Flask(__name__)
-    app.config.from_object(_get_config_object())
+    app.config.from_object(_get_config_object(api_env))
 
     # loads custom ``settings.py`` from instance folder
     app.instance_path = app.config["INSTANCE_DIR"]

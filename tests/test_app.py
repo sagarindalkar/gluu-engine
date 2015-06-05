@@ -1,6 +1,3 @@
-import os
-
-
 def test_get_config_object():
     from gluuapi.settings import ProdConfig
     from gluuapi.settings import DevConfig
@@ -14,5 +11,4 @@ def test_get_config_object():
     ]
 
     for item in data:
-        os.environ["API_ENV"] = item[0]
-        assert _get_config_object() == item[1]
+        assert _get_config_object(item[0]) == item[1]

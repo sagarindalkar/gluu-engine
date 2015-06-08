@@ -130,7 +130,7 @@ class ProviderResource(Resource):
             },
             {
                 "name": "docker_base_url",
-                "description": "URL to Docker API, could be unix socket (e.g. unix:///var/run/docker.sock) for localhost or tcp (10.10.10.1:2375) for remote host",
+                "description": "URL to Docker API, could be unix socket or host:port format",
                 "required": True,
                 "dataType": "string",
                 "paramType": "form"
@@ -153,18 +153,19 @@ class ProviderResource(Resource):
         if not provider:
             return {"code": 404, "message": "Provider not found"}, 404
 
-        # consumer type must use license
         if provider.type == "consumer":
+            # consumer type must use license
             if not params.license_id:
                 return {"code": 400, "message": "missing license ID for consumer type"}, 400
 
-            # license cannot be reuse
+            # counts license used by another provider (if any)
             licensed_count = db.count_from_table(
                 "providers",
                 ((db.where("license_id") == params.license_id)
                  & (db.where("id") != provider.id)),
             )
 
+            # license cannot be reuse
             if licensed_count:
                 return {"code": 403, "message": "cannot reuse license"}, 403
 
@@ -203,7 +204,7 @@ class ProviderListResource(Resource):
             },
             {
                 "name": "docker_base_url",
-                "description": "URL to Docker API, could be unix socket (e.g. unix:///var/run/docker.sock) for localhost or tcp (10.10.10.1:2375) for remote host",
+                "description": "URL to Docker API, could be unix socket or host:port format",
                 "required": True,
                 "dataType": "string",
                 "paramType": "form"

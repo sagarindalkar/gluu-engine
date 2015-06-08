@@ -69,9 +69,6 @@ def ldap_encode(password):
     encrypted_password = '{{SSHA}}{0}'.format(b64encoded)
     return encrypted_password
 
-# backward-compat
-encrypt_password = ldap_encode
-
 
 def get_quad():
     # borrowed from community-edition-setup project
@@ -99,11 +96,6 @@ def decrypt_text(encrypted_text, key):
     decrypted_text = cipher.update(base64.b64decode(b"{}".format(encrypted_text)))
     decrypted_text += cipher.final()
     return decrypted_text
-
-
-# backward-compat
-ox_encode_password = encrypt_text
-ox_decode_password = decrypt_text
 
 
 def exc_traceback():
@@ -136,7 +128,7 @@ def decode_signed_license(signed_license, public_key,
             public_password,
             license_password,
         ), exit_on_error=False)
-    except CalledProcessError as exc:
+    except CalledProcessError as exc:  # pragma: no cover
         cmd_output = exc.output
 
     # output example:
@@ -172,11 +164,3 @@ def timestamp_millis():
     """Time in milliseconds since the EPOCH.
     """
     return time.time() * 1000
-
-
-def datetime_to_timestamp_millis(dt):
-    """Converts datetime to time in milliseconds since the EPOCH.
-
-    :param dt: ``datetime.datetime`` object.
-    """
-    return time.mktime(dt.timetuple()) * 1000

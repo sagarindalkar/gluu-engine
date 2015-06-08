@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # The MIT License (MIT)
 #
 # Copyright (c) 2015 Gluu
@@ -79,14 +78,14 @@ class LicenseResource(Resource):
             },
             {
                 "name": "public_password",
-                "description": "Public password for license",
+                "description": "Public password for license (won't be stored)",
                 "required": True,
                 "dataType": "string",
                 "paramType": "form"
             },
             {
                 "name": "license_password",
-                "description": "License password",
+                "description": "License password (won't be stored)",
                 "required": True,
                 "dataType": "string",
                 "paramType": "form"
@@ -136,6 +135,8 @@ class LicenseResource(Resource):
                 "message": "invalid 'public_key', 'public_password', or 'license_password' value",
             }, 422
 
+        # validator running fine, but it couldn't decode signed license
+        # due to incorrect credentials
         if not decoded_license["valid"]:
             return {
                 "code": 422,
@@ -147,7 +148,6 @@ class LicenseResource(Resource):
         params.code = license.code
         params.signed_license = license.signed_license
         params.billing_email = license.billing_email
-        params.id = license.id
 
         license.populate(params)
         db.update(license.id, license, "licenses")

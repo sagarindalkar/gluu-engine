@@ -153,6 +153,33 @@ class LicenseResource(Resource):
         db.update(license.id, license, "licenses")
         return format_license_resp(license)
 
+    @swagger.operation(
+        notes="Deletes a license",
+        nickname="dellicense",
+        responseMessages=[
+            {
+                "code": 204,
+                "message": "License deleted",
+            },
+            {
+                "code": 404,
+                "message": "License not found",
+            },
+            {
+                "code": 500,
+                "message": "Internal Server Error",
+            },
+        ],
+        summary='TODO'
+    )
+    def delete(self, license_id):
+        license = db.get(license_id, "licenses")
+        if not license:
+            return {"code": 404, "message": "License not found"}, 404
+
+        db.delete(license_id, "licenses")
+        return {}, 204
+
 
 class LicenseListResource(Resource):
     @swagger.operation(

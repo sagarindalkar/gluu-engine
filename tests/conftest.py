@@ -121,3 +121,16 @@ def license():
         },
     })
     return license
+
+
+@pytest.fixture
+def patched_salt_cmd(monkeypatch):
+    monkeypatch.setattr(
+        "salt.client.LocalClient.cmd",
+        lambda cls, tgt, fun, arg: None,
+    )
+
+
+@pytest.fixture
+def patched_sleep(monkeypatch):
+    monkeypatch.setattr("time.sleep", lambda num: None)

@@ -1,13 +1,3 @@
-import pytest
-
-@pytest.fixture
-def salt_no_cmd(monkeypatch):
-    monkeypatch.setattr(
-        "salt.client.LocalClient.cmd",
-        lambda cls, tgt, fun, arg: None,
-    )
-
-
 def test_get_expired_licenses(db, license):
     import copy
     from gluuapi.task import LicenseExpirationTask
@@ -36,7 +26,7 @@ def test_get_providers(db, provider, license):
     let._get_providers(license)
 
 
-def test_get_nodes(db, provider, oxauth_node, salt_no_cmd):
+def test_get_nodes(db, provider, oxauth_node, patched_salt_cmd):
     from gluuapi.task import LicenseExpirationTask
 
     db.persist(provider, "providers")

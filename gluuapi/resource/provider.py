@@ -25,6 +25,7 @@ from flask_restful_swagger import swagger
 
 from gluuapi.database import db
 from gluuapi.reqparser import provider_req
+from gluuapi.reqparser import edit_provider_req
 from gluuapi.model import Provider
 from gluuapi.helper import SaltHelper
 
@@ -98,6 +99,92 @@ class ProviderResource(Resource):
         salt.unregister_minion(provider.hostname)
         return {}, 204
 
+    @swagger.operation(
+        notes="Updates a provider",
+        nickname="editprovider",
+        responseMessages=[
+            {
+                "code": 200,
+                "message": "Provider updated",
+            },
+            {
+                "code": 404,
+                "message": "Provider not found",
+            },
+            {
+                "code": 500,
+                "message": "Internal Server Error",
+            },
+            {
+                "code": 403,
+                "message": "Access denied",
+            },
+        ],
+        parameters=[
+            {
+                "name": "hostname",
+                "description": "Hostname of the provider",
+                "required": True,
+                "dataType": "string",
+                "paramType": "form"
+            },
+            {
+                "name": "docker_base_url",
+                "description": "URL to Docker API, could be unix socket (e.g. unix:///var/run/docker.sock) for localhost or tcp (10.10.10.1:2375) for remote host",
+                "required": True,
+                "dataType": "string",
+                "paramType": "form"
+            },
+            {
+                "name": "license_id",
+                "description": "ID of the license. Must be filled for consumer provider",
+                "required": False,
+                "dataType": "string",
+                "paramType": "form"
+            },
+        ],
+        summary='TODO'
+    )
+    def put(self, provider_id):
+        params = edit_provider_req.parse_args()
+
+        provider = db.get(provider_id, "providers")
+
+        if not provider:
+            return {"code": 404, "message": "Provider not found"}, 404
+
+        # consumer type must use license
+        if provider.type == "consumer":
+            if not params.license_id:
+                return {"code": 400, "message": "missing license ID for consumer type"}, 400
+
+            # license cannot be reuse
+            licensed_count = db.count_from_table(
+                "providers", db.where("license_id") == params.license_id)
+
+            if licensed_count:
+                return {"code": 403, "message": "cannot reuse license"}, 403
+
+            license = db.get(params.license_id, "licenses")
+
+            # license must exists
+            if not license:
+                return {"code": 400, "message": "invalid license ID"}, 400
+
+            if not license.valid:
+                return {"code": 403, "message": "invalid license"}, 403
+
+            if license.expired:
+                return {"code": 403, "message": "expired license"}, 403
+
+        provider.populate(params)
+        db.update(provider.id, provider, "providers")
+
+        # register provider so we can execute weave commands later on
+        salt = SaltHelper()
+        salt.register_minion(provider.hostname)
+        return format_provider_resp(provider), 200
+
 
 class ProviderListResource(Resource):
     @swagger.operation(
@@ -120,7 +207,7 @@ class ProviderListResource(Resource):
             },
             {
                 "name": "license_id",
-                "description": "ID of the license",
+                "description": "ID of the license. Must be filled for consumer provider",
                 "required": False,
                 "dataType": "string",
                 "paramType": "form"
@@ -150,7 +237,6 @@ class ProviderListResource(Resource):
         master_count = db.count_from_table(
             "providers", db.where("license_id") == "",
         )
-        print(master_count)
 
         if params.license_id:
             # if we dont have a master provider yet, rejects the request

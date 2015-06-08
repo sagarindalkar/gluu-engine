@@ -160,7 +160,10 @@ class ProviderResource(Resource):
 
             # license cannot be reuse
             licensed_count = db.count_from_table(
-                "providers", db.where("license_id") == params.license_id)
+                "providers",
+                ((db.where("license_id") == params.license_id)
+                 & (db.where("id") != provider.id)),
+            )
 
             if licensed_count:
                 return {"code": 403, "message": "cannot reuse license"}, 403
@@ -183,7 +186,7 @@ class ProviderResource(Resource):
         # register provider so we can execute weave commands later on
         salt = SaltHelper()
         salt.register_minion(provider.hostname)
-        return format_provider_resp(provider), 200
+        return format_provider_resp(provider)
 
 
 class ProviderListResource(Resource):

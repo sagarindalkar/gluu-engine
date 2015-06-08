@@ -79,14 +79,14 @@ class LicenseResource(Resource):
             },
             {
                 "name": "public_password",
-                "description": "Public password for license (won't be stored)",
+                "description": "Public password for license",
                 "required": True,
                 "dataType": "string",
                 "paramType": "form"
             },
             {
                 "name": "license_password",
-                "description": "License password (won't be stored)",
+                "description": "License password",
                 "required": True,
                 "dataType": "string",
                 "paramType": "form"
@@ -123,22 +123,33 @@ class LicenseResource(Resource):
         if not license:
             return {"code": 404, "message": "license not found"}, 404
 
-        resp = retrieve_signed_license(license.code)
-        if not resp.ok:
-            current_app.logger.warn(resp.text)
-            return {"code": 422, "message": "unable to retrieve license"}, 422
+        try:
+            decoded_license = decode_signed_license(
+                license.signed_license,
+                params.public_key,
+                params.public_password,
+                params.license_password,
+            )
+        except ValueError:
+            return {
+                "code": 422,
+                "message": "invalid 'public_key', 'public_password', or 'license_password' value",
+            }, 422
 
-        license.signed_license = resp.json()["license"]
+        if not decoded_license["valid"]:
+            return {
+                "code": 422,
+                "message": "invalid 'public_key', 'public_password', or 'license_password' value",
+            }, 422
 
-        decoded_license = decode_signed_license(
-            license.signed_license,
-            params.public_key,
-            params.public_password,
-            params.license_password,
-        )
-        license.valid = decoded_license["valid"]
-        license.metadata = decoded_license["metadata"]
+        params.valid = decoded_license["valid"]
+        params.metadata = decoded_license["metadata"]
+        params.code = license.code
+        params.signed_license = license.signed_license
+        params.billing_email = license.billing_email
+        params.id = license.id
 
+        license.populate(params)
         db.update(license.id, license, "licenses")
         return format_license_resp(license)
 
@@ -157,21 +168,21 @@ class LicenseListResource(Resource):
             },
             {
                 "name": "public_key",
-                "description": "Public key for license (won't be stored)",
+                "description": "Public key for license",
                 "required": True,
                 "dataType": "string",
                 "paramType": "form"
             },
             {
                 "name": "public_password",
-                "description": "Public password for license (won't be stored)",
+                "description": "Public password for license",
                 "required": True,
                 "dataType": "string",
                 "paramType": "form"
             },
             {
                 "name": "license_password",
-                "description": "License password (won't be stored)",
+                "description": "License password",
                 "required": True,
                 "dataType": "string",
                 "paramType": "form"
@@ -207,14 +218,21 @@ class LicenseListResource(Resource):
 
         params.signed_license = resp.json()["license"]
 
-        decoded_license = decode_signed_license(
-            params.signed_license,
-            params.public_key,
-            params.public_password,
-            params.license_password,
-        )
-        params.valid = decoded_license["valid"]
-        params.metadata = decoded_license["metadata"]
+        try:
+            decoded_license = decode_signed_license(
+                params.signed_license,
+                params.public_key,
+                params.public_password,
+                params.license_password,
+            )
+        except ValueError:
+            # when generating license's metadata, we dont care whether creds
+            # are invalid since we can re-generate the metadata in
+            # separate API call; see ``LicenseResource.put``
+            pass
+        else:
+            params.valid = decoded_license["valid"]
+            params.metadata = decoded_license["metadata"]
 
         license = License(fields=params)
         db.persist(license, "licenses")

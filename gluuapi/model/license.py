@@ -30,6 +30,7 @@ from gluuapi.database import db
 from gluuapi.model.base import BaseModel
 from gluuapi.utils import generate_passkey
 from gluuapi.utils import timestamp_millis
+# from gluuapi.utils import encrypt_text
 
 
 @swagger.model
@@ -45,20 +46,14 @@ class License(BaseModel):
     def __init__(self, fields=None):
         fields = fields or {}
         self.passkey = generate_passkey()
-
         self.id = "{}".format(uuid.uuid4())
-        self.code = fields.get("code", "")
-        self.billing_email = fields.get("billing_email", "")
-
-        # license retrieved from API call to
-        # https://license.gluu.org/rest/generate
-        self.signed_license = fields.get("signed_license", "")
-
-        self.valid = fields.get("valid", False)
-        self.metadata = fields.get("metadata", {})
+        self.populate(fields)
 
     @property
     def expired(self):
+        if not self.metadata or not self.valid:
+            return True
+
         if not self.metadata["expiration_date"]:
             return False
 
@@ -69,3 +64,27 @@ class License(BaseModel):
     def get_provider_objects(self):
         providers = db.search_from_table("providers", db.where("license_id") == self.id)
         return providers
+
+    def populate(self, fields=None):
+        fields = fields or {}
+
+        self.code = fields.get("code", "")
+        self.billing_email = fields.get("billing_email", "")
+        self.signed_license = fields.get("signed_license", "")
+
+        # self.public_key = encrypt_text(
+        #     fields.get("public_key", ""),
+        #     self.passkey,
+        # )
+
+        # self.public_password = encrypt_text(
+        #     fields.get("public_password", ""),
+        #     self.passkey,
+        # )
+
+        # self.license_password = encrypt_text(
+        #     fields.get("license_password", ""),
+        #     self.passkey,
+        # )
+        self.valid = fields.get("valid", False)
+        self.metadata = fields.get("metadata", None)

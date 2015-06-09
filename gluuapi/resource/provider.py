@@ -187,6 +187,16 @@ class ProviderResource(Resource):
         # register provider so we can execute weave commands later on
         salt = SaltHelper()
         salt.register_minion(provider.hostname)
+
+        # if provider has disabled oxAuth nodes, try to re-enable the nodes
+        oxauth_nodes = provider.get_node_objects(type_="oxauth")
+        for node in oxauth_nodes:
+            attach_cmd = "weave attach {}/{} {}".format(
+                node.weave_ip,
+                node.weave_prefixlen,
+                node.id,
+            )
+            salt.cmd(provider.hostname, "cmd.run", [attach_cmd])
         return format_provider_resp(provider)
 
 

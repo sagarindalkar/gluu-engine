@@ -252,11 +252,14 @@ def test_provider_put_expired_license(app, db, license, provider):
     assert resp.status_code == 403
 
 
-def test_provider_put_updated(app, db, license, provider):
+def test_provider_put_updated(app, db, license, provider,
+                              oxauth_node, patched_salt_cmd):
     license.metadata["expiration_date"] += 1000
     db.persist(license, "licenses")
     provider.license_id = license
     db.persist(provider, "providers")
+    oxauth_node.provider_id = provider.id
+    db.persist(oxauth_node, "nodes")
 
     resp = app.test_client().put(
         "/provider/{}".format(provider.id),

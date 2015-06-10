@@ -108,18 +108,20 @@ def exc_traceback():
     return exc_string
 
 
-def decode_signed_license(signed_license, public_key,
-                          public_password, license_password,
-                          validator="/opt/gluu/oxd-license-validator.jar"):
-    """Gets license's metadata from a signed license retrieved from license server
-    (https://license.gluu.org).
+def decode_signed_license(signed_license, public_key, public_password, license_password):
+    """Gets license's metadata from a signed license retrieved from license
+    server (https://license.gluu.org).
 
     :param signed_license: Signed license retrieved from license server
     :param public_key: Public key retrieved from license server
     :param public_password: Public password retrieved from license server
     :param license_password: License password retrieved from license server
-    :param validator: Path to Java JAR file to validate signed license
     """
+    validator = os.environ.get(
+        "OXD_LICENSE_VALIDATOR",
+        "/usr/share/oxd-license-validator/oxd-license-validator.jar",
+    )
+
     try:
         cmd_output = run("java -jar {} {} {} {} {}".format(
             validator,

@@ -37,6 +37,30 @@ sudo apt-get update
 sudo apt-get install -y salt-master
 ```
 
+### License Validator
+
+Get the oxd license validator JAR file:
+
+```
+wget http://ox.gluu.org/maven/org/xdi/oxd-license-validator/3.0.1-SNAPSHOT/oxd-license-validator-3.0.1-SNAPSHOT-jar-with-dependencies.jar
+```
+
+`gluu-flask` assumes this validator is located in `/usr/share/oxd-license-validator/oxd-license-validator.jar`, hence move the
+downloaded JAR to appropriate location:
+
+```
+sudo mkdir /usr/share/oxd-license-validator
+sudo mv oxd-license-validator-3.0.1-SNAPSHOT-jar-with-dependencies.jar /usr/share/oxd-license-validator/oxd-license-validator.jar
+```
+
+If, for any reason, JAR file cannot be moved to `/usr/share/oxd-license-validator` directory,
+use environment variable to adjust the path to JAR file.
+
+```
+mv oxd-license-validator-3.0.1-SNAPSHOT-jar-with-dependencies.jar oxd-license-validator.jar
+export OXD_LICENSE_VALIDATOR=/custom/path/to/oxd-license-validator.jar
+```
+
 ## Deployment
 
 ### Install pip and virtualenv

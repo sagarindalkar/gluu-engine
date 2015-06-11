@@ -59,7 +59,7 @@ class LicenseExpirationTask(object):
         licenses = db.search_from_table("licenses", condition)
 
         for license in licenses:
-            if not license.expired:
+            if not license.expired:  # pragma: no cover
                 continue
 
             self.logger.info("found expired license {}".format(license.id))
@@ -112,7 +112,7 @@ class LicenseExpirationTask(object):
                 credential.decrypted_public_password,
                 credential.decrypted_license_password,
             )
-        except ValueError:
+        except ValueError:  # pragma: no cover
             self.logger.warn("unable to generate metadata for new license; "
                              "likely caused by incorrect credentials")
         else:

@@ -119,8 +119,24 @@ def test_credential_put_notfound(app):
     assert resp.status_code == 404
 
 
-def test_credential_put(app, db, license_credential):
+def test_credential_put(app, db, license_credential, license, validator_ok):
     db.persist(license_credential, "license_credentials")
+    db.persist(license, "licenses")
+    resp = app.test_client().put(
+        "/license_credential/{}".format(license_credential.id),
+        data={
+            "name": "test",
+            "public_key": "pubkey",
+            "public_password": "pubpasswd",
+            "license_password": "licensepasswd",
+        },
+    )
+    assert resp.status_code == 200
+
+
+def test_credential_put_incorrect_creds(app, db, license_credential, license, validator_err):
+    db.persist(license_credential, "license_credentials")
+    db.persist(license, "licenses")
     resp = app.test_client().put(
         "/license_credential/{}".format(license_credential.id),
         data={

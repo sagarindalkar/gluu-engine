@@ -384,7 +384,6 @@ class LicenseCredentialResource(Resource):
                 license.metadata = decoded_license["metadata"]
             finally:
                 db.update(license.id, license, "licenses")
-
         return format_credential_resp(credential)
 
     @swagger.operation(

@@ -1,8 +1,11 @@
 def test_get_expired_licenses(db, license):
     import copy
     from gluuapi.task import LicenseExpirationTask
+    from gluuapi.utils import timestamp_millis
 
     # license with expired timestamp
+    license.valid = True
+    license.metadata["expiration_date"] = timestamp_millis() - (60 * 60 * 24 * 1000)
     db.persist(license, "licenses")
 
     # license having ``None`` as ``expiration_date`` value

@@ -25,4 +25,5 @@ from .node import node_req  # noqa
 from .provider import provider_req  # noqa
 from .license import license_req  # noqa
 from .license import edit_license_req  # noqa
+from .license import license_cred_req  # noqa
 from .provider import edit_provider_req  # noqa

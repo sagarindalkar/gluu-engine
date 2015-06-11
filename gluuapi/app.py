@@ -38,6 +38,8 @@ from gluuapi.resource import ProviderResource
 from gluuapi.resource import ProviderListResource
 from gluuapi.resource import LicenseResource
 from gluuapi.resource import LicenseListResource
+from gluuapi.resource import LicenseCredentialListResource
+from gluuapi.resource import LicenseCredentialResource
 from gluuapi.database import db
 
 
@@ -92,3 +94,8 @@ def register_resources():
                          endpoint="license")
     restapi.add_resource(LicenseListResource, "/license",
                          endpoint="licenselist")
+
+    restapi.add_resource(LicenseCredentialListResource, "/license_credential",
+                         endpoint="licensecredlist")
+    restapi.add_resource(LicenseCredentialResource, "/license_credential/<string:credential_id>",
+                         endpoint="licensecred")

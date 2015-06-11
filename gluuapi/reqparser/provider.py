@@ -47,8 +47,5 @@ provider_req.add_argument(
     help="URL to Docker API, could be unix socket or tcp",
 )
 provider_req.add_argument("license_id", location="form", default="")
-# provider_req.add_argument("public_key", location="form", default="")
-# provider_req.add_argument("public_password", location="form", default="")
-# provider_req.add_argument("license_password", location="form", default="")
 
 edit_provider_req = provider_req.copy()

@@ -23,9 +23,15 @@ from flask_restful import reqparse
 
 license_req = reqparse.RequestParser()
 license_req.add_argument("code", location="form", required=True)
-license_req.add_argument("public_key", location="form", required=True)
-license_req.add_argument("public_password", location="form", required=True)
-license_req.add_argument("license_password", location="form", required=True)
+license_req.add_argument("credential_id", location="form", required=True)
 
 edit_license_req = license_req.copy()
 edit_license_req.remove_argument("code")
+
+license_cred_req = reqparse.RequestParser()
+license_cred_req.add_argument("name", location="form", required=True)
+license_cred_req.add_argument("public_key", location="form", required=True)
+license_cred_req.add_argument("public_password", location="form",
+                              required=True)
+license_cred_req.add_argument("license_password", location="form",
+                              required=True)

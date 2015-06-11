@@ -175,9 +175,6 @@ class ProviderResource(Resource):
             if not license:
                 return {"code": 400, "message": "invalid license ID"}, 400
 
-            if not license.valid:
-                return {"code": 403, "message": "invalid license"}, 403
-
             if license.expired:
                 return {"code": 403, "message": "expired license"}, 403
 
@@ -271,9 +268,6 @@ class ProviderListResource(Resource):
             # license must exists
             if not license:
                 return {"code": 400, "message": "invalid license ID"}, 400
-
-            if not license.valid:
-                return {"code": 403, "message": "invalid license"}, 403
 
             if license.expired:
                 return {"code": 403, "message": "expired license"}, 403

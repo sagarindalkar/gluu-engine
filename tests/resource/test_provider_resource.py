@@ -60,21 +60,21 @@ def test_provider_list_post_license_notfound(app, db, provider):
     assert resp.status_code == 400
 
 
-def test_provider_list_post_invalid_license(monkeypatch, app, db, license, provider):
-    db.persist(provider, "providers")
+# def test_provider_list_post_invalid_license(monkeypatch, app, db, license, provider):
+#     db.persist(provider, "providers")
 
-    # makes the license as invalid
-    license.valid = False
-    db.persist(license, "licenses")
-    resp = app.test_client().post(
-        "/provider",
-        data={
-            "docker_base_url": "unix:///var/run/docker.sock",
-            "hostname": "local",
-            "license_id": license.id,
-        },
-    )
-    assert resp.status_code == 403
+#     # makes the license as invalid
+#     license.valid = False
+#     db.persist(license, "licenses")
+#     resp = app.test_client().post(
+#         "/provider",
+#         data={
+#             "docker_base_url": "unix:///var/run/docker.sock",
+#             "hostname": "local",
+#             "license_id": license.id,
+#         },
+#     )
+#     assert resp.status_code == 403
 
 
 def test_provider_list_post_expired_license(monkeypatch, app, db, license, provider):
@@ -214,29 +214,8 @@ def test_provider_put_license_notfound(app, db, provider, license):
     assert resp.status_code == 400
 
 
-def test_provider_put_invalid_license(app, db, license, provider):
-    license.valid = False
-    db.persist(license, "licenses")
-    provider.license_id = license.id
-    db.persist(provider, "providers")
+def test_provider_put_expired_license(app, db, license, provider, validator_err):
 
-    # makes the license as invalid
-    license.valid = False
-    db.persist(license, "licenses")
-    resp = app.test_client().put(
-        "/provider/{}".format(provider.id),
-        data={
-            "docker_base_url": "unix:///var/run/docker.sock",
-            "hostname": "local",
-            "license_id": license.id,
-        },
-    )
-    assert resp.status_code == 403
-
-
-def test_provider_put_expired_license(app, db, license, provider):
-
-    license.metadata["expiration_date"] -= 1000
     db.persist(license, "licenses")
     provider.license_id = license
     db.persist(provider, "providers")
@@ -253,8 +232,12 @@ def test_provider_put_expired_license(app, db, license, provider):
 
 
 def test_provider_put_updated(app, db, license, provider,
-                              oxauth_node, patched_salt_cmd):
-    license.metadata["expiration_date"] += 1000
+                              oxauth_node, patched_salt_cmd,
+                              license_credential, validator_ok):
+    db.persist(license_credential, "license_credentials")
+    license.credential_id = license_credential.id
+    license.metadata = {"expiration_date": None}
+    license.valid = True
     db.persist(license, "licenses")
     provider.license_id = license
     db.persist(provider, "providers")

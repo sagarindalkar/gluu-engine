@@ -104,7 +104,7 @@ class Node(Resource):
         db.delete(node_id, "nodes")
 
         # removes reference from cluster, if any
-        cluster.unreserve_ip_addr(node.weave_ip)
+        # cluster.unreserve_ip_addr(node.weave_ip)
         db.update(cluster.id, cluster, "clusters")
 
         if node.type == "ldap":

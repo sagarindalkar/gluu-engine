@@ -204,7 +204,7 @@ class BaseModelHelper(object):
                                                 self.node.weave_prefixlen,
                                                 self.node.id)],
             )
-            self.cluster.unreserve_ip_addr(self.node.weave_ip)
+            # self.cluster.unreserve_ip_addr(self.node.weave_ip)
             self.node.weave_ip = ""
             db.update(self.cluster.id, self.cluster, "clusters")
 

@@ -78,7 +78,6 @@ class LicenseExpirationTask(object):
                 if new_license and not new_license.expired:
                     # only update provider when new license has correct metadata
                     provider.license_id = new_license.id
-                    db.persist(new_license, "licenses")
                     db.update(provider.id, provider, "providers")
                     self.logger.info("provider {} has been "
                                      "updated".format(provider.id))
@@ -119,6 +118,9 @@ class LicenseExpirationTask(object):
         else:
             license.valid = decoded_license["valid"]
             license.metadata = decoded_license["metadata"]
+
+        # saves this new license
+        db.persist(license, "licenses")
         return license
 
     def disable_oxauth_nodes(self, provider):

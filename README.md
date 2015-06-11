@@ -40,13 +40,13 @@ Go version (server): go1.4.1
 Git commit (server): a8a31ef
 ```
 
-### Install salt-master
+### Install salt-master and salt-minion
 
 ```
 echo deb http://ppa.launchpad.net/saltstack/salt/ubuntu `lsb_release -sc` main | sudo tee /etc/apt/sources.list.d/saltstack.list
 wget -q -O- "http://keyserver.ubuntu.com:11371/pks/lookup?op=get&search=0x4759FA960E27C0A6" | sudo apt-key add -
 sudo apt-get update
-sudo apt-get install -y salt-master
+sudo apt-get install -y salt-master salt-minion
 ```
 
 ## Deployment
@@ -65,7 +65,23 @@ $ pip install virtualenv
 $ git clone https://github.com/GluuFederation/gluu-flask.git
 $ cd gluu-flask
 $ virtualenv env
-$ env/bin/python setup.py install
+$ source env/bin/activate
+$ python setup.py install
+```
+
+## Configure External Components
+
+`gluu-flask` relies on the following external components:
+
+* weave
+* prometheus
+
+Download `postinstall.py` script and run it.
+Note: this script will ask `SALT_MASTER_IPADDR` and provider type (`master` or `consumer`) value.
+
+```
+wget https://raw.githubusercontent.com/GluuFederation/gluu-cluster-postinstall/master/postinstall.py
+python postinstall.py
 ```
 
 ## Run
@@ -75,7 +91,8 @@ and make sure `SALT_MASTER_IPADDR` environment variable is set and
 pointed to salt-master IP address.
 
 ```
-$ SALT_MASTER_IPADDR=xxx.xxx.xxx.xxx env/bin/python gluuapi
+$ source env/bin/activate
+$ SALT_MASTER_IPADDR=xxx.xxx.xxx.xxx gluuapi
 ```
 
 Or, if you have make installed

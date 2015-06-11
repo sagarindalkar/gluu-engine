@@ -47,6 +47,7 @@ class ProviderResource(Resource):
                 "message": "Internal Server Error",
             },
         ],
+        summary='Get a list of existing providers',
     )
     def get(self, provider_id):
         obj = db.get(provider_id, "providers")
@@ -75,7 +76,7 @@ class ProviderResource(Resource):
                 "message": "Access denied",
             },
         ],
-        summary='TODO'
+        summary='Delete existing provider',
     )
     def delete(self, provider_id):
         provider = db.get(provider_id, "providers")
@@ -127,6 +128,7 @@ class ProviderListResource(Resource):
                 "message": "Internal Server Error",
             },
         ],
+        summary='Create a new provider',
     )
     def post(self):
         params = provider_req.parse_args()
@@ -155,6 +157,7 @@ class ProviderListResource(Resource):
                 "message": "Internal Server Error",
             },
         ],
+        summary='Get existing provider',
     )
     def get(self):
         obj_list = db.all("providers")

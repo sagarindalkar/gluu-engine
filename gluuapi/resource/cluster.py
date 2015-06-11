@@ -59,7 +59,7 @@ class Cluster(Resource):
                 "message": "Internal Server Error"
             },
         ],
-        summary='TODO'
+        summary='Get a list of existing clusters',
     )
     def get(self, cluster_id):
         cluster = db.get(cluster_id, "clusters")
@@ -85,7 +85,7 @@ class Cluster(Resource):
                 "message": "Internal Server Error",
             },
         ],
-        summary='TODO'
+        summary='Delete existing cluster',
     )
     def delete(self, cluster_id):
         cluster = db.get(cluster_id, "clusters")
@@ -111,7 +111,7 @@ class ClusterList(Resource):
                 "message": "Internal Server Error"
             },
         ],
-        summary='TODO'
+        summary='Get a list of existing providers'
     )
     def get(self):
         clusters = db.all("clusters")

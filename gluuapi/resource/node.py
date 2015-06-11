@@ -58,7 +58,7 @@ class Node(Resource):
                 "message": "Internal Server Error"
             },
         ],
-        summary='TODO'
+        summary='Get existing provider',
     )
     def get(self, node_id):
         obj = db.get(node_id, "nodes")
@@ -84,7 +84,7 @@ class Node(Resource):
                 "message": "Internal Server Error",
             },
         ],
-        summary='TODO'
+        summary='Delete existing node',
     )
     def delete(self, node_id):
         template_dir = current_app.config["TEMPLATES_DIR"]
@@ -138,7 +138,7 @@ class NodeList(Resource):
                 "message": "Internal Server Error"
             },
         ],
-        summary='TODO'
+        summary='Get a list of existing nodes',
     )
     def get(self):
         obj_list = db.all("nodes")
@@ -192,7 +192,7 @@ status of the cluster node is available.""",
                 "message": "Internal Server Error",
             }
         ],
-        summary='TODO'
+        summary='Create a new node',
     )
     def post(self):
         params = node_req.parse_args()

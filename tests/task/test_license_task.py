@@ -1,4 +1,4 @@
-def test_get_expired_licenses(db, license):
+def test_perform_job(db, license, oxd_resp_ok, validator_ok):
     import copy
     from gluuapi.task import LicenseExpirationTask
     from gluuapi.utils import timestamp_millis
@@ -15,25 +15,4 @@ def test_get_expired_licenses(db, license):
     db.persist(license2, "licenses")
 
     let = LicenseExpirationTask()
-    let._get_expired_licenses()
-
-
-def test_get_providers(db, provider, license):
-    from gluuapi.task import LicenseExpirationTask
-
-    db.persist(license, "licenses")
-    provider.license_id = license.id
-    db.persist(provider, "providers")
-
-    let = LicenseExpirationTask()
-    let._get_providers(license)
-
-
-def test_get_nodes(db, provider, oxauth_node, patched_salt_cmd):
-    from gluuapi.task import LicenseExpirationTask
-
-    db.persist(provider, "providers")
-    db.persist(oxauth_node, "nodes")
-
-    let = LicenseExpirationTask()
-    let._get_nodes(provider)
+    let.perform_job()

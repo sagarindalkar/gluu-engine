@@ -39,8 +39,9 @@ def main():
     app = create_app()
     crochet_setup()
 
-    let = LicenseExpirationTask()
-    let.start()
+    if not app.debug:
+        let = LicenseExpirationTask()
+        let.start()
 
     # runs the app
     app.run(port=app.config['PORT'])

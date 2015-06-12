@@ -11,7 +11,7 @@ the design of the gluu-flask component.
 ### Ubuntu packages
 
 ```
-sudo apt-get install -y libssl-dev python-dev swig libzmq3-dev
+sudo apt-get install -y libssl-dev python-dev swig libzmq3-dev openjdk-7-jre-headless
 sudo apt-get build-dep openssl
 ```
 
@@ -34,7 +34,7 @@ Note: gluu-flask only supports docker v1.5.0 or above.
 echo deb http://ppa.launchpad.net/saltstack/salt/ubuntu `lsb_release -sc` main | sudo tee /etc/apt/sources.list.d/saltstack.list
 wget -q -O- "http://keyserver.ubuntu.com:11371/pks/lookup?op=get&search=0x4759FA960E27C0A6" | sudo apt-key add -
 sudo apt-get update
-sudo apt-get install -y salt-master
+sudo apt-get install -y salt-master salt-minion
 ```
 
 ### License Validator
@@ -88,6 +88,7 @@ and make sure `SALT_MASTER_IPADDR` environment variable is set and
 pointed to salt-master IP address.
 
 ```
+source env/bin/activate
 SALT_MASTER_IPADDR=xxx.xxx.xxx.xxx gluuapi
 ```
 

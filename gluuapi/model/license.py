@@ -39,7 +39,7 @@ class License(BaseModel):
     resource_fields = {
         "id": String,
         "code": String,
-        "billing_email": String,
+        # "billing_email": String,
         "credential_id": String,
         "valid": Boolean,
         "metadata": Nested,

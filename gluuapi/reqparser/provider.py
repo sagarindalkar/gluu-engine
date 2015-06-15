@@ -40,9 +40,12 @@ def hostname_type(value, name):
 provider_req = reqparse.RequestParser()
 provider_req.add_argument(
     "hostname", type=hostname_type, location="form", required=True,
-    help="Hostname of the provider",
+    help="Hostname FQDN of the provider",
 )
 provider_req.add_argument(
     "docker_base_url", location="form", required=True,
     help="URL to Docker API, could be unix socket or tcp",
 )
+provider_req.add_argument("license_id", location="form", default="")
+
+edit_provider_req = provider_req.copy()

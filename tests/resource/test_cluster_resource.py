@@ -1,13 +1,8 @@
 import json
 
 
-def test_cluster_post(monkeypatch, app, db):
+def test_cluster_post(app, db, patched_salt_cmd):
     from gluuapi.model import GluuCluster
-
-    monkeypatch.setattr(
-        "salt.client.LocalClient.cmd",
-        lambda cls, tgt, fun, arg: None,
-    )
 
     resp = app.test_client().post(
         "/cluster",

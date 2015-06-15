@@ -1,22 +1,11 @@
-def test_setup(monkeypatch, ldap_setup):
-    monkeypatch.setattr(
-        "salt.client.LocalClient.cmd",
-        lambda cls, tgt, fun, arg: None,
-    )
-    monkeypatch.setattr("time.sleep", lambda num: None)
-
+def test_setup(ldap_setup, patched_salt_cmd, patched_sleep):
     # TODO: it might be better to split the tests
     ldap_setup.setup()
 
 
-def test_setup_with_replication(monkeypatch, ldap_setup, db, cluster):
+def test_setup_with_replication(ldap_setup, db, cluster, patched_salt_cmd,
+                                patched_sleep):
     from gluuapi.model import LdapNode
-
-    monkeypatch.setattr(
-        "salt.client.LocalClient.cmd",
-        lambda cls, tgt, fun, arg: None,
-    )
-    monkeypatch.setattr("time.sleep", lambda num: None)
 
     peer_node = LdapNode()
     peer_node.cluster_id = cluster.id
@@ -27,15 +16,10 @@ def test_setup_with_replication(monkeypatch, ldap_setup, db, cluster):
     assert ldap_setup.setup()
 
 
-def test_after_setup(monkeypatch, ldap_setup):
+def test_after_setup(ldap_setup, patched_salt_cmd):
     from gluuapi.database import db
     from gluuapi.model import OxauthNode
     from gluuapi.model import OxtrustNode
-
-    monkeypatch.setattr(
-        "salt.client.LocalClient.cmd",
-        lambda cls, tgt, fun, arg: None,
-    )
 
     oxauth = OxauthNode()
     oxauth.id = "auth-123"
@@ -49,22 +33,13 @@ def test_after_setup(monkeypatch, ldap_setup):
     ldap_setup.after_setup()
 
 
-def test_teardown(monkeypatch, ldap_setup):
-    monkeypatch.setattr(
-        "salt.client.LocalClient.cmd",
-        lambda cls, tgt, fun, arg: None,
-    )
+def test_teardown(ldap_setup, patched_salt_cmd):
     ldap_setup.teardown()
 
 
-def test_teardown_with_replication(monkeypatch, ldap_setup, cluster):
+def test_teardown_with_replication(ldap_setup, cluster, patched_salt_cmd):
     from gluuapi.database import db
     from gluuapi.model import LdapNode
-
-    monkeypatch.setattr(
-        "salt.client.LocalClient.cmd",
-        lambda cls, tgt, fun, arg: None,
-    )
 
     node1 = LdapNode()
     node1.id = "ldap-123"
@@ -80,14 +55,8 @@ def test_teardown_with_replication(monkeypatch, ldap_setup, cluster):
     ldap_setup.teardown()
 
 
-def test_replicate_from(monkeypatch, ldap_setup, db):
+def test_replicate_from(ldap_setup, db, patched_salt_cmd, patched_sleep):
     from gluuapi.model import LdapNode
-
-    monkeypatch.setattr(
-        "salt.client.LocalClient.cmd",
-        lambda cls, tgt, fun, arg: None,
-    )
-    monkeypatch.setattr("time.sleep", lambda num: None)
 
     peer_node = LdapNode()
     peer_node.id = "ldap-123"
@@ -97,13 +66,8 @@ def test_replicate_from(monkeypatch, ldap_setup, db):
     ldap_setup.replicate_from(peer_node)
 
 
-def test_render_ox_ldap_props(monkeypatch, ldap_setup, db,
-                              oxauth_node, oxtrust_node):
+def test_render_ox_ldap_props(ldap_setup, db, oxauth_node,
+                              oxtrust_node, patched_salt_cmd):
     db.persist(oxauth_node, "nodes")
     db.persist(oxtrust_node, "nodes")
-
-    monkeypatch.setattr(
-        "salt.client.LocalClient.cmd",
-        lambda cls, tgt, fun, arg: None,
-    )
     ldap_setup.render_ox_ldap_props()

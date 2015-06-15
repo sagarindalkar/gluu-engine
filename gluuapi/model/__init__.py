@@ -26,3 +26,5 @@ from .ldap_node import LdapNode  # noqa
 from .oxauth_node import OxauthNode  # noqa
 from .oxtrust_node import OxtrustNode  # noqa
 from .httpd_node import HttpdNode  # noqa
+from .license import License  # noqa
+from .license import LicenseCredential  # noqa

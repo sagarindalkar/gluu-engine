@@ -1,9 +1,3 @@
-def test_setup(monkeypatch, oxauth_setup):
-    monkeypatch.setattr(
-        "salt.client.LocalClient.cmd",
-        lambda cls, tgt, fun, arg: None,
-    )
-    monkeypatch.setattr("time.sleep", lambda num: None)
-
+def test_setup(oxauth_setup, patched_salt_cmd, patched_sleep):
     # TODO: it might be better to split the tests
     oxauth_setup.setup()

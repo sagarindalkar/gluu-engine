@@ -11,8 +11,8 @@ the design of the gluu-flask component.
 ### Ubuntu packages
 
 ```
-$ sudo apt-get install libssl-dev python-dev swig
-$ sudo apt-get build-dep openssl
+sudo apt-get install -y libssl-dev python-dev swig libzmq3-dev openjdk-7-jre-headless
+sudo apt-get build-dep openssl
 ```
 
 ### Install docker
@@ -23,22 +23,10 @@ Follow these instructions to install the package for Ubuntu Trusty 14.04 managed
 For the impatient, just type:
 
 ```
-$ curl -sSL https://get.docker.com/ubuntu/ | sudo sh
+curl -sSL https://get.docker.com/ubuntu/ | sudo sh
 ```
-After install, you should see
 
-```
-$ sudo docker version
-Client version: 1.5.0
-Client API version: 1.17
-Go version (client): go1.4.1
-Git commit (client): a8a31ef
-OS/Arch (client): linux/amd64
-Server version: 1.5.0
-Server API version: 1.17
-Go version (server): go1.4.1
-Git commit (server): a8a31ef
-```
+Note: gluu-flask only supports docker v1.5.0 or above.
 
 ### Install salt-master and salt-minion
 
@@ -49,16 +37,40 @@ sudo apt-get update
 sudo apt-get install -y salt-master salt-minion
 ```
 
+### License Validator
+
+Get the oxd license validator JAR file:
+
+```
+wget http://ox.gluu.org/maven/org/xdi/oxd-license-validator/3.0.1-SNAPSHOT/oxd-license-validator-3.0.1-SNAPSHOT-jar-with-dependencies.jar
+```
+
+`gluu-flask` assumes this validator is located in `/usr/share/oxd-license-validator/oxd-license-validator.jar`, hence move the
+downloaded JAR to appropriate location:
+
+```
+sudo mkdir /usr/share/oxd-license-validator
+sudo mv oxd-license-validator-3.0.1-SNAPSHOT-jar-with-dependencies.jar /usr/share/oxd-license-validator/oxd-license-validator.jar
+```
+
+If, for any reason, JAR file cannot be moved to `/usr/share/oxd-license-validator` directory,
+use environment variable to adjust the path to JAR file.
+
+```
+mv oxd-license-validator-3.0.1-SNAPSHOT-jar-with-dependencies.jar oxd-license-validator.jar
+export OXD_LICENSE_VALIDATOR=/custom/path/to/oxd-license-validator.jar
+```
+
 ## Deployment
 
 ### Install pip and virtualenv
 
 ```
-$ wget -q -O- https://bitbucket.org/pypa/setuptools/raw/bootstrap/ez_setup.py | python -
-$ wget -q -O- https://raw.github.com/pypa/pip/master/contrib/get-pip.py | python -
-$ export PATH="/usr/local/bin:$PATH"
-$ pip install virtualenv
+wget -q -O- https://bitbucket.org/pypa/setuptools/raw/bootstrap/ez_setup.py | python -
+wget -q -O- https://raw.github.com/pypa/pip/master/contrib/get-pip.py | python -
+pip install virtualenv
 ```
+
 ### Clone the project
 
 ```
@@ -107,8 +119,8 @@ $ make run
 Testcases are running using ``pytest`` executed by ``tox``.
 
 ```
-$ pip install tox
-$ tox
+pip install tox
+tox
 ```
 
 See `tox.ini` for details.

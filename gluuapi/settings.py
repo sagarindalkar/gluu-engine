@@ -20,41 +20,36 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
 import os
 
 
 class Config(object):
-    # SECRET_KEY = os_env.get('API_SECRET', 'blablabla')  # TODO: Change me
-    APP_DIR = os.path.abspath(os.path.dirname(__file__))  # This directory
-    PROJECT_ROOT = os.path.abspath(os.path.join(APP_DIR, os.pardir))
-    # BCRYPT_LOG_ROUNDS = 13
+    DEBUG = False
+    TESTING = False
+
+    # This directory
+    APP_DIR = os.path.abspath(os.path.dirname(__file__))
     PORT = 8080
-    # DATA_DIR = os.path.expanduser('~') + '/.gluu-cluster'
     DATA_DIR = os.environ.get(
         "DATA_DIR",
-        os.path.expanduser('~') + '/.gluu-cluster')
-    # CLUSTER_FILE = DATA_DIR + '/cluster.json'
-    # DB = os.path.join(PROJECT_ROOT, "db")
+        os.path.expanduser('~') + '/.gluu-cluster',
+    )
     DATABASE_URI = os.path.join(DATA_DIR, "db", "db.json")
     SALT_MASTER_IPADDR = os.environ.get("SALT_MASTER_IPADDR", "")
-    # Is there any better place to put this path
-    #DOCKER_REPO = 'https://raw.githubusercontent.com/GluuFederation/gluu-docker/master/ubuntu/14.04'
     TEMPLATES_DIR = os.path.join(APP_DIR, "templates")
     LOG_DIR = os.environ.get("LOG_DIR", "/var/log/gluu")
+    INSTANCE_DIR = os.path.join(DATA_DIR, "instance")
 
 
 class ProdConfig(Config):
-    """Production configuration."""
-    ENV = 'prod'
-    DEBUG = False
+    """Production configuration.
+    """
 
 
 class DevConfig(Config):
-    """Development configuration."""
-    ENV = 'dev'
+    """Development configuration.
+    """
     DEBUG = True
-    RELOADER = False
     DATABASE_URI = os.path.join(Config.DATA_DIR, "db", "db_dev.json")
     LOG_DIR = os.environ.get("LOG_DIR", "/tmp/gluu-dev")
 
@@ -62,7 +57,5 @@ class DevConfig(Config):
 class TestConfig(Config):
     TESTING = True
     DEBUG = True
-    # BCRYPT_LOG_ROUNDS = 1  # For faster tests
-    # DB = os.path.join(Config.PROJECT_ROOT, "dbtest")
     DATABASE_URI = os.path.join(Config.DATA_DIR, "db", "db_test.json")
     LOG_DIR = os.environ.get("LOG_DIR", "/tmp/gluu-test")

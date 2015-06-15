@@ -25,8 +25,15 @@ from flask_restful_swagger import swagger
 
 from gluuapi.database import db
 from gluuapi.reqparser import provider_req
+from gluuapi.reqparser import edit_provider_req
 from gluuapi.model import Provider
 from gluuapi.helper import SaltHelper
+
+
+def format_provider_resp(provider):
+    item = provider.as_dict()
+    item["type"] = provider.type
+    return item
 
 
 class ProviderResource(Resource):
@@ -53,7 +60,7 @@ class ProviderResource(Resource):
         obj = db.get(provider_id, "providers")
         if not obj:
             return {"code": 404, "message": "Provider not found"}, 404
-        return obj.as_dict()
+        return format_provider_resp(obj)
 
     @swagger.operation(
         notes="Deletes a provider",
@@ -93,6 +100,103 @@ class ProviderResource(Resource):
         salt.unregister_minion(provider.hostname)
         return {}, 204
 
+    @swagger.operation(
+        notes="Updates a provider",
+        nickname="editprovider",
+        responseMessages=[
+            {
+                "code": 200,
+                "message": "Provider updated",
+            },
+            {
+                "code": 404,
+                "message": "Provider not found",
+            },
+            {
+                "code": 500,
+                "message": "Internal Server Error",
+            },
+            {
+                "code": 403,
+                "message": "Access denied",
+            },
+        ],
+        parameters=[
+            {
+                "name": "hostname",
+                "description": "Hostname of the provider",
+                "required": True,
+                "dataType": "string",
+                "paramType": "form"
+            },
+            {
+                "name": "docker_base_url",
+                "description": "URL to Docker API, could be unix socket or host:port format",
+                "required": True,
+                "dataType": "string",
+                "paramType": "form"
+            },
+            {
+                "name": "license_id",
+                "description": "ID of the license. Must be filled for consumer provider",
+                "required": False,
+                "dataType": "string",
+                "paramType": "form"
+            },
+        ],
+        summary='TODO'
+    )
+    def put(self, provider_id):
+        params = edit_provider_req.parse_args()
+
+        provider = db.get(provider_id, "providers")
+
+        if not provider:
+            return {"code": 404, "message": "Provider not found"}, 404
+
+        if provider.type == "consumer":
+            # consumer type must use license
+            if not params.license_id:
+                return {"code": 400, "message": "missing license ID for consumer type"}, 400
+
+            # counts license used by another provider (if any)
+            licensed_count = db.count_from_table(
+                "providers",
+                ((db.where("license_id") == params.license_id)
+                 & (db.where("id") != provider.id)),
+            )
+
+            # license cannot be reuse
+            if licensed_count:
+                return {"code": 403, "message": "cannot reuse license"}, 403
+
+            license = db.get(params.license_id, "licenses")
+
+            # license must exists
+            if not license:
+                return {"code": 400, "message": "invalid license ID"}, 400
+
+            if license.expired:
+                return {"code": 403, "message": "expired license"}, 403
+
+        provider.populate(params)
+        db.update(provider.id, provider, "providers")
+
+        # register provider so we can execute weave commands later on
+        salt = SaltHelper()
+        salt.register_minion(provider.hostname)
+
+        # if provider has disabled oxAuth nodes, try to re-enable the nodes
+        oxauth_nodes = provider.get_node_objects(type_="oxauth")
+        for node in oxauth_nodes:
+            attach_cmd = "weave attach {}/{} {}".format(
+                node.weave_ip,
+                node.weave_prefixlen,
+                node.id,
+            )
+            salt.cmd(provider.hostname, "cmd.run", [attach_cmd])
+        return format_provider_resp(provider)
+
 
 class ProviderListResource(Resource):
     @swagger.operation(
@@ -108,8 +212,15 @@ class ProviderListResource(Resource):
             },
             {
                 "name": "docker_base_url",
-                "description": "URL to Docker API, could be unix socket (e.g. unix:///var/run/docker.sock) for localhost or tcp (10.10.10.1:2375) for remote host",
+                "description": "URL to Docker API, could be unix socket or host:port format",
                 "required": True,
+                "dataType": "string",
+                "paramType": "form"
+            },
+            {
+                "name": "license_id",
+                "description": "ID of the license. Must be filled for consumer provider",
+                "required": False,
                 "dataType": "string",
                 "paramType": "form"
             },
@@ -124,6 +235,10 @@ class ProviderListResource(Resource):
                 "message": "Bad Request",
             },
             {
+                "code": 403,
+                "message": "Forbidden",
+            },
+            {
                 "code": 500,
                 "message": "Internal Server Error",
             },
@@ -132,6 +247,41 @@ class ProviderListResource(Resource):
     )
     def post(self):
         params = provider_req.parse_args()
+        master_count = db.count_from_table(
+            "providers", db.where("license_id") == "",
+        )
+
+        if params.license_id:
+            # if we dont have a master provider yet, rejects the request
+            if not master_count:
+                return {
+                    "code": 403,
+                    "message": "requires at least 1 master provider registered first",
+                }, 403
+
+            # license cannot be reuse
+            licensed_count = db.count_from_table(
+                "providers", db.where("license_id") == params.license_id)
+            if licensed_count:
+                return {"code": 403, "message": "cannot reuse license"}, 403
+
+            license = db.get(params.license_id, "licenses")
+
+            # license must exists
+            if not license:
+                return {"code": 400, "message": "invalid license ID"}, 400
+
+            if license.expired:
+                return {"code": 403, "message": "expired license"}, 403
+
+        else:
+            # if we already have a master provider, rejects the request
+            if master_count:
+                return {
+                    "code": 403,
+                    "message": "cannot add another master provider",
+                }, 403
+
         provider = Provider(fields=params)
         db.persist(provider, "providers")
 
@@ -142,7 +292,7 @@ class ProviderListResource(Resource):
         headers = {
             "Location": url_for("provider", provider_id=provider.id),
         }
-        return provider.as_dict(), 201, headers
+        return format_provider_resp(provider), 201, headers
 
     @swagger.operation(
         notes="Gives provider info/state",
@@ -161,4 +311,4 @@ class ProviderListResource(Resource):
     )
     def get(self):
         obj_list = db.all("providers")
-        return [item.as_dict() for item in obj_list]
+        return [format_provider_resp(item) for item in obj_list]

@@ -26,11 +26,11 @@ def test_run_error():
         run("random-command", exit_on_error=False)
 
 
-def test_encrypt_password():
-    from gluuapi.utils import encrypt_password
+def test_ldap_encode():
+    from gluuapi.utils import ldap_encode
 
     passwd = "secret"
-    assert encrypt_password(passwd).startswith("{SSHA}")
+    assert ldap_encode(passwd).startswith("{SSHA}")
 
 
 def test_get_quad():

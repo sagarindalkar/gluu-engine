@@ -19,11 +19,19 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from flask_restful import reqparse
 
-from .cluster import cluster_req  # noqa
-from .node import node_req  # noqa
-from .provider import provider_req  # noqa
-from .license import license_req  # noqa
-from .license import edit_license_req  # noqa
-from .license import license_cred_req  # noqa
-from .provider import edit_provider_req  # noqa
+license_req = reqparse.RequestParser()
+license_req.add_argument("code", location="form", required=True)
+license_req.add_argument("credential_id", location="form", required=True)
+
+edit_license_req = license_req.copy()
+edit_license_req.remove_argument("code")
+
+license_cred_req = reqparse.RequestParser()
+license_cred_req.add_argument("name", location="form", required=True)
+license_cred_req.add_argument("public_key", location="form", required=True)
+license_cred_req.add_argument("public_password", location="form",
+                              required=True)
+license_cred_req.add_argument("license_password", location="form",
+                              required=True)

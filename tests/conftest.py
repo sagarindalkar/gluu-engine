@@ -1,3 +1,4 @@
+import codecs
 import os
 
 import pytest
@@ -12,9 +13,9 @@ def config():
 @pytest.fixture(scope="session")
 def app(request):
     from gluuapi.app import create_app
-    from gluuapi.settings import TestConfig
 
-    app = create_app(TestConfig)
+    os.environ["API_ENV"] = "test"
+    app = create_app()
     return app
 
 
@@ -98,3 +99,106 @@ def httpd_node(cluster, provider):
     node.cluster_id = cluster.id
     node.provider_id = provider.id
     return node
+
+
+@pytest.fixture()
+def license(license_credential):
+    from gluuapi.model import License
+
+    license = License({
+        "code": "code_abc",
+        "signed_license": "signed_license_abc",
+        "billing_email": "admin@example.com",
+        "credential_id": license_credential.id,
+    })
+    return license
+
+
+@pytest.fixture
+def patched_salt_cmd(monkeypatch):
+    monkeypatch.setattr(
+        "salt.client.LocalClient.cmd",
+        lambda cls, tgt, fun, arg: None,
+    )
+
+
+@pytest.fixture
+def patched_sleep(monkeypatch):
+    monkeypatch.setattr("time.sleep", lambda num: None)
+
+
+@pytest.fixture()
+def license_credential():
+    from gluuapi.model import LicenseCredential
+
+    cred = LicenseCredential({
+        "name": "abc",
+        "public_key": "pub_key",
+        "public_password": "pub_password",
+        "license_password": "license_password"
+    })
+    return cred
+
+
+@pytest.fixture
+def oxd_resp_ok(monkeypatch):
+    class Response(object):
+        ok = True
+        text = ""
+
+        def json(self):
+            return {"license": "xyz"}
+    monkeypatch.setattr("requests.post", lambda url, data: Response())
+
+
+@pytest.fixture
+def oxd_resp_err(monkeypatch):
+    class Response(object):
+        ok = False
+        text = ""
+
+        def json(self):
+            return {"license": None}
+    monkeypatch.setattr("requests.post", lambda url, data: Response())
+
+
+@pytest.fixture
+def validator_ok(monkeypatch):
+    with codecs.open("tests/resource/validator_ok.txt", encoding="utf-8") as f:
+        patch_output = f.read()
+
+    # cannot monkeypatch ``gluuapi.utils.run`` function wrapped in
+    # ``decode_signed_license`` function,
+    # hence we're monkeypatching ``gluuapi.utils.run`` directly
+    monkeypatch.setattr(
+        "gluuapi.utils.run",
+        lambda cmd, exit_on_error: patch_output,
+    )
+
+
+@pytest.fixture
+def validator_err(monkeypatch):
+    with codecs.open("tests/resource/validator_err.txt", encoding="utf-8") as f:
+        patch_output = f.read()
+
+    # cannot monkeypatch ``gluuapi.utils.run`` function wrapped in
+    # ``decode_signed_license`` function,
+    # hence we're monkeypatching ``gluuapi.utils.run`` directly
+    monkeypatch.setattr(
+        "gluuapi.utils.run",
+        lambda cmd, exit_on_error: patch_output,
+    )
+
+
+@pytest.fixture
+def validator_expired(monkeypatch):
+    from gluuapi.utils import timestamp_millis
+
+    # cannot monkeypatch ``gluuapi.utils.run`` function wrapped in
+    # ``decode_signed_license`` function,
+    # hence we're monkeypatching ``gluuapi.utils.run`` directly
+    monkeypatch.setattr(
+        "gluuapi.utils.run",
+        lambda cmd, exit_on_error: """Random line
+{"valid":true,"metadata":{"expiration_date":{}}}""".format(timestamp_millis() - 1000000),
+    )

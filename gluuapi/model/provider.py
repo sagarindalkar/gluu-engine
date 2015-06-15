@@ -38,16 +38,36 @@ class Provider(BaseModel):
         "id": fields.String,
         "docker_base_url": fields.String,
         "hostname": fields.String,
+        "license_id": fields.String,
     }
 
     def __init__(self, fields=None):
-        fields = fields or {}
-
         self.id = str(uuid.uuid4())
-        self.docker_base_url = fields.get("docker_base_url", "")
-        self.hostname = fields.get("hostname", "")
+        self.populate(fields)
+
+    @property
+    def type(self):
+        return "master" if not self.license_id else "consumer"
 
     @property
     def nodes_count(self):
         condition = db.where("provider_id") == self.id
         return db.count_from_table("nodes", condition)
+
+    def get_node_objects(self, type_=""):
+        condition = db.where("provider_id") == self.id
+        if type_:
+            condition = (condition) & (db.where("type") == type_)
+        return db.search_from_table("nodes", condition)
+
+    def populate(self, fields=None):
+        fields = fields or {}
+
+        self.docker_base_url = fields.get("docker_base_url", "")
+        self.hostname = fields.get("hostname", "")
+
+        # A reference to ``gluuapi.models.license.License.id``.
+        # If the value this attribute is set, provider is considered
+        # as ``consumer``; otherwise ``master`` is the role of
+        # this provider as default.
+        self.license_id = fields.get("license_id", "")

@@ -19,11 +19,13 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import re
 
-from .cluster import cluster_req  # noqa
-from .node import node_req  # noqa
-from .provider import provider_req  # noqa
-from .license import license_req  # noqa
-from .license import edit_license_req  # noqa
-from .license import license_cred_req  # noqa
-from .provider import edit_provider_req  # noqa
+# regex pattern to validate email address
+EMAIL_RE_ = re.compile(r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)")
+
+
+def email_type(value, name):
+    if EMAIL_RE_.match(value):
+        return value
+    raise ValueError("The parameter {} is not valid email address".format(name))

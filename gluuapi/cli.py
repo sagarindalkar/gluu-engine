@@ -24,23 +24,24 @@ import os
 from crochet import setup as crochet_setup
 
 from gluuapi.app import create_app
-from gluuapi.settings import DevConfig
-from gluuapi.settings import ProdConfig
+from gluuapi.log import configure_global_logging
+from gluuapi.task import LicenseExpirationTask
 
 
 def main():
-    if os.environ.get("API_ENV") == 'prod':
-        app = create_app(ProdConfig)
-    else:
-        app = create_app(DevConfig)
-
     if not os.environ.get("SALT_MASTER_IPADDR"):
         raise SystemExit("Unable to get salt-master IP address. "
                          "Make sure the SALT_MASTER_IPADDR "
                          "environment variable is set.")
 
-    crochet_setup()
-    app.run(port=app.config['PORT'])
+    configure_global_logging()
 
-if __name__ == '__main__':
-    main()
+    app = create_app()
+    crochet_setup()
+
+    if not app.debug:
+        let = LicenseExpirationTask()
+        let.start()
+
+    # runs the app
+    app.run(port=app.config['PORT'])

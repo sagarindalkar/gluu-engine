@@ -1,0 +1,2 @@
+Validator expects: java org.xdi.oxd.license.validator.LicenseValidator
+{"valid":true,"metadata":{"license_features":null,"thread_count":9,"license_name":null,"multi_server":true,"license_count_limit":0,"expiration_date":null,"license_type":"PAID"}}

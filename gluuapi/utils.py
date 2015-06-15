@@ -22,14 +22,18 @@
 # SOFTWARE.
 import base64
 import hashlib
+import json
 import os
 import random
 import string
 import subprocess
 import sys
 import traceback
+import time
 import uuid
+from subprocess import CalledProcessError
 
+import requests
 from M2Crypto.EVP import Cipher
 
 # Default charset
@@ -40,7 +44,6 @@ _DEFAULT_CHARS = "".join([string.ascii_uppercase,
 
 def run(command, exit_on_error=True, cwd=None):
     try:
-        # print("Shell command called (blocking): {}".format(command))
         return subprocess.check_output(command, stderr=subprocess.STDOUT,
                                        shell=True, cwd=cwd)
     except subprocess.CalledProcessError, e:
@@ -51,21 +54,20 @@ def run(command, exit_on_error=True, cwd=None):
 
 
 def get_random_chars(size=12, chars=_DEFAULT_CHARS):
+    """Generates random characters.
+    """
     return ''.join(random.choice(chars) for _ in range(size))
 
 
 def ldap_encode(password):
-    # borrowed from https://github.com/GluuFederation/community-edition-setup
-    # /blob/c23aa9a4353867060fc9faf674c72708059ae3bb/setup.py#L960-L966
+    # borrowed from community-edition-setup project
+    # see http://git.io/vIRex
     salt = os.urandom(4)
     sha = hashlib.sha1(password)
     sha.update(salt)
     b64encoded = '{0}{1}'.format(sha.digest(), salt).encode('base64').strip()
     encrypted_password = '{{SSHA}}{0}'.format(b64encoded)
     return encrypted_password
-
-# backward-compat
-encrypt_password = ldap_encode
 
 
 def get_quad():
@@ -96,11 +98,6 @@ def decrypt_text(encrypted_text, key):
     return decrypted_text
 
 
-# backward-compat
-ox_encode_password = encrypt_text
-ox_decode_password = decrypt_text
-
-
 def exc_traceback():
     """Get exception traceback as string.
     """
@@ -109,3 +106,63 @@ def exc_traceback():
         traceback.format_exception_only(*exc_info[:2]) +
         traceback.format_exception(*exc_info))
     return exc_string
+
+
+def decode_signed_license(signed_license, public_key, public_password, license_password):
+    """Gets license's metadata from a signed license retrieved from license
+    server (https://license.gluu.org).
+
+    :param signed_license: Signed license retrieved from license server
+    :param public_key: Public key retrieved from license server
+    :param public_password: Public password retrieved from license server
+    :param license_password: License password retrieved from license server
+    """
+    validator = os.environ.get(
+        "OXD_LICENSE_VALIDATOR",
+        "/usr/share/oxd-license-validator/oxd-license-validator.jar",
+    )
+
+    try:
+        cmd_output = run("java -jar {} {} {} {} {}".format(
+            validator,
+            signed_license,
+            public_key,
+            public_password,
+            license_password,
+        ), exit_on_error=False)
+    except CalledProcessError as exc:  # pragma: no cover
+        cmd_output = exc.output
+
+    # output example:
+    #
+    #   Validator expects: java org.xdi.oxd.license.validator.LicenseValidator
+    #   {"valid":true,"metadata":{}}
+    #
+    # but we only care about the last line
+    meta = cmd_output.splitlines()[-1]
+
+    try:
+        decoded_license = json.loads(meta)
+        return decoded_license
+    except ValueError:
+        # validator may throws exception as the output,
+        # which is not a valid JSON
+        raise ValueError("Error parsing JSON output of {}".format(validator))
+
+
+def retrieve_signed_license(code):
+    """Retrieves signed license from https://license.gluu.org.
+
+    :param code: Code (or licenseId).
+    """
+    resp = requests.post(
+        "https://license.gluu.org/oxLicense/rest/generate",
+        data={"licenseId": code},
+    )
+    return resp
+
+
+def timestamp_millis():
+    """Time in milliseconds since the EPOCH.
+    """
+    return time.time() * 1000

@@ -21,3 +21,7 @@
 # SOFTWARE.
 from .provider import ProviderResource  # noqa
 from .provider import ProviderListResource  # noqa
+from .license import LicenseResource  # noqa
+from .license import LicenseListResource  # noqa
+from .license import LicenseCredentialListResource  # noqa
+from .license import LicenseCredentialResource  # noqa

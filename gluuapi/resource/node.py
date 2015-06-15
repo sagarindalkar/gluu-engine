@@ -173,6 +173,20 @@ status of the cluster node is available.""",
                 "dataType": "string",
                 "paramType": "form",
             },
+            {
+                "name": "connect_delay",
+                "description": "Time to wait (in seconds) before start connecting to node (default to 10 seconds).",
+                "required": False,
+                "dataType": "integer",
+                "paramType": "form",
+            },
+            {
+                "name": "exec_delay",
+                "description": "Time to wait (in seconds) before start executing command in node (default to 15 seconds).",
+                "required": False,
+                "dataType": "integer",
+                "paramType": "form",
+            },
         ],
         responseMessages=[
             {

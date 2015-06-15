@@ -29,7 +29,7 @@ from flask_restful_swagger import swagger
 
 restapi = swagger.docs(
     Api(),
-    apiVersion='0.1',
+    apiVersion='0.2.0',
     api_spec_url='/api/spec',
     description='gluu cluster API',
 )

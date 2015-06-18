@@ -36,6 +36,7 @@ class OxauthNode(BaseModel):
         "cluster_id": String(attribute="Cluster ID"),
         "provider_id": String(attribute="Provider ID"),
         "weave_ip": String,
+        "state": String,
     }
 
     def __init__(self):
@@ -47,6 +48,7 @@ class OxauthNode(BaseModel):
         self.weave_ip = ""
         self.weave_prefixlen = ""
         self.type = "oxauth"
+        self.state = ""
 
         self.truststore_fn = '/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/security/cacerts'
         self.ldap_binddn = 'cn=directory manager'

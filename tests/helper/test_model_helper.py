@@ -36,9 +36,6 @@ def test_ldap_model_helper(monkeypatch, app, cluster, provider):
                                 "/GluuFederation/gluu-docker/master" \
                                 "/ubuntu/14.04/gluuopendj/Dockerfile"
 
-    helper.prepare_node_attrs()
-    assert helper.node.ip == ipaddr
-
 
 def test_oxauth_model_helper(monkeypatch, app, cluster, provider):
     from gluuapi.helper import OxauthModelHelper
@@ -63,9 +60,6 @@ def test_oxauth_model_helper(monkeypatch, app, cluster, provider):
                                 "/GluuFederation/gluu-docker/master" \
                                 "/ubuntu/14.04/gluuoxauth/Dockerfile"
 
-    helper.prepare_node_attrs()
-    assert helper.node.ip == ipaddr
-
 
 def test_oxtrust_model_helper(monkeypatch, app, cluster, provider):
     from gluuapi.helper import OxtrustModelHelper
@@ -89,6 +83,3 @@ def test_oxtrust_model_helper(monkeypatch, app, cluster, provider):
     assert helper.dockerfile == "https://raw.githubusercontent.com" \
                                 "/GluuFederation/gluu-docker/master" \
                                 "/ubuntu/14.04/gluuoxtrust/Dockerfile"
-
-    helper.prepare_node_attrs()
-    assert helper.node.ip == ipaddr

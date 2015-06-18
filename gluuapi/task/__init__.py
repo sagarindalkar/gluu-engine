@@ -28,6 +28,7 @@ from gluuapi.database import db
 from gluuapi.utils import timestamp_millis
 from gluuapi.helper import SaltHelper
 from gluuapi.model import License
+from gluuapi.model import STATE_DISABLED
 from gluuapi.utils import retrieve_signed_license
 from gluuapi.utils import decode_signed_license
 
@@ -131,6 +132,8 @@ class LicenseExpirationTask(object):
                 node.weave_prefixlen,
                 node.id,
             )
+            node.state = STATE_DISABLED
+            db.update(node.id, node, "nodes")
             self.salt.cmd(provider.hostname, "cmd.run", [detach_cmd])
             self.logger.info("oxAuth node {} has been "
                              "disabled".format(node.id))

@@ -36,6 +36,7 @@ class OxtrustNode(BaseModel):
         "cluster_id": String(attribute="Cluster ID"),
         "provider_id": String(attribute="Provider ID"),
         "weave_ip": String,
+        "state": String,
     }
 
     def __init__(self):
@@ -48,6 +49,7 @@ class OxtrustNode(BaseModel):
         self.weave_ip = ""
         self.weave_prefixlen = ""
         self.type = "oxtrust"
+        self.state = ""
 
         self.ldap_binddn = 'cn=directory manager'
         self.cert_folder = "/etc/certs"

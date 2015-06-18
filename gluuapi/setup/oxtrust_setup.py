@@ -77,13 +77,35 @@ class OxtrustSetup(OxauthSetup):
         # currently we need to add httpd container hostname
         # to prevent "peer not authenticated" raised by oxTrust;
         # TODO: use a real DNS
-        self.logger.info("updating oxTrust host entries in /etc/hosts")
+        self.logger.info("adding HTTPD entry in oxTrust /etc/hosts file")
         # add the entry only if line is not exist in /etc/hosts
         grep_cmd = "grep -q '^{0} {1}$' /etc/hosts " \
                    "|| echo '{0} {1}' >> /etc/hosts" \
                    .format(httpd.weave_ip,
                            self.cluster.ox_cluster_hostname)
         self.salt.cmd(self.node.id, "cmd.run", [grep_cmd])
+
+    def remove_host_entries(self, httpd):
+        # TODO: use a real DNS
+        #
+        # currently we need to remove httpd container hostname
+        # updating ``/etc/hosts`` in-place will raise "resource or device is busy"
+        # error, hence we use the following steps instead:
+        #
+        # 1. copy the original ``/etc/hosts``
+        # 2. find-and-replace entries in copied file
+        # 3. overwrite the original ``/etc/hosts``
+        self.logger.info("removing HTTPD entry in oxTrust /etc/hosts file")
+        backup_cmd = "cp /etc/hosts /tmp/hosts"
+        sed_cmd = "sed -i 's/{} {}//g' /tmp/hosts".format(
+            httpd.weave_ip, self.cluster.ox_cluster_hostname
+        )
+        overwrite_cmd = "cp /tmp/hosts /etc/hosts"
+        self.salt.cmd(
+            self.node.id,
+            ["cmd.run", "cmd.run", "cmd.run"],
+            [[backup_cmd], [sed_cmd], [overwrite_cmd]],
+        )
 
     def render_cache_props_template(self):
         src = self.oxtrust_cache_refresh_properties

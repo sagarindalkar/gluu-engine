@@ -111,3 +111,4 @@ class HttpdSetup(BaseSetup):
             setup_obj = OxtrustSetup(oxtrust, self.cluster,
                                      template_dir=self.template_dir)
             setup_obj.delete_httpd_cert()
+            setup_obj.remove_host_entries(self.node)

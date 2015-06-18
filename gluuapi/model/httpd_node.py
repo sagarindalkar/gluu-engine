@@ -35,6 +35,7 @@ class HttpdNode(BaseModel):
         "weave_ip": String,
         "name": String,
         "type": String,
+        "state": String,
     }
 
     def __init__(self):
@@ -46,6 +47,7 @@ class HttpdNode(BaseModel):
         self.cluster_id = ""
         self.provider_id = ""
         self.type = "httpd"
+        self.state = ""
 
         self.cert_folder = "/etc/certs"
         self.httpd_key = "/etc/certs/httpd.key"

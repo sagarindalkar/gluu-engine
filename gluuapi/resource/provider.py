@@ -27,6 +27,8 @@ from gluuapi.database import db
 from gluuapi.reqparser import provider_req
 from gluuapi.reqparser import edit_provider_req
 from gluuapi.model import Provider
+from gluuapi.model import STATE_DISABLED
+from gluuapi.model import STATE_SUCCESS
 from gluuapi.helper import SaltHelper
 
 
@@ -187,13 +189,15 @@ class ProviderResource(Resource):
         salt.register_minion(provider.hostname)
 
         # if provider has disabled oxAuth nodes, try to re-enable the nodes
-        oxauth_nodes = provider.get_node_objects(type_="oxauth")
+        oxauth_nodes = provider.get_node_objects(type_="oxauth", state=STATE_DISABLED)
         for node in oxauth_nodes:
             attach_cmd = "weave attach {}/{} {}".format(
                 node.weave_ip,
                 node.weave_prefixlen,
                 node.id,
             )
+            node.state = STATE_SUCCESS
+            db.update(node.id, node, "nodes")
             salt.cmd(provider.hostname, "cmd.run", [attach_cmd])
         return format_provider_resp(provider)
 

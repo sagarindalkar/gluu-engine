@@ -170,6 +170,7 @@ def test_node_post_invalid_provider(app, db, cluster):
 
 def test_node_post_max_ldap(app, db, cluster, provider):
     from gluuapi.model import LdapNode
+    from gluuapi.model import STATE_SUCCESS
 
     db.persist(cluster, "clusters")
     db.persist(provider, "providers")
@@ -177,6 +178,7 @@ def test_node_post_max_ldap(app, db, cluster, provider):
     for _ in range(cluster.max_allowed_ldap_nodes):
         node = LdapNode()
         node.cluster_id = cluster.id
+        node.state = STATE_SUCCESS
         db.persist(node, "nodes")
 
     resp = app.test_client().post(

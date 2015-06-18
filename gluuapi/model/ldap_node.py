@@ -42,6 +42,7 @@ class LdapNode(BaseModel):
         'ldap_jmx_port': String(attribute='JMX port (not used)'),
         "name": String,
         "weave_ip": String,
+        "state": String,
     }
 
     def __init__(self):
@@ -54,6 +55,7 @@ class LdapNode(BaseModel):
         self.weave_ip = ""
         self.weave_prefixlen = ""
         self.type = 'ldap'
+        self.state = ""
 
         # Filesystem path to Java truststore
         self.truststore_fn = '/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/security/cacerts'

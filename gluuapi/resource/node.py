@@ -21,11 +21,13 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 from flask import current_app
+from flask import url_for
 from flask.ext.restful import Resource
 from flask_restful_swagger import swagger
 
 from gluuapi.database import db
 from gluuapi.reqparser import node_req
+from gluuapi.model import STATE_IN_PROGRESS
 
 from gluuapi.helper import DockerHelper
 from gluuapi.helper import SaltHelper
@@ -61,10 +63,17 @@ class Node(Resource):
         summary='Get existing provider',
     )
     def get(self, node_id):
-        obj = db.get(node_id, "nodes")
-        if not obj:
+        try:
+            node = db.search_from_table(
+                "nodes",
+                (db.where("id") == node_id) | (db.where("name") == node_id),
+            )[0]
+        except IndexError:
+            node = None
+
+        if not node:
             return {"code": 404, "message": "Node not found"}, 404
-        return obj.as_dict()
+        return node.as_dict()
 
     @swagger.operation(
         notes='delete a node',
@@ -89,7 +98,12 @@ class Node(Resource):
     def delete(self, node_id):
         template_dir = current_app.config["TEMPLATES_DIR"]
 
-        node = db.get(node_id, "nodes")
+        try:
+            node = db.search_from_table(
+                "nodes", (db.where("id") == node_id) | (db.where("name") == node_id),
+            )[0]
+        except IndexError:
+            node = None
 
         if not node:
             return {"code": 404, "message": "Node not found"}, 404
@@ -101,7 +115,10 @@ class Node(Resource):
         salt = SaltHelper()
 
         # remove node
-        db.delete(node_id, "nodes")
+        db.delete_from_table(
+            "nodes",
+            (db.where("id") == node.id) | (db.where("name") == node.name),
+        )
 
         # removes reference from cluster, if any
         # cluster.unreserve_ip_addr(node.weave_ip)
@@ -248,4 +265,11 @@ status of the cluster node is available.""",
         helper = helper_class(cluster, provider, salt_master_ipaddr,
                               template_dir, log_dir)
         helper.setup(params.connect_delay, params.exec_delay)
-        return {"log": helper.logpath}, 202
+
+        headers = {
+            "X-Deploy-Log": helper.logpath,
+            "Location": url_for("node", node_id=helper.node.name),
+        }
+        # for render purpose, we set the state as in-progress
+        helper.node.state = STATE_IN_PROGRESS
+        return helper.node.as_dict(), 202, headers

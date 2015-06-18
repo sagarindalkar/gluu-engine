@@ -29,6 +29,7 @@ from netaddr import IPSet
 
 from gluuapi.database import db
 from gluuapi.model.base import BaseModel
+from gluuapi.model.base import STATE_SUCCESS
 from gluuapi.utils import get_quad
 from gluuapi.utils import get_random_chars
 from gluuapi.utils import encrypt_text
@@ -123,28 +124,34 @@ class GluuCluster(BaseModel):
     def max_allowed_ldap_nodes(self):
         return 4
 
-    def get_ldap_objects(self):
+    def get_ldap_objects(self, state=STATE_SUCCESS):
         """Get available ldap objects (models).
         """
-        return self.get_node_objects(type_="ldap")
+        return self.get_node_objects(type_="ldap", state=state)
 
-    def get_oxauth_objects(self):
+    def get_oxauth_objects(self, state=STATE_SUCCESS):
         """Get available oxAuth objects (models).
         """
-        return self.get_node_objects(type_="oxauth")
+        return self.get_node_objects(type_="oxauth", state=state)
 
-    def get_oxtrust_objects(self):
+    def get_oxtrust_objects(self, state=STATE_SUCCESS):
         """Get available oxTrust objects (models).
         """
-        return self.get_node_objects(type_="oxtrust")
+        return self.get_node_objects(type_="oxtrust", state=state)
 
-    def get_httpd_objects(self):
+    def get_httpd_objects(self, state=STATE_SUCCESS):
         """Get available httpd objects (models).
         """
-        return self.get_node_objects(type_="httpd")
+        return self.get_node_objects(type_="httpd", state=state)
 
-    def get_node_objects(self, type_=""):
+    def get_node_objects(self, type_="", state=STATE_SUCCESS):
         condition = db.where("cluster_id") == self.id
+        if state:
+            if state == STATE_SUCCESS:
+                # backward-compat for node without state field
+                condition = (condition) & ((db.where("state") == STATE_SUCCESS) | (~db.where("state")))
+            else:
+                condition = (condition) & (db.where("state") == state)
         if type_:
             condition = (condition) & (db.where("type") == type_)
         return db.search_from_table("nodes", condition)

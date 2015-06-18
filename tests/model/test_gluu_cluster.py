@@ -43,7 +43,7 @@ def test_get_node_objects(db, cluster, ldap_node, oxauth_node,
     db.persist(oxauth_node, "nodes")
     db.persist(oxtrust_node, "nodes")
     db.persist(httpd_node, "nodes")
-    data = cluster.get_node_objects()
+    data = cluster.get_node_objects(state=None)
 
     for item in data:
         assert item.cluster_id == cluster.id
@@ -52,7 +52,7 @@ def test_get_node_objects(db, cluster, ldap_node, oxauth_node,
 
 def test_get_httpd_objects(db, cluster, httpd_node):
     db.persist(httpd_node, "nodes")
-    data = cluster.get_httpd_objects()
+    data = cluster.get_httpd_objects(state=None)
 
     assert len(data) == 1
     assert data[0].type == httpd_node.type
@@ -60,7 +60,7 @@ def test_get_httpd_objects(db, cluster, httpd_node):
 
 def test_get_oxtrust_objects(db, cluster, oxtrust_node):
     db.persist(oxtrust_node, "nodes")
-    data = cluster.get_oxtrust_objects()
+    data = cluster.get_oxtrust_objects(state=None)
 
     assert len(data) == 1
     assert data[0].type == oxtrust_node.type
@@ -68,7 +68,7 @@ def test_get_oxtrust_objects(db, cluster, oxtrust_node):
 
 def test_get_oxauth_objects(db, cluster, oxauth_node):
     db.persist(oxauth_node, "nodes")
-    data = cluster.get_oxauth_objects()
+    data = cluster.get_oxauth_objects(state=None)
 
     assert len(data) == 1
     assert data[0].type == oxauth_node.type
@@ -76,7 +76,7 @@ def test_get_oxauth_objects(db, cluster, oxauth_node):
 
 def test_get_ldap_objects(db, cluster, ldap_node):
     db.persist(ldap_node, "nodes")
-    data = cluster.get_ldap_objects()
+    data = cluster.get_ldap_objects(state=None)
 
     assert len(data) == 1
     assert data[0].type == ldap_node.type

@@ -26,6 +26,7 @@ from flask.ext.restful import fields
 
 from gluuapi.database import db
 from gluuapi.model.base import BaseModel
+from gluuapi.model.base import STATE_SUCCESS
 
 
 @swagger.model
@@ -54,10 +55,16 @@ class Provider(BaseModel):
         condition = db.where("provider_id") == self.id
         return db.count_from_table("nodes", condition)
 
-    def get_node_objects(self, type_=""):
+    def get_node_objects(self, type_="", state=STATE_SUCCESS):
         condition = db.where("provider_id") == self.id
         if type_:
             condition = (condition) & (db.where("type") == type_)
+        if state:
+            if state == STATE_SUCCESS:
+                # backward-compat for node without state field
+                condition = (condition) & ((db.where("state") == STATE_SUCCESS) | (~db.where("state")))
+            else:
+                condition = (condition) & (db.where("state") == state)
         return db.search_from_table("nodes", condition)
 
     def populate(self, fields=None):

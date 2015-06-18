@@ -30,6 +30,9 @@ from gluuapi.model import LdapNode
 from gluuapi.model import OxauthNode
 from gluuapi.model import OxtrustNode
 from gluuapi.model import HttpdNode
+from gluuapi.model import STATE_SUCCESS
+from gluuapi.model import STATE_FAILED
+from gluuapi.model import STATE_IN_PROGRESS
 from gluuapi.helper.docker_helper import DockerHelper
 from gluuapi.helper.salt_helper import SaltHelper
 from gluuapi.helper.prometheus_helper import PrometheusHelper
@@ -128,6 +131,9 @@ class BaseModelHelper(object):
     def setup(self, connect_delay=10, exec_delay=15):
         """Runs the node setup.
         """
+        self.node.state = STATE_IN_PROGRESS
+        self.save()
+
         try:
             container_id = self.docker.setup_container(
                 self.node.name, self.image,
@@ -149,14 +155,17 @@ class BaseModelHelper(object):
                 )
                 db.update(self.cluster.id, self.cluster, "clusters")
 
-                self.node.weave_ip = addr
-                self.node.weave_prefixlen = prefixlen
-
                 # runs callback to prepare node attributes;
                 # warning: don't override node.id attribute!
                 self.prepare_node_attrs()
 
+                self.node.ip = self.docker.get_container_ip(self.node.id)
+                self.node.weave_ip = addr
+                self.node.weave_prefixlen = prefixlen
+                db.update_to_table("nodes", db.where("name") == self.node.name, self.node)
+
                 self.prepare_minion(connect_delay, exec_delay)
+
                 if self.salt.is_minion_registered(self.node.id):
                     setup_obj = self.setup_class(self.node, self.cluster, self.logger, self.template_dir)
 
@@ -164,14 +173,12 @@ class BaseModelHelper(object):
                     start = time.time()
 
                     setup_obj.before_setup()
-
-                    if setup_obj.setup():
-                        self.logger.info("saving to database")
-                        self.save()
-
+                    setup_obj.setup()
                     setup_obj.after_setup()
+
                     setup_obj.remove_build_dir()
-                    #updating prometheus
+
+                    # updating prometheus
                     prometheus = PrometheusHelper(template_dir=self.template_dir)
                     prometheus.update()
 
@@ -180,36 +187,30 @@ class BaseModelHelper(object):
                         "{} setup is finished ({} seconds)".format(
                             self.image, elapsed))
 
-                # minion is not connected
+                    # mark node as SUCCESS
+                    self.node.state = STATE_SUCCESS
+                    db.update_to_table("nodes", db.where("name") == self.node.name, self.node)
                 else:
+                    # minion is not connected
                     self.logger.error("minion {} is unreachable".format(self.node.id))
                     self.on_setup_error()
-
-            # container is not running
             else:
+                # container is not running
                 self.logger.error("Failed to start the {!r} container".format(self.node.name))
+                self.on_setup_error()
         except Exception:
             self.logger.error(exc_traceback())
             self.on_setup_error()
 
     def on_setup_error(self):
-        self.logger.info("destroying minion {}".format(self.node.id))
+        self.logger.info("destroying minion {}".format(self.node.name))
 
-        # detach container from weave network
-        if self.node.weave_ip:
-            self.salt.cmd(
-                self.provider.hostname,
-                "cmd.run",
-                ["weave detach {}/{} {}".format(self.node.weave_ip,
-                                                self.node.weave_prefixlen,
-                                                self.node.id)],
-            )
-            # self.cluster.unreserve_ip_addr(self.node.weave_ip)
-            self.node.weave_ip = ""
-            db.update(self.cluster.id, self.cluster, "clusters")
-
-        self.docker.remove_container(self.node.id)
+        self.docker.remove_container(self.node.name)
         self.salt.unregister_minion(self.node.id)
+
+        # mark node as FAILED
+        self.node.state = STATE_FAILED
+        db.update_to_table("nodes", db.where("name") == self.node.name, self.node)
 
 
 class LdapModelHelper(BaseModelHelper):
@@ -219,17 +220,6 @@ class LdapModelHelper(BaseModelHelper):
     dockerfile = "https://raw.githubusercontent.com/GluuFederation" \
                  "/gluu-docker/master/ubuntu/14.04/gluuopendj/Dockerfile"
 
-    def prepare_node_attrs(self):
-        # For replication, you will need
-        # to use the ip address of docker instance as hostname--not the cluster
-        # ldap hostname. For the four ports (ldap, ldaps, admin, jmx),
-        # try to use the default
-        # ports unless they are already in use, at which point it should chose
-        # a random port over 10,000. Note these ports will need to be
-        # open between the ldap docker instances
-        container_ip = self.docker.get_container_ip(self.node.id)
-        self.node.ip = container_ip
-
 
 class OxauthModelHelper(BaseModelHelper):
     setup_class = OxauthSetup
@@ -237,10 +227,6 @@ class OxauthModelHelper(BaseModelHelper):
     image = "gluuoxauth"
     dockerfile = "https://raw.githubusercontent.com/GluuFederation" \
                  "/gluu-docker/master/ubuntu/14.04/gluuoxauth/Dockerfile"
-
-    def prepare_node_attrs(self):
-        container_ip = self.docker.get_container_ip(self.node.id)
-        self.node.ip = container_ip
 
 
 class OxtrustModelHelper(BaseModelHelper):
@@ -250,11 +236,6 @@ class OxtrustModelHelper(BaseModelHelper):
     dockerfile = "https://raw.githubusercontent.com/GluuFederation" \
                  "/gluu-docker/master/ubuntu/14.04/gluuoxtrust/Dockerfile"
 
-    def prepare_node_attrs(self):
-        container_ip = self.docker.get_container_ip(self.node.id)
-        # self.node.hostname = container_ip
-        self.node.ip = container_ip
-
 
 class HttpdModelHelper(BaseModelHelper):
     setup_class = HttpdSetup
@@ -262,8 +243,3 @@ class HttpdModelHelper(BaseModelHelper):
     image = "gluuhttpd"
     dockerfile = "https://raw.githubusercontent.com/GluuFederation" \
                  "/gluu-docker/master/ubuntu/14.04/gluuhttpd/Dockerfile"
-
-    def prepare_node_attrs(self):
-        container_ip = self.docker.get_container_ip(self.node.id)
-        # self.node.hostname = container_ip
-        self.node.ip = container_ip

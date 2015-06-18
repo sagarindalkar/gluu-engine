@@ -122,6 +122,21 @@ class Database(object):
         table = self.db.table(table_name)
         return table.count(condition)
 
+    def update_to_table(self, table_name, condition, obj):
+        # encode the object so we can decode it later
+        encoded = jsonpickle.encode(obj)
+
+        # tinydb requires a ``dict`` object
+        data = json.loads(encoded)
+
+        table = self.db.table(table_name)
+        table.update(data, condition)
+        return True
+
+    def delete_from_table(self, table_name, condition):
+        table = self.db.table(table_name)
+        table.remove(condition)
+
 
 # shortcut to database object
 db = Database()

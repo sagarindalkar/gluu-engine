@@ -19,7 +19,18 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import urllib
+
 from flask_restful import reqparse
+
+
+def public_key(value, name):
+    # public key from license server is not URL-safe
+    # client like ``curl`` will interpret ``+`` as whitespace
+    # hence we're converting whitespace into ``+`` after ``flask.request``
+    # processes the request
+    return urllib.quote_plus(value, safe="/+=")
+
 
 license_req = reqparse.RequestParser()
 license_req.add_argument("code", location="form", required=True)
@@ -30,7 +41,8 @@ edit_license_req.remove_argument("code")
 
 license_cred_req = reqparse.RequestParser()
 license_cred_req.add_argument("name", location="form", required=True)
-license_cred_req.add_argument("public_key", location="form", required=True)
+license_cred_req.add_argument("public_key", location="form",
+                              required=True, type=public_key)
 license_cred_req.add_argument("public_password", location="form",
                               required=True)
 license_cred_req.add_argument("license_password", location="form",

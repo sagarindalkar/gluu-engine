@@ -155,8 +155,9 @@ class LicenseListResource(Resource):
                 credential.decrypted_public_password,
                 credential.decrypted_license_password,
             )
-        except ValueError:
-            pass
+        except ValueError as exc:
+            current_app.logger.warn("unable to generate metadata; "
+                                    "reason={}".format(exc))
         else:
             params.valid = decoded_license["valid"]
             params.metadata = decoded_license["metadata"]
@@ -376,7 +377,9 @@ class LicenseCredentialResource(Resource):
                     credential.decrypted_public_password,
                     credential.decrypted_license_password,
                 )
-            except ValueError:
+            except ValueError as exc:
+                current_app.logger.warn("unable to generate metadata; "
+                                        "reason={}".format(exc))
                 license.valid = False
                 license.metadata = {}
             else:

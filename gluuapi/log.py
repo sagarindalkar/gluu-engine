@@ -61,36 +61,46 @@ def create_tempfile(suffix="", prefix="tmp", dir_="/tmp"):
     return fp
 
 
-def configure_global_logging():  # pragma: no cover
+def configure_global_logging(logfile=None):  # pragma: no cover
     """Configure logging globally.
     """
+    handlers = {
+        "console": {
+            "level": "INFO",
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+        },
+    }
+    if logfile:
+        handlers["file"] = {
+            "level": "INFO",
+            "class": "logging.FileHandler",
+            "filename": logfile,
+            "mode": "a",
+            "formatter": "simple",
+        }
+
     log_config = {
         "version": 1,
         "disable_existing_loggers": True,
         "formatters": {
             "simple": {
-                "format": "%(asctime)s - %(name)s - %(levelname)s  - %(message)s",
+                "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
             },
         },
-        "handlers": {
-            "console": {
-                "level": "INFO",
-                "class": "logging.StreamHandler",
-                "formatter": "simple"
-            },
-        },
+        "handlers": handlers,
         "loggers": {
             "gluuapi": {
-                "handlers": ["console"],
+                "handlers": handlers.keys(),
                 "propagate": True,
                 "level": "INFO",
             },
             "werkzeug": {
-                "handlers": ["console"],
+                "handlers": handlers.keys(),
                 "level": "INFO",
             },
             "twisted": {
-                "handlers": ["console"],
+                "handlers": handlers.keys(),
                 "level": "ERROR",
             },
         },

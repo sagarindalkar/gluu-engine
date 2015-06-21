@@ -98,21 +98,34 @@ python postinstall.py
 
 ## Run
 
-To run the application, type the following command in the shell,
+To run the application in foreground, type the following command in the shell,
 and make sure `SALT_MASTER_IPADDR` environment variable is set and
 pointed to salt-master IP address.
 
 ```
 $ source env/bin/activate
-$ SALT_MASTER_IPADDR=xxx.xxx.xxx.xxx gluuapi
+$ SALT_MASTER_IPADDR=xxx.xxx.xxx.xxx gluuapi runserver
 ```
 
-Or, if you have make installed
+Or, if you have `make` installed
 
 ```
 $ source env/bin/activate
 $ make run
 ```
+
+## Daemon Mode
+
+To run `gluuapi` in background (daemon mode):
+
+```
+$ source env/bin/activate
+$ SALT_MASTER_IPADDR=xxx.xxx.xxx.xxx gluuapi daemon --pidfile /path/to/pidfile --logfile /path/to/logfile start
+```
+
+The daemon has `start`, `stop`, `restart`, and `status` commands.
+It's worth noting that `--pidfile` and `--logfile` must be pointed to accessible (writable and readable) path by user who runs the daemon.
+By default they are pointed to `/var/run/gluuapi.pid` and `/var/log/gluuapi.log` respectively.
 
 ## Testing
 

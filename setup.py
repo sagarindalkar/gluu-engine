@@ -45,6 +45,7 @@ setup(
         "jsonpickle",
         "netaddr",
         "m2crypto",
+        "daemonocle",
     ],
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",

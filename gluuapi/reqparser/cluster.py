@@ -19,46 +19,37 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-# import re
+import re
 
-from flask_restful import reqparse
-from netaddr import AddrFormatError
-from netaddr import IPNetwork
+from marshmallow import validates
+from marshmallow import ValidationError
 
-# backward-compat
-from gluuapi.reqparser.base import email_type as admin_email
+from gluuapi.extensions import ma
 
-
-def country_code(value, name):
-    if len(value) == 2:
-        return value
-    raise ValueError("The parameter {} requires 2 letters value".format(name))
+WEAVE_NETWORK_RE = re.compile(
+    r"[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/24"
+)
 
 
-def weave_network_type(value, name):
-    # checks whether IP network is valid
-    try:
-        IPNetwork(value)
-    except AddrFormatError:
-        raise ValueError(
-            "{} is not valid value for parameter {}".format(value, name))
-    return value
+class ClusterReq(ma.Schema):
+    name = ma.Str(required=True)
+    description = ma.Str()
+    ox_cluster_hostname = ma.Str(required=True)
+    org_name = ma.Str(required=True)
+    org_short_name = ma.Str(required=True)
+    country_code = ma.Str()
+    city = ma.Str(required=True)
+    state = ma.Str(required=True)
+    admin_email = ma.Email(required=True)
+    admin_pw = ma.Str(required=True)
+    weave_ip_network = ma.Str(required=True)
 
+    @validates("country_code")
+    def validate_country_code(self, value):
+        if len(value) != 2:
+            raise ValidationError("requires 2 characters")
 
-# Request parser for cluster POST request
-cluster_req = reqparse.RequestParser()
-
-cluster_req.add_argument("name", location="form", required=True)
-cluster_req.add_argument("description", location="form")
-cluster_req.add_argument("ox_cluster_hostname", location="form", required=True)
-cluster_req.add_argument("org_name", location="form", required=True)
-cluster_req.add_argument("org_short_name", location="form", required=True)
-cluster_req.add_argument("country_code", type=country_code,
-                         location="form", required=True)
-cluster_req.add_argument("city", location="form", required=True)
-cluster_req.add_argument("state", location="form", required=True)
-cluster_req.add_argument("admin_email", type=admin_email,
-                         location="form", required=True)
-cluster_req.add_argument("admin_pw", location="form", required=True)
-cluster_req.add_argument("weave_ip_network", type=weave_network_type,
-                         location="form", required=True)
+    @validates("weave_ip_network")
+    def validate_weave_ip_network(self, value):
+        if not WEAVE_NETWORK_RE.match(value):
+            raise ValidationError("invalid IP network address format")

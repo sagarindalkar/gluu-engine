@@ -43,7 +43,7 @@ def test_provider_list_post_consumer_duplicated(app, db, license, provider):
             "license_id": license.id,
         },
     )
-    assert resp.status_code == 403
+    assert resp.status_code == 400
 
 
 def test_provider_list_post_license_notfound(app, db, provider):
@@ -60,24 +60,8 @@ def test_provider_list_post_license_notfound(app, db, provider):
     assert resp.status_code == 400
 
 
-# def test_provider_list_post_invalid_license(monkeypatch, app, db, license, provider):
-#     db.persist(provider, "providers")
-
-#     # makes the license as invalid
-#     license.valid = False
-#     db.persist(license, "licenses")
-#     resp = app.test_client().post(
-#         "/provider",
-#         data={
-#             "docker_base_url": "unix:///var/run/docker.sock",
-#             "hostname": "local",
-#             "license_id": license.id,
-#         },
-#     )
-#     assert resp.status_code == 403
-
-
-def test_provider_list_post_expired_license(monkeypatch, app, db, license, provider):
+def test_provider_list_post_expired_license(monkeypatch, app, db,
+                                            license, provider):
     # creates a master first
     db.persist(provider, "providers")
     db.persist(license, "licenses")
@@ -89,10 +73,12 @@ def test_provider_list_post_expired_license(monkeypatch, app, db, license, provi
             "license_id": license.id,
         },
     )
-    assert resp.status_code == 403
+    assert resp.status_code == 400
 
 
 def test_provider_list_post_consumer_no_master(monkeypatch, app, db, license):
+    license.valid = True
+    license.metadata["expiration_date"] = None
     db.persist(license, "licenses")
     resp = app.test_client().post(
         "/provider",
@@ -170,32 +156,31 @@ def test_provider_put_missing_params(app, db, provider):
 def test_provider_put_license_reused(app, db, license, provider):
     import copy
 
+    license.valid = True
+    license.metadata["expiration_date"] = None
     db.persist(license, "licenses")
 
-    # creates a master first
-    db.persist(provider, "providers")
-
     # set a consumer
-    provider2 = copy.deepcopy(provider)
-    provider2.id = "abc"
-    provider2.license_id = license.id
-    db.persist(provider2, "providers")
+    provider1 = copy.deepcopy(provider)
+    provider1.id = "abc"
+    provider1.license_id = license.id
+    db.persist(provider1, "providers")
 
     # set another consumer
-    provider3 = copy.deepcopy(provider)
-    provider3.id = "def"
-    provider3.license_id = "abc"
-    db.persist(provider3, "providers")
+    provider2 = copy.deepcopy(provider1)
+    provider2.id = "def"
+    provider2.license_id = "abc"
+    db.persist(provider2, "providers")
 
     resp = app.test_client().put(
-        "/provider/{}".format(provider3.id),
+        "/provider/{}".format(provider2.id),
         data={
             "docker_base_url": "unix:///var/run/docker.sock",
             "hostname": "local",
             "license_id": license.id,
         },
     )
-    assert resp.status_code == 403
+    assert resp.status_code == 400
 
 
 def test_provider_put_license_notfound(app, db, provider, license):
@@ -228,7 +213,7 @@ def test_provider_put_expired_license(app, db, license, provider, validator_err)
             "license_id": license.id,
         },
     )
-    assert resp.status_code == 403
+    assert resp.status_code == 400
 
 
 def test_provider_put_updated(app, db, license, provider,

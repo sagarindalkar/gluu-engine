@@ -20,7 +20,6 @@ def test_node_get_invalid_id(app):
     resp = app.test_client().get("/node/random-invalid-id")
     actual_data = json.loads(resp.data)
     assert resp.status_code == 404
-    assert actual_data["code"] == 404
     assert "message" in actual_data
 
 
@@ -152,7 +151,7 @@ def test_node_post_ip_unavailable(app, db, cluster):
             "node_type": "httpd",
         },
     )
-    assert resp.status_code == 403
+    assert resp.status_code == 400
 
 
 def test_node_post_invalid_provider(app, db, cluster):
@@ -189,7 +188,7 @@ def test_node_post_max_ldap(app, db, cluster, provider):
             "node_type": "ldap",
         },
     )
-    assert resp.status_code == 403
+    assert resp.status_code == 400
 
 
 @pytest.mark.parametrize("node_type, helper_class", [
@@ -234,4 +233,4 @@ def test_node_post_expired_license(app, db, provider, license,
             "node_type": "httpd",
         },
     )
-    assert resp.status_code == 403
+    assert resp.status_code == 400

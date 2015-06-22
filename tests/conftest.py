@@ -54,6 +54,7 @@ def ldap_node(cluster, provider):
     node.id = "ldap_{}_123".format(cluster.id)
     node.cluster_id = cluster.id
     node.provider_id = provider.id
+    node.name = "ldap-node"
     return node
 
 
@@ -98,6 +99,7 @@ def httpd_node(cluster, provider):
     node.id = "httpd_{}_123".format(cluster.id)
     node.cluster_id = cluster.id
     node.provider_id = provider.id
+    node.name = "httpd-node"
     return node
 
 

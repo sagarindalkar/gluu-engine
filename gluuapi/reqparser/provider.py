@@ -21,31 +21,67 @@
 # SOFTWARE.
 import re
 
-from flask_restful import reqparse
+from marshmallow import validates
+from marshmallow import ValidationError
+
+from gluuapi.extensions import ma
+from gluuapi.database import db
 
 # regex pattern for hostname as defined by RFC 952 and RFC 1123
 HOSTNAME_RE = re.compile('^(?![0-9]+$)(?!-)[a-zA-Z0-9-]{,63}(?<!-)$')
 
 
-def hostname_type(value, name):
-    # some provider like AWS uses dotted hostname,
-    # e.g. ip-172-31-24-54.ec2.internal
-    if all(HOSTNAME_RE.match(v) for v in value.split(".")):
-        return value
+class ProviderReq(ma.Schema):
+    hostname = ma.Str(required=True)
+    docker_base_url = ma.Str(required=True)
+    license_id = ma.Str(default="", missing="")
 
-    raise ValueError(
-        "{} is not a valid value for {} parameter".format(value, name))
+    @validates("hostname")
+    def validate_hostname(self, value):
+        # some provider like AWS uses dotted hostname,
+        # e.g. ip-172-31-24-54.ec2.internal
+        valid = all(HOSTNAME_RE.match(v) for v in value.split("."))
+        if not valid:
+            raise ValidationError("invalid hostname")
+
+    @validates("license_id")
+    def validate_license_id(self, value):
+        if value:
+            licensed_count = db.count_from_table(
+                "providers",
+                db.where("license_id") == value,
+            )
+            if licensed_count:
+                raise ValidationError("cannot reuse license")
+
+            license = db.get(value, "licenses")
+            if not license:
+                raise ValidationError("invalid license ID")
+            if license.expired:
+                raise ValidationError("expired license")
 
 
-provider_req = reqparse.RequestParser()
-provider_req.add_argument(
-    "hostname", type=hostname_type, location="form", required=True,
-    help="Hostname FQDN of the provider",
-)
-provider_req.add_argument(
-    "docker_base_url", location="form", required=True,
-    help="URL to Docker API, could be unix socket or tcp",
-)
-provider_req.add_argument("license_id", location="form", default="")
+class EditProviderReq(ProviderReq):
+    @validates("license_id")
+    def validate_license_id(self, value):
+        provider = self.context["provider"]
+        if provider.type == "consumer":
+            if not value:
+                raise ValidationError("the value is required for consumer")
 
-edit_provider_req = provider_req.copy()
+            # counts license used by another provider (if any)
+            licensed_count = db.count_from_table(
+                "providers",
+                ((db.where("license_id") == value)
+                 & (db.where("id") != provider.id)),
+            )
+
+            # license cannot be reuse
+            if licensed_count:
+                raise ValidationError("cannot reuse license")
+
+            license = db.get(value, "licenses")
+            if not license:
+                raise ValidationError("invalid license ID")
+            if license.expired:
+                raise ValidationError("expired license")

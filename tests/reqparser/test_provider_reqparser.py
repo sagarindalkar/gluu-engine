@@ -11,18 +11,20 @@ import pytest
     '0--0',
     'ip-172-31-24-54.ec2.internal',
 ])
-def test_hostname_type(hostname):
-    from gluuapi.reqparser.provider import hostname_type
-    assert hostname_type(hostname, "hostname") == hostname
+def test_validate_hostname_valid(hostname):
+    from gluuapi.reqparser import ProviderReq
+
+    reqparser = ProviderReq()
+    assert reqparser.validate_hostname(hostname) is None
 
 
 @pytest.mark.parametrize("hostname", [
-    '01010',
-    'A0c-',
-    '-A0c',
-    'o123456701234567012345670123456701234567012345670123456701234567',
+    "-a",
 ])
-def test_hostname_type_error(hostname):
-    from gluuapi.reqparser.provider import hostname_type
-    with pytest.raises(ValueError):
-        hostname_type(hostname, "hostname")
+def test_validate_hostname_invalid(hostname):
+    from gluuapi.reqparser import ProviderReq
+    from marshmallow import ValidationError
+
+    reqparser = ProviderReq()
+    with pytest.raises(ValidationError):
+        reqparser.validate_hostname(hostname)

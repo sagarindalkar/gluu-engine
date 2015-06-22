@@ -19,13 +19,14 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from flask import request
 from flask import url_for
 from flask_restful import Resource
 from flask_restful_swagger import swagger
 
 from gluuapi.database import db
-from gluuapi.reqparser import provider_req
-from gluuapi.reqparser import edit_provider_req
+from gluuapi.reqparser import ProviderReq
+from gluuapi.reqparser import EditProviderReq
 from gluuapi.model import Provider
 from gluuapi.model import STATE_DISABLED
 from gluuapi.model import STATE_SUCCESS
@@ -44,8 +45,8 @@ class ProviderResource(Resource):
         nickname="getprovider",
         responseMessages=[
             {
-              "code": 200,
-              "message": "Provider information",
+                "code": 200,
+                "message": "Provider information",
             },
             {
                 "code": 404,
@@ -61,7 +62,7 @@ class ProviderResource(Resource):
     def get(self, provider_id):
         obj = db.get(provider_id, "providers")
         if not obj:
-            return {"code": 404, "message": "Provider not found"}, 404
+            return {"status": 404, "message": "Provider not found"}, 404
         return format_provider_resp(obj)
 
     @swagger.operation(
@@ -90,12 +91,12 @@ class ProviderResource(Resource):
     def delete(self, provider_id):
         provider = db.get(provider_id, "providers")
         if not provider:
-            return {"code": 404, "message": "Provider not found"}, 404
+            return {"status": 404, "message": "Provider not found"}, 404
 
         if provider.nodes_count:
             msg = "Cannot delete provider while having nodes " \
                   "deployed on this provider"
-            return {"code": 403, "message": msg}, 403
+            return {"status": 403, "message": msg}, 403
 
         db.delete(provider_id, "providers")
         salt = SaltHelper()
@@ -149,39 +150,21 @@ class ProviderResource(Resource):
         summary='TODO'
     )
     def put(self, provider_id):
-        params = edit_provider_req.parse_args()
-
         provider = db.get(provider_id, "providers")
-
         if not provider:
-            return {"code": 404, "message": "Provider not found"}, 404
+            return {"status": 404, "message": "Provider not found"}, 404
 
-        if provider.type == "consumer":
-            # consumer type must use license
-            if not params.license_id:
-                return {"code": 400, "message": "missing license ID for consumer type"}, 400
+        data, errors = EditProviderReq(
+            context={"provider": provider},
+        ).load(request.form)
+        if errors:
+            return {
+                "status": 400,
+                "message": "Invalid data",
+                "params": errors,
+            }, 400
 
-            # counts license used by another provider (if any)
-            licensed_count = db.count_from_table(
-                "providers",
-                ((db.where("license_id") == params.license_id)
-                 & (db.where("id") != provider.id)),
-            )
-
-            # license cannot be reuse
-            if licensed_count:
-                return {"code": 403, "message": "cannot reuse license"}, 403
-
-            license = db.get(params.license_id, "licenses")
-
-            # license must exists
-            if not license:
-                return {"code": 400, "message": "invalid license ID"}, 400
-
-            if license.expired:
-                return {"code": 403, "message": "expired license"}, 403
-
-        provider.populate(params)
+        provider.populate(data)
         db.update(provider.id, provider, "providers")
 
         # register provider so we can execute weave commands later on
@@ -189,7 +172,9 @@ class ProviderResource(Resource):
         salt.register_minion(provider.hostname)
 
         # if provider has disabled oxAuth nodes, try to re-enable the nodes
-        oxauth_nodes = provider.get_node_objects(type_="oxauth", state=STATE_DISABLED)
+        oxauth_nodes = provider.get_node_objects(
+            type_="oxauth", state=STATE_DISABLED,
+        )
         for node in oxauth_nodes:
             attach_cmd = "weave attach {}/{} {}".format(
                 node.weave_ip,
@@ -250,43 +235,34 @@ class ProviderListResource(Resource):
         summary='Create a new provider',
     )
     def post(self):
-        params = provider_req.parse_args()
+        data, errors = ProviderReq().load(request.form)
+        if errors:
+            return {
+                "status": 400,
+                "message": "Invalid data",
+                "params": errors,
+            }, 400
+
         master_count = db.count_from_table(
             "providers", db.where("license_id") == "",
         )
 
-        if params.license_id:
+        if data["license_id"]:
             # if we dont have a master provider yet, rejects the request
             if not master_count:
                 return {
-                    "code": 403,
+                    "status": 403,
                     "message": "requires at least 1 master provider registered first",
                 }, 403
-
-            # license cannot be reuse
-            licensed_count = db.count_from_table(
-                "providers", db.where("license_id") == params.license_id)
-            if licensed_count:
-                return {"code": 403, "message": "cannot reuse license"}, 403
-
-            license = db.get(params.license_id, "licenses")
-
-            # license must exists
-            if not license:
-                return {"code": 400, "message": "invalid license ID"}, 400
-
-            if license.expired:
-                return {"code": 403, "message": "expired license"}, 403
-
         else:
             # if we already have a master provider, rejects the request
             if master_count:
                 return {
-                    "code": 403,
+                    "status": 403,
                     "message": "cannot add another master provider",
                 }, 403
 
-        provider = Provider(fields=params)
+        provider = Provider(fields=data)
         db.persist(provider, "providers")
 
         # register provider so we can execute weave commands later on
@@ -303,8 +279,8 @@ class ProviderListResource(Resource):
         nickname="listprovider",
         responseMessages=[
             {
-              "code": 200,
-              "message": "Provider list information",
+                "code": 200,
+                "message": "Provider list information",
             },
             {
                 "code": 500,

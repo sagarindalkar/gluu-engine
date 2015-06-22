@@ -19,31 +19,44 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-import urllib
+from urllib import quote_plus
 
-from flask_restful import reqparse
+from marshmallow import post_load
+from marshmallow import validates
+from marshmallow import ValidationError
 
-
-def public_key(value, name):
-    # public key from license server is not URL-safe
-    # client like ``curl`` will interpret ``+`` as whitespace
-    # hence we're converting whitespace into ``+`` after ``flask.request``
-    # processes the request
-    return urllib.quote_plus(value, safe="/+=")
+from gluuapi.database import db
+from gluuapi.extensions import ma
 
 
-license_req = reqparse.RequestParser()
-license_req.add_argument("code", location="form", required=True)
-license_req.add_argument("credential_id", location="form", required=True)
+class LicenseReq(ma.Schema):
+    code = ma.Str(required=True)
+    credential_id = ma.Str(required=True)
 
-edit_license_req = license_req.copy()
-edit_license_req.remove_argument("code")
+    @validates("credential_id")
+    def validate_credential_id(self, value):
+        credential = db.get(value, "license_credentials")
+        if not credential:
+            raise ValidationError("invalid credential ID")
+        self.context["credential"] = credential
 
-license_cred_req = reqparse.RequestParser()
-license_cred_req.add_argument("name", location="form", required=True)
-license_cred_req.add_argument("public_key", location="form",
-                              required=True, type=public_key)
-license_cred_req.add_argument("public_password", location="form",
-                              required=True)
-license_cred_req.add_argument("license_password", location="form",
-                              required=True)
+    @post_load
+    def finalize_data(self, data):
+        out = {"params": data}
+        out.update({"context": self.context})
+        return out
+
+
+class CredentialReq(ma.Schema):
+    name = ma.Str(required=True)
+    public_key = ma.Str(required=True)
+    public_password = ma.Str(required=True)
+    license_password = ma.Str(required=True)
+
+    @post_load
+    def urlsafe_public_key(self, data):
+        # public key from license server is not URL-safe
+        # client like ``curl`` will interpret ``+`` as whitespace
+        # hence we're converting whitespace to ``+``
+        data["public_key"] = quote_plus(data["public_key"], safe="/+=")
+        return data

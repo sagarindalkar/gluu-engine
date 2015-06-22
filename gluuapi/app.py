@@ -30,6 +30,7 @@ from gluuapi.settings import ProdConfig
 from gluuapi.settings import DevConfig
 from gluuapi.settings import TestConfig
 from gluuapi.extensions import restapi
+from gluuapi.extensions import ma
 from gluuapi.resource.node import Node
 from gluuapi.resource.node import NodeList
 from gluuapi.resource.cluster import Cluster
@@ -76,6 +77,7 @@ def create_app():
 def register_extensions(app):
     restapi.init_app(app)
     db.init_app(app)
+    ma.init_app(app)
 
 
 def register_resources():

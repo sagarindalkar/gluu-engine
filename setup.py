@@ -46,6 +46,8 @@ setup(
         "netaddr",
         "m2crypto",
         "daemonocle",
+        "marshmallow>=2.0.0b3",
+        "flask_marshmallow",
     ],
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",

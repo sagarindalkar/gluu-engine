@@ -19,3 +19,5 @@ netaddr==0.7.14
 m2crypto==0.22.3
 daemonocle==0.8
 click==2.5
+marshmallow==2.0.0.b3
+flask-marshmallow==0.6.0

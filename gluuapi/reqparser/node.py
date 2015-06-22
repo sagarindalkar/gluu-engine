@@ -19,16 +19,56 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+from marshmallow import post_load
+from marshmallow import validates
+from marshmallow import ValidationError
 
-from flask.ext.restful import reqparse
+from gluuapi.database import db
+from gluuapi.extensions import ma
 
-node_req = reqparse.RequestParser()
-node_req.add_argument("cluster_id", location="form", required=True,
-                      help="Cluster ID to which this node will be added")
-node_req.add_argument("node_type", location="form", required=True,
-                      choices=["ldap", "oxauth", "oxtrust", "httpd"],
-                      help="one of 'ldap', 'oxauth', 'oxtrust', or 'httpd'")
-node_req.add_argument("provider_id", location="form", required=True,
-                      help="Provider ID to which this node will be added")
-node_req.add_argument("connect_delay", location="form", type=int, default=10)
-node_req.add_argument("exec_delay", location="form", type=int, default=15)
+NODE_CHOICES = ["ldap", "oxauth", "oxtrust", "httpd"]
+
+
+class NodeReq(ma.Schema):
+    cluster_id = ma.Str(required=True)
+    provider_id = ma.Str(required=True)
+    node_type = ma.Select(choices=NODE_CHOICES, error="unsupported type")
+    connect_delay = ma.Int(default=10, missing=10,
+                           error="must use numerical value")
+    exec_delay = ma.Int(default=15, missing=15,
+                        error="must use numerical value")
+
+    @validates("cluster_id")
+    def validate_cluster(self, value):
+        cluster = db.get(value, "clusters")
+        if not cluster:
+            raise ValidationError("invalid cluster ID")
+        if not cluster.ip_addr_available:
+            raise ValidationError("cluster is running out of weave IP")
+        self.context["cluster"] = cluster
+
+    @validates("provider_id")
+    def validate_provider(self, value):
+        provider = db.get(value, "providers")
+        if not provider:
+            raise ValidationError("invalid provider ID")
+        if provider.type == "consumer":
+            license = db.get(provider.license_id, "licenses")
+            if license and license.expired:
+                raise ValidationError("cannot deploy node to "
+                                      "provider with expired license")
+        self.context["provider"] = provider
+
+    @validates("node_type")
+    def validate_node(self, value):
+        if value == "ldap":
+            cluster = self.context["cluster"]
+            max_num = cluster.max_allowed_ldap_nodes
+            if len(cluster.get_ldap_objects()) >= max_num:
+                raise ValidationError("max. allowed LDAP nodes is exceeded")
+
+    @post_load
+    def finalize_data(self, data):
+        out = {"params": data}
+        out.update({"context": self.context})
+        return out

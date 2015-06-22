@@ -20,14 +20,14 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
+from flask import request
 from flask import url_for
-from flask.ext.restful import Resource
+from flask_restful import Resource
 from flask_restful_swagger import swagger
 
 from gluuapi.model import GluuCluster
 from gluuapi.database import db
-from gluuapi.reqparser import cluster_req
+from gluuapi.reqparser import ClusterReq
 from gluuapi.helper import SaltHelper
 
 
@@ -47,8 +47,8 @@ class Cluster(Resource):
         parameters=[],
         responseMessages=[
             {
-              "code": 200,
-              "message": "List cluster information",
+                "code": 200,
+                "message": "List cluster information",
             },
             {
                 "code": 404,
@@ -64,7 +64,7 @@ class Cluster(Resource):
     def get(self, cluster_id):
         cluster = db.get(cluster_id, "clusters")
         if not cluster:
-            return {"code": 404, "message": "Cluster not found"}, 404
+            return {"status": 404, "message": "Cluster not found"}, 404
         return format_cluster_resp(cluster)
 
     @swagger.operation(
@@ -90,7 +90,7 @@ class Cluster(Resource):
     def delete(self, cluster_id):
         cluster = db.get(cluster_id, "clusters")
         if not cluster:
-            return {"code": 404, "message": "Cluster not found"}, 404
+            return {"status": 404, "message": "Cluster not found"}, 404
 
         db.delete(cluster_id, "clusters")
         return {}, 204
@@ -219,8 +219,8 @@ class ClusterList(Resource):
                 "message": "Internal Server Error",
             },
             {
-                "code": 403,
-                "message": "Forbidden",
+                "code": 409,
+                "message": "Conflict",
             },
         ],
         summary='Create a new cluster'
@@ -228,10 +228,17 @@ class ClusterList(Resource):
     def post(self):
         # limit to 1 cluster for now
         if len(db.all("clusters")) >= 1:
-            return {"code": 403, "message": "cannot add more cluster"}, 403
+            return {"status": 403, "message": "cannot add more cluster"}, 403
 
-        params = cluster_req.parse_args()
-        cluster = GluuCluster(fields=params)
+        data, errors = ClusterReq().load(request.form)
+        if errors:
+            return {
+                "status": 400,
+                "message": "Invalid data",
+                "params": errors,
+            }, 400
+
+        cluster = GluuCluster(fields=data)
         db.persist(cluster, "clusters")
 
         # expose the weave IP

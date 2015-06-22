@@ -21,14 +21,14 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 from flask import current_app
+from flask import request
 from flask import url_for
-from flask.ext.restful import Resource
+from flask_restful import Resource
 from flask_restful_swagger import swagger
 
 from gluuapi.database import db
-from gluuapi.reqparser import node_req
+from gluuapi.reqparser import NodeReq
 from gluuapi.model import STATE_IN_PROGRESS
-
 from gluuapi.helper import DockerHelper
 from gluuapi.helper import SaltHelper
 from gluuapi.helper import PrometheusHelper
@@ -36,7 +36,6 @@ from gluuapi.helper import LdapModelHelper
 from gluuapi.helper import OxauthModelHelper
 from gluuapi.helper import OxtrustModelHelper
 from gluuapi.helper import HttpdModelHelper
-
 from gluuapi.setup import LdapSetup
 from gluuapi.setup import HttpdSetup
 
@@ -48,8 +47,8 @@ class Node(Resource):
         parameters=[],
         responseMessages=[
             {
-              "code": 200,
-              "message": "Node information",
+                "code": 200,
+                "message": "Node information",
             },
             {
                 "code": 404,
@@ -72,7 +71,7 @@ class Node(Resource):
             node = None
 
         if not node:
-            return {"code": 404, "message": "Node not found"}, 404
+            return {"status": 404, "message": "Node not found"}, 404
         return node.as_dict()
 
     @swagger.operation(
@@ -81,8 +80,8 @@ class Node(Resource):
         parameters=[],
         responseMessages=[
             {
-              "code": 204,
-              "message": "Node deleted",
+                "code": 204,
+                "message": "Node deleted",
             },
             {
                 "code": 404,
@@ -106,7 +105,7 @@ class Node(Resource):
             node = None
 
         if not node:
-            return {"code": 404, "message": "Node not found"}, 404
+            return {"status": 404, "message": "Node not found"}, 404
 
         cluster = db.get(node.cluster_id, "clusters")
         provider = db.get(node.provider_id, "providers")
@@ -147,8 +146,8 @@ class NodeList(Resource):
         parameters=[],
         responseMessages=[
             {
-              "code": 200,
-              "message": "List node information",
+                "code": 200,
+                "message": "List node information",
             },
             {
                 "code": 500,
@@ -226,45 +225,32 @@ status of the cluster node is available.""",
         summary='Create a new node',
     )
     def post(self):
-        params = node_req.parse_args()
+        data, errors = NodeReq().load(request.form)
+        if errors:
+            return {
+                "status": 400,
+                "message": "Invalid params",
+                "params": errors,
+            }, 400
+
         salt_master_ipaddr = current_app.config["SALT_MASTER_IPADDR"]
         template_dir = current_app.config["TEMPLATES_DIR"]
         log_dir = current_app.config["LOG_DIR"]
+        cluster = data["context"]["cluster"]
+        provider = data["context"]["provider"]
+        params = data["params"]
 
-        cluster = db.get(params.cluster_id, "clusters")
-        if not cluster:
-            return {"code": 400, "message": "invalid cluster ID"}, 400
-
-        if not cluster.ip_addr_available:
-            return {"code": 403, "message": "running out of weave IP"}, 403
-
-        # check that provider ID is valid else return with message and code
-        provider = db.get(params.provider_id, "providers")
-        if not provider:
-            return {"code": 400, "message": "invalid provider ID"}, 400
-
-        # if node is being deployed to consumer, check that provider
-        # is not having expired license, otherwise rejects the request
-        if provider.type == "consumer":
-            license = db.get(provider.license_id, "licenses")
-            if license and license.expired:
-                return {"code": 403, "message": "cannot deploy node to provider having expired license"}, 403
-
-        if params.node_type == "ldap":
-            # checks if this new node will exceed max. allowed LDAP nodes
-            if len(cluster.get_ldap_objects()) >= cluster.max_allowed_ldap_nodes:
-                return {"code": 403, "message": "max. allowed LDAP nodes is reached"}, 403
-            helper_class = LdapModelHelper
-        elif params.node_type == "oxauth":
-            helper_class = OxauthModelHelper
-        elif params.node_type == "oxtrust":
-            helper_class = OxtrustModelHelper
-        elif params.node_type == "httpd":
-            helper_class = HttpdModelHelper
+        helper_classes = {
+            "ldap": LdapModelHelper,
+            "oxauth": OxauthModelHelper,
+            "oxtrust": OxtrustModelHelper,
+            "httpd": HttpdModelHelper,
+        }
+        helper_class = helper_classes[params["node_type"]]
 
         helper = helper_class(cluster, provider, salt_master_ipaddr,
                               template_dir, log_dir)
-        helper.setup(params.connect_delay, params.exec_delay)
+        helper.setup(params["connect_delay"], params["exec_delay"])
 
         headers = {
             "X-Deploy-Log": helper.logpath,

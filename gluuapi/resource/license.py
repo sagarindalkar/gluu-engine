@@ -21,14 +21,15 @@
 # SOFTWARE.
 from flask import url_for
 from flask import current_app
+from flask import request
 from flask_restful import Resource
 from flask_restful_swagger import swagger
 
 from gluuapi.database import db
 from gluuapi.model import License
 from gluuapi.model import LicenseCredential
-from gluuapi.reqparser import license_req
-from gluuapi.reqparser import license_cred_req
+from gluuapi.reqparser import LicenseReq
+from gluuapi.reqparser import CredentialReq
 from gluuapi.utils import retrieve_signed_license
 from gluuapi.utils import decode_signed_license
 
@@ -46,8 +47,8 @@ class LicenseResource(Resource):
         parameters=[],
         responseMessages=[
             {
-              "code": 200,
-              "message": "License information",
+                "code": 200,
+                "message": "License information",
             },
             {
                 "code": 404,
@@ -63,7 +64,7 @@ class LicenseResource(Resource):
     def get(self, license_id):
         license = db.get(license_id, "licenses")
         if not license:
-            return {"code": 404, "message": "License not found"}, 404
+            return {"status": 404, "message": "License not found"}, 404
         return format_license_resp(license)
 
     @swagger.operation(
@@ -88,7 +89,7 @@ class LicenseResource(Resource):
     def delete(self, license_id):
         license = db.get(license_id, "licenses")
         if not license:
-            return {"code": 404, "message": "License not found"}, 404
+            return {"status": 404, "message": "License not found"}, 404
 
         db.delete(license_id, "licenses")
         return {}, 204
@@ -135,22 +136,30 @@ class LicenseListResource(Resource):
         summary="Create a new license",
     )
     def post(self):
-        params = license_req.parse_args()
+        data, errors = LicenseReq().load(request.form)
+        if errors:
+            return {
+                "status": 400,
+                "message": "Invalid data",
+                "params": errors,
+            }, 400
 
-        credential = db.get(params.credential_id, "license_credentials")
-        if not credential:
-            return {"code": 400, "message": "invalid credential ID"}, 400
+        params = data["params"]
+        credential = data["context"]["credential"]
 
-        resp = retrieve_signed_license(params.code)
+        resp = retrieve_signed_license(params["code"])
         if not resp.ok:
             current_app.logger.warn(resp.text)
-            return {"code": 422, "message": "unable to retrieve license"}, 422
+            return {
+                "status": 422,
+                "message": "unable to retrieve license",
+            }, 422
 
-        params.signed_license = resp.json()["license"]
+        params["signed_license"] = resp.json()["license"]
 
         try:
             decoded_license = decode_signed_license(
-                params.signed_license,
+                params["signed_license"],
                 credential.decrypted_public_key,
                 credential.decrypted_public_password,
                 credential.decrypted_license_password,
@@ -159,8 +168,8 @@ class LicenseListResource(Resource):
             current_app.logger.warn("unable to generate metadata; "
                                     "reason={}".format(exc))
         else:
-            params.valid = decoded_license["valid"]
-            params.metadata = decoded_license["metadata"]
+            params["valid"] = decoded_license["valid"]
+            params["metadata"] = decoded_license["metadata"]
 
         license = License(fields=params)
         db.persist(license, "licenses")
@@ -176,8 +185,8 @@ class LicenseListResource(Resource):
         parameters=[],
         responseMessages=[
             {
-              "code": 200,
-              "message": "License list information",
+                "code": 200,
+                "message": "License list information",
             },
             {
                 "code": 500,
@@ -249,8 +258,14 @@ class LicenseCredentialListResource(Resource):
         summary="Create license credential",
     )
     def post(self):
-        params = license_cred_req.parse_args()
-        credential = LicenseCredential(fields=params)
+        data, errors = CredentialReq().load(request.form)
+        if errors:
+            return {
+                "status": 400,
+                "message": "Invalid data",
+                "params": errors,
+            }, 400
+        credential = LicenseCredential(fields=data)
         db.persist(credential, "license_credentials")
 
         headers = {
@@ -264,8 +279,8 @@ class LicenseCredentialListResource(Resource):
         parameters=[],
         responseMessages=[
             {
-              "code": 200,
-              "message": "License credential information",
+                "code": 200,
+                "message": "License credential information",
             },
             {
                 "code": 404,
@@ -291,8 +306,8 @@ class LicenseCredentialResource(Resource):
         parameters=[],
         responseMessages=[
             {
-              "code": 200,
-              "message": "License credential information",
+                "code": 200,
+                "message": "License credential information",
             },
             {
                 "code": 404,
@@ -308,7 +323,7 @@ class LicenseCredentialResource(Resource):
     def get(self, credential_id):
         credential = db.get(credential_id, "license_credentials")
         if not credential:
-            return {"code": 404, "message": "Credential not found"}, 404
+            return {"status": 404, "message": "Credential not found"}, 404
         return format_credential_resp(credential)
 
     @swagger.operation(
@@ -363,10 +378,17 @@ class LicenseCredentialResource(Resource):
     def put(self, credential_id):
         credential = db.get(credential_id, "license_credentials")
         if not credential:
-            return {"code": 404, "message": "Credential not found"}, 404
+            return {"status": 404, "message": "Credential not found"}, 404
 
-        params = license_cred_req.parse_args()
-        credential.populate(params)
+        # params = license_cred_req.parse_args()
+        data, errors = CredentialReq().load(request.form)
+        if errors:
+            return {
+                "status": 400,
+                "message": "Invalid data",
+                "params": errors,
+            }, 400
+        credential.populate(data)
         db.update(credential_id, credential, "license_credentials")
 
         for license in credential.get_license_objects():
@@ -411,7 +433,7 @@ class LicenseCredentialResource(Resource):
     def delete(self, credential_id):
         credential = db.get(credential_id, "license_credentials")
         if not credential:
-            return {"code": 404, "message": "License credential not found"}, 404
+            return {"status": 404, "message": "License credential not found"}, 404
 
         db.delete(credential_id, "license_credentials")
         return {}, 204

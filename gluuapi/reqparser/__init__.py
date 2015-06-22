@@ -19,11 +19,9 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
-from .cluster import cluster_req  # noqa
-from .node import node_req  # noqa
-from .provider import provider_req  # noqa
-from .license import license_req  # noqa
-from .license import edit_license_req  # noqa
-from .license import license_cred_req  # noqa
-from .provider import edit_provider_req  # noqa
+from .cluster import ClusterReq  # noqa
+from .node import NodeReq  # noqa
+from .provider import ProviderReq  # noqa
+from .provider import EditProviderReq  # noqa
+from .license import LicenseReq  # noqa
+from .license import CredentialReq  # noqa

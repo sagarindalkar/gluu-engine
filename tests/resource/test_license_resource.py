@@ -96,6 +96,17 @@ def test_credential_post(app):
     assert resp.status_code == 201
 
 
+def test_credential_post_invalid_params(app):
+    resp = app.test_client().post(
+        "/license_credential",
+        data={
+            "name": "test",
+            "public_key": "pubkey",
+        },
+    )
+    assert resp.status_code == 400
+
+
 def test_credential_get_list(app, db, license_credential):
     db.persist(license_credential, "license_credentials")
     resp = app.test_client().get("/license_credential")
@@ -147,6 +158,19 @@ def test_credential_put_incorrect_creds(app, db, license_credential, license, va
         },
     )
     assert resp.status_code == 200
+
+
+def test_credential_put_invalid_params(app, db, license_credential, license, validator_ok):
+    db.persist(license_credential, "license_credentials")
+    db.persist(license, "licenses")
+    resp = app.test_client().put(
+        "/license_credential/{}".format(license_credential.id),
+        data={
+            "name": "test",
+            "public_key": "pubkey",
+        },
+    )
+    assert resp.status_code == 400
 
 
 def test_credential_delete_notfound(app):

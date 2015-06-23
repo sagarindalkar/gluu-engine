@@ -131,7 +131,7 @@ class Node(Resource):
             setup_obj = HttpdSetup(node, cluster, template_dir=template_dir)
             setup_obj.teardown()
 
-        docker.remove_container(node.id)
+        docker.remove_container(node.name)
         salt.unregister_minion(node.id)
 
         #updating prometheus

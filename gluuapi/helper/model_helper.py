@@ -131,10 +131,10 @@ class BaseModelHelper(object):
     def setup(self, connect_delay=10, exec_delay=15):
         """Runs the node setup.
         """
-        self.node.state = STATE_IN_PROGRESS
-        self.save()
-
         try:
+            self.node.state = STATE_IN_PROGRESS
+            self.save()
+
             container_id = self.docker.setup_container(
                 self.node.name, self.image,
                 self.dockerfile, self.salt_master_ipaddr,

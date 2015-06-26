@@ -99,7 +99,8 @@ class Node(Resource):
 
         try:
             node = db.search_from_table(
-                "nodes", (db.where("id") == node_id) | (db.where("name") == node_id),
+                "nodes",
+                (db.where("id") == node_id) | (db.where("name") == node_id),
             )[0]
         except IndexError:
             node = None
@@ -113,11 +114,9 @@ class Node(Resource):
         docker = DockerHelper(base_url=provider.docker_base_url)
         salt = SaltHelper()
 
-        # remove node
-        db.delete_from_table(
-            "nodes",
-            (db.where("id") == node.id) | (db.where("name") == node.name),
-        )
+        # remove node (``node.id`` may empty, hence we're using
+        # unique ``node.name`` instead)
+        db.delete_from_table("nodes", db.where("name") == node.name)
 
         # removes reference from cluster, if any
         # cluster.unreserve_ip_addr(node.weave_ip)

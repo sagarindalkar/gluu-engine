@@ -23,6 +23,7 @@
 import time
 from random import randrange
 
+from requests.exceptions import SSLError
 from crochet import run_in_reactor
 
 from gluuapi.database import db
@@ -81,8 +82,7 @@ class BaseModelHelper(object):
             dir_=log_dir,
         )
         self.logger = create_file_logger(self.logpath, name=self.node.name)
-        self.docker = DockerHelper(
-            logger=self.logger, base_url=self.provider.docker_base_url)
+        self.docker = DockerHelper(self.provider, logger=self.logger)
         self.salt = SaltHelper()
         self.template_dir = template_dir
 
@@ -205,7 +205,11 @@ class BaseModelHelper(object):
     def on_setup_error(self):
         self.logger.info("destroying minion {}".format(self.node.name))
 
-        self.docker.remove_container(self.node.name)
+        try:
+            self.docker.remove_container(self.node.name)
+        except SSLError:
+            self.logger.warn("unable to connect to docker API "
+                             "due to SSL connection errors")
         self.salt.unregister_minion(self.node.id)
 
         # mark node as FAILED

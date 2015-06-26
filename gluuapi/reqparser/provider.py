@@ -20,8 +20,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 import re
+from urllib import quote_plus
 
+from flask import current_app
 from marshmallow import validates
+from marshmallow import validates_schema
+from marshmallow import post_load
 from marshmallow import ValidationError
 
 from gluuapi.extensions import ma
@@ -35,6 +39,9 @@ class ProviderReq(ma.Schema):
     hostname = ma.Str(required=True)
     docker_base_url = ma.Str(required=True)
     license_id = ma.Str(default="", missing="")
+    ssl_cert = ma.Str(default="", missing="")
+    ssl_key = ma.Str(default="", missing="")
+    ca_cert = ma.Str(default="", missing="")
 
     @validates("hostname")
     def validate_hostname(self, value):
@@ -59,6 +66,27 @@ class ProviderReq(ma.Schema):
                 raise ValidationError("invalid license ID")
             if license.expired:
                 raise ValidationError("expired license")
+
+    @validates_schema
+    def validate_docker_config(self, data):
+        if data["docker_base_url"].startswith("https"):
+            for field in ("ssl_cert", "ssl_key", "ca_cert"):
+                if not data[field]:
+                    raise ValidationError("field is required", field)
+
+    @post_load
+    def finalize_data(self, data):
+        for field in ("ssl_cert", "ssl_key", "ca_cert"):
+            # split lines but preserve the new-line special character
+            lines = data[field].splitlines(True)
+            for idx, line in enumerate(lines):
+                # exclude first and last line
+                if (idx == 0) or (idx == len(lines) - 1):
+                    continue
+                lines[idx] = quote_plus(line, safe="/+=\n")
+            data[field] = "".join(lines)
+        data["docker_cert_dir"] = current_app.config["DOCKER_CERT_DIR"]
+        return data
 
 
 class EditProviderReq(ProviderReq):

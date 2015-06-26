@@ -146,8 +146,29 @@ class ProviderResource(Resource):
                 "dataType": "string",
                 "paramType": "form"
             },
+            {
+                "name": "ssl_key",
+                "description": "The contents of SSL client key file",
+                "required": False,
+                "dataType": "string",
+                "paramType": "form"
+            },
+            {
+                "name": "ssl_cert",
+                "description": "The contents of SSL client cert file",
+                "required": False,
+                "dataType": "string",
+                "paramType": "form"
+            },
+            {
+                "name": "ca_cert",
+                "description": "The contents of SSL CA cert file",
+                "required": False,
+                "dataType": "string",
+                "paramType": "form"
+            },
         ],
-        summary='TODO'
+        summary='Update existing provider',
     )
     def put(self, provider_id):
         provider = db.get(provider_id, "providers")
@@ -209,6 +230,27 @@ class ProviderListResource(Resource):
             {
                 "name": "license_id",
                 "description": "ID of the license. Must be filled for consumer provider",
+                "required": False,
+                "dataType": "string",
+                "paramType": "form"
+            },
+            {
+                "name": "ssl_key",
+                "description": "The contents of SSL client key file",
+                "required": False,
+                "dataType": "string",
+                "paramType": "form"
+            },
+            {
+                "name": "ssl_cert",
+                "description": "The contents of SSL client cert file",
+                "required": False,
+                "dataType": "string",
+                "paramType": "form"
+            },
+            {
+                "name": "ca_cert",
+                "description": "The contents of SSL CA cert file",
                 "required": False,
                 "dataType": "string",
                 "paramType": "form"

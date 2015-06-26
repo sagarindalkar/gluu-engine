@@ -28,3 +28,42 @@ def test_validate_hostname_invalid(hostname):
     reqparser = ProviderReq()
     with pytest.raises(ValidationError):
         reqparser.validate_hostname(hostname)
+
+
+def test_validate_docker_config():
+    from gluuapi.reqparser import ProviderReq
+    from marshmallow import ValidationError
+
+    reqparser = ProviderReq()
+    with pytest.raises(ValidationError):
+        data = {
+            "docker_base_url": "https://localhost:2375",
+            "ssl_cert": "",
+            "ssl_key": "",
+            "ca_cert": "",
+        }
+        reqparser.validate_docker_config(data)
+
+
+def test_finalize_data(app):
+    from gluuapi.reqparser import ProviderReq
+
+    reqparser = ProviderReq()
+    with app.test_request_context():
+        data = reqparser.finalize_data({
+            "docker_base_url": "https://localhost:2375",
+            "hostname": "local",
+            "ssl_cert": """-----BEGIN CERTIFICATE-----\n
+kye8qHB5Sm43E/PJL+oAPU0OSYe3H7f9pJMwvx0 T7Sa4T8FKl10W76Rn==\n
+-----END CERTIFICATE-----\n""",
+            "ssl_key": """-----BEGIN RSA PRIVATE KEY-----
+kye8qHB5Sm43E/PJL+oAPU0OSYe3H7f9pJMwvx0 T7Sa4T8FKl10W76Rn==
+-----END RSA PRIVATE KEY-----""",
+            "ca_cert": """-----BEGIN CERTIFICATE-----
+kye8qHB5Sm43E/PJL+oAPU0OSYe3H7f9pJMwvx0 T7Sa4T8FKl10W76Rn==
+-----END CERTIFICATE-----""",
+        })
+
+        assert data["ssl_cert"] == """-----BEGIN CERTIFICATE-----\n
+kye8qHB5Sm43E/PJL+oAPU0OSYe3H7f9pJMwvx0+T7Sa4T8FKl10W76Rn==\n
+-----END CERTIFICATE-----\n"""

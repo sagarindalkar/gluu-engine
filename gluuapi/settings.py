@@ -39,6 +39,7 @@ class Config(object):
     TEMPLATES_DIR = os.path.join(APP_DIR, "templates")
     LOG_DIR = os.environ.get("LOG_DIR", "/var/log/gluu")
     INSTANCE_DIR = os.path.join(DATA_DIR, "instance")
+    DOCKER_CERT_DIR = os.path.join(DATA_DIR, "docker_certs")
 
 
 class ProdConfig(Config):

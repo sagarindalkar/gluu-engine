@@ -28,14 +28,39 @@ import shutil
 import docker.errors
 import requests
 from docker import Client
+from docker.tls import TLSConfig
+from docker.errors import TLSParameterError
 
 from gluuapi.log import create_file_logger
 
+#: Default URL to docker API
+DEFAULT_DOCKER_URL = "unix:///var/run/docker.sock"
+
 
 class DockerHelper(object):
-    def __init__(self, logger=None, base_url=""):
+    def __init__(self, provider, logger=None):
         self.logger = logger or create_file_logger()
-        self.docker = Client(base_url=base_url or "unix:///var/run/docker.sock")
+        self.docker = None
+        self.provider = provider
+        self.connect()
+
+    def connect(self):
+        if not self.docker:
+            tlsconfig = None
+            if all([self.provider.ssl_key, self.provider.ssl_cert,
+                    self.provider.ca_cert]):
+                try:
+                    # configure TLS configuration to connect to docker
+                    tlsconfig = TLSConfig(
+                        client_cert=(self.provider.ssl_cert_path,
+                                     self.provider.ssl_key_path),
+                        verify=self.provider.ca_cert_path,
+                    )
+                except TLSParameterError as exc:
+                    self.logger.warn(exc)
+
+            self.docker = Client(base_url=self.provider.docker_base_url,
+                                 tls=tlsconfig)
 
     def image_exists(self, name):
         """Checks whether a docker image exists.

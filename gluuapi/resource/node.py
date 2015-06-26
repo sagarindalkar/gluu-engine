@@ -25,6 +25,7 @@ from flask import request
 from flask import url_for
 from flask_restful import Resource
 from flask_restful_swagger import swagger
+from requests.exceptions import SSLError
 
 from gluuapi.database import db
 from gluuapi.reqparser import NodeReq
@@ -111,16 +112,16 @@ class Node(Resource):
         cluster = db.get(node.cluster_id, "clusters")
         provider = db.get(node.provider_id, "providers")
 
-        docker = DockerHelper(base_url=provider.docker_base_url)
+        docker = DockerHelper(provider)
         salt = SaltHelper()
 
         # remove node (``node.id`` may empty, hence we're using
         # unique ``node.name`` instead)
         db.delete_from_table("nodes", db.where("name") == node.name)
 
-        # removes reference from cluster, if any
+        # # removes reference from cluster, if any
         # cluster.unreserve_ip_addr(node.weave_ip)
-        db.update(cluster.id, cluster, "clusters")
+        # db.update(cluster.id, cluster, "clusters")
 
         if node.type == "ldap":
             setup_obj = LdapSetup(node, cluster, template_dir=template_dir)
@@ -129,7 +130,11 @@ class Node(Resource):
             setup_obj = HttpdSetup(node, cluster, template_dir=template_dir)
             setup_obj.teardown()
 
-        docker.remove_container(node.name)
+        try:
+            docker.remove_container(node.name)
+        except SSLError:  # pragma: no cover
+            current_app.logger.warn("unable to connect to docker API "
+                                    "due to SSL connection errors")
         salt.unregister_minion(node.id)
 
         #updating prometheus

@@ -37,7 +37,7 @@ class ClusterReq(ma.Schema):
     ox_cluster_hostname = ma.Str(required=True)
     org_name = ma.Str(required=True)
     org_short_name = ma.Str(required=True)
-    country_code = ma.Str()
+    country_code = ma.Str(required=True)
     city = ma.Str(required=True)
     state = ma.Str(required=True)
     admin_email = ma.Email(required=True)

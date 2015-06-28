@@ -134,7 +134,7 @@ class ProviderResource(Resource):
             },
             {
                 "name": "docker_base_url",
-                "description": "URL to Docker API, could be unix socket or host:port format",
+                "description": "URL to Docker API (e.g. 'unix:///var/run/docker.sock' or 'https://ip:port')",
                 "required": True,
                 "dataType": "string",
                 "paramType": "form"
@@ -222,7 +222,7 @@ class ProviderListResource(Resource):
             },
             {
                 "name": "docker_base_url",
-                "description": "URL to Docker API, could be unix socket or host:port format",
+                "description": "URL to Docker API (e.g. 'unix:///var/run/docker.sock' or 'https://ip:port')",
                 "required": True,
                 "dataType": "string",
                 "paramType": "form"

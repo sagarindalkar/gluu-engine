@@ -28,7 +28,6 @@ from flask_restful_swagger import swagger
 from gluuapi.model import GluuCluster
 from gluuapi.database import db
 from gluuapi.reqparser import ClusterReq
-from gluuapi.helper import SaltHelper
 
 
 def format_cluster_resp(cluster):
@@ -240,15 +239,6 @@ class ClusterList(Resource):
 
         cluster = GluuCluster(fields=data)
         db.persist(cluster, "clusters")
-
-        # expose the weave IP
-        addr, prefixlen = cluster.exposed_weave_ip
-        salt = SaltHelper()
-        salt.cmd(
-            salt.get_fqhostname(),
-            "cmd.run",
-            ["weave expose {}/{}".format(addr, prefixlen)],
-        )
 
         headers = {
             "Location": url_for("cluster", cluster_id=cluster.id),

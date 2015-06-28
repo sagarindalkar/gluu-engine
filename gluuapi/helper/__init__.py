@@ -26,3 +26,4 @@ from .model_helper import OxauthModelHelper  # noqa
 from .model_helper import OxtrustModelHelper  # noqa
 from .model_helper import HttpdModelHelper  # noqa
 from .prometheus_helper import PrometheusHelper  # noqa
+from .weave_helper import WeaveHelper  # noqa

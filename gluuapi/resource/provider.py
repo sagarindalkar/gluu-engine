@@ -21,6 +21,7 @@
 # SOFTWARE.
 from flask import request
 from flask import url_for
+from flask import current_app
 from flask_restful import Resource
 from flask_restful_swagger import swagger
 
@@ -31,6 +32,7 @@ from gluuapi.model import Provider
 from gluuapi.model import STATE_DISABLED
 from gluuapi.model import STATE_SUCCESS
 from gluuapi.helper import SaltHelper
+from gluuapi.helper import WeaveHelper
 
 
 def format_provider_resp(provider):
@@ -277,6 +279,17 @@ class ProviderListResource(Resource):
         summary='Create a new provider',
     )
     def post(self):
+        try:
+            cluster = db.all("clusters")[0]
+        except IndexError:
+            cluster = None
+
+        if not cluster:
+            return {
+                "status": 403,
+                "message": "requires at least 1 cluster created beforehand",
+            }, 403
+
         data, errors = ProviderReq().load(request.form)
         if errors:
             return {
@@ -307,9 +320,10 @@ class ProviderListResource(Resource):
         provider = Provider(fields=data)
         db.persist(provider, "providers")
 
-        # register provider so we can execute weave commands later on
-        salt = SaltHelper()
-        salt.register_minion(provider.hostname)
+        weave = WeaveHelper(
+            provider, cluster, current_app.config["SALT_MASTER_IPADDR"],
+        )
+        weave.launch()
 
         headers = {
             "Location": url_for("provider", provider_id=provider.id),

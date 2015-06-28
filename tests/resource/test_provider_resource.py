@@ -1,7 +1,23 @@
 import json
 
 
-def test_provider_list_post_master(app):
+def test_provider_no_cluster(app):
+    resp = app.test_client().post(
+        "/provider",
+        data={
+            "docker_base_url": "unix:///var/run/docker.sock",
+            "hostname": "local",
+        },
+    )
+    assert resp.status_code == 403
+
+
+def test_provider_list_post_master(monkeypatch, app, db, cluster, patched_salt_cmd):
+    monkeypatch.setattr(
+        "gluuapi.helper.WeaveHelper.launch",
+        lambda cls: None,
+    )
+    db.persist(cluster, "clusters")
     resp = app.test_client().post(
         "/provider",
         data={
@@ -13,7 +29,8 @@ def test_provider_list_post_master(app):
     assert json.loads(resp.data)["type"] == "master"
 
 
-def test_provider_list_post_duplicated_master(app, db, provider):
+def test_provider_list_post_duplicated_master(app, db, provider, cluster):
+    db.persist(cluster, "clusters")
     db.persist(provider, "providers")
     resp = app.test_client().post(
         "/provider",
@@ -25,7 +42,9 @@ def test_provider_list_post_duplicated_master(app, db, provider):
     assert resp.status_code == 403
 
 
-def test_provider_list_post_consumer_duplicated(app, db, license, provider):
+def test_provider_list_post_consumer_duplicated(app, db, license,
+                                                provider, cluster):
+    db.persist(cluster, "clusters")
     db.persist(license, "licenses")
 
     # creates a master first
@@ -46,7 +65,8 @@ def test_provider_list_post_consumer_duplicated(app, db, license, provider):
     assert resp.status_code == 400
 
 
-def test_provider_list_post_license_notfound(app, db, provider):
+def test_provider_list_post_license_notfound(app, db, provider, cluster):
+    db.persist(cluster, "clusters")
     # creates a master first
     db.persist(provider, "providers")
     resp = app.test_client().post(
@@ -61,7 +81,8 @@ def test_provider_list_post_license_notfound(app, db, provider):
 
 
 def test_provider_list_post_expired_license(monkeypatch, app, db,
-                                            license, provider):
+                                            license, provider, cluster):
+    db.persist(cluster, "clusters")
     # creates a master first
     db.persist(provider, "providers")
     db.persist(license, "licenses")
@@ -76,7 +97,9 @@ def test_provider_list_post_expired_license(monkeypatch, app, db,
     assert resp.status_code == 400
 
 
-def test_provider_list_post_consumer_no_master(monkeypatch, app, db, license):
+def test_provider_list_post_consumer_no_master(monkeypatch, app, db,
+                                               license, cluster):
+    db.persist(cluster, "clusters")
     license.valid = True
     license.metadata["expiration_date"] = None
     db.persist(license, "licenses")

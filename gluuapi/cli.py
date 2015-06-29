@@ -94,7 +94,7 @@ def main():
 )
 @click.option(
     "--logfile",
-    default="/var/run/gluuapi.log",
+    default="/var/log/gluuapi.log",
     metavar="<logfile>",
     type=click.Path(resolve_path=True, file_okay=True, dir_okay=True,
                     writable=True, readable=True),

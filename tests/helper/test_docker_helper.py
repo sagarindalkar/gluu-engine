@@ -52,7 +52,7 @@ def test_build_image_success(monkeypatch, docker_helper):
 
     monkeypatch.setattr(
         "docker.Client.build",
-        lambda cls, path, tag, quiet, rm, forcerm: gen(stream_output),
+        lambda cls, path, tag, quiet, rm, forcerm, pull: gen(stream_output),
     )
     assert docker_helper.build_image("/tmp/abc", "abc") is True
 
@@ -69,7 +69,7 @@ def test_build_image_failed(monkeypatch, docker_helper):
 
     monkeypatch.setattr(
         "docker.Client.build",
-        lambda cls, path, tag, quiet, rm, forcerm: gen(stream_output),
+        lambda cls, path, tag, quiet, rm, forcerm, pull: gen(stream_output),
     )
     assert docker_helper.build_image("/tmp/abc", "abc") is False
 

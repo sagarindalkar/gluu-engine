@@ -79,8 +79,12 @@ class DockerHelper(object):
         :returns: ``True`` if image successfully built, otherwise ``False``
         """
         self.logger.info("building {} image".format(tag))
-        resp = self.docker.build(path, tag=tag, quiet=True,
-                                 rm=True, forcerm=True)
+
+        # pulling image update from Registry V2 raises error,
+        # hence we skip the updates until we have a correct implementation
+        pull = False
+        resp = self.docker.build(path, tag=tag, quiet=True, rm=True,
+                                 forcerm=True, pull=pull)
 
         output = ""
         while True:

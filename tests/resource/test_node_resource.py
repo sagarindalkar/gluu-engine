@@ -7,7 +7,7 @@ def test_node_get(app, cluster, db, ldap_node):
     db.persist(ldap_node, "nodes")
     db.persist(cluster, "clusters")
 
-    resp = app.test_client().get("/node/{}".format(ldap_node.id))
+    resp = app.test_client().get("/nodes/{}".format(ldap_node.id))
     actual_data = json.loads(resp.data)
 
     assert resp.status_code == 200
@@ -17,7 +17,7 @@ def test_node_get(app, cluster, db, ldap_node):
 
 
 def test_node_get_invalid_id(app):
-    resp = app.test_client().get("/node/random-invalid-id")
+    resp = app.test_client().get("/nodes/random-invalid-id")
     actual_data = json.loads(resp.data)
     assert resp.status_code == 404
     assert "message" in actual_data
@@ -27,7 +27,7 @@ def test_node_get_list(app, db, cluster, ldap_node):
     db.persist(ldap_node, "nodes")
     db.persist(cluster, "clusters")
 
-    resp = app.test_client().get("/node")
+    resp = app.test_client().get("/nodes")
     actual_data = json.loads(resp.data)
 
     assert resp.status_code == 200
@@ -40,7 +40,7 @@ def test_node_get_list(app, db, cluster, ldap_node):
 
 
 def test_node_get_list_empty(app):
-    resp = app.test_client().get("/node")
+    resp = app.test_client().get("/nodes")
     actual_data = json.loads(resp.data)
 
     assert resp.status_code == 200
@@ -64,7 +64,7 @@ def test_node_delete_ldap(monkeypatch, app, db, cluster, provider, ldap_node):
         lambda cls: None,
     )
 
-    resp = app.test_client().delete("/node/{}".format(ldap_node.id))
+    resp = app.test_client().delete("/nodes/{}".format(ldap_node.id))
     assert resp.status_code == 204
 
 
@@ -85,12 +85,12 @@ def test_node_delete_httpd(monkeypatch, app, db, cluster,
         lambda cls: None,
     )
 
-    resp = app.test_client().delete("/node/{}".format(httpd_node.id))
+    resp = app.test_client().delete("/nodes/{}".format(httpd_node.id))
     assert resp.status_code == 204
 
 
 def test_node_delete_failed(app):
-    resp = app.test_client().delete("/node/random-invalid-id")
+    resp = app.test_client().delete("/nodes/random-invalid-id")
     assert resp.status_code == 404
 
 
@@ -99,7 +99,7 @@ def test_node_post_invalid_connect_delay(app, db, cluster, provider):
     db.persist(provider, "providers")
 
     resp = app.test_client().post(
-        "/node",
+        "/nodes",
         data={
             "cluster_id": cluster.id,
             "provider_id": provider.id,
@@ -115,7 +115,7 @@ def test_node_post_invalid_exec_delay(app, db, cluster, provider):
     db.persist(provider, "providers")
 
     resp = app.test_client().post(
-        "/node",
+        "/nodes",
         data={
             "cluster_id": cluster.id,
             "provider_id": provider.id,
@@ -128,7 +128,7 @@ def test_node_post_invalid_exec_delay(app, db, cluster, provider):
 
 def test_node_post_invalid_cluster(app, db):
     resp = app.test_client().post(
-        "/node",
+        "/nodes",
         data={
             "cluster_id": "123",
             "provider_id": "123",
@@ -144,7 +144,7 @@ def test_node_post_ip_unavailable(app, db, cluster):
     db.persist(cluster, "clusters")
 
     resp = app.test_client().post(
-        "/node",
+        "/nodes",
         data={
             "cluster_id": cluster.id,
             "provider_id": "123",
@@ -157,7 +157,7 @@ def test_node_post_ip_unavailable(app, db, cluster):
 def test_node_post_invalid_provider(app, db, cluster):
     db.persist(cluster, "clusters")
     resp = app.test_client().post(
-        "/node",
+        "/nodes",
         data={
             "cluster_id": cluster.id,
             "provider_id": "123",
@@ -181,7 +181,7 @@ def test_node_post_max_ldap(app, db, cluster, provider):
         db.persist(node, "nodes")
 
     resp = app.test_client().post(
-        "/node",
+        "/nodes",
         data={
             "cluster_id": cluster.id,
             "provider_id": provider.id,
@@ -207,7 +207,7 @@ def test_node_post(monkeypatch, app, db, cluster, provider,
         lambda cls, connect_delay, exec_delay: None,
     )
     resp = app.test_client().post(
-        "/node",
+        "/nodes",
         data={
             "cluster_id": cluster.id,
             "provider_id": provider.id,
@@ -226,7 +226,7 @@ def test_node_post_expired_license(app, db, provider, license,
     db.persist(provider, "providers")
 
     resp = app.test_client().post(
-        "/node",
+        "/nodes",
         data={
             "cluster_id": cluster.id,
             "provider_id": provider.id,

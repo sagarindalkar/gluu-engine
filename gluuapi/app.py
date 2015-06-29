@@ -81,23 +81,23 @@ def register_extensions(app):
 
 
 def register_resources():
-    restapi.add_resource(NodeList, '/node')
-    restapi.add_resource(Node, '/node/<string:node_id>')
+    restapi.add_resource(NodeList, '/nodes')
+    restapi.add_resource(Node, '/nodes/<string:node_id>')
 
-    restapi.add_resource(ClusterList, '/cluster')
-    restapi.add_resource(Cluster, '/cluster/<string:cluster_id>')
+    restapi.add_resource(ClusterList, '/clusters')
+    restapi.add_resource(Cluster, '/clusters/<string:cluster_id>')
 
-    restapi.add_resource(ProviderResource, "/provider/<string:provider_id>",
+    restapi.add_resource(ProviderResource, "/providers/<string:provider_id>",
                          endpoint="provider")
-    restapi.add_resource(ProviderListResource, "/provider",
+    restapi.add_resource(ProviderListResource, "/providers",
                          endpoint="providerlist")
 
-    restapi.add_resource(LicenseResource, "/license/<string:license_id>",
+    restapi.add_resource(LicenseResource, "/licenses/<string:license_id>",
                          endpoint="license")
-    restapi.add_resource(LicenseListResource, "/license",
+    restapi.add_resource(LicenseListResource, "/licenses",
                          endpoint="licenselist")
 
-    restapi.add_resource(LicenseCredentialListResource, "/license_credential",
+    restapi.add_resource(LicenseCredentialListResource, "/license_credentials",
                          endpoint="licensecredlist")
-    restapi.add_resource(LicenseCredentialResource, "/license_credential/<string:credential_id>",
+    restapi.add_resource(LicenseCredentialResource, "/license_credentials/<string:credential_id>",
                          endpoint="licensecred")

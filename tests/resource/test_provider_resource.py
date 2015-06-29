@@ -3,7 +3,7 @@ import json
 
 def test_provider_no_cluster(app):
     resp = app.test_client().post(
-        "/provider",
+        "/providers",
         data={
             "docker_base_url": "unix:///var/run/docker.sock",
             "hostname": "local",
@@ -19,7 +19,7 @@ def test_provider_list_post_master(monkeypatch, app, db, cluster, patched_salt_c
     )
     db.persist(cluster, "clusters")
     resp = app.test_client().post(
-        "/provider",
+        "/providers",
         data={
             "docker_base_url": "unix:///var/run/docker.sock",
             "hostname": "local",
@@ -33,7 +33,7 @@ def test_provider_list_post_duplicated_master(app, db, provider, cluster):
     db.persist(cluster, "clusters")
     db.persist(provider, "providers")
     resp = app.test_client().post(
-        "/provider",
+        "/providers",
         data={
             "docker_base_url": "unix:///var/run/docker.sock",
             "hostname": "local",
@@ -55,7 +55,7 @@ def test_provider_list_post_consumer_duplicated(app, db, license,
     db.persist(provider, "providers")
 
     resp = app.test_client().post(
-        "/provider",
+        "/providers",
         data={
             "docker_base_url": "unix:///var/run/docker.sock",
             "hostname": "local",
@@ -70,7 +70,7 @@ def test_provider_list_post_license_notfound(app, db, provider, cluster):
     # creates a master first
     db.persist(provider, "providers")
     resp = app.test_client().post(
-        "/provider",
+        "/providers",
         data={
             "docker_base_url": "unix:///var/run/docker.sock",
             "hostname": "local",
@@ -87,7 +87,7 @@ def test_provider_list_post_expired_license(monkeypatch, app, db,
     db.persist(provider, "providers")
     db.persist(license, "licenses")
     resp = app.test_client().post(
-        "/provider",
+        "/providers",
         data={
             "docker_base_url": "unix:///var/run/docker.sock",
             "hostname": "local",
@@ -104,7 +104,7 @@ def test_provider_list_post_consumer_no_master(monkeypatch, app, db,
     license.metadata["expiration_date"] = None
     db.persist(license, "licenses")
     resp = app.test_client().post(
-        "/provider",
+        "/providers",
         data={
             "docker_base_url": "unix:///var/run/docker.sock",
             "hostname": "local",
@@ -116,42 +116,42 @@ def test_provider_list_post_consumer_no_master(monkeypatch, app, db,
 
 def test_provider_list_get(app, db, provider):
     db.persist(provider, "providers")
-    resp = app.test_client().get("/provider")
+    resp = app.test_client().get("/providers")
     assert resp.status_code == 200
 
 
 def test_provider_get(app, db, provider):
     db.persist(provider, "providers")
-    resp = app.test_client().get("/provider/{}".format(provider.id))
+    resp = app.test_client().get("/providers/{}".format(provider.id))
     assert resp.status_code == 200
 
 
 def test_provider_get_not_found(app):
-    resp = app.test_client().get("/provider/random-id")
+    resp = app.test_client().get("/providers/random-id")
     assert resp.status_code == 404
 
 
 def test_provider_delete(app, db, provider):
     db.persist(provider, "providers")
-    resp = app.test_client().delete("/provider/{}".format(provider.id))
+    resp = app.test_client().delete("/providers/{}".format(provider.id))
     assert resp.status_code == 204
 
 
 def test_provider_delete_not_found(app):
-    resp = app.test_client().delete("/provider/random-id")
+    resp = app.test_client().delete("/providers/random-id")
     assert resp.status_code == 404
 
 
 def test_provider_delete_having_nodes(app, db, provider, ldap_node):
     db.persist(ldap_node, "nodes")
     db.persist(provider, "providers")
-    resp = app.test_client().delete("/provider/{}".format(provider.id))
+    resp = app.test_client().delete("/providers/{}".format(provider.id))
     assert resp.status_code == 403
 
 
 def test_provider_put_notfound(app):
     resp = app.test_client().put(
-        "/provider/abc",
+        "/providers/abc",
         data={
             "docker_base_url": "unix:///var/run/docker.sock",
             "hostname": "local",
@@ -166,7 +166,7 @@ def test_provider_put_missing_params(app, db, provider):
     db.persist(provider, "providers")
 
     resp = app.test_client().put(
-        "/provider/{}".format(provider.id),
+        "/providers/{}".format(provider.id),
         data={
             "docker_base_url": "unix:///var/run/docker.sock",
             "hostname": "local",
@@ -196,7 +196,7 @@ def test_provider_put_license_reused(app, db, license, provider):
     db.persist(provider2, "providers")
 
     resp = app.test_client().put(
-        "/provider/{}".format(provider2.id),
+        "/providers/{}".format(provider2.id),
         data={
             "docker_base_url": "unix:///var/run/docker.sock",
             "hostname": "local",
@@ -212,7 +212,7 @@ def test_provider_put_license_notfound(app, db, provider, license):
     db.persist(provider, "providers")
 
     resp = app.test_client().put(
-        "/provider/{}".format(provider.id),
+        "/providers/{}".format(provider.id),
         data={
             "docker_base_url": "unix:///var/run/docker.sock",
             "hostname": "local",
@@ -229,7 +229,7 @@ def test_provider_put_expired_license(app, db, license, provider, validator_err)
     db.persist(provider, "providers")
 
     resp = app.test_client().put(
-        "/provider/{}".format(provider.id),
+        "/providers/{}".format(provider.id),
         data={
             "docker_base_url": "unix:///var/run/docker.sock",
             "hostname": "local",
@@ -256,7 +256,7 @@ def test_provider_put_updated(app, db, license, provider,
     db.persist(oxauth_node, "nodes")
 
     resp = app.test_client().put(
-        "/provider/{}".format(provider.id),
+        "/providers/{}".format(provider.id),
         data={
             "docker_base_url": "unix:///var/run/docker.sock",
             "hostname": "localhost",

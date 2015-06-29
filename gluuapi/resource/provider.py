@@ -114,6 +114,10 @@ class ProviderResource(Resource):
                 "message": "Provider updated",
             },
             {
+                "code": 400,
+                "message": "Bad Request",
+            },
+            {
                 "code": 404,
                 "message": "Provider not found",
             },

@@ -61,6 +61,13 @@ mv oxd-license-validator-3.0.1-SNAPSHOT-jar-with-dependencies.jar oxd-license-va
 export OXD_LICENSE_VALIDATOR=/custom/path/to/oxd-license-validator.jar
 ```
 
+### Install weave
+
+```
+sudo curl -L git.io/weave -o /usr/local/bin/weave
+sudo chmod a+x /usr/local/bin/weave
+```
+
 ## Deployment
 
 ### Install pip and virtualenv

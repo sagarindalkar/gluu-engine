@@ -167,29 +167,27 @@ class BaseModelHelper(object):
                 self.prepare_minion(connect_delay, exec_delay)
 
                 if self.salt.is_minion_registered(self.node.id):
-                    setup_obj = self.setup_class(self.node, self.cluster, self.logger, self.template_dir)
-
                     self.logger.info("{} setup is started".format(self.image))
                     start = time.time()
 
+                    setup_obj = self.setup_class(self.node, self.cluster, self.logger, self.template_dir)
                     setup_obj.before_setup()
                     setup_obj.setup()
                     setup_obj.after_setup()
-
                     setup_obj.remove_build_dir()
+
+                    # mark node as SUCCESS
+                    self.node.state = STATE_SUCCESS
+                    db.update_to_table("nodes", db.where("name") == self.node.name, self.node)
 
                     # updating prometheus
                     prometheus = PrometheusHelper(template_dir=self.template_dir)
                     prometheus.update()
 
                     elapsed = time.time() - start
-                    self.logger.info(
-                        "{} setup is finished ({} seconds)".format(
-                            self.image, elapsed))
-
-                    # mark node as SUCCESS
-                    self.node.state = STATE_SUCCESS
-                    db.update_to_table("nodes", db.where("name") == self.node.name, self.node)
+                    self.logger.info("{} setup is finished ({} seconds)".format(
+                        self.image, elapsed
+                    ))
                 else:
                     # minion is not connected
                     self.logger.error("minion {} is unreachable".format(self.node.id))

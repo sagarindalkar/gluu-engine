@@ -86,13 +86,6 @@ class BaseModelHelper(object):
         self.salt = SaltHelper()
         self.template_dir = template_dir
 
-    def prepare_node_attrs(self):
-        """Prepares changes to node's attributes (if any).
-
-        It's worth noting that changing ``id`` attribute in this method
-        should be avoided.
-        """
-
     def prepare_minion(self, connect_delay=10, exec_delay=15):
         """Waits for minion to connect before doing any remote execution.
         """
@@ -113,89 +106,84 @@ class BaseModelHelper(object):
                          "{} seconds".format(exec_delay))
         time.sleep(exec_delay)
 
-    def before_save(self):
-        """Callback before saving to database.
-
-        Typical usage is to remove or protect sensitive field such as
-        password or secret.
-        """
-
-    def save(self):
-        """Saves node.
-        """
-        # Runs pre-save callback
-        self.before_save()
-        db.persist(self.node, "nodes")
-
     @run_in_reactor
     def setup(self, connect_delay=10, exec_delay=15):
         """Runs the node setup.
         """
         try:
             self.node.state = STATE_IN_PROGRESS
-            self.save()
+            db.persist(self.node, "nodes")
 
             container_id = self.docker.setup_container(
                 self.node.name, self.image,
                 self.dockerfile, self.salt_master_ipaddr,
             )
 
-            if container_id:
-                # container ID in short format
-                self.node.id = container_id[:12]
-
-                # attach weave IP to container
-                self.logger.info("assigning weave IP address")
-                addr, prefixlen = self.cluster.reserve_ip_addr()
-                self.salt.cmd(
-                    self.provider.hostname,
-                    "cmd.run",
-                    ["weave attach {}/{} {}".format(addr, prefixlen,
-                                                    self.node.id)],
-                )
-                db.update(self.cluster.id, self.cluster, "clusters")
-
-                # runs callback to prepare node attributes;
-                # warning: don't override node.id attribute!
-                self.prepare_node_attrs()
-
-                self.node.ip = self.docker.get_container_ip(self.node.id)
-                self.node.weave_ip = addr
-                self.node.weave_prefixlen = prefixlen
-                db.update_to_table("nodes", db.where("name") == self.node.name, self.node)
-
-                self.prepare_minion(connect_delay, exec_delay)
-
-                if self.salt.is_minion_registered(self.node.id):
-                    self.logger.info("{} setup is started".format(self.image))
-                    start = time.time()
-
-                    setup_obj = self.setup_class(self.node, self.cluster, self.logger, self.template_dir)
-                    setup_obj.before_setup()
-                    setup_obj.setup()
-                    setup_obj.after_setup()
-                    setup_obj.remove_build_dir()
-
-                    # mark node as SUCCESS
-                    self.node.state = STATE_SUCCESS
-                    db.update_to_table("nodes", db.where("name") == self.node.name, self.node)
-
-                    # updating prometheus
-                    prometheus = PrometheusHelper(template_dir=self.template_dir)
-                    prometheus.update()
-
-                    elapsed = time.time() - start
-                    self.logger.info("{} setup is finished ({} seconds)".format(
-                        self.image, elapsed
-                    ))
-                else:
-                    # minion is not connected
-                    self.logger.error("minion {} is unreachable".format(self.node.id))
-                    self.on_setup_error()
-            else:
-                # container is not running
-                self.logger.error("Failed to start the {!r} container".format(self.node.name))
+            # container is not running
+            if not container_id:
+                self.logger.error("Failed to start the "
+                                  "{!r} container".format(self.node.name))
                 self.on_setup_error()
+                return
+
+            # container ID in short format
+            self.node.id = container_id[:12]
+            self.prepare_minion(connect_delay, exec_delay)
+
+            # minion is not connected
+            if not self.salt.is_minion_registered(self.node.id):
+                self.logger.error("minion {} is "
+                                  "unreachable".format(self.node.id))
+                self.on_setup_error()
+                return
+
+            # attach weave IP to container
+            addr, prefixlen = self.cluster.reserve_ip_addr()
+            self.logger.info("assigning weave IP address")
+            self.salt.cmd(
+                self.provider.hostname,
+                "cmd.run",
+                ["weave attach {}/{} {}".format(addr, prefixlen,
+                                                self.node.id)],
+            )
+            db.update(self.cluster.id, self.cluster, "clusters")
+
+            # save weave_ip for inter-node communications
+            self.node.ip = self.docker.get_container_ip(self.node.id)
+            self.node.weave_ip = addr
+            self.node.weave_prefixlen = prefixlen
+            db.update_to_table(
+                "nodes",
+                db.where("name") == self.node.name,
+                self.node,
+            )
+
+            self.logger.info("{} setup is started".format(self.image))
+            start = time.time()
+
+            setup_obj = self.setup_class(self.node, self.cluster,
+                                         self.logger, self.template_dir)
+            setup_obj.before_setup()
+            setup_obj.setup()
+            setup_obj.after_setup()
+            setup_obj.remove_build_dir()
+
+            # mark node as SUCCESS
+            self.node.state = STATE_SUCCESS
+            db.update_to_table(
+                "nodes",
+                db.where("name") == self.node.name,
+                self.node,
+            )
+
+            # updating prometheus
+            prometheus = PrometheusHelper(template_dir=self.template_dir)
+            prometheus.update()
+
+            elapsed = time.time() - start
+            self.logger.info("{} setup is finished ({} seconds)".format(
+                self.image, elapsed
+            ))
         except Exception:
             self.logger.error(exc_traceback())
             self.on_setup_error()
@@ -212,7 +200,11 @@ class BaseModelHelper(object):
 
         # mark node as FAILED
         self.node.state = STATE_FAILED
-        db.update_to_table("nodes", db.where("name") == self.node.name, self.node)
+        db.update_to_table(
+            "nodes",
+            db.where("name") == self.node.name,
+            self.node,
+        )
 
 
 class LdapModelHelper(BaseModelHelper):

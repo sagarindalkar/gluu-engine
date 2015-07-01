@@ -163,10 +163,7 @@ class BaseModelHelper(object):
 
             setup_obj = self.setup_class(self.node, self.cluster,
                                          self.logger, self.template_dir)
-            setup_obj.before_setup()
             setup_obj.setup()
-            setup_obj.after_setup()
-            setup_obj.remove_build_dir()
 
             # mark node as SUCCESS
             self.node.state = STATE_SUCCESS
@@ -175,6 +172,11 @@ class BaseModelHelper(object):
                 db.where("name") == self.node.name,
                 self.node,
             )
+
+            # after_setup must be called after node has been marked
+            # as SUCCESS
+            setup_obj.after_setup()
+            setup_obj.remove_build_dir()
 
             # updating prometheus
             prometheus = PrometheusHelper(template_dir=self.template_dir)

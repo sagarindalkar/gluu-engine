@@ -407,6 +407,7 @@ class LdapSetup(BaseSetup):
         # stop the replication agreement
         if len(self.cluster.get_ldap_objects()) > 0:
             self.write_ldap_pw()
+            self.logger.info("disabling replication")
             disable_repl_cmd = " ".join([
                 "{}/bin/dsreplication".format(self.node.ldap_base_folder),
                 "disable",
@@ -423,3 +424,4 @@ class LdapSetup(BaseSetup):
         stop_cmd = "{}/bin/stop-ds".format(self.node.ldap_base_folder)
         self.salt.cmd(self.node.id, "cmd.run", [stop_cmd])
         self.render_ox_ldap_props()
+        self.after_teardown()

@@ -228,3 +228,6 @@ class OxauthSetup(BaseSetup):
 
         self.change_cert_access("tomcat", "tomcat")
         return True
+
+    def teardown(self):
+        self.after_teardown()

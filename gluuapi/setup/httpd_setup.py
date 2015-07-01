@@ -112,3 +112,4 @@ class HttpdSetup(BaseSetup):
                                      template_dir=self.template_dir)
             setup_obj.delete_httpd_cert()
             setup_obj.remove_host_entries(self.node)
+        self.after_teardown()

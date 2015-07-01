@@ -55,11 +55,10 @@ class BaseSetup(object):
     def remove_build_dir(self):
         self.logger.info("removing temporary build "
                          "directory {}".format(self.build_dir))
-        shutil.rmtree(self.build_dir)
-
-    def before_setup(self):
-        """Callback executed before ``setup`` taking place.
-        """
+        try:
+            shutil.rmtree(self.build_dir)
+        except OSError:
+            pass
 
     def render_template(self, src, dest, ctx=None):
         ctx = ctx or {}
@@ -153,3 +152,14 @@ class BaseSetup(object):
     def get_template_path(self, path):
         template_path = os.path.join(self.template_dir, path)
         return template_path
+
+    def teardown(self):
+        """Teardown the node.
+        """
+
+    def after_teardown(self):
+        """After teardown callback. This method is supposed to be called
+        after calling ``teardown``.
+        """
+        # remove logs directory
+        self.remove_build_dir()

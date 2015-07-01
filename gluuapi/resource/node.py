@@ -39,6 +39,8 @@ from gluuapi.helper import OxtrustModelHelper
 from gluuapi.helper import HttpdModelHelper
 from gluuapi.setup import LdapSetup
 from gluuapi.setup import HttpdSetup
+from gluuapi.setup import OxauthSetup
+from gluuapi.setup import OxtrustSetup
 
 
 class Node(Resource):
@@ -109,26 +111,25 @@ class Node(Resource):
         if not node:
             return {"status": 404, "message": "Node not found"}, 404
 
-        cluster = db.get(node.cluster_id, "clusters")
-        provider = db.get(node.provider_id, "providers")
-
-        docker = DockerHelper(provider)
-        salt = SaltHelper()
-
         # remove node (``node.id`` may empty, hence we're using
         # unique ``node.name`` instead)
         db.delete_from_table("nodes", db.where("name") == node.name)
 
-        # # removes reference from cluster, if any
-        # cluster.unreserve_ip_addr(node.weave_ip)
-        # db.update(cluster.id, cluster, "clusters")
+        cluster = db.get(node.cluster_id, "clusters")
+        provider = db.get(node.provider_id, "providers")
 
         if node.type == "ldap":
             setup_obj = LdapSetup(node, cluster, template_dir=template_dir)
-            setup_obj.teardown()
         elif node.type == "httpd":
             setup_obj = HttpdSetup(node, cluster, template_dir=template_dir)
-            setup_obj.teardown()
+        elif node.type == "oxauth":  # pragma: no cover
+            setup_obj = OxauthSetup(node, cluster, template_dir=template_dir)
+        elif node.type == "oxtrust":  # pragma: no cover
+            setup_obj = OxtrustSetup(node, cluster, template_dir=template_dir)
+        setup_obj.teardown()
+
+        docker = DockerHelper(provider)
+        salt = SaltHelper()
 
         try:
             docker.remove_container(node.name)
@@ -137,7 +138,7 @@ class Node(Resource):
                                     "due to SSL connection errors")
         salt.unregister_minion(node.id)
 
-        #updating prometheus
+        # updating prometheus
         prometheus = PrometheusHelper(template_dir=template_dir)
         prometheus.update()
         return {}, 204

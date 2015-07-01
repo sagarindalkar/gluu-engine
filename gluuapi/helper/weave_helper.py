@@ -40,12 +40,15 @@ class WeaveHelper(object):
     @run_in_reactor
     def launch(self):
         self.prepare_minion()
+
         if self.provider.type == "master":
             self.launch_master()
-            time.sleep(5)
-            self.expose_network()
         else:
             self.launch_consumer()
+
+        # wait for weave to run before exposing its network
+        time.sleep(5)
+        self.expose_network()
 
     def prepare_minion(self, connect_delay=10, exec_delay=15):
         """Waits for minion to connect before doing any remote execution.

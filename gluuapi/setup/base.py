@@ -26,6 +26,9 @@ import os.path
 import shutil
 import tempfile
 
+from jinja2 import Environment
+from jinja2 import PackageLoader
+
 from gluuapi.database import db
 from gluuapi.log import create_file_logger
 from gluuapi.helper.salt_helper import SaltHelper
@@ -42,6 +45,7 @@ class BaseSetup(object):
         self.node = node
         self.cluster = cluster
         self.provider = db.get(node.provider_id, "providers")
+        self.jinja_env = Environment(loader=PackageLoader("gluuapi", "templates"))
 
     @abc.abstractmethod
     def setup(self):
@@ -163,3 +167,16 @@ class BaseSetup(object):
         """
         # remove logs directory
         self.remove_build_dir()
+
+    def render_jinja_template(self, src, dest, ctx=None):
+        ctx = ctx or {}
+        template = self.jinja_env.get_template(src)
+        rendered_content = template.render(**ctx)
+        file_basename = os.path.basename(src)
+        local = os.path.join(self.build_dir, file_basename)
+
+        with codecs.open(local, "w", encoding="utf-8") as fp:
+            fp.write(rendered_content)
+
+        self.logger.info("rendering {}".format(file_basename))
+        self.salt.copy_file(self.node.id, local, dest)

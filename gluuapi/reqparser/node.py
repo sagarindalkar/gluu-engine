@@ -57,6 +57,7 @@ class NodeReq(ma.Schema):
     def validate_provider(self, value):
         provider = db.get(value, "providers")
         self.context["provider"] = provider
+
         if not provider:
             raise ValidationError("invalid provider ID")
         if provider.type == "consumer":
@@ -68,15 +69,16 @@ class NodeReq(ma.Schema):
     @validates("node_type")
     def validate_node(self, value):
         cluster = self.context.get("cluster")
+        self.context["node_type"] = value
+
         if value == "ldap" and cluster is not None:
             max_num = cluster.max_allowed_ldap_nodes
             if len(cluster.get_ldap_objects()) >= max_num:
                 raise ValidationError("max. allowed LDAP nodes is exceeded")
-        self.context["node_type"] = value
 
     @post_load
     def finalize_data(self, data):
-        if data["node_type"] != "httpd":
+        if data.get("node_type") != "httpd":
             data.pop("oxauth_node_id", None)
             data.pop("oxtrust_node_id", None)
 

@@ -203,6 +203,13 @@ class BaseModelHelper(object):
 
         # mark node as FAILED
         self.node.state = STATE_FAILED
+
+        # if httpd node is FAILED, remove reference to oxAuth and oxTrust
+        # so we can use those 2 nodes for another httpd node
+        if self.node.type == "httpd":
+            self.node.oxauth_node_id = ""
+            self.node.oxtrust_node_id = ""
+
         db.update_to_table(
             "nodes",
             db.where("name") == self.node.name,

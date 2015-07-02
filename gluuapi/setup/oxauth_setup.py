@@ -99,8 +99,23 @@ class OxauthSetup(BaseSetup):
         self.salt.cmd(
             self.node.id,
             "cmd.run",
-            ["{}/bin/catalina.sh start".format(self.node.tomcat_home)],
+            ["export CATALINA_PID={0}/bin/catalina.pid && {0}/bin/catalina.sh start".format(self.node.tomcat_home)],
         )
+
+    def stop_tomcat(self):
+        self.logger.info("stopping tomcat")
+        self.salt.cmd(
+            self.node.id,
+            "cmd.run",
+            ["export CATALINA_PID={0}/bin/catalina.pid && {0}/bin/catalina.sh stop -force".format(self.node.tomcat_home)],
+        )
+
+    def restart_tomcat(self):
+        self.stop_tomcat()
+        # tomcat do force-shutdown within 5 seconds, hence we'll start
+        # tomcat within 5 seconds after tomcat is successfully stopped
+        time.sleep(10)
+        self.start_tomcat()
 
     def gen_keystore(self, suffix, keystore_fn, keystore_pw, in_key,
                      in_cert, user, group, hostname):

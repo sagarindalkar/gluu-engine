@@ -403,9 +403,37 @@ class LdapSetup(BaseSetup):
         """
         self.render_ox_ldap_props()
 
+        # modify oxIDPAuthentication entry when we have more LDAP nodes
+        # ldap_num = len(self.cluster.get_ldap_objects())
+        # if ldap_num > 1:
+        self.modify_oxidp_auth()
+
+        # # restart oxAuth so modification is picked up by oxAuth
+        # for oxauth in self.cluster.get_oxauth_objects():
+        #     setup_obj = OxauthSetup(
+        #         oxauth,
+        #         self.cluster,
+        #         logger=self.logger,
+        #         template_dir=self.template_dir,
+        #     )
+        #     setup_obj.restart_tomcat()
+
+        # # restart oxTrust so modification is picked up by oxTrust
+        # for oxtrust in self.cluster.get_oxtrust_objects():
+        #     setup_obj = OxtrustSetup(
+        #         oxtrust,
+        #         self.cluster,
+        #         logger=self.logger,
+        #         template_dir=self.template_dir,
+        #     )
+        #     setup_obj.restart_tomcat()
+
     def teardown(self):
+        self.modify_oxidp_auth()
+
         # stop the replication agreement
-        if len(self.cluster.get_ldap_objects()) > 0:
+        ldap_num = len(self.cluster.get_ldap_objects())
+        if ldap_num > 0:
             self.write_ldap_pw()
             self.logger.info("disabling replication")
             disable_repl_cmd = " ".join([
@@ -424,4 +452,54 @@ class LdapSetup(BaseSetup):
         stop_cmd = "{}/bin/stop-ds".format(self.node.ldap_base_folder)
         self.salt.cmd(self.node.id, "cmd.run", [stop_cmd])
         self.render_ox_ldap_props()
+
+        # # restart oxAuth so modification is picked up by oxAuth
+        # for oxauth in self.cluster.get_oxauth_objects():
+        #     setup_obj = OxauthSetup(
+        #         oxauth,
+        #         self.cluster,
+        #         logger=self.logger,
+        #         template_dir=self.template_dir,
+        #     )
+        #     setup_obj.restart_tomcat()
+
+        # # restart oxTrust so modification is picked up by oxTrust
+        # for oxtrust in self.cluster.get_oxtrust_objects():
+        #     setup_obj = OxtrustSetup(
+        #         oxtrust,
+        #         self.cluster,
+        #         logger=self.logger,
+        #         template_dir=self.template_dir,
+        #     )
+        #     setup_obj.restart_tomcat()
         self.after_teardown()
+
+    @property
+    def ldif_appliance_mod(self):
+        return "salt/opendj/ldif/appliance-mod.ldif"
+
+    def modify_oxidp_auth(self):
+        nodes = self.cluster.get_ldap_objects()
+        self.render_jinja_template(
+            self.ldif_appliance_mod,
+            "/opt/opendj/ldif/appliance-mod.ldif",
+            ctx={
+                "nodes": nodes,
+                "inumAppliance": self.cluster.inum_appliance,
+                "ldap_binddn": self.node.ldap_binddn,
+                "encoded_ox_ldap_pw": self.cluster.encoded_ox_ldap_pw,
+            },
+        )
+        self.write_ldap_pw()
+        ldapmod_cmd = " ".join([
+            "/opt/opendj/bin/ldapmodify",
+            "-f /opt/opendj/ldif/appliance-mod.ldif",
+            "-j {}".format(self.node.ldap_pass_fn),
+            # "-w {}".format(self.cluster.decrypted_admin_pw),
+            "-p {}".format(self.node.ldaps_port),
+            "-D '{}'".format(self.node.ldap_binddn),
+            "-Z -X",
+        ])
+        self.logger.info("modifying oxIDPAuthentication entry")
+        self.salt.cmd(self.node.id, "cmd.run", [ldapmod_cmd])
+        self.delete_ldap_pw()

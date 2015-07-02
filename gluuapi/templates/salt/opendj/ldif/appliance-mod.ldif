@@ -1,0 +1,21 @@
+dn: inum={{ inumAppliance }},ou=appliances,o=gluu
+changetype: modify
+replace: oxIDPAuthentication
+oxIDPAuthentication: {"type": "auth",
+  "name": null,
+  "level": 0,
+  "priority": 1,
+  "enabled": true,
+  "version": 0,
+  "config": "{\"configId\": \"auth_ldap_server\",
+            \"servers\": [{% for node in nodes %}{\"value\":\"{{ node.weave_ip }}:{{ node.ldaps_port }}\"}{% if loop.index != nodes|length %},{% endif %}{% endfor %}],
+            \"maxConnections\": 1000,
+            \"bindDN\": \"{{ ldap_binddn }}\",
+            \"bindPassword\": \"{{ encoded_ox_ldap_pw }}\",
+            \"useSSL\": \"true\",
+            \"baseDNs\": [{\"value\":\"o=gluu\"}],
+            \"primaryKey\": \"uid\",
+            \"localPrimaryKey\": \"uid\",
+            \"useAnonymousBind\": false,
+            \"enabled\": true}"
+  }

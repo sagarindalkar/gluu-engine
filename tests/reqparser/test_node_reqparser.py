@@ -4,7 +4,6 @@ from marshmallow import ValidationError
 
 def test_ip_addr_available(cluster, db):
     from gluuapi.reqparser import NodeReq
-    from marshmallow import ValidationError
     from netaddr import IPNetwork
 
     # set last_fetched_addr to use last IPNetwork.iter_hosts element

@@ -208,6 +208,20 @@ status of the cluster node is available.""",
                 "dataType": "integer",
                 "paramType": "form",
             },
+            {
+                "name": "oxauth_node_id",
+                "description": "ID of oxauth node (required when deploying httpd node).",
+                "required": False,
+                "dataType": "string",
+                "paramType": "form",
+            },
+            {
+                "name": "oxtrust_node_id",
+                "description": "ID of oxtrust node (required when deploying httpd node).",
+                "required": False,
+                "dataType": "string",
+                "paramType": "form",
+            },
         ],
         responseMessages=[
             {
@@ -255,6 +269,11 @@ status of the cluster node is available.""",
 
         helper = helper_class(cluster, provider, salt_master_ipaddr,
                               template_dir, log_dir)
+
+        if helper.node.type == "httpd":
+            helper.node.oxauth_node_id = params["oxauth_node_id"]
+            helper.node.oxtrust_node_id = params["oxtrust_node_id"]
+
         helper.setup(params["connect_delay"], params["exec_delay"])
 
         headers = {

@@ -23,6 +23,7 @@ from flask_restful.fields import String
 from flask_restful_swagger import swagger
 
 from gluuapi.model.base import BaseModel
+from gluuapi.database import db
 
 
 @swagger.model
@@ -36,6 +37,8 @@ class HttpdNode(BaseModel):
         "name": String,
         "type": String,
         "state": String,
+        "oxauth_node_id": String,
+        "oxtrust_node_id": String,
     }
 
     def __init__(self):
@@ -54,3 +57,11 @@ class HttpdNode(BaseModel):
         self.httpd_key_orig = "/etc/certs/httpd.key.orig"
         self.httpd_csr = "/etc/certs/httpd.csr"
         self.httpd_crt = "/etc/certs/httpd.crt"
+        self.oxauth_node_id = ""
+        self.oxtrust_node_id = ""
+
+    def get_oxauth_object(self):
+        return db.get(self.oxauth_node_id, "nodes")
+
+    def get_oxtrust_object(self):
+        return db.get(self.oxtrust_node_id, "nodes")

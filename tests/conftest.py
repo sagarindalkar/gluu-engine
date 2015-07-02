@@ -89,7 +89,7 @@ def provider():
 
 
 @pytest.fixture()
-def httpd_node(cluster, provider):
+def httpd_node(cluster, provider, oxauth_node, oxtrust_node):
     from gluuapi.model import HttpdNode
 
     node = HttpdNode()
@@ -97,6 +97,8 @@ def httpd_node(cluster, provider):
     node.cluster_id = cluster.id
     node.provider_id = provider.id
     node.name = "httpd-node"
+    node.oxauth_node_id = oxauth_node.id
+    node.oxtrust_node_id = oxtrust_node.id
     return node
 
 

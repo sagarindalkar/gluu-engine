@@ -35,13 +35,8 @@ class HttpdSetup(BaseSetup):
         file_basename = os.path.basename(src)
         dest = os.path.join("/etc/apache2/sites-available", file_basename)
 
-        oxauth_ip = ""
-        for oxauth in self.cluster.get_oxauth_objects():
-            oxauth_ip = oxauth.weave_ip
-
-        oxtrust_ip = ""
-        for oxtrust in self.cluster.get_oxtrust_objects():
-            oxtrust_ip = oxtrust.weave_ip
+        oxauth_ip = self.node.get_oxauth_object().weave_ip
+        oxtrust_ip = self.node.get_oxtrust_object().weave_ip
 
         ctx = {
             "hostname": hostname,
@@ -76,7 +71,8 @@ class HttpdSetup(BaseSetup):
         return True
 
     def after_setup(self):
-        for oxtrust in self.cluster.get_oxtrust_objects():
+        oxtrust = self.node.get_oxtrust_object()
+        if oxtrust:
             setup_obj = OxtrustSetup(oxtrust, self.cluster, logger=self.logger,
                                      template_dir=self.template_dir)
             setup_obj.add_host_entries(self.node)
@@ -107,7 +103,8 @@ class HttpdSetup(BaseSetup):
                        "--to-destination {}:443".format(self.node.weave_ip)
         self.salt.cmd(self.provider.hostname, "cmd.run", [iptables_cmd])
 
-        for oxtrust in self.cluster.get_oxtrust_objects():
+        oxtrust = self.node.get_oxtrust_object()
+        if oxtrust:
             setup_obj = OxtrustSetup(oxtrust, self.cluster,
                                      template_dir=self.template_dir)
             setup_obj.delete_httpd_cert()

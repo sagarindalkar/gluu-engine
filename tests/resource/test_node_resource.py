@@ -198,22 +198,28 @@ def test_node_post_max_ldap(app, db, cluster, provider):
     ("httpd", "HttpdModelHelper"),
 ])
 def test_node_post(monkeypatch, app, db, cluster, provider,
-                   node_type, helper_class):
+                   node_type, helper_class, oxauth_node, oxtrust_node):
     db.persist(cluster, "clusters")
     db.persist(provider, "providers")
+    oxauth_node.state = "SUCCESS"
+    db.persist(oxauth_node, "nodes")
+    oxtrust_node.state = "SUCCESS"
+    db.persist(oxtrust_node, "nodes")
 
     monkeypatch.setattr(
         "gluuapi.helper.{}.setup".format(helper_class),
         lambda cls, connect_delay, exec_delay: None,
     )
-    resp = app.test_client().post(
-        "/nodes",
-        data={
-            "cluster_id": cluster.id,
-            "provider_id": provider.id,
-            "node_type": node_type,
-        },
-    )
+    data = {
+        "cluster_id": cluster.id,
+        "provider_id": provider.id,
+        "node_type": node_type,
+    }
+    if node_type == "httpd":
+        data["oxauth_node_id"] = oxauth_node.id
+        data["oxtrust_node_id"] = oxtrust_node.id
+
+    resp = app.test_client().post("/nodes", data=data)
     assert resp.status_code == 202
 
 

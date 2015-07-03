@@ -41,15 +41,16 @@ class NodeReq(ma.Schema):
     @validates("cluster_id")
     def validate_cluster(self, value):
         cluster = db.get(value, "clusters")
+        self.context["cluster"] = cluster
         if not cluster:
             raise ValidationError("invalid cluster ID")
         if not cluster.ip_addr_available:
             raise ValidationError("cluster is running out of weave IP")
-        self.context["cluster"] = cluster
 
     @validates("provider_id")
     def validate_provider(self, value):
         provider = db.get(value, "providers")
+        self.context["provider"] = provider
         if not provider:
             raise ValidationError("invalid provider ID")
         if provider.type == "consumer":
@@ -57,12 +58,11 @@ class NodeReq(ma.Schema):
             if license and license.expired:
                 raise ValidationError("cannot deploy node to "
                                       "provider with expired license")
-        self.context["provider"] = provider
 
     @validates("node_type")
     def validate_node(self, value):
-        if value == "ldap":
-            cluster = self.context["cluster"]
+        cluster = self.context.get("cluster")
+        if value == "ldap" and cluster is not None:
             max_num = cluster.max_allowed_ldap_nodes
             if len(cluster.get_ldap_objects()) >= max_num:
                 raise ValidationError("max. allowed LDAP nodes is exceeded")

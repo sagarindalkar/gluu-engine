@@ -27,9 +27,9 @@ from flask_restful_swagger import swagger
 
 from gluuapi.database import db
 from gluuapi.model import License
-from gluuapi.model import LicenseCredential
+from gluuapi.model import LicenseKey
 from gluuapi.reqparser import LicenseReq
-from gluuapi.reqparser import CredentialReq
+from gluuapi.reqparser import LicenseKeyReq
 from gluuapi.utils import retrieve_signed_license
 from gluuapi.utils import decode_signed_license
 
@@ -101,15 +101,8 @@ class LicenseListResource(Resource):
         nickname="postlicense",
         parameters=[
             {
-                "name": "code",
-                "description": "License code (licenseId) retrieved from https://license.gluu.org",
-                "required": True,
-                "dataType": "string",
-                "paramType": "form",
-            },
-            {
-                "name": "credential_id",
-                "description": "Credential ID to use (useful for generating metadata)",
+                "name": "license_key_id",
+                "description": "license key ID to use (useful for generating metadata)",
                 "required": True,
                 "dataType": "string",
                 "paramType": "form",
@@ -145,11 +138,14 @@ class LicenseListResource(Resource):
             }, 400
 
         params = data["params"]
-        credential = data["context"]["credential"]
+        license_key = data["context"]["license_key"]
 
-        resp = retrieve_signed_license(params["code"])
+        resp = retrieve_signed_license(license_key.code)
         if not resp.ok:
-            current_app.logger.warn(resp.text)
+            current_app.logger.warn(
+                "unable to retrieve license from https://license.gluu.org; "
+                "code={} reason={}".format(resp.status_code, resp.text)
+            )
             return {
                 "status": 422,
                 "message": "unable to retrieve license",
@@ -160,9 +156,9 @@ class LicenseListResource(Resource):
         try:
             decoded_license = decode_signed_license(
                 params["signed_license"],
-                credential.decrypted_public_key,
-                credential.decrypted_public_password,
-                credential.decrypted_license_password,
+                license_key.decrypted_public_key,
+                license_key.decrypted_public_password,
+                license_key.decrypted_license_password,
             )
         except ValueError as exc:
             current_app.logger.warn("unable to generate metadata; "
@@ -200,21 +196,28 @@ class LicenseListResource(Resource):
         return [format_license_resp(license) for license in licenses]
 
 
-def format_credential_resp(obj):
+def format_license_key_resp(obj):
     resp = obj.as_dict()
     resp["public_key"] = obj.decrypted_public_key
     resp["public_password"] = obj.decrypted_public_password
     resp["license_password"] = obj.decrypted_license_password
     return resp
 
-class LicenseCredentialListResource(Resource):
+class LicenseKeyListResource(Resource):
     @swagger.operation(
         notes="",
-        nickname="postlicensecred",
+        nickname="postlicensekey",
         parameters=[
             {
                 "name": "name",
                 "description": "Decriptive name",
+                "required": True,
+                "dataType": "string",
+                "paramType": "form",
+            },
+            {
+                "name": "code",
+                "description": "License code retrieved from license server",
                 "required": True,
                 "dataType": "string",
                 "paramType": "form",
@@ -251,88 +254,105 @@ class LicenseCredentialListResource(Resource):
                 "message": "Bad Request",
             },
             {
+                "code": 403,
+                "message": "Forbidden",
+            },
+            {
                 "code": 500,
                 "message": "Internal Server Error",
             }
         ],
-        summary="Create license credential",
+        summary="Create license key",
     )
     def post(self):
-        data, errors = CredentialReq().load(request.form)
+        if len(db.all("license_keys")):
+            return {
+                "status": 403,
+                "message": "cannot add more license key",
+            }, 403
+
+        data, errors = LicenseKeyReq().load(request.form)
         if errors:
             return {
                 "status": 400,
                 "message": "Invalid data",
                 "params": errors,
             }, 400
-        credential = LicenseCredential(fields=data)
-        db.persist(credential, "license_credentials")
+        license_key = LicenseKey(fields=data)
+        db.persist(license_key, "license_keys")
 
         headers = {
-            "Location": url_for("licensecred", credential_id=credential.id),
+            "Location": url_for("licensekey", license_key_id=license_key.id),
         }
-        return format_credential_resp(credential), 201, headers
+        return format_license_key_resp(license_key), 201, headers
 
     @swagger.operation(
-        notes='Gives license credentials info/state',
-        nickname='listlicensecred',
+        notes='Gives license keys info/state',
+        nickname='listlicensekey',
         parameters=[],
         responseMessages=[
             {
                 "code": 200,
-                "message": "License credential information",
+                "message": "License key information",
             },
             {
                 "code": 404,
-                "message": "License credential not found",
+                "message": "License key not found",
             },
             {
                 "code": 500,
                 "message": "Internal Server Error"
             },
         ],
-        summary="Get a list of existing license credentials",
+        summary="Get a list of existing license keys",
     )
     def get(self):
-        credentials = db.all("license_credentials")
-        return [format_credential_resp(credential)
-                for credential in credentials]
+        license_keys = db.all("license_keys")
+        return [format_license_key_resp(license_key)
+                for license_key in license_keys]
 
 
-class LicenseCredentialResource(Resource):
+class LicenseKeyResource(Resource):
     @swagger.operation(
-        notes='Gives license credential info/state',
-        nickname='licensecred',
+        notes='Gives license key info/state',
+        nickname='licensekey',
         parameters=[],
         responseMessages=[
             {
                 "code": 200,
-                "message": "License credential information",
+                "message": "License license_key information",
             },
             {
                 "code": 404,
-                "message": "License credential not found",
+                "message": "License key not found",
             },
             {
                 "code": 500,
                 "message": "Internal Server Error"
             },
         ],
-        summary="Get a list of existing license credential",
+        summary="Get a list of existing license key",
     )
-    def get(self, credential_id):
-        credential = db.get(credential_id, "license_credentials")
-        if not credential:
-            return {"status": 404, "message": "Credential not found"}, 404
-        return format_credential_resp(credential)
+    def get(self, license_key_id):
+        license_key = db.get(license_key_id, "license_keys")
+        if not license_key:
+            return {"status": 404, "message": "license key not found"}, 404
+        return format_license_key_resp(license_key)
 
     @swagger.operation(
         notes="",
-        nickname="putlicensecred",
+        nickname="putlicensekey",
         parameters=[
             {
                 "name": "name",
                 "description": "Decriptive name",
+                "required": True,
+                "dataType": "string",
+                "paramType": "form",
+            },
+            {
+                "name": "code",
+                "description": "License code retrieved from license server",
                 "required": True,
                 "dataType": "string",
                 "paramType": "form",
@@ -373,31 +393,30 @@ class LicenseCredentialResource(Resource):
                 "message": "Internal Server Error",
             }
         ],
-        summary="Update license credential",
+        summary="Update license key",
     )
-    def put(self, credential_id):
-        credential = db.get(credential_id, "license_credentials")
-        if not credential:
-            return {"status": 404, "message": "Credential not found"}, 404
+    def put(self, license_key_id):
+        license_key = db.get(license_key_id, "license_keys")
+        if not license_key:
+            return {"status": 404, "message": "license key not found"}, 404
 
-        # params = license_cred_req.parse_args()
-        data, errors = CredentialReq().load(request.form)
+        data, errors = LicenseKeyReq().load(request.form)
         if errors:
             return {
                 "status": 400,
                 "message": "Invalid data",
                 "params": errors,
             }, 400
-        credential.populate(data)
-        db.update(credential_id, credential, "license_credentials")
+        license_key.populate(data)
+        db.update(license_key_id, license_key, "license_keys")
 
-        for license in credential.get_license_objects():
+        for license in license_key.get_license_objects():
             try:
                 decoded_license = decode_signed_license(
                     license.signed_license,
-                    credential.decrypted_public_key,
-                    credential.decrypted_public_password,
-                    credential.decrypted_license_password,
+                    license_key.decrypted_public_key,
+                    license_key.decrypted_public_password,
+                    license_key.decrypted_license_password,
                 )
             except ValueError as exc:
                 current_app.logger.warn("unable to generate metadata; "
@@ -409,31 +428,31 @@ class LicenseCredentialResource(Resource):
                 license.metadata = decoded_license["metadata"]
             finally:
                 db.update(license.id, license, "licenses")
-        return format_credential_resp(credential)
+        return format_license_key_resp(license_key)
 
     @swagger.operation(
-        notes="Delete a license credential",
-        nickname="dellicensecred",
+        notes="Delete a license key",
+        nickname="dellicensekey",
         responseMessages=[
             {
                 "code": 204,
-                "message": "License credential deleted",
+                "message": "License key deleted",
             },
             {
                 "code": 404,
-                "message": "License credential not found",
+                "message": "License key not found",
             },
             {
                 "code": 500,
                 "message": "Internal Server Error",
             },
         ],
-        summary='Delete existing license credential'
+        summary='Delete existing license key'
     )
-    def delete(self, credential_id):
-        credential = db.get(credential_id, "license_credentials")
-        if not credential:
-            return {"status": 404, "message": "License credential not found"}, 404
+    def delete(self, license_key_id):
+        license_key = db.get(license_key_id, "license_keys")
+        if not license_key:
+            return {"status": 404, "message": "License key not found"}, 404
 
-        db.delete(credential_id, "license_credentials")
+        db.delete(license_key_id, "license_keys")
         return {}, 204

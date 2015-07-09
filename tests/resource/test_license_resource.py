@@ -14,13 +14,12 @@ def test_license_list_get_empty(app):
     assert json.loads(resp.data) == []
 
 
-def test_license_post(app, oxd_resp_ok, validator_ok, license_credential, db):
-    db.persist(license_credential, "license_credentials")
+def test_license_post(app, oxd_resp_ok, validator_ok, license_key, db):
+    db.persist(license_key, "license_keys")
     resp = app.test_client().post(
         "/licenses",
         data={
-            "code": "abc",
-            "credential_id": license_credential.id,
+            "license_key_id": license_key.id,
         },
     )
     assert resp.status_code == 201
@@ -30,30 +29,28 @@ def test_license_post_invalid_params(app):
     resp = app.test_client().post(
         "/licenses",
         data={
-            "code": "abc",
-            "credential_id": "abc",
+            "license_key_id": "abc",
         },
     )
     assert resp.status_code == 400
 
 
-def test_license_post_notretrieved(app, oxd_resp_err, db, license_credential):
-    db.persist(license_credential, "license_credentials")
+def test_license_post_notretrieved(app, oxd_resp_err, db, license_key):
+    db.persist(license_key, "license_keys")
     resp = app.test_client().post(
         "/licenses",
         data={
-            "code": "abc",
-            "credential_id": license_credential.id,
+            "license_key_id": license_key.id,
         },
     )
     assert resp.status_code == 422
 
 
-def test_license_post_invalid_creds(app, db, license_credential, oxd_resp_ok, validator_err):
-    db.persist(license_credential, "license_credentials")
+def test_license_post_invalid_creds(app, db, license_key, oxd_resp_ok, validator_err):
+    db.persist(license_key, "license_keys")
     resp = app.test_client().post(
         "/licenses",
-        data={"code": "abc", "credential_id": license_credential.id},
+        data={"license_key_id": license_key.id},
     )
     assert resp.status_code == 201
 
@@ -83,11 +80,33 @@ def test_license_delete(app, db, license):
     assert resp.status_code == 204
 
 
-def test_credential_post(app):
+def test_license_key_post_multiple(app, db, license_key):
+    db.persist(license_key, "license_keys")
     resp = app.test_client().post(
-        "/license_credentials",
+        "/license_keys",
+        data={"name": "test"},
+    )
+    assert resp.status_code == 403
+
+
+def test_license_key_post_invalid_params(app, db):
+    resp = app.test_client().post(
+        "/license_keys",
         data={
             "name": "test",
+            "code": "abc",
+            "public_key": "pubkey",
+        },
+    )
+    assert resp.status_code == 400
+
+
+def test_license_key_post(app):
+    resp = app.test_client().post(
+        "/license_keys",
+        data={
+            "name": "test",
+            "code": "abc",
             "public_key": "pubkey",
             "public_password": "pubpasswd",
             "license_password": "licensepasswd",
@@ -96,47 +115,37 @@ def test_credential_post(app):
     assert resp.status_code == 201
 
 
-def test_credential_post_invalid_params(app):
-    resp = app.test_client().post(
-        "/license_credentials",
-        data={
-            "name": "test",
-            "public_key": "pubkey",
-        },
-    )
-    assert resp.status_code == 400
-
-
-def test_credential_get_list(app, db, license_credential):
-    db.persist(license_credential, "license_credentials")
-    resp = app.test_client().get("/license_credentials")
+def test_license_key_get_list(app, db, license_key):
+    db.persist(license_key, "license_keys")
+    resp = app.test_client().get("/license_keys")
     assert resp.status_code == 200
     assert json.loads(resp.data) != []
 
 
-def test_credential_get_notfound(app):
-    resp = app.test_client().get("/license_credentials/abc")
+def test_license_key_get_notfound(app):
+    resp = app.test_client().get("/license_keys/abc")
     assert resp.status_code == 404
 
 
-def test_credential_get(app, db, license_credential):
-    db.persist(license_credential, "license_credentials")
-    resp = app.test_client().get("/license_credentials/{}".format(license_credential.id))
+def test_license_key_get(app, db, license_key):
+    db.persist(license_key, "license_keys")
+    resp = app.test_client().get("/license_keys/{}".format(license_key.id))
     assert resp.status_code == 200
 
 
-def test_credential_put_notfound(app):
-    resp = app.test_client().put("/license_credentials/abc")
+def test_license_key_put_notfound(app):
+    resp = app.test_client().put("/license_keys/abc")
     assert resp.status_code == 404
 
 
-def test_credential_put(app, db, license_credential, license, validator_ok):
-    db.persist(license_credential, "license_credentials")
+def test_license_key_put(app, db, license_key, license, validator_ok):
+    db.persist(license_key, "license_keys")
     db.persist(license, "licenses")
     resp = app.test_client().put(
-        "/license_credentials/{}".format(license_credential.id),
+        "/license_keys/{}".format(license_key.id),
         data={
             "name": "test",
+            "code": "abc",
             "public_key": "pubkey",
             "public_password": "pubpasswd",
             "license_password": "licensepasswd",
@@ -145,13 +154,14 @@ def test_credential_put(app, db, license_credential, license, validator_ok):
     assert resp.status_code == 200
 
 
-def test_credential_put_incorrect_creds(app, db, license_credential, license, validator_err):
-    db.persist(license_credential, "license_credentials")
+def test_license_key_put_incorrect_creds(app, db, license_key, license, validator_err):
+    db.persist(license_key, "license_keys")
     db.persist(license, "licenses")
     resp = app.test_client().put(
-        "/license_credentials/{}".format(license_credential.id),
+        "/license_keys/{}".format(license_key.id),
         data={
             "name": "test",
+            "code": "abc",
             "public_key": "pubkey",
             "public_password": "pubpasswd",
             "license_password": "licensepasswd",
@@ -160,25 +170,26 @@ def test_credential_put_incorrect_creds(app, db, license_credential, license, va
     assert resp.status_code == 200
 
 
-def test_credential_put_invalid_params(app, db, license_credential, license, validator_ok):
-    db.persist(license_credential, "license_credentials")
+def test_license_key_put_invalid_params(app, db, license_key, license, validator_ok):
+    db.persist(license_key, "license_keys")
     db.persist(license, "licenses")
     resp = app.test_client().put(
-        "/license_credentials/{}".format(license_credential.id),
+        "/license_keys/{}".format(license_key.id),
         data={
             "name": "test",
             "public_key": "pubkey",
+            "code": "abc",
         },
     )
     assert resp.status_code == 400
 
 
-def test_credential_delete_notfound(app):
-    resp = app.test_client().delete("/license_credentials/abc")
+def test_license_key_delete_notfound(app):
+    resp = app.test_client().delete("/license_keys/abc")
     assert resp.status_code == 404
 
 
-def test_credential_delete(app, db, license_credential):
-    db.persist(license_credential, "license_credentials")
-    resp = app.test_client().delete("/license_credentials/{}".format(license_credential.id))
+def test_license_key_delete(app, db, license_key):
+    db.persist(license_key, "license_keys")
+    resp = app.test_client().delete("/license_keys/{}".format(license_key.id))
     assert resp.status_code == 204

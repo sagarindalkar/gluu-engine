@@ -26,10 +26,7 @@ def db(request, app):
     db.init_app(app)
 
     def teardown():
-        try:
-            os.unlink(app.config["DATABASE_URI"])
-        except OSError:
-            pass
+        os.unlink(app.config["DATABASE_URI"])
 
     request.addfinalizer(teardown)
     return db
@@ -104,14 +101,13 @@ def httpd_node(cluster, provider):
 
 
 @pytest.fixture()
-def license(license_credential):
+def license(license_key):
     from gluuapi.model import License
 
     license = License({
-        "code": "code_abc",
         "signed_license": "signed_license_abc",
         "billing_email": "admin@example.com",
-        "credential_id": license_credential.id,
+        "license_key_id": license_key.id,
     })
     return license
 
@@ -130,16 +126,17 @@ def patched_sleep(monkeypatch):
 
 
 @pytest.fixture()
-def license_credential():
-    from gluuapi.model import LicenseCredential
+def license_key():
+    from gluuapi.model import LicenseKey
 
-    cred = LicenseCredential({
+    key = LicenseKey({
         "name": "abc",
+        "code": "abc",
         "public_key": "pub_key",
         "public_password": "pub_password",
         "license_password": "license_password"
     })
-    return cred
+    return key
 
 
 @pytest.fixture
@@ -147,6 +144,7 @@ def oxd_resp_ok(monkeypatch):
     class Response(object):
         ok = True
         text = ""
+        status_code = 200
 
         def json(self):
             return {"license": "xyz"}
@@ -158,6 +156,7 @@ def oxd_resp_err(monkeypatch):
     class Response(object):
         ok = False
         text = ""
+        status_code = 400
 
         def json(self):
             return {"license": None}

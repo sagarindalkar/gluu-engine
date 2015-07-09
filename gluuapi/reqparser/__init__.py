@@ -24,4 +24,4 @@ from .node import NodeReq  # noqa
 from .provider import ProviderReq  # noqa
 from .provider import EditProviderReq  # noqa
 from .license import LicenseReq  # noqa
-from .license import CredentialReq  # noqa
+from .license import LicenseKeyReq  # noqa

@@ -73,8 +73,13 @@ class LicenseExpirationTask(object):
                 self.logger.info("trying to retrieve new license for "
                                  "provider {}".format(provider.id))
 
+                try:
+                    code = license.get_license_key().code
+                except AttributeError:
+                    code = ""
+
                 new_license = self.get_new_license(
-                    license.code, license.credential_id,
+                    code, license.license_key_id,
                 )
                 if new_license and not new_license.expired:
                     # only update provider when new license has correct metadata
@@ -88,7 +93,7 @@ class LicenseExpirationTask(object):
                 # disable oxAuth nodes
                 self.disable_oxauth_nodes(provider)
 
-    def get_new_license(self, code, credential_id):
+    def get_new_license(self, code, license_key_id):
         resp = retrieve_signed_license(code)
         if not resp.ok:
             self.logger.warn("unable to retrieve new license; "
@@ -99,12 +104,12 @@ class LicenseExpirationTask(object):
         self.logger.info("new license has been retrieved")
         params = {
             "signed_license": resp.json()["license"],
-            "credential_id": credential_id,
+            "license_key_id": license_key_id,
             "code": code,
         }
 
         license = License(params)
-        credential = db.get(license.credential_id, "license_credentials")
+        credential = db.get(license.license_key_id, "license_keys")
 
         try:
             decoded_license = decode_signed_license(

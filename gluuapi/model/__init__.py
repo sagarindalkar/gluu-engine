@@ -27,7 +27,7 @@ from .oxauth_node import OxauthNode  # noqa
 from .oxtrust_node import OxtrustNode  # noqa
 from .httpd_node import HttpdNode  # noqa
 from .license import License  # noqa
-from .license import LicenseCredential  # noqa
+from .license import LicenseKey  # noqa
 from .base import STATE_IN_PROGRESS  # noqa
 from .base import STATE_FAILED  # noqa
 from .base import STATE_SUCCESS  # noqa

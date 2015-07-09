@@ -30,15 +30,15 @@ from gluuapi.extensions import ma
 
 
 class LicenseReq(ma.Schema):
-    code = ma.Str(required=True)
-    credential_id = ma.Str(required=True)
+    license_key_id = ma.Str(required=True)
 
-    @validates("credential_id")
+    @validates("license_key_id")
     def validate_credential_id(self, value):
-        credential = db.get(value, "license_credentials")
-        if not credential:
-            raise ValidationError("invalid credential ID")
-        self.context["credential"] = credential
+        license_key = db.get(value, "license_keys")
+        self.context["license_key"] = license_key
+
+        if not license_key:
+            raise ValidationError("invalid license key")
 
     @post_load
     def finalize_data(self, data):
@@ -47,8 +47,9 @@ class LicenseReq(ma.Schema):
         return out
 
 
-class CredentialReq(ma.Schema):
+class LicenseKeyReq(ma.Schema):
     name = ma.Str(required=True)
+    code = ma.Str(required=True)
     public_key = ma.Str(required=True)
     public_password = ma.Str(required=True)
     license_password = ma.Str(required=True)
@@ -58,5 +59,5 @@ class CredentialReq(ma.Schema):
         # public key from license server is not URL-safe
         # client like ``curl`` will interpret ``+`` as whitespace
         # hence we're converting whitespace to ``+``
-        data["public_key"] = quote_plus(data["public_key"], safe="/+=")
+        data["public_key"] = quote_plus(data.get("public_key", ""), safe="/+=")
         return data

@@ -40,7 +40,7 @@ class License(BaseModel):
         "id": String,
         "code": String,
         # "billing_email": String,
-        "credential_id": String,
+        "license_key_id": String,
         "valid": Boolean,
         "metadata": Nested,
     }
@@ -72,18 +72,29 @@ class License(BaseModel):
     def populate(self, fields=None):
         fields = fields or {}
 
-        self.code = fields.get("code", "")
-        self.billing_email = fields.get("billing_email", "")
+        # self.code = fields.get("code", "")
+        # self.billing_email = fields.get("billing_email", "")
         self.signed_license = fields.get("signed_license", "")
-        self.credential_id = fields.get("credential_id", "")
+        self.license_key_id = fields.get("license_key_id", "")
         self.valid = fields.get("valid", False)
         self.metadata = fields.get("metadata", {})
 
+    def get_license_key(self):
+        try:
+            license_key = db.search_from_table(
+                "license_keys",
+                db.where("id") == self.license_key_id,
+            )[0]
+        except IndexError:
+            license_key = None
+        return license_key
 
-class LicenseCredential(BaseModel):
+
+class LicenseKey(BaseModel):
     resource_fields = {
         "id": String,
         "name": String,
+        "code": String,
     }
 
     def __init__(self, fields=None):
@@ -95,6 +106,7 @@ class LicenseCredential(BaseModel):
         fields = fields or {}
 
         self.name = fields.get("name", "")
+        self.code = fields.get("code", "")
 
         self.public_key = encrypt_text(
             fields.get("public_key", ""),
@@ -124,5 +136,5 @@ class LicenseCredential(BaseModel):
         return decrypt_text(self.license_password, self.passkey)
 
     def get_license_objects(self):
-        condition = db.where("credential_id") == self.id
+        condition = db.where("license_key_id") == self.id
         return db.search_from_table("licenses", condition)

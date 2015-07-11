@@ -3,6 +3,24 @@ Changelog
 
 Here you can see the full list of changes between each gluu-flask release.
 
+Version 0.2.0
+-------------
+
+Released on July 12th, 2015.
+
+* Added License Key API.
+* Added License API.
+* Change the endpoint for Node API from `/node` to `/nodes`.
+* Change the endpoint for Cluster API from `/cluster` to `/clusters`.
+* Change the endpoint for Provider API from `/provider` to `/providers`.
+* Added `ssl_key`, `ssl_cert`, and `ca_cert` parameters in Provider API to support TLS.
+* Enable encryption in Weave.
+* Docker daemon is protected by TLS.
+* Added support for Docker 1.7.
+* Added license expiration monitoring.
+* Weave is launched and exposed after registering provider.
+* Added node state to track the progress of deployment.
+
 Version 0.1.0
 -------------
 

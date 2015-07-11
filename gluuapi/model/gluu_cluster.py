@@ -19,13 +19,12 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-import itertools
 import uuid
 
 from flask_restful_swagger import swagger
 from flask_restful.fields import String
 from netaddr import IPNetwork
-from netaddr import IPSet
+from netaddr import IPAddress
 
 from gluuapi.database import db
 from gluuapi.model.base import BaseModel
@@ -116,6 +115,9 @@ class GluuCluster(BaseModel):
         self.weave_ip_network = fields.get("weave_ip_network", "10.2.1.0/24")
         self.reserved_ip_addrs = []
 
+        # a pointer to last fetched address
+        self.last_fetched_addr = ""
+
     @property
     def decrypted_admin_pw(self):
         return decrypt_text(self.admin_pw, self.passkey)
@@ -159,53 +161,36 @@ class GluuCluster(BaseModel):
     @property
     def exposed_weave_ip(self):
         pool = IPNetwork(self.weave_ip_network)
-        # get the last element of host IP address
-        addr = list(itertools.islice(pool.iter_hosts(), pool.size - 3, pool.size))[0]
+        # as the last element of pool is a broadcast address, we cannot use it;
+        # hence we fetch the last element before broadcast address
+        addr = pool[-2]
         return str(addr), pool.prefixlen
 
     def reserve_ip_addr(self):
-        """Picks first available IP address from weave network.
+        """Picks available IP address from weave network.
 
-        If there's no available IP address anymore, ``IndexError``
-        will be raised. To prevent this error, catch the exception
-        or checks the value ``GluuCluster.ip_addr_available`` first
-        before trying to call this method.
-
-        :returns: A 2-elements tuple consists of IP address and network prefix,
-                  e.g. ``("10.10.10.1", 24)``.
+        :returns: A 2-elements tuple consists of IP address and CIDR,
+                  e.g. ``("10.10.10.1", 24)``. If there's no available
+                  IP address anymore, this returns ``(None, 24)``.
         """
         # represents a pool of IP addresses
         pool = IPNetwork(self.weave_ip_network)
 
-        # a generator holds possible IP addresses range, excluding exposed weave IP
-        ip_range = IPSet(pool.iter_hosts()) ^ IPSet(self.reserved_ip_addrs) ^ IPSet([self.exposed_weave_ip[0]])
+        if not self.last_fetched_addr:
+            # import from reserved_ip_addrs for backward-compat
+            try:
+                self.last_fetched_addr = self.reserved_ip_addrs[-1]
+            except IndexError:
+                pass
 
-        # retrieves first IP address from ``ip_range`` generator
-        ip_addr = list(itertools.islice(ip_range, 1))[0]
+        if self.last_fetched_addr:
+            addr = str(IPAddress(self.last_fetched_addr) + 1)
+        else:
+            # skips ``pool.network`` address
+            addr = str(pool[1])
 
-        # register the IP address so it will be excluded
-        # from possible IP range in subsequent requests
-        self.reserved_ip_addrs.append(str(ip_addr))
-
-        # weave IP address for container expects a traditional CIDR,
-        # e.g. 10.10.10.1/24, hence we return the actual IP and
-        # its prefix length
-        return str(ip_addr), pool.prefixlen
-
-    def unreserve_ip_addr(self, addr):
-        try:
-            self.reserved_ip_addrs.remove(addr)
-        except ValueError:
-            # we don't care about missing element
-            pass
-
-    @property
-    def ip_addr_available(self):
-        """Checks whether there's available IP address in weave network.
-
-        :returns: A boolean represents whether there's available IP address.
-        """
-        range_size = IPSet(IPNetwork(self.weave_ip_network).iter_hosts()).size
-        reserved_size = len(self.reserved_ip_addrs)
-        exposed_ip_len = 1
-        return reserved_size + exposed_ip_len < range_size
+        if addr in (self.exposed_weave_ip[0], str(pool.network),
+                    str(pool.broadcast)):
+            # there's no available IP address
+            return "", pool.prefixlen
+        return addr, pool.prefixlen

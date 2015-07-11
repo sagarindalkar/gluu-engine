@@ -146,6 +146,7 @@ class BaseModelHelper(object):
                 ["weave attach {}/{} {}".format(addr, prefixlen,
                                                 self.node.id)],
             )
+            self.cluster.last_fetched_addr = addr
             db.update(self.cluster.id, self.cluster, "clusters")
 
             # save weave_ip for inter-node communications

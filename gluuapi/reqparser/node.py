@@ -44,7 +44,9 @@ class NodeReq(ma.Schema):
         self.context["cluster"] = cluster
         if not cluster:
             raise ValidationError("invalid cluster ID")
-        if not cluster.ip_addr_available:
+
+        addr, _ = cluster.reserve_ip_addr()
+        if not addr:
             raise ValidationError("cluster is running out of weave IP")
 
     @validates("provider_id")

@@ -19,21 +19,8 @@ def test_decrypted_admin_pw():
     assert cluster.decrypted_admin_pw == "secret"
 
 
-def test_ip_addr_available(cluster):
-    # fills up reserved IP address using fake values
-    cluster.reserved_ip_addrs = [ip for ip in range(253)]
-    assert cluster.ip_addr_available is False
-
-    cluster.reserved_ip_addrs.pop()
-    assert cluster.ip_addr_available is True
-
-
 def test_reserve_ip_addr(cluster):
     assert cluster.reserve_ip_addr() == tuple(["10.20.10.1", 24])
-
-
-def test_unreserve_ip_addr(cluster):
-    assert cluster.unreserve_ip_addr("10.20.10.1") is None
 
 
 def test_get_node_objects(db, cluster, ldap_node, oxauth_node,
@@ -91,3 +78,10 @@ def test_exposed_weave_ip():
     addr, prefixlen = cluster.exposed_weave_ip
     assert addr == "10.2.1.254"
     assert prefixlen == 24
+
+
+def test_get_nodes_by_state(db, cluster, ldap_node):
+    db.persist(cluster, "clusters")
+    ldap_node.state = "FAILED"
+    db.persist(ldap_node, "nodes")
+    assert cluster.get_node_objects(type_="ldap", state="FAILED")

@@ -23,11 +23,13 @@ import re
 
 from marshmallow import validates
 from marshmallow import ValidationError
+from netaddr import AddrFormatError
+from netaddr import IPNetwork
 
 from gluuapi.extensions import ma
 
 WEAVE_NETWORK_RE = re.compile(
-    r"[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/24"
+    r"[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/[0-9]{1,2}"
 )
 
 
@@ -51,5 +53,12 @@ class ClusterReq(ma.Schema):
 
     @validates("weave_ip_network")
     def validate_weave_ip_network(self, value):
+        # allow only IPv4 for now
         if not WEAVE_NETWORK_RE.match(value):
             raise ValidationError("invalid IP network address format")
+
+        # check if IP is supported by ``netaddr``
+        try:
+            IPNetwork(value)
+        except AddrFormatError as exc:
+            raise ValidationError(exc.message)

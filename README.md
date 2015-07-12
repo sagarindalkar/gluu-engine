@@ -42,30 +42,17 @@ sudo apt-get install -y salt-master salt-minion
 Get the oxd license validator JAR file:
 
 ```
-wget http://ox.gluu.org/maven/org/xdi/oxd-license-validator/3.0.1-SNAPSHOT/oxd-license-validator-3.0.1-SNAPSHOT-jar-with-dependencies.jar
-```
-
-`gluu-flask` assumes this validator is located in `/usr/share/oxd-license-validator/oxd-license-validator.jar`, hence move the
-downloaded JAR to appropriate location:
-
-```
-sudo mkdir /usr/share/oxd-license-validator
-sudo mv oxd-license-validator-3.0.1-SNAPSHOT-jar-with-dependencies.jar /usr/share/oxd-license-validator/oxd-license-validator.jar
-```
-
-If, for any reason, JAR file cannot be moved to `/usr/share/oxd-license-validator` directory,
-use environment variable to adjust the path to JAR file.
-
-```
-mv oxd-license-validator-3.0.1-SNAPSHOT-jar-with-dependencies.jar oxd-license-validator.jar
-export OXD_LICENSE_VALIDATOR=/custom/path/to/oxd-license-validator.jar
+wget http://repo.gluu.org/ubuntu/pool/main/trusty-devel/oxd-license-validator_3.0.1-SNAPSHOT-1_all.deb
+sudo dpkg -i oxd-license-validator_3.0.1-SNAPSHOT-1_all.deb
 ```
 
 ### Install weave
 
+Currently `gluu-flask` only supports weave v0.10.0.
+
 ```
-sudo curl -L git.io/weave -o /usr/local/bin/weave
-sudo chmod a+x /usr/local/bin/weave
+wget http://repo.gluu.org/ubuntu/pool/main/trusty-devel/weave_0.10.0-1_all.deb
+sudo dpkg -i weave_0.10.0-1_all.deb
 ```
 
 ## Deployment

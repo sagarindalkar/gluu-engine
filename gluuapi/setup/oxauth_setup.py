@@ -102,21 +102,6 @@ class OxauthSetup(BaseSetup):
             ["export CATALINA_PID={0}/bin/catalina.pid && {0}/bin/catalina.sh start".format(self.node.tomcat_home)],
         )
 
-    def stop_tomcat(self):
-        self.logger.info("stopping tomcat")
-        self.salt.cmd(
-            self.node.id,
-            "cmd.run",
-            ["export CATALINA_PID={0}/bin/catalina.pid && {0}/bin/catalina.sh stop -force".format(self.node.tomcat_home)],
-        )
-
-    def restart_tomcat(self):
-        self.stop_tomcat()
-        # tomcat do force-shutdown within 5 seconds, hence we'll start
-        # tomcat within 5 seconds after tomcat is successfully stopped
-        time.sleep(10)
-        self.start_tomcat()
-
     def gen_keystore(self, suffix, keystore_fn, keystore_pw, in_key,
                      in_cert, user, group, hostname):
         self.logger.info("Creating keystore %s" % suffix)
@@ -242,7 +227,43 @@ class OxauthSetup(BaseSetup):
         self.start_tomcat()
 
         self.change_cert_access("tomcat", "tomcat")
+
+        for ldap in self.cluster.get_ldap_objects():
+            self.add_ldap_host_entry(ldap)
         return True
 
     def teardown(self):
         self.after_teardown()
+
+    def add_ldap_host_entry(self, ldap):
+        # for ldap in self.cluster.get_ldap_objects():
+        # currently we need to add ldap container hostname
+        self.logger.info("adding LDAP entry into oxAuth /etc/hosts file")
+        # add the entry only if line is not exist in /etc/hosts
+        grep_cmd = "grep -q '^{0} {1}$' /etc/hosts " \
+                   "|| echo '{0} {1}' >> /etc/hosts" \
+            .format(ldap.weave_ip, ldap.id)
+        self.salt.cmd(self.node.id, "cmd.run", [grep_cmd])
+
+    def remove_ldap_host_entry(self, ldap):
+        # TODO: use a real DNS
+        #
+        # currently we need to remove httpd container hostname
+        # updating ``/etc/hosts`` in-place will raise
+        # "resource or device is busy" error, hence we use
+        # the following steps instead:
+        #
+        # 1. copy the original ``/etc/hosts``
+        # 2. find-and-replace entries in copied file
+        # 3. overwrite the original ``/etc/hosts``
+        self.logger.info("removing LDAP entry from oxAuth /etc/hosts file")
+        backup_cmd = "cp /etc/hosts /tmp/hosts"
+        sed_cmd = "sed -i 's/{} {}//g' /tmp/hosts".format(
+            ldap.weave_ip, ldap.id,
+        )
+        overwrite_cmd = "cp /tmp/hosts /etc/hosts"
+        self.salt.cmd(
+            self.node.id,
+            ["cmd.run", "cmd.run", "cmd.run"],
+            [[backup_cmd], [sed_cmd], [overwrite_cmd]],
+        )

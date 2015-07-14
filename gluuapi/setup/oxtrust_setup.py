@@ -97,7 +97,7 @@ class OxtrustSetup(OxauthSetup):
         # 3. overwrite the original ``/etc/hosts``
         self.logger.info("removing HTTPD entry in oxTrust /etc/hosts file")
         backup_cmd = "cp /etc/hosts /tmp/hosts"
-        sed_cmd = "sed -i 's/{} {}//g' /tmp/hosts".format(
+        sed_cmd = "sed -i 's/{} {}//g' /tmp/hosts && sed -i '/^$/d' /tmp/hosts".format(
             httpd.weave_ip, self.cluster.ox_cluster_hostname
         )
         overwrite_cmd = "cp /tmp/hosts /etc/hosts"

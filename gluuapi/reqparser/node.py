@@ -66,16 +66,6 @@ class NodeReq(ma.Schema):
                 raise ValidationError("cannot deploy node to "
                                       "provider with expired license")
 
-    @validates("node_type")
-    def validate_node(self, value):
-        cluster = self.context.get("cluster")
-        self.context["node_type"] = value
-
-        if value == "ldap" and cluster is not None:
-            max_num = cluster.max_allowed_ldap_nodes
-            if len(cluster.get_ldap_objects()) >= max_num:
-                raise ValidationError("max. allowed LDAP nodes is exceeded")
-
     @post_load
     def finalize_data(self, data):
         if data.get("node_type") != "httpd":

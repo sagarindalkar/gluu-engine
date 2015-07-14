@@ -8,10 +8,6 @@ def test_cluster_as_dict():
         assert field in actual
 
 
-def test_cluster_max_allowed_nodes(cluster):
-    assert cluster.max_allowed_ldap_nodes == 4
-
-
 def test_decrypted_admin_pw():
     from gluuapi.model import GluuCluster
 

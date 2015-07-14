@@ -122,10 +122,6 @@ class GluuCluster(BaseModel):
     def decrypted_admin_pw(self):
         return decrypt_text(self.admin_pw, self.passkey)
 
-    @property
-    def max_allowed_ldap_nodes(self):
-        return 4
-
     def get_ldap_objects(self, state=STATE_SUCCESS):
         """Get available ldap objects (models).
         """

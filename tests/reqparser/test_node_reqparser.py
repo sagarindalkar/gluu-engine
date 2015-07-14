@@ -52,6 +52,15 @@ def test_validate_oxauth_invalid_state(db, oxauth_node, provider):
         node_req.validate_oxauth(oxauth_node.id)
 
 
+def test_validate_oxauth_notfound():
+    from gluuapi.reqparser import NodeReq
+
+    ctx = {"node_type": "httpd"}
+    node_req = NodeReq(context=ctx)
+    with pytest.raises(ValidationError):
+        node_req.validate_oxauth("abc")
+
+
 def test_validate_oxtrust_reused(db, httpd_node):
     from gluuapi.reqparser import NodeReq
 

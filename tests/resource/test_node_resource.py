@@ -167,30 +167,6 @@ def test_node_post_invalid_provider(app, db, cluster):
     assert resp.status_code == 400
 
 
-def test_node_post_max_ldap(app, db, cluster, provider):
-    from gluuapi.model import LdapNode
-    from gluuapi.model import STATE_SUCCESS
-
-    db.persist(cluster, "clusters")
-    db.persist(provider, "providers")
-
-    for _ in range(cluster.max_allowed_ldap_nodes):
-        node = LdapNode()
-        node.cluster_id = cluster.id
-        node.state = STATE_SUCCESS
-        db.persist(node, "nodes")
-
-    resp = app.test_client().post(
-        "/nodes",
-        data={
-            "cluster_id": cluster.id,
-            "provider_id": provider.id,
-            "node_type": "ldap",
-        },
-    )
-    assert resp.status_code == 400
-
-
 @pytest.mark.parametrize("node_type, helper_class", [
     ("ldap", "LdapModelHelper"),
     ("oxauth", "OxauthModelHelper"),

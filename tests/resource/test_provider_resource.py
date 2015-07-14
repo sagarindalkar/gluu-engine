@@ -241,9 +241,10 @@ def test_provider_put_expired_license(app, db, license, provider, validator_err)
 
 def test_provider_put_updated(app, db, license, provider,
                               oxauth_node, patched_salt_cmd,
-                              license_key, validator_ok):
+                              license_key, validator_ok, cluster):
     from gluuapi.model import STATE_DISABLED
 
+    db.persist(cluster, "clusters")
     db.persist(license_key, "license_keys")
     license.license_key_id = license_key.id
     license.metadata = {"expiration_date": None}

@@ -198,10 +198,22 @@ class ProviderResource(Resource):
         salt = SaltHelper()
         salt.register_minion(provider.hostname)
 
+        # try to launch weave (for backward-compat with v0.2)
+        try:
+            cluster = db.all("clusters")[0]
+        except IndexError:  # pragma: no cover
+            current_app.logger.warn("cluster object is not available")
+        else:
+            weave = WeaveHelper(
+                provider, cluster, current_app.config["SALT_MASTER_IPADDR"],
+            )
+            weave.launch()
+
         # if provider has disabled oxAuth nodes, try to re-enable the nodes
         oxauth_nodes = provider.get_node_objects(
             type_="oxauth", state=STATE_DISABLED,
         )
+
         for node in oxauth_nodes:
             attach_cmd = "weave attach {}/{} {}".format(
                 node.weave_ip,

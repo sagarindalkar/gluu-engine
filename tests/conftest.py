@@ -13,9 +13,11 @@ def config():
 @pytest.fixture(scope="session")
 def app(request):
     from gluuapi.app import create_app
+    from crochet import no_setup
 
     os.environ["API_ENV"] = "test"
     app = create_app()
+    no_setup()
     return app
 
 

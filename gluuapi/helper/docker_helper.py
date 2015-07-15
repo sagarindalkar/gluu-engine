@@ -47,8 +47,7 @@ class DockerHelper(object):
     def connect(self):
         if not self.docker:
             tlsconfig = None
-            if all([self.provider.ssl_key, self.provider.ssl_cert,
-                    self.provider.ca_cert]):
+            if self.provider.docker_base_url.startswith("https"):
                 try:
                     # configure TLS configuration to connect to docker
                     tlsconfig = TLSConfig(

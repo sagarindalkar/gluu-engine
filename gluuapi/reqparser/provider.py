@@ -27,6 +27,8 @@ from marshmallow import validates
 from marshmallow import validates_schema
 from marshmallow import post_load
 from marshmallow import ValidationError
+from docker.utils import parse_host
+from docker.errors import DockerException
 
 from gluuapi.extensions import ma
 from gluuapi.database import db
@@ -87,6 +89,13 @@ class ProviderReq(ma.Schema):
             data[field] = "".join(lines)
         data["docker_cert_dir"] = current_app.config["DOCKER_CERT_DIR"]
         return data
+
+    @validates("docker_base_url")
+    def validate_docker_base_url(self, value):
+        try:
+            parse_host(value)
+        except DockerException as exc:
+            raise ValidationError(exc.message)
 
 
 class EditProviderReq(ProviderReq):

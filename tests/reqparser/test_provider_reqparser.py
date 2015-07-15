@@ -30,19 +30,40 @@ def test_validate_hostname_invalid(hostname):
         reqparser.validate_hostname(hostname)
 
 
-def test_validate_docker_config():
+def test_validate_docker_base_url():
     from gluuapi.reqparser import ProviderReq
     from marshmallow import ValidationError
 
     reqparser = ProviderReq()
     with pytest.raises(ValidationError):
-        data = {
-            "docker_base_url": "https://localhost:2375",
-            "ssl_cert": "",
-            "ssl_key": "",
-            "ca_cert": "",
-        }
-        reqparser.validate_docker_config(data)
+        reqparser.validate_docker_base_url("abc")
+
+
+def test_validate_ssl_cert():
+    from gluuapi.reqparser import ProviderReq
+    from marshmallow import ValidationError
+
+    reqparser = ProviderReq(context={"docker_base_url": "https://0.0.0.0:2375"})
+    with pytest.raises(ValidationError):
+        reqparser.validate_ssl_cert("")
+
+
+def test_validate_ssl_key():
+    from gluuapi.reqparser import ProviderReq
+    from marshmallow import ValidationError
+
+    reqparser = ProviderReq(context={"docker_base_url": "https://0.0.0.0:2375"})
+    with pytest.raises(ValidationError):
+        reqparser.validate_ssl_key("")
+
+
+def test_validate_ca_cert():
+    from gluuapi.reqparser import ProviderReq
+    from marshmallow import ValidationError
+
+    reqparser = ProviderReq(context={"docker_base_url": "https://0.0.0.0:2375"})
+    with pytest.raises(ValidationError):
+        reqparser.validate_ca_cert("")
 
 
 def test_finalize_data(app):

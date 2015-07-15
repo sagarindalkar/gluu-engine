@@ -24,7 +24,6 @@ from urllib import quote_plus
 
 from flask import current_app
 from marshmallow import validates
-from marshmallow import validates_schema
 from marshmallow import post_load
 from marshmallow import ValidationError
 from docker.utils import parse_host
@@ -69,13 +68,6 @@ class ProviderReq(ma.Schema):
             if license.expired:
                 raise ValidationError("expired license")
 
-    @validates_schema
-    def validate_docker_config(self, data):
-        if data["docker_base_url"].startswith("https"):
-            for field in ("ssl_cert", "ssl_key", "ca_cert"):
-                if not data[field]:
-                    raise ValidationError("field is required", field)
-
     @post_load
     def finalize_data(self, data):
         for field in ("ssl_cert", "ssl_key", "ca_cert"):
@@ -96,6 +88,30 @@ class ProviderReq(ma.Schema):
             parse_host(value)
         except DockerException as exc:
             raise ValidationError(exc.message)
+
+    @validates("ssl_cert")
+    def validate_ssl_cert(self, value):
+        base_url = self.context.get("docker_base_url", "")
+        if base_url.startswith("https"):
+            if not value:
+                raise ValidationError("Field is required when "
+                                      "'docker_base_url' uses https")
+
+    @validates("ssl_key")
+    def validate_ssl_key(self, value):
+        base_url = self.context.get("docker_base_url", "")
+        if base_url.startswith("https"):
+            if not value:
+                raise ValidationError("Field is required when "
+                                      "'docker_base_url' uses https")
+
+    @validates("ca_cert")
+    def validate_ca_cert(self, value):
+        base_url = self.context.get("docker_base_url", "")
+        if base_url.startswith("https"):
+            if not value:
+                raise ValidationError("Field is required when "
+                                      "'docker_base_url' uses https")
 
 
 class EditProviderReq(ProviderReq):

@@ -182,7 +182,10 @@ class ProviderResource(Resource):
             return {"status": 404, "message": "Provider not found"}, 404
 
         data, errors = EditProviderReq(
-            context={"provider": provider},
+            context={
+                "provider": provider,
+                "docker_base_url": request.form.get("docker_base_url")
+            },
         ).load(request.form)
         if errors:
             return {
@@ -306,7 +309,10 @@ class ProviderListResource(Resource):
                 "message": "requires at least 1 cluster created beforehand",
             }, 403
 
-        data, errors = ProviderReq().load(request.form)
+        data, errors = ProviderReq(
+            context={"docker_base_url": request.form.get("docker_base_url")}
+        ).load(request.form)
+
         if errors:
             return {
                 "status": 400,

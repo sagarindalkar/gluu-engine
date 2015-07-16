@@ -88,14 +88,14 @@ class BaseSetup(object):
         keypass_cmd = " ".join([
             "openssl", "genrsa", "-des3",
             "-out", key_with_password,
-            "-passout", "pass:{}".format(password), "2048",
+            "-passout", "pass:'{}'".format(password), "2048",
         ])
 
         # command to create key file
         key_cmd = " ".join([
             "openssl", "rsa",
             "-in", key_with_password, "-passin",
-            "pass:{}".format(password),
+            "pass:'{}'".format(password),
             "-out", key,
         ])
 
@@ -104,7 +104,7 @@ class BaseSetup(object):
             "openssl", "req", "-new",
             "-key", key,
             "-out", csr,
-            "-subj", "/CN=%s/O=%s/C=%s/ST=%s/L=%s" % (
+            "-subj", "'/CN=%s/O=%s/C=%s/ST=%s/L=%s'" % (
                 hostname,
                 self.cluster.org_name,
                 self.cluster.country_code,

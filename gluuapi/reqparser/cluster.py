@@ -62,3 +62,8 @@ class ClusterReq(ma.Schema):
             IPNetwork(value)
         except AddrFormatError as exc:
             raise ValidationError(exc.message)
+
+    @validates("admin_pw")
+    def validate_admin_pw(self, value):
+        if len(value) < 6:
+            raise ValidationError("Must use at least 6 characters")

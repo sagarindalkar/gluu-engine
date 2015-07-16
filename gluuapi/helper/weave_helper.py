@@ -82,14 +82,20 @@ class WeaveHelper(object):
         )
 
     def launch_master(self):
-        self.logger.info("launching weave for master provider")
+        self.logger.info("re-launching weave for master provider")
+        stop_cmd = "weave stop"
+        self.salt.cmd(self.provider.hostname, "cmd.run", [stop_cmd])
+        time.sleep(5)
         launch_cmd = "weave launch -password {}".format(
             self.cluster.decrypted_admin_pw,
         )
         self.salt.cmd(self.provider.hostname, "cmd.run", [launch_cmd])
 
     def launch_consumer(self):
-        self.logger.info("launching weave for consumer provider")
+        self.logger.info("re-launching weave for consumer provider")
+        stop_cmd = "weave stop"
+        self.salt.cmd(self.provider.hostname, "cmd.run", [stop_cmd])
+        time.sleep(5)
         launch_cmd = "weave launch -password {} {}".format(
             self.cluster.decrypted_admin_pw,
             self.master_ipaddr,

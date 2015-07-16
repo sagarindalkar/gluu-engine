@@ -137,8 +137,10 @@ class BaseModelHelper(object):
                 self.on_setup_error()
                 return
 
+            addr = self.cluster.last_fetched_addr
+            prefixlen = self.cluster.prefixlen
+
             # attach weave IP to container
-            addr, prefixlen = self.cluster.reserve_ip_addr()
             self.logger.info("assigning weave IP address")
             self.salt.cmd(
                 self.provider.hostname,
@@ -146,9 +148,6 @@ class BaseModelHelper(object):
                 ["weave attach {}/{} {}".format(addr, prefixlen,
                                                 self.node.id)],
             )
-            self.cluster.last_fetched_addr = addr
-            db.update(self.cluster.id, self.cluster, "clusters")
-
             # save weave_ip for inter-node communications
             self.node.ip = self.docker.get_container_ip(self.node.id)
             self.node.weave_ip = addr

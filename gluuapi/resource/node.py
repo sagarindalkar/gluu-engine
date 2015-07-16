@@ -259,6 +259,10 @@ status of the cluster node is available.""",
         provider = data["context"]["provider"]
         params = data["params"]
 
+        addr, prefixlen = cluster.reserve_ip_addr()
+        cluster.last_fetched_addr = addr
+        db.update(cluster.id, cluster, "clusters")
+
         helper_classes = {
             "ldap": LdapModelHelper,
             "oxauth": OxauthModelHelper,

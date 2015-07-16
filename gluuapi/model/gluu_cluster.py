@@ -190,3 +190,7 @@ class GluuCluster(BaseModel):
             # there's no available IP address
             return "", pool.prefixlen
         return addr, pool.prefixlen
+
+    @property
+    def prefixlen(self):
+        return IPNetwork(self.weave_ip_network).prefixlen

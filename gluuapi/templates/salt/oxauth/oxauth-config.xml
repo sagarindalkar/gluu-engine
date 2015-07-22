@@ -26,8 +26,8 @@
     <!-- sets mode of the server. Possible values: memory, ldap-->
     <mode>ldap</mode>
 
-    <!-- Configuration is updated from LDAP, interval in seconds, 3600seconds = 1hour -->
-    <configuration-update-interval>3600</configuration-update-interval>
+    <!-- Configuration is updated from LDAP, interval in seconds, 60seconds = 1minute -->
+    <configuration-update-interval>60</configuration-update-interval>
 
     <response-types-supported>
         <response-type>code</response-type>

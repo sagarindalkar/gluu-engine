@@ -12,7 +12,8 @@ def test_provider_no_cluster(app):
     assert resp.status_code == 403
 
 
-def test_provider_list_post_master(monkeypatch, app, db, cluster, patched_salt_cmd):
+def test_provider_list_post_master(monkeypatch, app, db, cluster,
+                                   patched_salt_cmd, patched_sleep):
     monkeypatch.setattr(
         "gluuapi.helper.WeaveHelper.launch",
         lambda cls: None,
@@ -241,7 +242,8 @@ def test_provider_put_expired_license(app, db, license, provider, validator_err)
 
 def test_provider_put_updated(app, db, license, provider,
                               oxauth_node, patched_salt_cmd,
-                              license_key, validator_ok, cluster):
+                              license_key, validator_ok, cluster,
+                              patched_sleep):
     from gluuapi.model import STATE_DISABLED
 
     db.persist(cluster, "clusters")

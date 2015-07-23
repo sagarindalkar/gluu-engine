@@ -48,6 +48,10 @@ class OxauthSetup(BaseSetup):
     def tomcat_server_xml(self):  # pragma: no cover
         return self.get_template_path("salt/_shared/server.xml")
 
+    @property
+    def oxauth_config_marker(self):  # pragma: no cover
+        return self.get_template_path("salt/oxauth/oxauth.config.reload")
+
     def write_salt_file(self):
         self.logger.info("writing salt file")
 
@@ -73,15 +77,13 @@ class OxauthSetup(BaseSetup):
         classpath = ":".join([
             "{}/classes".format(web_inf),
             "{}/lib/bcprov-jdk16-1.46.jar".format(web_inf),
-            "{}/lib/oxauth-model-2.2.0.Final.jar".format(web_inf),
+            "{}/lib/oxauth-model-2.3.2.Final.jar".format(web_inf),
             "{}/lib/jettison-1.3.jar".format(web_inf),
             "{}/lib/commons-lang-2.6.jar".format(web_inf),
             "{}/lib/log4j-1.2.14.jar".format(web_inf),
             "{}/lib/commons-codec-1.5.jar".format(web_inf),
         ])
-        # one of Java class prints a line of log message, which breaks the JSON,
-        # hence we start reading from second line
-        key_cmd = "java -cp {} org.xdi.oxauth.util.KeyGenerator | tail -n +2 > {}".format(
+        key_cmd = "java -cp {} org.xdi.oxauth.util.KeyGenerator > {}".format(
             classpath, openid_key_json_fn,
         )
         self.salt.cmd(self.node.id, "cmd.run", [key_cmd])
@@ -194,6 +196,11 @@ class OxauthSetup(BaseSetup):
         }
         self.render_template(src, dest, ctx)
 
+    def write_marker_file(self):
+        self.logger.info("writing config marker file")
+        touch_cmd = "touch {}/oxauth.config.reload".format(self.node.tomcat_conf_dir)
+        self.salt.cmd(self.node.id, "cmd.run", [touch_cmd])
+
     def setup(self):
         hostname = self.cluster.ox_cluster_hostname.split(":")[0]
         self.create_cert_dir()
@@ -205,6 +212,7 @@ class OxauthSetup(BaseSetup):
         self.render_static_conf_template()
         self.render_server_xml_template()
         self.write_salt_file()
+        self.write_marker_file()
 
         self.gen_cert("shibIDP", self.cluster.decrypted_admin_pw,
                       "tomcat", "tomcat", hostname)

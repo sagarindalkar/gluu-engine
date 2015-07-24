@@ -59,5 +59,7 @@ class LicenseKeyReq(ma.Schema):
         # public key from license server is not URL-safe
         # client like ``curl`` will interpret ``+`` as whitespace
         # hence we're converting whitespace to ``+``
-        data["public_key"] = quote_plus(data.get("public_key", ""), safe="/+=")
+        if "public_key" in data:
+            pubkey = data["public_key"].strip().replace(" ", "")
+            data["public_key"] = quote_plus(pubkey, safe="/+=")
         return data

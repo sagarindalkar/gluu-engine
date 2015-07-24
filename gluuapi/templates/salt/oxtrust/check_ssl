@@ -1,0 +1,3 @@
+#!/bin/sh
+
+check_ssl.py %(ox_cluster_hostname)s

@@ -42,6 +42,10 @@ class OxtrustSetup(OxauthSetup):
     def oxtrust_cache_refresh_properties(self):  # pragma: no cover
         return self.get_template_path("salt/oxtrust/oxTrustCacheRefresh-template.properties.vm")
 
+    @property
+    def check_ssl_template(self):  # pragma: no cover
+        return self.get_template_path("salt/oxtrust/check_ssl")
+
     def import_httpd_cert(self):
         # imports httpd cert into oxtrust cacerts to avoid
         # "peer not authenticated" error
@@ -162,6 +166,13 @@ class OxtrustSetup(OxauthSetup):
         }
         self.render_template(src, dest, ctx)
 
+    def render_check_ssl_template(self):
+        src = self.check_ssl_template
+        dest = "/usr/bin/{}".format(os.path.basename(src))
+        ctx = {"ox_cluster_hostname": self.cluster.ox_cluster_hostname}
+        self.render_template(src, dest, ctx)
+        self.salt.cmd(self.node.id, "cmd.run", ["chmod +x {}".format(dest)])
+
     def setup(self):
         hostname = self.cluster.ox_cluster_hostname.split(":")[0]
         self.create_cert_dir()
@@ -173,6 +184,7 @@ class OxtrustSetup(OxauthSetup):
         self.render_ldap_props_template()
         self.render_server_xml_template()
         self.write_salt_file()
+        self.render_check_ssl_template()
 
         self.gen_cert("shibIDP", self.cluster.decrypted_admin_pw,
                       "tomcat", "tomcat", hostname)

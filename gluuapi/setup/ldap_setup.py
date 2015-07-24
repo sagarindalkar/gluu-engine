@@ -470,3 +470,7 @@ class LdapSetup(BaseSetup):
         self.logger.info("modifying oxIDPAuthentication entry")
         self.salt.cmd(self.node.id, "cmd.run", [ldapmod_cmd])
         self.delete_ldap_pw()
+
+    def start_opendj(self):
+        self.logger.info("starting OpenDJ server")
+        self.salt.cmd(self.node.id, "cmd.run", ["/opt/opendj/bin/start-ds"])

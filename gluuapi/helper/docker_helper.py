@@ -216,3 +216,9 @@ class DockerHelper(object):
             if err_code == 404:
                 self.logger.warn(
                     "container {!r} does not exist".format(container_id))
+
+    def inspect_container(self, container_id):
+        return self.docker.inspect_container(container_id)
+
+    def start_container(self, container_id):
+        return self.docker.start(container_id)

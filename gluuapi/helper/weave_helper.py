@@ -38,8 +38,12 @@ class WeaveHelper(object):
         )
 
     @run_in_reactor
-    def launch(self):
-        self.prepare_minion()
+    def launch_async(self, register_minion=True):
+        self.launch(register_minion)
+
+    def launch(self, register_minion=True):
+        if register_minion:
+            self.prepare_minion()
 
         if self.provider.type == "master":
             self.launch_master()

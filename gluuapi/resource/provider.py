@@ -210,7 +210,7 @@ class ProviderResource(Resource):
             weave = WeaveHelper(
                 provider, cluster, current_app.config["SALT_MASTER_IPADDR"],
             )
-            weave.launch()
+            weave.launch_async()
 
         # if provider has disabled oxAuth nodes, try to re-enable the nodes
         oxauth_nodes = provider.get_node_objects(
@@ -345,7 +345,7 @@ class ProviderListResource(Resource):
         weave = WeaveHelper(
             provider, cluster, current_app.config["SALT_MASTER_IPADDR"],
         )
-        weave.launch()
+        weave.launch_async()
 
         headers = {
             "Location": url_for("provider", provider_id=provider.id),

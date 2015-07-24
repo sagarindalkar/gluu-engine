@@ -59,3 +59,7 @@ class OxauthNode(BaseModel):
         self.tomcat_home = "/opt/tomcat"
         self.tomcat_conf_dir = "/opt/tomcat/conf"
         self.tomcat_log_folder = "/opt/tomcat/logs"
+
+    @property
+    def recovery_priority(self):
+        return 3

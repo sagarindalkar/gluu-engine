@@ -29,6 +29,7 @@ from daemonocle import Daemon
 from gluuapi.app import create_app
 from gluuapi.log import configure_global_logging
 from gluuapi.task import LicenseExpirationTask
+from gluuapi.task import RecoverProviderTask
 
 # global context settings
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
@@ -119,3 +120,16 @@ def runserver():
     configure_global_logging()
     app = create_app()
     run_app(app)
+
+
+@main.command()
+@click.argument("provider_id")
+def recover(provider_id):
+    """Recover provider and its nodes.
+    """
+    check_salt()
+    configure_global_logging()
+    app = create_app()
+
+    recovery = RecoverProviderTask(app, provider_id)
+    recovery.perform_job()

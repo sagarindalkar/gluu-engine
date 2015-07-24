@@ -65,3 +65,7 @@ class HttpdNode(BaseModel):
 
     def get_oxtrust_object(self):
         return db.get(self.oxtrust_node_id, "nodes")
+
+    @property
+    def recovery_priority(self):
+        return 4

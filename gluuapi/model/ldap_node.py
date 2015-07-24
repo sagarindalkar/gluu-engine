@@ -108,3 +108,7 @@ class LdapNode(BaseModel):
 
         # Full path to openssl command
         self.openssl_command = '/usr/bin/openssl'
+
+    @property
+    def recovery_priority(self):
+        return 1

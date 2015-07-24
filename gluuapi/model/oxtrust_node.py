@@ -23,6 +23,7 @@ from flask_restful.fields import String
 from flask_restful_swagger import swagger
 
 from gluuapi.model.base import BaseModel
+from gluuapi.database import db
 
 
 @swagger.model
@@ -61,3 +62,17 @@ class OxtrustNode(BaseModel):
         self.tomcat_home = "/opt/tomcat"
         self.tomcat_conf_dir = "/opt/tomcat/conf"
         self.tomcat_log_folder = "/opt/tomcat/logs"
+
+    def get_httpd_object(self):
+        try:
+            nodes = db.search_from_table(
+                "nodes",
+                (db.where("type") == "httpd") & (db.where("oxtrust_node_id") != "") & (db.where("oxtrust_node_id") == self.id),
+            )
+            return nodes[0]
+        except IndexError:
+            return
+
+    @property
+    def recovery_priority(self):
+        return 3

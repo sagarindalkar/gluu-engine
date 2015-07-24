@@ -77,7 +77,20 @@ class HttpdSetup(BaseSetup):
                                      template_dir=self.template_dir)
             setup_obj.add_host_entries(self.node)
             setup_obj.import_httpd_cert()
+        self.add_iptable_rule()
 
+    def teardown(self):
+        self.remove_iptable_rule()
+
+        oxtrust = self.node.get_oxtrust_object()
+        if oxtrust:
+            setup_obj = OxtrustSetup(oxtrust, self.cluster,
+                                     template_dir=self.template_dir)
+            setup_obj.delete_httpd_cert()
+            setup_obj.remove_host_entries(self.node)
+        self.after_teardown()
+
+    def add_iptable_rule(self):
         # expose port 80
         iptables_cmd = "iptables -t nat -A PREROUTING -p tcp " \
                        "-i eth0 --dport 80 -j DNAT " \
@@ -90,7 +103,7 @@ class HttpdSetup(BaseSetup):
                        "--to-destination {}:443".format(self.node.weave_ip)
         self.salt.cmd(self.provider.hostname, "cmd.run", [iptables_cmd])
 
-    def teardown(self):
+    def remove_iptable_rule(self):
         # unexpose port 80
         iptables_cmd = "iptables -t nat -D PREROUTING -p tcp " \
                        "-i eth0 --dport 80 -j DNAT " \
@@ -102,11 +115,3 @@ class HttpdSetup(BaseSetup):
                        "-i eth0 --dport 443 -j DNAT " \
                        "--to-destination {}:443".format(self.node.weave_ip)
         self.salt.cmd(self.provider.hostname, "cmd.run", [iptables_cmd])
-
-        oxtrust = self.node.get_oxtrust_object()
-        if oxtrust:
-            setup_obj = OxtrustSetup(oxtrust, self.cluster,
-                                     template_dir=self.template_dir)
-            setup_obj.delete_httpd_cert()
-            setup_obj.remove_host_entries(self.node)
-        self.after_teardown()

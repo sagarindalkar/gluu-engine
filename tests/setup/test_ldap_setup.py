@@ -18,19 +18,23 @@ def test_setup_with_replication(ldap_setup, db, cluster, patched_salt_cmd,
     assert ldap_setup.setup()
 
 
-def test_after_setup(ldap_setup, patched_salt_cmd):
+def test_after_setup(cluster, ldap_setup, patched_salt_cmd):
     from gluuapi.database import db
     from gluuapi.model import OxauthNode
     from gluuapi.model import OxtrustNode
     from gluuapi.model import STATE_SUCCESS
 
+    db.persist(cluster, "clusters")
+
     oxauth = OxauthNode()
     oxauth.id = "auth-123"
+    oxauth.cluster_id = cluster.id
     oxauth.state = STATE_SUCCESS
     db.persist(oxauth, "nodes")
 
     oxtrust = OxtrustNode()
     oxtrust.id = "trust-123"
+    oxauth.cluster_id = cluster.id
     oxtrust.state = STATE_SUCCESS
     db.persist(oxtrust, "nodes")
 
@@ -38,7 +42,10 @@ def test_after_setup(ldap_setup, patched_salt_cmd):
     ldap_setup.after_setup()
 
 
-def test_teardown(ldap_setup, patched_salt_cmd):
+def test_teardown(ldap_setup, patched_salt_cmd, cluster, oxauth_node, db):
+    db.persist(cluster, "clusters")
+    oxauth_node.state = "SUCCESS"
+    db.persist(oxauth_node, "nodes")
     ldap_setup.teardown()
 
 
@@ -85,3 +92,7 @@ def test_render_ox_ldap_props(ldap_setup, db, oxauth_node,
     oxtrust_node.state = STATE_SUCCESS
     db.persist(oxtrust_node, "nodes")
     ldap_setup.render_ox_ldap_props()
+
+
+def test_start_opendj(ldap_setup, patched_salt_cmd):
+    ldap_setup.start_opendj()

@@ -55,7 +55,11 @@ class RecoverProviderTask(object):
 
     def perform_job(self):
         self.logger.info("trying to recover provider {}".format(self.provider.id))
-        self.relaunch_weave()
+
+        self.logger.info("inspecting weave container")
+        if self.container_stopped("weave"):
+            self.logger.warn("weave container is not running")
+            self.relaunch_weave()
 
         nodes = sorted(self.provider.get_node_objects(),
                        key=lambda node: node.recovery_priority)
@@ -64,7 +68,10 @@ class RecoverProviderTask(object):
             self.check_node(node)
 
         if self.provider.type == "master":
-            self.relaunch_prometheus()
+            self.logger.info("inspecting prometheus container")
+            if self.container_stopped("prometheus"):
+                self.logger.warn("prometheus container is not running")
+                self.relaunch_prometheus()
 
     def relaunch_weave(self):
         self.logger.info("relaunching weave")
@@ -82,11 +89,8 @@ class RecoverProviderTask(object):
 
     def check_node(self, node):
         self.logger.info("inspecting {} node {}".format(node.type, node.id))
-        meta = self.docker.inspect_container(node.id)
-        is_running = meta["State"]["Running"]
-        if not is_running:
-            self.logger.info("{} node {} is not running; trying to "
-                             "re-run the node".format(node.type, node.id))
+        if self.container_stopped(node.id):
+            self.logger.warn("{} node {} is not running".format(node.type, node.id))
             self.recover_node(node)
 
     def recover_node(self, node):
@@ -135,3 +139,7 @@ class RecoverProviderTask(object):
             setup_obj.remove_pidfile()
             setup_obj.start_httpd()
             setup_obj.add_iptable_rule()
+
+    def container_stopped(self, cid):
+        meta = self.docker.inspect_container(cid)
+        return not meta["State"]["Running"]

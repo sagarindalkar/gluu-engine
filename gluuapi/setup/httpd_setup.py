@@ -115,3 +115,8 @@ class HttpdSetup(BaseSetup):
                        "-i eth0 --dport 443 -j DNAT " \
                        "--to-destination {}:443".format(self.node.weave_ip)
         self.salt.cmd(self.provider.hostname, "cmd.run", [iptables_cmd])
+
+    def remove_pidfile(self):
+        # prevent error 'Unclean shutdown of previous Apache run?'
+        rm_cmd = "rm /var/run/apache2/apache2.pid"
+        self.salt.cmd(self.node.id, "cmd.run", [rm_cmd])

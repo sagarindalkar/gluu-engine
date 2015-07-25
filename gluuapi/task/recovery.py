@@ -93,7 +93,7 @@ class RecoverProviderTask(object):
         self.logger.info("re-running {} node {}".format(node.type, node.id))
         self.docker.start_container(node.id)
 
-        # prepare minion
+        # delay between node setup
         time.sleep(10)
 
         self.logger.info("attaching weave IP")
@@ -110,9 +110,9 @@ class RecoverProviderTask(object):
                          "{} node {}".format(node.type, node.id))
 
         if node.type == "ldap":
-            setup_obj = LdapSetup(node, self.cluster, self.logger, template_dir)
+            setup_obj = LdapSetup(node, self.cluster,
+                                  self.logger, template_dir)
             setup_obj.start_opendj()
-            time.sleep(10)
 
         elif node.type == "oxauth":
             setup_obj = OxauthSetup(node, self.cluster,
@@ -120,7 +120,6 @@ class RecoverProviderTask(object):
             setup_obj.start_tomcat()
             for ldap in self.cluster.get_ldap_objects():
                 setup_obj.add_ldap_host_entry(ldap)
-            time.sleep(5)
 
         elif node.type == "oxtrust":
             setup_obj = OxtrustSetup(node, self.cluster,
@@ -129,11 +128,10 @@ class RecoverProviderTask(object):
             httpd = node.get_httpd_object()
             if httpd:
                 setup_obj.add_host_entries(httpd)
-            time.sleep(5)
 
         elif node.type == "httpd":
             setup_obj = HttpdSetup(node, self.cluster,
                                    self.logger, template_dir)
+            setup_obj.remove_pidfile()
             setup_obj.start_httpd()
             setup_obj.add_iptable_rule()
-            time.sleep(15)

@@ -49,8 +49,10 @@ class RecoverProviderTask(object):
         self.salt = SaltHelper()
 
         self.cluster = db.all("clusters")[0]
-        self.weave = WeaveHelper(self.provider, self.cluster,
-                                 self.app.config["SALT_MASTER_IPADDR"])
+        self.weave = WeaveHelper(self.provider,
+                                 self.cluster,
+                                 self.app.config["SALT_MASTER_IPADDR"],
+                                 logger=self.logger)
 
     def perform_job(self):
         self.logger.info("trying to recover provider {}".format(self.provider.id))
@@ -89,13 +91,12 @@ class RecoverProviderTask(object):
         if self.container_stopped(node.id):
             self.logger.warn("{} node {} is not running".format(node.type, node.id))
             self.recover_node(node)
+            # delay between node setup
+            time.sleep(10)
 
     def recover_node(self, node):
         self.logger.info("re-running {} node {}".format(node.type, node.id))
         self.docker.start_container(node.id)
-
-        # delay between node setup
-        time.sleep(10)
 
         self.logger.info("attaching weave IP")
         attach_cmd = "weave attach {}/{} {}".format(

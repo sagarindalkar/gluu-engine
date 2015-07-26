@@ -28,12 +28,12 @@ from gluuapi.helper.salt_helper import SaltHelper
 
 
 class WeaveHelper(object):
-    def __init__(self, provider, cluster, master_ipaddr):
+    def __init__(self, provider, cluster, master_ipaddr, logger=None):
         self.provider = provider
         self.cluster = cluster
         self.master_ipaddr = master_ipaddr
         self.salt = SaltHelper()
-        self.logger = logging.getLogger(
+        self.logger = logger or logging.getLogger(
             __name__ + "." + self.__class__.__name__,
         )
 

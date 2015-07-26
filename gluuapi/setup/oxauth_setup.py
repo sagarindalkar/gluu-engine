@@ -101,7 +101,7 @@ class OxauthSetup(BaseSetup):
         self.salt.cmd(
             self.node.id,
             "cmd.run",
-            ["export CATALINA_PID={0}/bin/catalina.pid && {0}/bin/catalina.sh start".format(self.node.tomcat_home)],
+            ["{}/bin/catalina.sh start".format(self.node.tomcat_home)],
         )
 
     def gen_keystore(self, suffix, keystore_fn, keystore_pw, in_key,

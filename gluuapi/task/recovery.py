@@ -20,7 +20,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 import logging
-import os.path
 import sys
 import time
 
@@ -74,7 +73,6 @@ class RecoverProviderTask(object):
                 self.relaunch_prometheus()
 
     def relaunch_weave(self):
-        self.logger.info("relaunching weave")
         self.weave.launch(register_minion=False)
 
     def relaunch_prometheus(self):
@@ -82,10 +80,9 @@ class RecoverProviderTask(object):
         prom_cmd = "docker start prometheus"
         self.salt.cmd(self.provider.hostname, "cmd.run", [prom_cmd])
 
-        if not os.path.exists("/var/run/prometheus.cid"):
-            # needed by Prometheus helper
-            with open("/var/run/prometheus.cid", "w") as fp:
-                fp.write(self.docker.inspect_container("prometheus")["Id"])
+        # needed by Prometheus helper
+        with open("/var/run/prometheus.cid", "w") as fp:
+            fp.write(self.docker.inspect_container("prometheus")["Id"])
 
     def check_node(self, node):
         self.logger.info("inspecting {} node {}".format(node.type, node.id))

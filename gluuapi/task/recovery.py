@@ -91,8 +91,6 @@ class RecoverProviderTask(object):
         if self.container_stopped(node.id):
             self.logger.warn("{} node {} is not running".format(node.type, node.id))
             self.recover_node(node)
-            # delay between node setup
-            time.sleep(10)
 
     def recover_node(self, node):
         self.logger.info("re-running {} node {}".format(node.type, node.id))
@@ -103,6 +101,9 @@ class RecoverProviderTask(object):
             node.weave_ip, self.cluster.prefixlen, node.id,
         )
         self.salt.cmd(self.provider.hostname, "cmd.run", [attach_cmd])
+
+        # delay to prepare minion inside container
+        time.sleep(10)
         self.node_setup(node)
 
     def node_setup(self, node):

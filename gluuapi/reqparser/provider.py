@@ -30,16 +30,14 @@ from docker.utils import parse_host
 from docker.errors import DockerException
 
 from gluuapi.extensions import ma
-from gluuapi.database import db
 
 # regex pattern for hostname as defined by RFC 952 and RFC 1123
 HOSTNAME_RE = re.compile('^(?![0-9]+$)(?!-)[a-zA-Z0-9-]{,63}(?<!-)$')
 
 
-class ProviderReq(ma.Schema):
+class BaseProviderReq(ma.Schema):
     hostname = ma.Str(required=True)
     docker_base_url = ma.Str(required=True)
-    license_id = ma.Str(default="", missing="")
     ssl_cert = ma.Str(default="", missing="")
     ssl_key = ma.Str(default="", missing="")
     ca_cert = ma.Str(default="", missing="")
@@ -51,22 +49,6 @@ class ProviderReq(ma.Schema):
         valid = all(HOSTNAME_RE.match(v) for v in value.split("."))
         if not valid:
             raise ValidationError("invalid hostname")
-
-    @validates("license_id")
-    def validate_license_id(self, value):
-        if value:
-            licensed_count = db.count_from_table(
-                "providers",
-                db.where("license_id") == value,
-            )
-            if licensed_count:
-                raise ValidationError("cannot reuse license")
-
-            license = db.get(value, "licenses")
-            if not license:
-                raise ValidationError("invalid license ID")
-            if license.expired:
-                raise ValidationError("expired license")
 
     @post_load
     def finalize_data(self, data):
@@ -114,27 +96,9 @@ class ProviderReq(ma.Schema):
                                       "'docker_base_url' uses https")
 
 
-class EditProviderReq(ProviderReq):
-    @validates("license_id")
-    def validate_license_id(self, value):
-        provider = self.context["provider"]
-        if provider.type == "consumer":
-            if not value:
-                raise ValidationError("the value is required for consumer")
+class ProviderReq(BaseProviderReq):
+    type = ma.Select(choices=["master", "consumer"], required=True)
 
-            # counts license used by another provider (if any)
-            licensed_count = db.count_from_table(
-                "providers",
-                ((db.where("license_id") == value)
-                 & (db.where("id") != provider.id)),
-            )
 
-            # license cannot be reuse
-            if licensed_count:
-                raise ValidationError("cannot reuse license")
-
-            license = db.get(value, "licenses")
-            if not license:
-                raise ValidationError("invalid license ID")
-            if license.expired:
-                raise ValidationError("expired license")
+# backward-compat
+EditProviderReq = BaseProviderReq

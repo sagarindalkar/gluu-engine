@@ -42,7 +42,6 @@ class Provider(BaseModel):
         "id": fields.String,
         "docker_base_url": fields.String,
         "hostname": fields.String,
-        "license_id": fields.String,
         "ssl_key": fields.String,
         "ssl_cert": fields.String,
         "ca_cert": fields.String,

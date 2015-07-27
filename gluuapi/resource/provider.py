@@ -33,6 +33,9 @@ from gluuapi.model import STATE_DISABLED
 from gluuapi.model import STATE_SUCCESS
 from gluuapi.helper import SaltHelper
 from gluuapi.helper import WeaveHelper
+from gluuapi.utils import retrieve_signed_license
+from gluuapi.utils import decode_signed_license
+from gluuapi.model import License
 
 
 def format_provider_resp(provider):
@@ -194,6 +197,9 @@ class ProviderResource(Resource):
                 "params": errors,
             }, 400
 
+        if provider.license_id:
+            data["license_id"] = provider.license_id
+
         provider.populate(data)
         db.update(provider.id, provider, "providers")
 
@@ -320,24 +326,82 @@ class ProviderListResource(Resource):
                 "params": errors,
             }, 400
 
-        master_count = db.count_from_table(
+        master_num = db.count_from_table(
             "providers", db.where("license_id") == "",
         )
 
-        if data["license_id"]:
-            # if we dont have a master provider yet, rejects the request
-            if not master_count:
+        # if requested provider is master and we already have
+        # a master provider, rejects the request
+        if data["type"] == "master" and master_num:
+            return {
+                "status": 403,
+                "message": "cannot add another master provider",
+            }, 403
+
+        # if requested provider is consumer, but we dont have
+        # a master provider yet, rejects the request
+        if data["type"] == "consumer" and not master_num:
+            return {
+                "status": 403,
+                "message": "requires a master provider registered first",
+            }, 403
+
+        if data["type"] == "consumer":
+            try:
+                license_key = db.all("license_keys")[0]
+            except IndexError:
+                license_key = None
+
+            if not license_key:
                 return {
                     "status": 403,
-                    "message": "requires at least 1 master provider registered first",
+                    "message": "requires a valid license key",
                 }, 403
-        else:
-            # if we already have a master provider, rejects the request
-            if master_count:
+
+            # download signed license from license server
+            sl_resp = retrieve_signed_license(license_key.code)
+            if not sl_resp.ok:
+                err_msg = "unable to retrieve license from " \
+                          "https://license.gluu.org; code={} reason={}"
+                current_app.logger.warn(err_msg.format(
+                    sl_resp.status_code,
+                    sl_resp.text,
+                ))
                 return {
-                    "status": 403,
-                    "message": "cannot add another master provider",
-                }, 403
+                    "status": 422,
+                    "message": "unable to retrieve license",
+                }, 422
+
+            signed_license = sl_resp.json()["license"]
+            try:
+                # generate metadata
+                decoded_license = decode_signed_license(
+                    signed_license,
+                    license_key.decrypted_public_key,
+                    license_key.decrypted_public_password,
+                    license_key.decrypted_license_password,
+                )
+            except ValueError as exc:
+                current_app.logger.warn("unable to generate metadata; "
+                                        "reason={}".format(exc))
+                decoded_license = {"valid": False, "metadata": {}}
+            finally:
+                license = License(fields={
+                    "signed_license": signed_license,
+                    "license_key_id": license_key.id,
+                    "valid": decoded_license["valid"],
+                    "metadata": decoded_license["metadata"],
+                })
+                db.persist(license, "licenses")
+
+                if license.expired:
+                    return {
+                        "status": 422,
+                        "message": "downloaded license is invalid or expired",
+                    }, 422
+
+                # set license ID for consumer
+                data["license_id"] = license.id
 
         provider = Provider(fields=data)
         db.persist(provider, "providers")

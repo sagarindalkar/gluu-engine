@@ -49,11 +49,12 @@ class Provider(BaseModel):
 
     def __init__(self, fields=None):
         self.id = str(uuid.uuid4())
+        self.license_key_id = ""
         self.populate(fields)
 
     @property
     def type(self):
-        return "master" if not self.license_id else "consumer"
+        return "master" if not self.license_key_id else "consumer"
 
     @property
     def nodes_count(self):
@@ -77,12 +78,6 @@ class Provider(BaseModel):
 
         self.docker_base_url = fields.get("docker_base_url", "")
         self.hostname = fields.get("hostname", "")
-
-        # A reference to ``gluuapi.models.license.License.id``.
-        # If the value this attribute is set, provider is considered
-        # as ``consumer``; otherwise ``master`` is the role of
-        # this provider as default.
-        self.license_id = fields.get("license_id", "")
 
         # Path to directory to store all docker client certs
         self.docker_cert_dir = fields.get("docker_cert_dir",

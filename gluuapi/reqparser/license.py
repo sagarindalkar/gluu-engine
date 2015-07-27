@@ -22,29 +22,8 @@
 from urllib import quote_plus
 
 from marshmallow import post_load
-from marshmallow import validates
-from marshmallow import ValidationError
 
-from gluuapi.database import db
 from gluuapi.extensions import ma
-
-
-class LicenseReq(ma.Schema):
-    license_key_id = ma.Str(required=True)
-
-    @validates("license_key_id")
-    def validate_credential_id(self, value):
-        license_key = db.get(value, "license_keys")
-        self.context["license_key"] = license_key
-
-        if not license_key:
-            raise ValidationError("invalid license key")
-
-    @post_load
-    def finalize_data(self, data):
-        out = {"params": data}
-        out.update({"context": self.context})
-        return out
 
 
 class LicenseKeyReq(ma.Schema):

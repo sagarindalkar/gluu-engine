@@ -25,9 +25,7 @@ from crochet import run_in_reactor
 from twisted.internet.task import LoopingCall
 
 from gluuapi.database import db
-from gluuapi.utils import timestamp_millis
 from gluuapi.helper import SaltHelper
-from gluuapi.model import License
 from gluuapi.model import STATE_DISABLED
 from gluuapi.utils import retrieve_signed_license
 from gluuapi.utils import decode_signed_license
@@ -54,80 +52,53 @@ class LicenseExpirationTask(object):
         deferred.addErrback(on_error)
 
     def perform_job(self):
-        self.logger.info("checking expired licenses")
-        field = db.where("metadata").has("expiration_date")
-        condition = (field < timestamp_millis())
-        licenses = db.search_from_table("licenses", condition)
+        self.logger.info("checking expired license keys")
+        license_keys = db.all("license_keys")
 
-        for license in licenses:
-            if not license.expired:  # pragma: no cover
+        for license_key in license_keys:
+            if not license_key.expired:  # pragma: no cover
                 continue
 
-            self.logger.info("found expired license {}".format(license.id))
+            self.logger.info("found expired license "
+                             "key {}".format(license_key.id))
 
-            providers = license.get_provider_objects()
+            providers = license_key.get_provider_objects()
             for provider in providers:
-                # if we have providers affected by this license,
-                # try to retrieve new license and update related provider
-                # to use the new license
                 self.logger.info("trying to retrieve new license for "
                                  "provider {}".format(provider.id))
 
-                try:
-                    code = license.get_license_key().code
-                except AttributeError:
-                    code = ""
+                new_license_key = self.update_license_key(license_key)
+                if new_license_key.expired:
+                    # unable to do license_key renewal, hence we're going to
+                    # disable oxAuth nodes
+                    self.disable_oxauth_nodes(provider)
 
-                new_license = self.get_new_license(
-                    code, license.license_key_id,
-                )
-                if new_license and not new_license.expired:
-                    # only update provider when new license has correct metadata
-                    provider.license_id = new_license.id
-                    db.update(provider.id, provider, "providers")
-                    self.logger.info("provider {} has been "
-                                     "updated".format(provider.id))
-                    continue
-
-                # unable to do license renewal, hence we're going to
-                # disable oxAuth nodes
-                self.disable_oxauth_nodes(provider)
-
-    def get_new_license(self, code, license_key_id):
-        resp = retrieve_signed_license(code)
+    def update_license_key(self, license_key):
+        resp = retrieve_signed_license(license_key.code)
         if not resp.ok:
             self.logger.warn("unable to retrieve new license; "
                              "reason: {}".format(resp.text))
-            return
+            return license_key
 
-        # new license is retrieved
         self.logger.info("new license has been retrieved")
-        params = {
-            "signed_license": resp.json()["license"],
-            "license_key_id": license_key_id,
-            "code": code,
-        }
-
-        license = License(params)
-        credential = db.get(license.license_key_id, "license_keys")
-
         try:
             decoded_license = decode_signed_license(
-                license.signed_license,
-                credential.decrypted_public_key,
-                credential.decrypted_public_password,
-                credential.decrypted_license_password,
+                resp.json()["license"],
+                license_key.decrypted_public_key,
+                license_key.decrypted_public_password,
+                license_key.decrypted_license_password,
             )
         except ValueError:  # pragma: no cover
             self.logger.warn("unable to generate metadata for new license; "
                              "likely caused by incorrect credentials")
-        else:
-            license.valid = decoded_license["valid"]
-            license.metadata = decoded_license["metadata"]
+            decoded_license["valid"] = False
+            decoded_license["metadata"] = {}
+        finally:
+            license_key.valid = decoded_license["valid"]
+            license_key.metadata = decoded_license["metadata"]
 
-        # saves this new license
-        db.persist(license, "licenses")
-        return license
+        db.update(license_key.id, license_key, "license_keys")
+        return license_key
 
     def disable_oxauth_nodes(self, provider):
         for node in provider.get_node_objects(type_="oxauth"):

@@ -35,71 +35,20 @@ from gluuapi.utils import decrypt_text
 
 
 @swagger.model
-class License(BaseModel):
-    resource_fields = {
-        "id": String,
-        "code": String,
-        # "billing_email": String,
-        "license_key_id": String,
-        "valid": Boolean,
-        "metadata": Nested,
-    }
-
-    def __init__(self, fields=None):
-        self.passkey = generate_passkey()
-        self.id = "{}".format(uuid.uuid4())
-        self.populate(fields)
-
-    @property
-    def expired(self):
-        if not self.valid or not self.metadata:
-            return True
-
-        # ``expiration_date`` is set to null
-        if not self.metadata["expiration_date"]:
-            return False
-
-        # ``expiration_date`` is time in milliseconds since the EPOCH
-        now = timestamp_millis()
-        return now > self.metadata["expiration_date"]
-
-    def get_provider_objects(self):
-        providers = db.search_from_table(
-            "providers", db.where("license_id") == self.id,
-        )
-        return providers
-
-    def populate(self, fields=None):
-        fields = fields or {}
-
-        # self.code = fields.get("code", "")
-        # self.billing_email = fields.get("billing_email", "")
-        self.signed_license = fields.get("signed_license", "")
-        self.license_key_id = fields.get("license_key_id", "")
-        self.valid = fields.get("valid", False)
-        self.metadata = fields.get("metadata", {})
-
-    def get_license_key(self):
-        try:
-            license_key = db.search_from_table(
-                "license_keys",
-                db.where("id") == self.license_key_id,
-            )[0]
-        except IndexError:
-            license_key = None
-        return license_key
-
-
 class LicenseKey(BaseModel):
     resource_fields = {
         "id": String,
         "name": String,
         "code": String,
+        "valid": Boolean,
+        "metadata": Nested,
     }
 
     def __init__(self, fields=None):
         self.id = "{}".format(uuid.uuid4())
         self.passkey = generate_passkey()
+        self.valid = False
+        self.metadata = {}
         self.populate(fields)
 
     def populate(self, fields=None):
@@ -135,6 +84,21 @@ class LicenseKey(BaseModel):
     def decrypted_license_password(self):
         return decrypt_text(self.license_password, self.passkey)
 
-    def get_license_objects(self):
-        condition = db.where("license_key_id") == self.id
-        return db.search_from_table("licenses", condition)
+    @property
+    def expired(self):
+        if not self.valid or not self.metadata:
+            return True
+
+        # ``expiration_date`` is set to null
+        if not self.metadata["expiration_date"]:
+            return False
+
+        # ``expiration_date`` is time in milliseconds since the EPOCH
+        now = timestamp_millis()
+        return now > self.metadata["expiration_date"]
+
+    def get_provider_objects(self):
+        providers = db.search_from_table(
+            "providers", db.where("license_key_id") == self.id,
+        )
+        return providers

@@ -61,8 +61,8 @@ class NodeReq(ma.Schema):
         if not provider:
             raise ValidationError("invalid provider ID")
         if provider.type == "consumer":
-            license = db.get(provider.license_id, "licenses")
-            if license and license.expired:
+            license_key = db.get(provider.license_key_id, "license_keys")
+            if license_key and license_key.expired:
                 raise ValidationError("cannot deploy node to "
                                       "provider with expired license")
 

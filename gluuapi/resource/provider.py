@@ -35,7 +35,6 @@ from gluuapi.helper import SaltHelper
 from gluuapi.helper import WeaveHelper
 from gluuapi.utils import retrieve_signed_license
 from gluuapi.utils import decode_signed_license
-from gluuapi.model import License
 
 
 def format_provider_resp(provider):
@@ -149,13 +148,6 @@ class ProviderResource(Resource):
                 "paramType": "form"
             },
             {
-                "name": "license_id",
-                "description": "ID of the license. Must be filled for consumer provider",
-                "required": False,
-                "dataType": "string",
-                "paramType": "form"
-            },
-            {
                 "name": "ssl_key",
                 "description": "The contents of SSL client key file",
                 "required": False,
@@ -197,9 +189,6 @@ class ProviderResource(Resource):
                 "params": errors,
             }, 400
 
-        if provider.license_id:
-            data["license_id"] = provider.license_id
-
         provider.populate(data)
         db.update(provider.id, provider, "providers")
 
@@ -207,31 +196,28 @@ class ProviderResource(Resource):
         salt = SaltHelper()
         salt.register_minion(provider.hostname)
 
-        # try to launch weave (for backward-compat with v0.2)
-        try:
-            cluster = db.all("clusters")[0]
-        except IndexError:  # pragma: no cover
-            current_app.logger.warn("cluster object is not available")
-        else:
-            weave = WeaveHelper(
-                provider, cluster, current_app.config["SALT_MASTER_IPADDR"],
-            )
-            weave.launch_async()
-
-        # if provider has disabled oxAuth nodes, try to re-enable the nodes
-        oxauth_nodes = provider.get_node_objects(
-            type_="oxauth", state=STATE_DISABLED,
+        cluster = db.all("clusters")[0]
+        weave = WeaveHelper(
+            provider, cluster, current_app.config["SALT_MASTER_IPADDR"],
         )
+        weave.launch_async()
 
-        for node in oxauth_nodes:
-            attach_cmd = "weave attach {}/{} {}".format(
-                node.weave_ip,
-                node.weave_prefixlen,
-                node.id,
+        # if consumer provider has disabled oxAuth nodes, try to re-enable the nodes
+        license_key = db.get(provider.license_key_id, "license_keys")
+        if license_key and not license_key.expired:
+            oxauth_nodes = provider.get_node_objects(
+                type_="oxauth", state=STATE_DISABLED,
             )
-            node.state = STATE_SUCCESS
-            db.update(node.id, node, "nodes")
-            salt.cmd(provider.hostname, "cmd.run", [attach_cmd])
+
+            for node in oxauth_nodes:
+                attach_cmd = "weave attach {}/{} {}".format(
+                    node.weave_ip,
+                    node.weave_prefixlen,
+                    node.id,
+                )
+                node.state = STATE_SUCCESS
+                db.update(node.id, node, "nodes")
+                salt.cmd(provider.hostname, "cmd.run", [attach_cmd])
         return format_provider_resp(provider)
 
 
@@ -251,13 +237,6 @@ class ProviderListResource(Resource):
                 "name": "docker_base_url",
                 "description": "URL to Docker API (e.g. 'unix:///var/run/docker.sock' or 'https://ip:port')",
                 "required": True,
-                "dataType": "string",
-                "paramType": "form"
-            },
-            {
-                "name": "license_id",
-                "description": "ID of the license. Must be filled for consumer provider",
-                "required": False,
                 "dataType": "string",
                 "paramType": "form"
             },
@@ -312,7 +291,7 @@ class ProviderListResource(Resource):
         if not cluster:
             return {
                 "status": 403,
-                "message": "requires at least 1 cluster created beforehand",
+                "message": "requires at least 1 cluster created first",
             }, 403
 
         data, errors = ProviderReq(
@@ -327,7 +306,7 @@ class ProviderListResource(Resource):
             }, 400
 
         master_num = db.count_from_table(
-            "providers", db.where("license_id") == "",
+            "providers", db.where("license_key_id") == "",
         )
 
         # if requested provider is master and we already have
@@ -346,6 +325,7 @@ class ProviderListResource(Resource):
                 "message": "requires a master provider registered first",
             }, 403
 
+        license_key_id = ""
         if data["type"] == "consumer":
             try:
                 license_key = db.all("license_keys")[0]
@@ -386,24 +366,13 @@ class ProviderListResource(Resource):
                                         "reason={}".format(exc))
                 decoded_license = {"valid": False, "metadata": {}}
             finally:
-                license = License(fields={
-                    "signed_license": signed_license,
-                    "license_key_id": license_key.id,
-                    "valid": decoded_license["valid"],
-                    "metadata": decoded_license["metadata"],
-                })
-                db.persist(license, "licenses")
-
-                if license.expired:
-                    return {
-                        "status": 422,
-                        "message": "downloaded license is invalid or expired",
-                    }, 422
-
-                # set license ID for consumer
-                data["license_id"] = license.id
+                license_key.valid = decoded_license["valid"]
+                license_key.metadata = decoded_license["metadata"]
+                db.update(license_key.id, license_key, "license_keys")
+                license_key_id = license_key.id
 
         provider = Provider(fields=data)
+        provider.license_key_id = license_key_id
         db.persist(provider, "providers")
 
         weave = WeaveHelper(

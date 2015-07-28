@@ -104,18 +104,6 @@ def httpd_node(cluster, provider, oxauth_node, oxtrust_node):
     return node
 
 
-@pytest.fixture()
-def license(license_key):
-    from gluuapi.model import License
-
-    license = License({
-        "signed_license": "signed_license_abc",
-        "billing_email": "admin@example.com",
-        "license_key_id": license_key.id,
-    })
-    return license
-
-
 @pytest.fixture
 def patched_salt_cmd(monkeypatch):
     monkeypatch.setattr(

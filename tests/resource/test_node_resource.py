@@ -199,12 +199,10 @@ def test_node_post(monkeypatch, app, db, cluster, provider,
     assert resp.status_code == 202
 
 
-def test_node_post_expired_license(app, db, provider, license,
-                                   cluster, license_key):
+def test_node_post_expired_license(app, db, provider, cluster, license_key):
     db.persist(cluster, "clusters")
     db.persist(license_key, "license_keys")
-    db.persist(license, "licenses")
-    provider.license_id = license.id
+    provider.license_key_id = license_key.id
     db.persist(provider, "providers")
 
     resp = app.test_client().post(

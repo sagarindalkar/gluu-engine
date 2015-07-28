@@ -8,7 +8,7 @@ if [ -n $build ]; then
     build="unstable"
 fi
 if [ "$(ls -f *.deb)" ]; then
-    debfile=`ls -f *.deb`
+    debfile=`ls -f *.deb|sort|head -1`
     #/usr/bin/dpkg-sig -k 0544BA38 -f $gpg_pass -s builder $debfile
     ./deb-sign2.sh $debfile
     version="trusty"

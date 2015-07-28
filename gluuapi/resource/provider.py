@@ -241,6 +241,13 @@ class ProviderListResource(Resource):
                 "paramType": "form"
             },
             {
+                "name": "type",
+                "description": "Provider type (either 'master' or 'consumer')",
+                "required": True,
+                "dataType": "string",
+                "paramType": "form"
+            },
+            {
                 "name": "ssl_key",
                 "description": "The contents of SSL client key file",
                 "required": False,
@@ -274,6 +281,10 @@ class ProviderListResource(Resource):
             {
                 "code": 403,
                 "message": "Forbidden",
+            },
+            {
+                "code": 422,
+                "message": "Unprocessable Entity",
             },
             {
                 "code": 500,

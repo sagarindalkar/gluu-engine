@@ -1,4 +1,122 @@
-gluu-flask (0.1.0-2) trusty; urgency=low
+gluu-flask (0.3.0-7) unstable; urgency=medium
+
+  * QA upload.
+  * new upstream code
+
+ -- Adrian Alves <adrian@gluu.org>  Mon, 27 Jul 2015 11:38:29 -0400
+
+gluu-flask (0.3.0-6) trusty; urgency=medium
+
+  * QA upload.
+  * new
+
+ -- Adrian Alves <adrian@gluu.org>  Fri, 24 Jul 2015 17:53:58 -0400
+
+gluu-flask (0.3.0-5) trusty; urgency=low
+
+  * new upstream patches
+  * new test
+
+ -- Adrian Alves <adrian@gluu.org>  Mon, 29 Jun 2015 13:11:14 -0500
+
+gluu-flask (0.3.0-4) trusty; urgency=low
+
+  * new upstream patches
+
+ -- Adrian Alves <adrian@gluu.org>  Mon, 29 Jun 2015 13:11:14 -0500
+
+gluu-flask (0.3.0-3) trusty; urgency=low
+
+  * new upstream patches
+
+ -- Adrian Alves <adrian@gluu.org>  Mon, 29 Jun 2015 13:11:14 -0500
+
+gluu-flask (0.3.0-2) trusty; urgency=low
+
+  * new upstream patches
+
+ -- Adrian Alves <adrian@gluu.org>  Mon, 29 Jun 2015 13:11:14 -0500
+
+gluu-flask (0.3.0-1) trusty; urgency=low
+
+  * new upstream patches
+
+ -- Adrian Alves <adrian@gluu.org>  Mon, 29 Jun 2015 13:11:14 -0500
+
+gluu-flask (0.2.0-12) trusty; urgency=low
+
+  * new upstream patches
+
+ -- Adrian Alves <adrian@gluu.org>  Mon, 29 Jun 2015 13:11:14 -0500
+
+gluu-flask (0.2.0-11) trusty; urgency=low
+
+  * new upstream patches
+
+ -- Adrian Alves <adrian@gluu.org>  Mon, 29 Jun 2015 13:11:14 -0500
+
+gluu-flask (0.2.0-10) trusty; urgency=low
+
+  * new upstream patches
+
+ -- Adrian Alves <adrian@gluu.org>  Mon, 29 Jun 2015 13:11:14 -0500
+
+gluu-flask (0.2.0-9) trusty; urgency=low
+
+  * typo fix
+
+ -- Adrian Alves <adrian@gluu.org>  Mon, 29 Jun 2015 13:11:14 -0500
+
+gluu-flask (0.2.0-8) trusty; urgency=low
+
+  * new fixes from upstream
+
+ -- Adrian Alves <adrian@gluu.org>  Mon, 29 Jun 2015 13:11:14 -0500
+
+gluu-flask (0.2.0-7) trusty; urgency=low
+
+  * added default file workaround
+
+ -- Adrian Alves <adrian@gluu.org>  Mon, 29 Jun 2015 13:11:14 -0500
+
+gluu-flask (0.2.0-6) trusty; urgency=low
+
+  * code fixing from isman upstream
+
+ -- Adrian Alves <adrian@gluu.org>  Mon, 29 Jun 2015 13:11:14 -0500
+
+gluu-flask (0.2.0-5) trusty; urgency=low
+
+  * added python-marshmallow and python-flask-marshmallow as dependencie
+
+ -- Adrian Alves <adrian@gluu.org>  Mon, 29 Jun 2015 13:11:14 -0500
+
+gluu-flask (0.2.0-4) trusty; urgency=low
+
+  * new init file
+
+ -- Adrian Alves <adrian@gluu.org>  Mon, 29 Jun 2015 13:11:14 -0500
+
+gluu-flask (0.2.0-3) trusty; urgency=low
+
+  * add python-daemonocle depends for new init changes
+
+ -- Adrian Alves <adrian@gluu.org>  Wed, 24 Jun 2015 13:11:14 -0500
+
+gluu-flask (0.2.0-2) trusty; urgency=low
+
+  * new release with fixes by isman
+
+ -- Adrian Alves <adrian@gluu.org>  Fri, 19 Jun 2015 13:11:14 -0500
+
+gluu-flask (0.2.0-1) trusty; urgency=low
+
+  * Version 0.2.0
+  * added dependecies for the new release.
+
+ -- Adrian Alves <adrian@gluu.org>  Thu, 18 Jun 2015 13:11:14 -0500
+
+gluu-flask (0.1.0-21) trusty; urgency=low
 
   * Initial release. Version 0.1.0
 

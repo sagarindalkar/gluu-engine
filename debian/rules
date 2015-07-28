@@ -6,6 +6,7 @@ override_dh_auto_build:
 		python setup.py build
 override_dh_auto_install:
 		python setup.py install --root=debian/gluu-flask --install-scripts /usr/bin
+		install -D -m0644 $(CURDIR)/debian/gluuapi.default $(CURDIR)/debian/gluu-flask/etc/default/gluuapi
 override_dh_auto_clean:
 		python setup.py clean
 override_dh_auto_test:

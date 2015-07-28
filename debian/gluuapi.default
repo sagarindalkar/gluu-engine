@@ -1,0 +1,5 @@
+# API environment set as production mode
+API_ENV=prod
+ 
+# IP address where salt-master listens to. By default uses IP address from eth0.
+SALT_MASTER_IPADDR=`hostname -I | cut -d ' ' -f 1`

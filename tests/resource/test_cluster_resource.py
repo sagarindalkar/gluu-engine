@@ -71,6 +71,15 @@ def test_cluster_delete_failed(app):
     assert resp.status_code == 404
 
 
+def test_cluster_delete_nodes_exist(app, db, cluster, ldap_node):
+    db.persist(cluster, "clusters")
+    ldap_node.state = "SUCCESS"
+    ldap_node.cluster_id = cluster.id
+    db.persist(ldap_node, "nodes")
+    resp = app.test_client().delete("/clusters/{}".format(cluster.id))
+    assert resp.status_code == 403
+
+
 def test_cluster_post_max_cluster_reached(app, db, cluster):
     db.persist(cluster, "clusters")
 

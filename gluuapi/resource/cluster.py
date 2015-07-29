@@ -76,6 +76,10 @@ class Cluster(Resource):
                 "message": "Cluster deleted"
             },
             {
+                "code": 403,
+                "message": "Forbidden",
+            },
+            {
                 "code": 404,
                 "message": "Cluster not found",
             },
@@ -90,6 +94,11 @@ class Cluster(Resource):
         cluster = db.get(cluster_id, "clusters")
         if not cluster:
             return {"status": 404, "message": "Cluster not found"}, 404
+
+        if cluster.nodes_count:
+            msg = "Cannot delete cluster while having nodes " \
+                  "deployed on this cluster"
+            return {"status": 403, "message": msg}, 403
 
         db.delete(cluster_id, "clusters")
         return {}, 204

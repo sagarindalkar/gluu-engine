@@ -27,6 +27,7 @@ from twisted.internet.task import LoopingCall
 from gluuapi.database import db
 from gluuapi.helper import SaltHelper
 from gluuapi.model import STATE_DISABLED
+from gluuapi.model import STATE_SUCCESS
 from gluuapi.utils import retrieve_signed_license
 from gluuapi.utils import decode_signed_license
 
@@ -52,11 +53,11 @@ class LicenseExpirationTask(object):
         deferred.addErrback(on_error)
 
     def perform_job(self):
-        self.logger.info("checking expired license keys")
+        self.logger.info("checking license keys")
         license_keys = db.all("license_keys")
 
         for license_key in license_keys:
-            if not license_key.expired:  # pragma: no cover
+            if not license_key.expired:
                 continue
 
             self.logger.info("found expired license "
@@ -72,6 +73,11 @@ class LicenseExpirationTask(object):
                     # unable to do license_key renewal, hence we're going to
                     # disable oxAuth nodes
                     self.disable_oxauth_nodes(provider)
+                else:
+                    # if we have disabled oxAuth nodes in provider
+                    # and license key is not expired, try to re-enable
+                    # the nodes
+                    self.enable_oxauth_nodes(provider)
 
     def update_license_key(self, license_key):
         resp = retrieve_signed_license(license_key.code)
@@ -82,8 +88,9 @@ class LicenseExpirationTask(object):
 
         self.logger.info("new license has been retrieved")
         try:
+            signed_license = resp.json()["license"]
             decoded_license = decode_signed_license(
-                resp.json()["license"],
+                signed_license,
                 license_key.decrypted_public_key,
                 license_key.decrypted_public_password,
                 license_key.decrypted_license_password,
@@ -96,6 +103,7 @@ class LicenseExpirationTask(object):
         finally:
             license_key.valid = decoded_license["valid"]
             license_key.metadata = decoded_license["metadata"]
+            license_key.signed_license = signed_license
 
         db.update(license_key.id, license_key, "license_keys")
         return license_key
@@ -113,3 +121,17 @@ class LicenseExpirationTask(object):
             self.salt.cmd(provider.hostname, "cmd.run", [detach_cmd])
             self.logger.info("oxAuth node {} has been "
                              "disabled".format(node.id))
+
+    def enable_oxauth_nodes(self, provider):
+        for node in provider.get_node_objects(type_="oxauth", state=STATE_DISABLED):
+            self.logger.info("enabling oxAuth node {}".format(node.id))
+            attach_cmd = "weave attach {}/{} {}".format(
+                node.weave_ip,
+                node.weave_prefixlen,
+                node.id,
+            )
+            node.state = STATE_SUCCESS
+            db.update(node.id, node, "nodes")
+            self.salt.cmd(provider.hostname, "cmd.run", [attach_cmd])
+            self.logger.info("oxAuth node {} has been "
+                             "enabled".format(node.id))

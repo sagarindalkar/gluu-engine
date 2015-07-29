@@ -29,8 +29,6 @@ from gluuapi.database import db
 from gluuapi.reqparser import ProviderReq
 from gluuapi.reqparser import EditProviderReq
 from gluuapi.model import Provider
-from gluuapi.model import STATE_DISABLED
-from gluuapi.model import STATE_SUCCESS
 from gluuapi.helper import SaltHelper
 from gluuapi.helper import WeaveHelper
 from gluuapi.utils import retrieve_signed_license
@@ -189,6 +187,7 @@ class ProviderResource(Resource):
                 "params": errors,
             }, 400
 
+        data["type"] = provider.type
         provider.populate(data)
         db.update(provider.id, provider, "providers")
 
@@ -201,23 +200,6 @@ class ProviderResource(Resource):
             provider, cluster, current_app.config["SALT_MASTER_IPADDR"],
         )
         weave.launch_async()
-
-        # if consumer provider has disabled oxAuth nodes, try to re-enable the nodes
-        license_key = db.get(provider.license_key_id, "license_keys")
-        if license_key and not license_key.expired:
-            oxauth_nodes = provider.get_node_objects(
-                type_="oxauth", state=STATE_DISABLED,
-            )
-
-            for node in oxauth_nodes:
-                attach_cmd = "weave attach {}/{} {}".format(
-                    node.weave_ip,
-                    node.weave_prefixlen,
-                    node.id,
-                )
-                node.state = STATE_SUCCESS
-                db.update(node.id, node, "nodes")
-                salt.cmd(provider.hostname, "cmd.run", [attach_cmd])
         return format_provider_resp(provider)
 
 
@@ -317,7 +299,7 @@ class ProviderListResource(Resource):
             }, 400
 
         master_num = db.count_from_table(
-            "providers", db.where("license_key_id") == "",
+            "providers", db.where("type") == "master",
         )
 
         # if requested provider is master and we already have
@@ -336,7 +318,6 @@ class ProviderListResource(Resource):
                 "message": "requires a master provider registered first",
             }, 403
 
-        license_key_id = ""
         if data["type"] == "consumer":
             try:
                 license_key = db.all("license_keys")[0]
@@ -379,11 +360,10 @@ class ProviderListResource(Resource):
             finally:
                 license_key.valid = decoded_license["valid"]
                 license_key.metadata = decoded_license["metadata"]
+                license_key.signed_license = signed_license
                 db.update(license_key.id, license_key, "license_keys")
-                license_key_id = license_key.id
 
         provider = Provider(fields=data)
-        provider.license_key_id = license_key_id
         db.persist(provider, "providers")
 
         weave = WeaveHelper(

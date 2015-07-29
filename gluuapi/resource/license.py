@@ -21,13 +21,17 @@
 # SOFTWARE.
 from flask import url_for
 from flask import request
+from flask import current_app
 from flask_restful import Resource
 from flask_restful_swagger import swagger
 
 from gluuapi.database import db
 from gluuapi.model import LicenseKey
 from gluuapi.reqparser import LicenseKeyReq
-
+from gluuapi.model import STATE_DISABLED
+from gluuapi.model import STATE_SUCCESS
+from gluuapi.helper import SaltHelper
+from gluuapi.utils import decode_signed_license
 
 def format_license_key_resp(obj):
     resp = obj.as_dict()
@@ -241,7 +245,42 @@ class LicenseKeyResource(Resource):
                 "params": errors,
             }, 400
         license_key.populate(data)
-        db.update(license_key_id, license_key, "license_keys")
+
+        try:
+            # try to recalculate the metadata
+            decoded_license = decode_signed_license(
+                license_key.signed_license,
+                license_key.decrypted_public_key,
+                license_key.decrypted_public_password,
+                license_key.decrypted_license_password,
+            )
+        except ValueError as exc:
+            current_app.logger.warn("unable to generate metadata; "
+                                    "reason={}".format(exc))
+            decoded_license = {"valid": False, "metadata": {}}
+        finally:
+            license_key.valid = decoded_license["valid"]
+            license_key.metadata = decoded_license["metadata"]
+            db.update(license_key.id, license_key, "license_keys")
+
+        # if consumer providers have disabled oxAuth nodes and license
+        # key is not expired, try to re-enable the nodes
+        if not license_key.expired:
+            salt = SaltHelper()
+            for provider in license_key.get_provider_objects():
+                oxauth_nodes = provider.get_node_objects(
+                    type_="oxauth", state=STATE_DISABLED,
+                )
+
+                for node in oxauth_nodes:
+                    attach_cmd = "weave attach {}/{} {}".format(
+                        node.weave_ip,
+                        node.weave_prefixlen,
+                        node.id,
+                    )
+                    node.state = STATE_SUCCESS
+                    db.update(node.id, node, "nodes")
+                    salt.cmd(provider.hostname, "cmd.run", [attach_cmd])
         return format_license_key_resp(license_key)
 
     @swagger.operation(
@@ -267,6 +306,11 @@ class LicenseKeyResource(Resource):
         license_key = db.get(license_key_id, "license_keys")
         if not license_key:
             return {"status": 404, "message": "License key not found"}, 404
+
+        if len(license_key.get_provider_objects()):
+            msg = "Cannot delete license key while having consumer " \
+                  "providers"
+            return {"status": 403, "message": msg}, 403
 
         db.delete(license_key_id, "license_keys")
         return {}, 204

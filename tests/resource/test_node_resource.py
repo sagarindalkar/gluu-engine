@@ -201,8 +201,9 @@ def test_node_post(monkeypatch, app, db, cluster, provider,
 
 def test_node_post_expired_license(app, db, provider, cluster, license_key):
     db.persist(cluster, "clusters")
+    license_key.valid = False
     db.persist(license_key, "license_keys")
-    provider.license_key_id = license_key.id
+    provider.type = "consumer"
     db.persist(provider, "providers")
 
     resp = app.test_client().post(

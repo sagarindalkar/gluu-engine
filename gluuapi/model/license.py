@@ -49,6 +49,7 @@ class LicenseKey(BaseModel):
         self.passkey = generate_passkey()
         self.valid = False
         self.metadata = {}
+        self.signed_license = ""
         self.populate(fields)
 
     def populate(self, fields=None):
@@ -99,6 +100,6 @@ class LicenseKey(BaseModel):
 
     def get_provider_objects(self):
         providers = db.search_from_table(
-            "providers", db.where("license_key_id") == self.id,
+            "providers", db.where("type") == "consumer",
         )
         return providers

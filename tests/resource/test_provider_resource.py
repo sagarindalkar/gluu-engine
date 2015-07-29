@@ -34,6 +34,7 @@ def test_provider_list_post_master(monkeypatch, app, db, cluster,
 
 def test_provider_list_post_duplicated_master(app, db, provider, cluster):
     db.persist(cluster, "clusters")
+    provider.type = "master"
     db.persist(provider, "providers")
     resp = app.test_client().post(
         "/providers",
@@ -76,6 +77,7 @@ def test_provider_list_post_consumer_no_master(monkeypatch, app, db, cluster):
 def test_provider_list_post_consumer_no_license(app, db, cluster, provider):
     db.persist(cluster, "clusters")
     # create master provider first
+    provider.type = "master"
     db.persist(provider, "providers")
     resp = app.test_client().post(
         "/providers",
@@ -92,6 +94,7 @@ def test_provider_list_post_consumer_unretrieved_license(
         app, db, cluster, license_key, oxd_resp_err, provider):
     db.persist(cluster, "clusters")
     # create master provider first
+    provider.type = "master"
     db.persist(provider, "providers")
     db.persist(license_key, "license_keys")
     resp = app.test_client().post(
@@ -111,6 +114,7 @@ def test_provider_list_post_consumer(monkeypatch, app, db, cluster,
                                      validator_ok, provider):
     db.persist(cluster, "clusters")
     # create master provider first
+    provider.type = "master"
     db.persist(provider, "providers")
     db.persist(license_key, "license_keys")
     resp = app.test_client().post(
@@ -125,11 +129,12 @@ def test_provider_list_post_consumer(monkeypatch, app, db, cluster,
     assert json.loads(resp.data)["type"] == "consumer"
 
 
-def test_provider_list_post_consumer_no_met(
+def test_provider_list_post_consumer_no_meta(
         monkeypatch, app, db, cluster, patched_salt_cmd, patched_sleep,
         license_key, oxd_resp_ok, validator_err, provider):
     db.persist(cluster, "clusters")
     # create master provider first
+    provider.type = "master"
     db.persist(provider, "providers")
     db.persist(license_key, "license_keys")
     resp = app.test_client().post(
@@ -202,39 +207,6 @@ def test_provider_put_missing_params(app, db, provider):
         },
     )
     assert resp.status_code == 400
-
-
-# def test_provider_put_license_notfound(app, db, provider, license):
-#     db.persist(license, "licenses")
-#     provider.license_id = license.id
-#     db.persist(provider, "providers")
-
-#     resp = app.test_client().put(
-#         "/providers/{}".format(provider.id),
-#         data={
-#             "docker_base_url": "unix:///var/run/docker.sock",
-#             "hostname": "local",
-#             "license_id": "abc",
-#         },
-#     )
-#     assert resp.status_code == 400
-
-
-# def test_provider_put_expired_license(app, db, license, provider, validator_err):
-
-#     db.persist(license, "licenses")
-#     provider.license_id = license
-#     db.persist(provider, "providers")
-
-#     resp = app.test_client().put(
-#         "/providers/{}".format(provider.id),
-#         data={
-#             "docker_base_url": "unix:///var/run/docker.sock",
-#             "hostname": "local",
-#             "license_id": license.id,
-#         },
-#     )
-#     assert resp.status_code == 400
 
 
 def test_provider_put_updated(app, db, provider, oxauth_node,

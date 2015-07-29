@@ -74,6 +74,27 @@ def test_license_key_put(app, db, license_key, validator_ok):
     assert resp.status_code == 200
 
 
+def test_license_key_put_enable_nodes(app, db, license_key, validator_ok,
+                                      oxauth_node, provider, patched_salt_cmd):
+    provider.type = "consumer"
+    db.persist(provider, "providers")
+    oxauth_node.provider_id = provider.id
+    oxauth_node.state = "DISABLED"
+    db.persist(oxauth_node, "nodes")
+    db.persist(license_key, "license_keys")
+    resp = app.test_client().put(
+        "/license_keys/{}".format(license_key.id),
+        data={
+            "name": "test",
+            "code": "abc",
+            "public_key": "pubkey",
+            "public_password": "pubpasswd",
+            "license_password": "licensepasswd",
+        },
+    )
+    assert resp.status_code == 200
+
+
 def test_license_key_put_incorrect_creds(app, db, license_key, validator_err):
     db.persist(license_key, "license_keys")
     resp = app.test_client().put(
@@ -105,6 +126,14 @@ def test_license_key_put_invalid_params(app, db, license_key, validator_ok):
 def test_license_key_delete_notfound(app):
     resp = app.test_client().delete("/license_keys/abc")
     assert resp.status_code == 404
+
+
+def test_license_key_delete_provider_exist(app, db, provider, license_key):
+    provider.type = "consumer"
+    db.persist(provider, "providers")
+    db.persist(license_key, "license_keys")
+    resp = app.test_client().delete("/license_keys/{}".format(license_key.id))
+    assert resp.status_code == 403
 
 
 def test_license_key_delete(app, db, license_key):

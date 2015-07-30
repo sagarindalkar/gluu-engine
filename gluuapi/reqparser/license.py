@@ -25,6 +25,10 @@ from marshmallow import post_load
 
 from gluuapi.extensions import ma
 
+import re
+
+MIDDLE_SPACES_RE = re.compile(r'(.+)\s+([^\s])')
+
 
 class LicenseKeyReq(ma.Schema):
     name = ma.Str(required=True)
@@ -39,6 +43,5 @@ class LicenseKeyReq(ma.Schema):
         # client like ``curl`` will interpret ``+`` as whitespace
         # hence we're converting whitespace to ``+``
         if "public_key" in data:
-            pubkey = data["public_key"].strip().replace(" ", "")
-            data["public_key"] = quote_plus(pubkey, safe="/+=")
+            data["public_key"] = quote_plus(data["public_key"], safe="/+=")
         return data

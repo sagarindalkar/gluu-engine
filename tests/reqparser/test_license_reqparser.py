@@ -3,9 +3,9 @@ import pytest
 
 @pytest.mark.parametrize("pubkey_in, pubkey_out", [
     ("abc", "abc"),
-    ("a b c", "abc"),
+    ("a b c", "a+b+c"),
     ("abc/+=", "abc/+="),
-    ("a+ b/ c=", "a+b/c="),
+    ("a+ b/ c=", "a++b/+c="),
 ])
 def test_sanitize_public_key(pubkey_in, pubkey_out):
     from gluuapi.reqparser import LicenseKeyReq

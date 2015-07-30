@@ -91,16 +91,18 @@ class HttpdSetup(BaseSetup):
         self.after_teardown()
 
     def add_iptable_rule(self):
-        # expose port 80
-        iptables_cmd = "iptables -t nat -A PREROUTING -p tcp " \
+        # expose port 80 only if there's no rule yet
+        iptables_cmd = "iptables -L -t nat | grep '{0}:80' || " \
+                       "iptables -t nat -A PREROUTING -p tcp " \
                        "-i eth0 --dport 80 -j DNAT " \
-                       "--to-destination {}:80".format(self.node.weave_ip)
+                       "--to-destination {0}:80".format(self.node.weave_ip)
         self.salt.cmd(self.provider.hostname, "cmd.run", [iptables_cmd])
 
-        # expose port 443
-        iptables_cmd = "iptables -t nat -A PREROUTING -p tcp " \
+        # expose port 443 only if there's no rule yet
+        iptables_cmd = "iptables -L -t nat | grep '{0}:443' || " \
+                       "iptables -t nat -A PREROUTING -p tcp " \
                        "-i eth0 --dport 443 -j DNAT " \
-                       "--to-destination {}:443".format(self.node.weave_ip)
+                       "--to-destination {0}:443".format(self.node.weave_ip)
         self.salt.cmd(self.provider.hostname, "cmd.run", [iptables_cmd])
 
     def remove_iptable_rule(self):

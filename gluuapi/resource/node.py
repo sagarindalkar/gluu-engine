@@ -244,7 +244,9 @@ status of the cluster node is available.""",
         summary='Create a new node',
     )
     def post(self):
-        data, errors = NodeReq().load(request.form)
+        data, errors = NodeReq(
+            context={"node_type": request.form.get("node_type", "")}
+        ).load(request.form)
         if errors:
             return {
                 "status": 400,

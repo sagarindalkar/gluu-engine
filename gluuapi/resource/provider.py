@@ -125,10 +125,6 @@ class ProviderResource(Resource):
                 "code": 500,
                 "message": "Internal Server Error",
             },
-            {
-                "code": 403,
-                "message": "Access denied",
-            },
         ],
         parameters=[
             {

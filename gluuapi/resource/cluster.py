@@ -223,12 +223,16 @@ class ClusterList(Resource):
                 "message": "Created",
             },
             {
-                "code": 500,
-                "message": "Internal Server Error",
+                "code": 400,
+                "message": "Bad Request",
             },
             {
-                "code": 409,
-                "message": "Conflict",
+                "code": 403,
+                "message": "Forbidden",
+            },
+            {
+                "code": 500,
+                "message": "Internal Server Error",
             },
         ],
         summary='Create a new cluster'

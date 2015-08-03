@@ -87,6 +87,10 @@ class Node(Resource):
                 "message": "Node deleted",
             },
             {
+                "code": 403,
+                "message": "Forbidden",
+            },
+            {
                 "code": 404,
                 "message": "Node not found",
             },
@@ -110,6 +114,12 @@ class Node(Resource):
 
         if not node:
             return {"status": 404, "message": "Node not found"}, 404
+
+        if node.state == STATE_IN_PROGRESS:
+            return {
+                "status": 403,
+                "message": "cannot delete node while still in deployment",
+            }, 403
 
         # remove node (``node.id`` may empty, hence we're using
         # unique ``node.name`` instead)

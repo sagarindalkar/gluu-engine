@@ -94,6 +94,13 @@ def test_node_delete_failed(app):
     assert resp.status_code == 404
 
 
+def test_node_delete_in_progress(app, db, ldap_node):
+    ldap_node.state = "IN_PROGRESS"
+    db.persist(ldap_node, "nodes")
+    resp = app.test_client().delete("/nodes/{}".format(ldap_node.name))
+    assert resp.status_code == 403
+
+
 def test_node_post_invalid_connect_delay(app, db, cluster, provider):
     db.persist(cluster, "clusters")
     db.persist(provider, "providers")

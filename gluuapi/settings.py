@@ -30,10 +30,7 @@ class Config(object):
     # This directory
     APP_DIR = os.path.abspath(os.path.dirname(__file__))
     PORT = 8080
-    DATA_DIR = os.environ.get(
-        "DATA_DIR",
-        os.path.expanduser('~') + '/.gluu-cluster',
-    )
+    DATA_DIR = os.environ.get("DATA_DIR", "/var/lib/gluu-cluster")
     DATABASE_URI = os.path.join(DATA_DIR, "db", "db.json")
     SALT_MASTER_IPADDR = os.environ.get("SALT_MASTER_IPADDR", "")
     TEMPLATES_DIR = os.path.join(APP_DIR, "templates")
@@ -51,12 +48,17 @@ class DevConfig(Config):
     """Development configuration.
     """
     DEBUG = True
-    DATABASE_URI = os.path.join(Config.DATA_DIR, "db", "db_dev.json")
     LOG_DIR = os.environ.get("LOG_DIR", "/tmp/gluu-dev")
+    DATA_DIR = os.environ.get(
+        "DATA_DIR",
+        os.path.expanduser('~') + '/.gluu-cluster',
+    )
+    DATABASE_URI = os.path.join(DATA_DIR, "db", "db_dev.json")
 
 
 class TestConfig(Config):
     TESTING = True
     DEBUG = True
-    DATABASE_URI = os.path.join(Config.DATA_DIR, "db", "db_test.json")
+    DATA_DIR = os.environ.get("DATA_DIR", DevConfig.DATA_DIR)
+    DATABASE_URI = os.path.join(DATA_DIR, "db", "db_test.json")
     LOG_DIR = os.environ.get("LOG_DIR", "/tmp/gluu-test")

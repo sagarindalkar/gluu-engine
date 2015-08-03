@@ -3,6 +3,27 @@ Changelog
 
 Here you can see the full list of changes between each gluu-flask release.
 
+Version 0.3.0
+-------------
+
+Released on August 4th, 2015.
+
+* License Key and License API is merged into single API, License Key API
+* License key is restricted to a single key.
+* Registering consumer provider doesn't need `license_id` parameter anymore.
+* Added recovery script; available as `gluuapi recover` command.
+* oxAuth is upgraded to v2.3.2.
+* oxTrust is upgraded to v2.3.2.
+* `.ldif` files are updated.
+* weave is launched and exposed after registering/updating provider.
+* Swagger UI is updated to conform to changes in API.
+* Node deletion is disallowed if node's state is set to `IN_PROGRESS` (https://github.com/GluuFederation/gluu-flask/issues/31).
+* Fixed duplicated weave IP allocation.
+* Fixed issue where certification password use value less than 6 characters.
+* Fixed connection to TLS-protected docker daemon.
+* Fixed LDAP discovery in oxAuth node (reference: https://github.com/GluuFederation/oxAuth/issues/52).
+* Fixed file permission to deploy log files.
+
 Version 0.2.0
 -------------
 

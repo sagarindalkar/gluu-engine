@@ -1,3 +1,4 @@
 #!/bin/sh -e
 update-rc.d gluu-flask defaults > /dev/null
 service gluu-flask start
+chmod 644 /var/log/gluu/*

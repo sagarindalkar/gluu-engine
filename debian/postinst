@@ -2,4 +2,5 @@
 update-rc.d gluu-flask defaults > /dev/null
 service gluu-flask start
 mkdir -p /var/log/gluu
+mkdir -p /var/lib/gluu-cluster
 chmod 644 /var/log/gluu/*

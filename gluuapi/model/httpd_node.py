@@ -51,6 +51,7 @@ class HttpdNode(BaseModel):
         self.provider_id = ""
         self.type = "httpd"
         self.state = ""
+        self.setup_logpath = ""
 
         self.cert_folder = "/etc/certs"
         self.httpd_key = "/etc/certs/httpd.key"

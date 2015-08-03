@@ -36,10 +36,6 @@ def create_file_logger(filepath="", log_level=logging.DEBUG, name=""):
     :param name: Logger name (by default will use current module name)
     """
     filepath = filepath or tempfile.mkstemp()[1]
-
-    # set proper permission 644
-    os.chmod(filepath, stat.S_IWUSR | stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)  # noqa
-
     logger = logging.getLogger(name or __name__)
     logger.setLevel(log_level)
     ch = logging.FileHandler(filepath)
@@ -48,6 +44,9 @@ def create_file_logger(filepath="", log_level=logging.DEBUG, name=""):
         "%(asctime)s - %(name)s - %(levelname)s  - %(message)s")
     ch.setFormatter(fmt)
     logger.addHandler(ch)
+
+    # set proper permission 644
+    os.chmod(filepath, stat.S_IWUSR | stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)  # noqa
     return logger
 
 

@@ -51,6 +51,7 @@ class OxtrustNode(BaseModel):
         self.weave_prefixlen = ""
         self.type = "oxtrust"
         self.state = ""
+        self.setup_logpath = ""
 
         self.ldap_binddn = 'cn=directory manager'
         self.cert_folder = "/etc/certs"

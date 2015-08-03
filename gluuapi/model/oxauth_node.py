@@ -49,6 +49,7 @@ class OxauthNode(BaseModel):
         self.weave_prefixlen = ""
         self.type = "oxauth"
         self.state = ""
+        self.setup_logpath = ""
 
         self.truststore_fn = '/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/security/cacerts'
         self.ldap_binddn = 'cn=directory manager'

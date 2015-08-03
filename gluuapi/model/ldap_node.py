@@ -56,6 +56,7 @@ class LdapNode(BaseModel):
         self.weave_prefixlen = ""
         self.type = 'ldap'
         self.state = ""
+        self.setup_logpath = ""
 
         # Filesystem path to Java truststore
         self.truststore_fn = '/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/security/cacerts'

@@ -20,6 +20,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+import os.path
 import time
 from random import randrange
 
@@ -42,7 +43,6 @@ from gluuapi.setup import OxauthSetup
 from gluuapi.setup import OxtrustSetup
 from gluuapi.setup import HttpdSetup
 from gluuapi.log import create_file_logger
-from gluuapi.log import create_tempfile
 from gluuapi.utils import exc_traceback
 
 
@@ -76,12 +76,13 @@ class BaseModelHelper(object):
         self.node.name = "{}_{}_{}".format(self.image, self.cluster.id,
                                            randrange(101, 999))
 
-        self.logpath = create_tempfile(
-            suffix=".log",
-            prefix=self.image + "-build-",
-            dir_=log_dir,
-        )
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir)
+
+        self.logpath = os.path.join(log_dir, self.node.name + "-setup.log")
+        self.node.setup_logpath = self.logpath
         self.logger = create_file_logger(self.logpath, name=self.node.name)
+
         self.docker = DockerHelper(self.provider, logger=self.logger)
         self.salt = SaltHelper()
         self.template_dir = template_dir

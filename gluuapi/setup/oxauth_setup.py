@@ -98,11 +98,9 @@ class OxauthSetup(BaseSetup):
 
     def start_tomcat(self):
         self.logger.info("starting tomcat")
-        self.salt.cmd(
-            self.node.id,
-            "cmd.run",
-            ["{}/bin/catalina.sh start".format(self.node.tomcat_home)],
-        )
+        start_cmd = "export CATALINA_PID={0}/bin/catalina.pid && " \
+                    "{0}/bin/catalina.sh start".format(self.node.tomcat_home)
+        self.salt.cmd(self.node.id, "cmd.run", [start_cmd])
 
     def gen_keystore(self, suffix, keystore_fn, keystore_pw, in_key,
                      in_cert, user, group, hostname):

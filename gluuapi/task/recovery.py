@@ -137,7 +137,10 @@ class RecoverProviderTask(object):
                                    self.logger, template_dir)
             setup_obj.remove_pidfile()
             setup_obj.start_httpd()
-            setup_obj.add_iptable_rule()
+
+            # clear iptables rule for this node
+            setup_obj.remove_iptables_rule()
+            setup_obj.add_iptables_rule()
 
     def container_stopped(self, cid):
         meta = self.docker.inspect_container(cid)

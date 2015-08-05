@@ -131,7 +131,7 @@ class ClusterList(Resource):
         parameters=[
             {
                 "name": "name",
-                "description": "Name of the cluster",
+                "description": "Name of the cluster (accepts alphanumeric, dash, underscore, and dot characters; min 3 characters)",
                 "required": True,
                 "allowMultiple": False,
                 "dataType": 'string',

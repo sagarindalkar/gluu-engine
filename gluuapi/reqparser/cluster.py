@@ -33,6 +33,14 @@ WEAVE_NETWORK_RE = re.compile(
 )
 
 
+# cluster name
+#
+# * at least 3 chars
+# * must not start with dash, underscore, dot, or number
+# * must not end with dash, underscore, or dot
+CLUSTER_NAME_RE = re.compile(r"^[a-zA-Z0-9]+[a-zA-Z0-9-_\.]+[a-zA-Z0-9]$")
+
+
 class ClusterReq(ma.Schema):
     name = ma.Str(required=True)
     description = ma.Str()
@@ -67,3 +75,8 @@ class ClusterReq(ma.Schema):
     def validate_admin_pw(self, value):
         if len(value) < 6:
             raise ValidationError("Must use at least 6 characters")
+
+    @validates("name")
+    def validate_name(self, value):
+        if not CLUSTER_NAME_RE.match(value):
+            raise ValidationError("Unaccepted cluster name format")

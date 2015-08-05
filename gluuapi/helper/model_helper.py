@@ -22,7 +22,7 @@
 # SOFTWARE.
 import os.path
 import time
-from random import randrange
+import uuid
 
 from requests.exceptions import SSLError
 from crochet import run_in_reactor
@@ -73,8 +73,7 @@ class BaseModelHelper(object):
         self.node = self.node_class()
         self.node.cluster_id = cluster.id
         self.node.provider_id = provider.id
-        self.node.name = "{}_{}_{}".format(self.image, self.cluster.id,
-                                           randrange(101, 999))
+        self.node.name = "{}_{}".format(self.image, uuid.uuid4())
 
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)

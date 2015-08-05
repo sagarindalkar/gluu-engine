@@ -1,6 +1,3 @@
-import os.path
-
-
 def test_dev_config():
     from gluuapi.settings import DevConfig
 
@@ -9,8 +6,9 @@ def test_dev_config():
     # sanity checks
     assert cfg.DEBUG is True
     assert cfg.LOG_DIR == "/tmp/gluu-dev"
-    assert cfg.DATA_DIR == os.path.expanduser('~') + '/.gluu-cluster'
-    assert cfg.DATABASE_URI == os.path.join(cfg.DATA_DIR, "db", "db_dev.json")
+    assert cfg.DATA_DIR.endswith("/.gluu-cluster")
+    assert cfg.DATABASE_URI.endswith("/.gluu-cluster/db/db_dev.json")
+    assert cfg.INSTANCE_DIR.endswith("/.gluu-cluster/instance")
 
 
 def test_test_config():
@@ -20,9 +18,11 @@ def test_test_config():
 
     # sanity checks
     assert cfg.DEBUG is True
+    assert cfg.TESTING is True
     assert cfg.LOG_DIR == "/tmp/gluu-test"
-    assert cfg.DATA_DIR == os.path.expanduser('~') + '/.gluu-cluster'
-    assert cfg.DATABASE_URI == os.path.join(cfg.DATA_DIR, "db", "db_test.json")
+    assert cfg.DATA_DIR.endswith("/.gluu-cluster")
+    assert cfg.DATABASE_URI.endswith("/.gluu-cluster/db/db_test.json")
+    assert cfg.INSTANCE_DIR.endswith("/.gluu-cluster/instance")
 
 
 def test_prod_config():
@@ -34,4 +34,6 @@ def test_prod_config():
     assert cfg.DEBUG is False
     assert cfg.LOG_DIR == "/var/log/gluu"
     assert cfg.DATA_DIR == "/var/lib/gluu-cluster"
-    assert cfg.DATABASE_URI == os.path.join(cfg.DATA_DIR, "db", "db.json")
+    assert cfg.DATABASE_URI == "/var/lib/gluu-cluster/db/db.json"
+    assert cfg.INSTANCE_DIR == "/var/lib/gluu-cluster/instance"
+    assert cfg.DOCKER_CERT_DIR == "/var/lib/gluu-cluster/docker_certs"

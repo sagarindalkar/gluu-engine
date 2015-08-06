@@ -41,7 +41,7 @@ class SaltHelper(object):
 
         :param key: Key used by minion; typically a container ID (short format)
         """
-        return self.key_store.accept(key)
+        return self.key_store.accept(key, include_rejected=True)
 
     def unregister_minion(self, key):
         """Unregisters a minion.
@@ -83,3 +83,6 @@ class SaltHelper(object):
     def get_fqhostname(self):
         import salt.utils.network
         return salt.utils.network.get_fqhostname()
+
+    def reject_minion(self, key):
+        return self.key_store.reject(key, include_accepted=True)

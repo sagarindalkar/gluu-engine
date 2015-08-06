@@ -102,7 +102,7 @@ class ProviderResource(Resource):
 
         db.delete(provider_id, "providers")
         salt = SaltHelper()
-        salt.unregister_minion(provider.hostname)
+        salt.reject_minion(provider.hostname)
         return {}, 204
 
     @swagger.operation(

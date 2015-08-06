@@ -64,3 +64,15 @@ def test_copy_file(monkeypatch, salt_helper):
     src = "tests/helper/sample.txt"
     dest = "/tmp/sample.txt"
     assert salt_helper.copy_file("123", src, dest)
+
+
+def test_reject_minion(monkeypatch, salt_helper):
+    # stub accepted minion keys
+    monkeypatch.setattr(
+        "salt.key.Key.list_keys",
+        lambda cls: {"minions": ["abc"]},
+    )
+
+    # make sure minion key is rejected by checking whether
+    # return value is not an empty ``dict``
+    assert salt_helper.reject_minion("abc") != {}

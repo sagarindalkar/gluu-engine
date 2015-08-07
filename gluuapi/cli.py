@@ -124,12 +124,15 @@ def runserver():
 
 @main.command()
 @click.argument("provider_id")
-def recover(provider_id):
+@click.option("--exec-delay", type=int, default=30,
+              help="Time to wait in seconds before start recovering "
+                   "each node.")
+def recover(provider_id, exec_delay):
     """Recover provider and its nodes.
     """
     check_salt()
     configure_global_logging()
     app = create_app()
 
-    recovery = RecoverProviderTask(app, provider_id)
+    recovery = RecoverProviderTask(app, provider_id, exec_delay)
     recovery.perform_job()

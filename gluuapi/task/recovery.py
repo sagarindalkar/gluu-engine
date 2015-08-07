@@ -34,11 +34,12 @@ from gluuapi.setup import HttpdSetup
 
 
 class RecoverProviderTask(object):
-    def __init__(self, app, provider_id):
+    def __init__(self, app, provider_id, exec_delay=30):
         self.logger = logging.getLogger(
             __name__ + "." + self.__class__.__name__,
         )
         self.app = app
+        self.exec_delay = exec_delay
 
         self.provider = db.get(provider_id, "providers")
         if not self.provider:
@@ -103,7 +104,7 @@ class RecoverProviderTask(object):
         self.salt.cmd(self.provider.hostname, "cmd.run", [attach_cmd])
 
         # delay to prepare minion inside container
-        time.sleep(10)
+        time.sleep(float(self.exec_delay))
         self.node_setup(node)
 
     def node_setup(self, node):

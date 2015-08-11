@@ -304,4 +304,6 @@
     <imgLocation>/oxauth/img</imgLocation>
 -->
 
+    <!-- Metric reporter interval in seconds -->
+    <metric-reporter-interval>300</metric-reporter-interval>
 </configuration>

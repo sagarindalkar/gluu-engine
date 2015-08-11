@@ -184,6 +184,7 @@ class OxtrustSetup(OxauthSetup):
         self.render_ldap_props_template()
         self.render_server_xml_template()
         self.write_salt_file()
+        self.write_marker_file()
         self.render_check_ssl_template()
 
         self.gen_cert("shibIDP", self.cluster.decrypted_admin_pw,
@@ -210,3 +211,8 @@ class OxtrustSetup(OxauthSetup):
 
     def teardown(self):
         self.after_teardown()
+
+    def write_marker_file(self):
+        self.logger.info("writing config marker file")
+        touch_cmd = "touch {}/oxtrust.config.reload".format(self.node.tomcat_conf_dir)
+        self.salt.cmd(self.node.id, "cmd.run", [touch_cmd])

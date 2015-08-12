@@ -410,6 +410,11 @@ class LdapSetup(BaseSetup):
                                     template_dir=self.template_dir)
             setup_obj.add_ldap_host_entry(self.node)
 
+        for oxtrust in self.cluster.get_oxtrust_objects():
+            setup_obj = OxtrustSetup(oxtrust, self.cluster, logger=self.logger,
+                                     template_dir=self.template_dir)
+            setup_obj.add_ldap_host_entry(self.node)
+
     def teardown(self):
         self.modify_oxidp_auth()
 
@@ -417,6 +422,11 @@ class LdapSetup(BaseSetup):
         for oxauth in self.cluster.get_oxauth_objects():
             setup_obj = OxauthSetup(oxauth, self.cluster, logger=self.logger,
                                     template_dir=self.template_dir)
+            setup_obj.remove_ldap_host_entry(self.node)
+
+        for oxtrust in self.cluster.get_oxtrust_objects():
+            setup_obj = OxtrustSetup(oxtrust, self.cluster, logger=self.logger,
+                                     template_dir=self.template_dir)
             setup_obj.remove_ldap_host_entry(self.node)
 
         # stop the replication agreement

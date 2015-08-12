@@ -132,6 +132,8 @@ class RecoverProviderTask(object):
             httpd = node.get_httpd_object()
             if httpd:
                 setup_obj.add_host_entries(httpd)
+            for ldap in self.cluster.get_ldap_objects():
+                setup_obj.add_ldap_host_entry(ldap)
 
         elif node.type == "httpd":
             setup_obj = HttpdSetup(node, self.cluster,

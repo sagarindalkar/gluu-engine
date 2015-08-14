@@ -26,6 +26,8 @@
     <!-- sets mode of the server. Possible values: memory, ldap-->
     <mode>ldap</mode>
 
+    <openid-sub-attribute>inum</openid-sub-attribute>
+
     <!-- Configuration is updated from LDAP, interval in seconds, 60seconds = 1minute -->
     <configuration-update-interval>60</configuration-update-interval>
 

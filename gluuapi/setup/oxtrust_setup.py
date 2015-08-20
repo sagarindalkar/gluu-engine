@@ -21,6 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 import os.path
+import time
 
 from gluuapi.setup.oxauth_setup import OxauthSetup
 
@@ -202,8 +203,7 @@ class OxtrustSetup(OxauthSetup):
             hostname,
         )
 
-        # Configure tomcat to run oxtrust war file
-        # FIXME: cannot found "facter" and "check_ssl" commands
+        self.symlink_jython_lib()
         self.start_tomcat()
 
         self.change_cert_access("tomcat", "tomcat")
@@ -252,3 +252,15 @@ class OxtrustSetup(OxauthSetup):
             ["cmd.run", "cmd.run", "cmd.run"],
             [[backup_cmd], [sed_cmd], [overwrite_cmd]],
         )
+
+    def symlink_jython_lib(self):
+        unpack_cmd = "unzip -q /opt/tomcat/webapps/identity.war " \
+                     "-d /opt/tomcat/webapps/identity"
+        self.salt.cmd(self.node.id, "cmd.run", [unpack_cmd])
+
+        # waiting for identity.war to be unpacked
+        time.sleep(5)
+
+        symlink_cmd = "ln -s /opt/jython/Lib " \
+                      "/opt/tomcat/webapps/identity/WEB-INF/lib/Lib"
+        self.salt.cmd(self.node.id, "cmd.run", [symlink_cmd])

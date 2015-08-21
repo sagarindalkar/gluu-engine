@@ -228,6 +228,7 @@ class OxauthSetup(BaseSetup):
         )
 
         self.gen_openid_keys()
+        self.symlink_jython_lib()
 
         # configure tomcat to run oxauth war file
         self.start_tomcat()
@@ -273,3 +274,8 @@ class OxauthSetup(BaseSetup):
             ["cmd.run", "cmd.run", "cmd.run"],
             [[backup_cmd], [sed_cmd], [overwrite_cmd]],
         )
+
+    def symlink_jython_lib(self):
+        symlink_cmd = "ln -s /opt/jython/Lib " \
+                      "/opt/tomcat/webapps/oxauth/WEB-INF/lib/Lib"
+        self.salt.cmd(self.node.id, "cmd.run", [symlink_cmd])

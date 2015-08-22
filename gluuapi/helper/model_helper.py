@@ -25,6 +25,7 @@ import time
 import uuid
 
 from requests.exceptions import SSLError
+from requests.exceptions import ConnectionError
 from crochet import run_in_reactor
 
 from gluuapi.database import db
@@ -198,6 +199,9 @@ class BaseModelHelper(object):
         except SSLError:
             self.logger.warn("unable to connect to docker API "
                              "due to SSL connection errors")
+        except ConnectionError:
+            self.logger.warn("unable to connect to docker API "
+                             "due to connection errors")
         self.salt.unregister_minion(self.node.id)
 
         # mark node as FAILED

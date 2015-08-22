@@ -80,7 +80,15 @@ class Node(Resource):
     @swagger.operation(
         notes='delete a node',
         nickname='delnode',
-        parameters=[],
+        parameters=[
+            {
+                "name": "force",
+                "description": "Force delete",
+                "required": False,
+                "dataType": "string",
+                "paramType": "query",
+            },
+        ],
         responseMessages=[
             {
                 "code": 204,
@@ -103,6 +111,17 @@ class Node(Resource):
     )
     def delete(self, node_id):
         template_dir = current_app.config["TEMPLATES_DIR"]
+        truthy = ("1", "True", "true", "t",)
+        falsy = ("0", "false", "False", "f",)
+
+        force_delete = request.args.get("force", False)
+
+        if force_delete in falsy:
+            force_delete = False
+        elif force_delete in truthy:
+            force_delete = True
+        else:
+            force_delete = False
 
         try:
             node = db.search_from_table(
@@ -115,7 +134,9 @@ class Node(Resource):
         if not node:
             return {"status": 404, "message": "Node not found"}, 404
 
-        if node.state == STATE_IN_PROGRESS:
+        # if not a force-delete, node with state set to IN_PROGRESS
+        # must not be deleted
+        if node.state == STATE_IN_PROGRESS and force_delete is False:
             return {
                 "status": 403,
                 "message": "cannot delete node while still in deployment",

@@ -1,3 +1,10 @@
+gluu-flask (0.3.1-12) unstable; urgency=medium
+
+  * QA upload.
+  * New upstream release (add inum index for site backend).
+
+ -- Adrian Alves <tomcat@deb-repo.gluu.org>  Sun, 23 Aug 2015 01:45:23 -0400
+
 gluu-flask (0.3.1-11) unstable; urgency=medium
 
   * QA upload.

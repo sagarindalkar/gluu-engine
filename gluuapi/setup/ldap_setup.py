@@ -194,7 +194,7 @@ class LdapSetup(BaseSetup):
             self.salt.cmd(self.node.id, 'cmd.run', [dsconfigCmd])
             time.sleep(1)
 
-    def index_opendj(self):
+    def index_opendj_root(self):
         with open(self.index_json, 'r') as fp:
             index_json = json.load(fp)
 
@@ -204,7 +204,8 @@ class LdapSetup(BaseSetup):
                 index_types = attrDict['index']
 
                 for index_type in index_types:
-                    self.logger.info("creating %s index for attribute %s" % (index_type, attr_name))
+                    self.logger.info("creating {} index for "
+                                     "userRoot backend".format(attr_name))
                     indexCmd = " ".join([
                         self.node.ldap_dsconfig_command,
                         'create-local-db-index',
@@ -220,6 +221,24 @@ class LdapSetup(BaseSetup):
                         '--trustAll', '--noPropertiesFile', '--no-prompt',
                     ])
                     self.salt.cmd(self.node.id, 'cmd.run', [indexCmd])
+
+    def index_opendj_site(self):
+        index_cmd = " ".join([
+            self.node.ldap_dsconfig_command,
+            "create-local-db-index",
+            "--backend-name", "site",
+            "--type", "generic",
+            "--index-name", "inum",
+            "--set", "index-type:equality",
+            "--set", "index-entry-limit:4000",
+            "--hostname", self.node.weave_ip,
+            "--port", self.node.ldap_admin_port,
+            "--bindDN", '"{}"'.format(self.node.ldap_binddn),
+            "-j", self.node.ldap_pass_fn,
+            "--trustAll", "--noPropertiesFile", "--no-prompt",
+        ])
+        self.logger.info("creating inum index for site backend")
+        self.salt.cmd(self.node.id, "cmd.run", [index_cmd])
 
     def import_ldif(self):
         # template's context
@@ -344,7 +363,6 @@ class LdapSetup(BaseSetup):
             # has been enabled
             time.sleep(10)
 
-            # try:
             init_cmd = " ".join([
                 "/opt/opendj/bin/dsreplication", "initialize",
                 "--baseDN", "'{}'".format(base_dn),
@@ -370,7 +388,8 @@ class LdapSetup(BaseSetup):
         self.add_ldap_schema()
         self.setup_opendj()
         self.configure_opendj()
-        self.index_opendj()
+        self.index_opendj_site()
+        self.index_opendj_root()
 
         try:
             peer_node = self.cluster.get_ldap_objects()[-1]

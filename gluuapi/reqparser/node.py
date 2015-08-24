@@ -79,7 +79,6 @@ class NodeReq(ma.Schema):
     @validates_schema
     def validate_schema(self, data):
         self.validate_oxauth(data.get("oxauth_node_id"))
-        self.validate_oxtrust(data.get("oxtrust_node_id"))
 
     def validate_oxauth(self, value):
         if self.context.get("node_type") == "httpd":
@@ -113,38 +112,4 @@ class NodeReq(ma.Schema):
                 raise ValidationError(
                     "only oxAuth node with SUCCESS state is allowed",
                     "oxauth_node_id",
-                )
-
-    def validate_oxtrust(self, value):
-        if self.context.get("node_type") == "httpd":
-            node_in_use = db.count_from_table(
-                "nodes",
-                db.where("oxtrust_node_id") == value,
-            )
-            if node_in_use:
-                raise ValidationError("cannot reuse the oxTrust node",
-                                      "oxtrust_node_id")
-
-            try:
-                node = db.search_from_table(
-                    "nodes",
-                    (db.where("id") == value) & (db.where("type") == "oxtrust")
-                )[0]
-            except IndexError:
-                node = None
-
-            if not node:
-                raise ValidationError("invalid oxTrust node",
-                                      "oxtrust_node_id")
-
-            if node.provider_id != self.context["provider"].id:
-                raise ValidationError(
-                    "only oxTrust node within same provider is allowed",
-                    "oxtrust_node_id",
-                )
-
-            if node.state != STATE_SUCCESS:
-                raise ValidationError(
-                    "only oxTrust node with SUCCESS state is allowed",
-                    "oxtrust_node_id",
                 )

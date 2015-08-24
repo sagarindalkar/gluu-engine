@@ -46,7 +46,7 @@ class OxauthSetup(BaseSetup):
 
     @property
     def tomcat_server_xml(self):  # pragma: no cover
-        return self.get_template_path("salt/_shared/server.xml")
+        return self.get_template_path("salt/oxauth/server.xml")
 
     @property
     def oxauth_config_marker(self):  # pragma: no cover

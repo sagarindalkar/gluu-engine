@@ -105,6 +105,9 @@ class RecoverProviderTask(object):
 
         # delay to prepare minion inside container
         time.sleep(float(self.exec_delay))
+
+        node.ip = self.docker.get_container_ip(node.id)
+        db.update(node.id, node, "nodes")
         self.node_setup(node)
 
     def node_setup(self, node):
@@ -128,10 +131,17 @@ class RecoverProviderTask(object):
         elif node.type == "oxtrust":
             setup_obj = OxtrustSetup(node, self.cluster,
                                      self.logger, template_dir)
+            setup_obj.render_server_xml_template()
             setup_obj.start_tomcat()
-            httpd = node.get_httpd_object()
+
+            try:
+                httpd = self.provider.get_node_objects(type_="httpd")[0]
+            except IndexError:
+                httpd = None
+
             if httpd:
                 setup_obj.add_host_entries(httpd)
+
             for ldap in self.cluster.get_ldap_objects():
                 setup_obj.add_ldap_host_entry(ldap)
 

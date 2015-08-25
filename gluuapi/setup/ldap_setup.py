@@ -194,22 +194,27 @@ class LdapSetup(BaseSetup):
             self.salt.cmd(self.node.id, 'cmd.run', [dsconfigCmd])
             time.sleep(1)
 
-    def index_opendj_root(self):
+    def index_opendj(self, backend):
         with open(self.index_json, 'r') as fp:
             index_json = json.load(fp)
 
-        if index_json:
-            for attrDict in index_json:
-                attr_name = attrDict['attribute']
-                index_types = attrDict['index']
+        for attr_map in index_json:
+            attr_name = attr_map['attribute']
 
-                for index_type in index_types:
-                    self.logger.info("creating {} index for "
-                                     "userRoot backend".format(attr_name))
-                    indexCmd = " ".join([
+            for index_type in attr_map["index"]:
+                for backend_name in attr_map["backend"]:
+                    if backend_name != backend:
+                        continue
+
+                    self.logger.info(
+                        "creating {} attribute for {} index "
+                        "in {} backend".format(attr_name, index_type, backend)
+                    )
+
+                    index_cmd = " ".join([
                         self.node.ldap_dsconfig_command,
                         'create-local-db-index',
-                        '--backend-name', 'userRoot',
+                        '--backend-name', backend,
                         '--type', 'generic',
                         '--index-name', attr_name,
                         '--set', 'index-type:%s' % index_type,
@@ -220,25 +225,7 @@ class LdapSetup(BaseSetup):
                         '-j', self.node.ldap_pass_fn,
                         '--trustAll', '--noPropertiesFile', '--no-prompt',
                     ])
-                    self.salt.cmd(self.node.id, 'cmd.run', [indexCmd])
-
-    def index_opendj_site(self):
-        index_cmd = " ".join([
-            self.node.ldap_dsconfig_command,
-            "create-local-db-index",
-            "--backend-name", "site",
-            "--type", "generic",
-            "--index-name", "inum",
-            "--set", "index-type:equality",
-            "--set", "index-entry-limit:4000",
-            "--hostname", self.node.weave_ip,
-            "--port", self.node.ldap_admin_port,
-            "--bindDN", '"{}"'.format(self.node.ldap_binddn),
-            "-j", self.node.ldap_pass_fn,
-            "--trustAll", "--noPropertiesFile", "--no-prompt",
-        ])
-        self.logger.info("creating inum index for site backend")
-        self.salt.cmd(self.node.id, "cmd.run", [index_cmd])
+                    self.salt.cmd(self.node.id, 'cmd.run', [index_cmd])
 
     def import_ldif(self):
         # template's context
@@ -388,8 +375,8 @@ class LdapSetup(BaseSetup):
         self.add_ldap_schema()
         self.setup_opendj()
         self.configure_opendj()
-        self.index_opendj_site()
-        self.index_opendj_root()
+        self.index_opendj("site")
+        self.index_opendj("userRoot")
 
         try:
             peer_node = self.cluster.get_ldap_objects()[-1]

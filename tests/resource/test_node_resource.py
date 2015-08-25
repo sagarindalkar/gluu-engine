@@ -181,13 +181,11 @@ def test_node_post_invalid_provider(app, db, cluster):
     ("httpd", "HttpdModelHelper"),
 ])
 def test_node_post(monkeypatch, app, db, cluster, provider,
-                   node_type, helper_class, oxauth_node, oxtrust_node):
+                   node_type, helper_class, oxauth_node):
     db.persist(cluster, "clusters")
     db.persist(provider, "providers")
     oxauth_node.state = "SUCCESS"
     db.persist(oxauth_node, "nodes")
-    oxtrust_node.state = "SUCCESS"
-    db.persist(oxtrust_node, "nodes")
 
     monkeypatch.setattr(
         "gluuapi.helper.{}.setup".format(helper_class),
@@ -200,10 +198,30 @@ def test_node_post(monkeypatch, app, db, cluster, provider,
     }
     if node_type == "httpd":
         data["oxauth_node_id"] = oxauth_node.id
-        data["oxtrust_node_id"] = oxtrust_node.id
 
     resp = app.test_client().post("/nodes", data=data)
     assert resp.status_code == 202
+
+
+def test_node_post_duplicate_oxtrust(monkeypatch, app, db, cluster,
+                                     provider, oxtrust_node):
+    db.persist(cluster, "clusters")
+    db.persist(provider, "providers")
+    oxtrust_node.state = "SUCCESS"
+    db.persist(oxtrust_node, "nodes")
+
+    monkeypatch.setattr(
+        "gluuapi.helper.OxtrustModelHelper.setup",
+        lambda cls, connect_delay, exec_delay: None,
+    )
+    data = {
+        "cluster_id": cluster.id,
+        "provider_id": provider.id,
+        "node_type": "oxtrust",
+    }
+
+    resp = app.test_client().post("/nodes", data=data)
+    assert resp.status_code == 403
 
 
 def test_node_post_expired_license(app, db, provider, cluster, license_key):

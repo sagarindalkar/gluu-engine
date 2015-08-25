@@ -77,7 +77,7 @@ def test_build_image_failed(monkeypatch, docker_helper):
 def test_run_container(monkeypatch, docker_helper):
     monkeypatch.setattr(
         "docker.Client.create_container",
-        lambda cls, image, name, detach, environment: {"Id": "123"},
+        lambda cls, image, name, detach, environment, host_config: {"Id": "123"},
     )
     monkeypatch.setattr("docker.Client.start", lambda cls, container: "")
     assert docker_helper.run_container("abc", "gluuopendj") == "123"
@@ -134,7 +134,7 @@ def test_setup_container_existing_image(monkeypatch, docker_helper):
     )
     monkeypatch.setattr(
         "gluuapi.helper.docker_helper.DockerHelper.run_container",
-        lambda cls, name, image: "123",
+        lambda cls, name, image, port_bindings: "123",
     )
 
     container_id = docker_helper.setup_container(

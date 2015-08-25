@@ -22,7 +22,8 @@ def test_container_stopped(monkeypatch, app, db, cluster, provider):
 
 
 def test_node_setup(patched_salt_cmd, db, app, cluster, provider,
-                    ldap_node, oxauth_node, oxtrust_node, httpd_node):
+                    ldap_node, oxauth_node, oxtrust_node, httpd_node,
+                    patched_sleep):
     from gluuapi.task import RecoverProviderTask
 
     db.persist(cluster, "clusters")

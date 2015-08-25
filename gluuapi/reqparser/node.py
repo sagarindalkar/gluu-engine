@@ -40,7 +40,6 @@ class NodeReq(ma.Schema):
     exec_delay = ma.Int(default=15, missing=15,
                         error="must use numerical value")
     oxauth_node_id = ma.Str(default="", missing="")
-    oxtrust_node_id = ma.Str(default="", missing="")
 
     @validates("cluster_id")
     def validate_cluster(self, value):
@@ -70,7 +69,6 @@ class NodeReq(ma.Schema):
     def finalize_data(self, data):
         if data.get("node_type") != "httpd":
             data.pop("oxauth_node_id", None)
-            data.pop("oxtrust_node_id", None)
 
         out = {"params": data}
         out.update({"context": self.context})

@@ -38,7 +38,6 @@ class HttpdNode(BaseModel):
         "type": String,
         "state": String,
         "oxauth_node_id": String,
-        "oxtrust_node_id": String,
     }
 
     def __init__(self):

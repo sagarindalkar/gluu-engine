@@ -209,6 +209,7 @@ class OxtrustSetup(OxauthSetup):
 
         self.change_cert_access("tomcat", "tomcat")
 
+        self.discover_httpd()
         for ldap in self.cluster.get_ldap_objects():
             self.add_ldap_host_entry(ldap)
         return True
@@ -222,8 +223,6 @@ class OxtrustSetup(OxauthSetup):
         self.salt.cmd(self.node.id, "cmd.run", [touch_cmd])
 
     def add_ldap_host_entry(self, ldap):
-        # for ldap in self.cluster.get_ldap_objects():
-        # currently we need to add ldap container hostname
         self.logger.info("adding LDAP entry into oxTrust /etc/hosts file")
         # add the entry only if line is not exist in /etc/hosts
         grep_cmd = "grep -q '^{0} {1}$' /etc/hosts " \
@@ -287,5 +286,16 @@ class OxtrustSetup(OxauthSetup):
 
     def copy_tomcat_index_html(self):
         src = self.tomcat_index_html
-        dest = "/opt/tomcat/webapps/ROOT/WEB-INF/index.html"
+        dest = "/opt/tomcat/webapps/ROOT/index.html"
         self.salt.copy_file(self.node.id, src, dest)
+
+    def discover_httpd(self):
+        self.logger.info("discovering available httpd within same provider")
+        try:
+            # if we already have httpd node in the same provider,
+            # add entry to /etc/hosts and import the cert
+            httpd = self.provider.get_node_objects(type_="httpd")[0]
+            self.add_host_entries(httpd)
+            self.import_httpd_cert()
+        except IndexError:
+            pass

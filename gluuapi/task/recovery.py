@@ -133,15 +133,7 @@ class RecoverProviderTask(object):
                                      self.logger, template_dir)
             setup_obj.render_server_xml_template()
             setup_obj.start_tomcat()
-
-            try:
-                httpd = self.provider.get_node_objects(type_="httpd")[0]
-            except IndexError:
-                httpd = None
-
-            if httpd:
-                setup_obj.add_host_entries(httpd)
-
+            setup_obj.discover_httpd()
             for ldap in self.cluster.get_ldap_objects():
                 setup_obj.add_ldap_host_entry(ldap)
 

@@ -293,7 +293,7 @@ status of the cluster node is available.""",
                 return {
                     "status": 403,
                     "message": "cannot deploy more oxtrust nodes to this provider",
-                }
+                }, 403
 
         addr, prefixlen = cluster.reserve_ip_addr()
         cluster.last_fetched_addr = addr

@@ -209,7 +209,6 @@ class OxtrustSetup(OxauthSetup):
 
         self.change_cert_access("tomcat", "tomcat")
 
-        self.discover_httpd()
         for ldap in self.cluster.get_ldap_objects():
             self.add_ldap_host_entry(ldap)
         return True
@@ -299,3 +298,6 @@ class OxtrustSetup(OxauthSetup):
             self.import_httpd_cert()
         except IndexError:
             pass
+
+    def after_setup(self):
+        self.discover_httpd()

@@ -204,6 +204,7 @@ class OxtrustSetup(OxauthSetup):
         )
 
         self.symlink_jython_lib()
+        self.copy_tomcat_index_html()
         self.start_tomcat()
 
         self.change_cert_access("tomcat", "tomcat")
@@ -279,3 +280,12 @@ class OxtrustSetup(OxauthSetup):
             "shibJksFn": self.cluster.shib_jks_fn,
         }
         self.render_template(src, dest, ctx)
+
+    @property
+    def tomcat_index_html(self):  # pragma: no cover
+        return self.get_template_path("salt/oxtrust/index.html")
+
+    def copy_tomcat_index_html(self):
+        src = self.tomcat_index_html
+        dest = "/opt/tomcat/webapps/ROOT/WEB-INF/index.html"
+        self.salt.copy_file(self.node.id, src, dest)

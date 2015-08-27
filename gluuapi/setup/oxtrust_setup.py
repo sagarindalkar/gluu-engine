@@ -187,6 +187,7 @@ class OxtrustSetup(OxauthSetup):
         self.write_salt_file()
         self.write_marker_file()
         self.render_check_ssl_template()
+        self.copy_import_person_properties()
 
         self.gen_cert("shibIDP", self.cluster.decrypted_admin_pw,
                       "tomcat", "tomcat", hostname)
@@ -301,3 +302,12 @@ class OxtrustSetup(OxauthSetup):
 
     def after_setup(self):
         self.discover_httpd()
+
+    @property
+    def import_person_properties(self):  # pragma: no cover
+        return self.get_template_path("salt/oxtrust/gluuImportPerson.properties")
+
+    def copy_import_person_properties(self):
+        src = self.import_person_properties
+        dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
+        self.salt.copy_file(self.node.id, src, dest)

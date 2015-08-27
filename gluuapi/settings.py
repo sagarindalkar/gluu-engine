@@ -48,11 +48,8 @@ class DevConfig(Config):
     """Development configuration.
     """
     DEBUG = True
-    LOG_DIR = os.environ.get("LOG_DIR", "/tmp/gluu-dev")
-    DATA_DIR = os.environ.get(
-        "DATA_DIR",
-        os.path.expanduser('~') + '/.gluu-cluster',
-    )
+    LOG_DIR = os.environ.get("LOG_DIR", "/var/log/gluu-dev")
+    DATA_DIR = os.environ.get("DATA_DIR", "/var/lib/gluu-cluster-dev")
     DATABASE_URI = os.path.join(DATA_DIR, "db", "db_dev.json")
     DOCKER_CERT_DIR = os.path.join(DATA_DIR, "docker_certs")
     INSTANCE_DIR = os.path.join(DATA_DIR, "instance")
@@ -61,8 +58,8 @@ class DevConfig(Config):
 class TestConfig(Config):
     TESTING = True
     DEBUG = True
-    DATA_DIR = os.environ.get("DATA_DIR", DevConfig.DATA_DIR)
+    DATA_DIR = os.environ.get("DATA_DIR", "/var/lib/gluu-cluster-test")
     DATABASE_URI = os.path.join(DATA_DIR, "db", "db_test.json")
-    LOG_DIR = os.environ.get("LOG_DIR", "/tmp/gluu-test")
+    LOG_DIR = os.environ.get("LOG_DIR", "/var/log/gluu-test")
     DOCKER_CERT_DIR = os.path.join(DATA_DIR, "docker_certs")
     INSTANCE_DIR = os.path.join(DATA_DIR, "instance")

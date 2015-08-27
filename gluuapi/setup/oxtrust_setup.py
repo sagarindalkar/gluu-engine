@@ -175,7 +175,7 @@ class OxtrustSetup(OxauthSetup):
         self.salt.cmd(self.node.id, "cmd.run", ["chmod +x {}".format(dest)])
 
     def setup(self):
-        hostname = self.cluster.ox_cluster_hostname.split(":")[0]
+        hostname = "localhost"
         self.create_cert_dir()
 
         # render config templates
@@ -204,6 +204,7 @@ class OxtrustSetup(OxauthSetup):
         )
 
         self.symlink_jython_lib()
+        self.copy_tomcat_index_html()
         self.start_tomcat()
 
         self.change_cert_access("tomcat", "tomcat")
@@ -221,8 +222,6 @@ class OxtrustSetup(OxauthSetup):
         self.salt.cmd(self.node.id, "cmd.run", [touch_cmd])
 
     def add_ldap_host_entry(self, ldap):
-        # for ldap in self.cluster.get_ldap_objects():
-        # currently we need to add ldap container hostname
         self.logger.info("adding LDAP entry into oxTrust /etc/hosts file")
         # add the entry only if line is not exist in /etc/hosts
         grep_cmd = "grep -q '^{0} {1}$' /etc/hosts " \
@@ -264,3 +263,41 @@ class OxtrustSetup(OxauthSetup):
         symlink_cmd = "ln -s /opt/jython/Lib " \
                       "/opt/tomcat/webapps/identity/WEB-INF/lib/Lib"
         self.salt.cmd(self.node.id, "cmd.run", [symlink_cmd])
+
+    @property
+    def tomcat_server_xml(self):  # pragma: no cover
+        return self.get_template_path("salt/oxtrust/server.xml")
+
+    def render_server_xml_template(self):
+        src = self.tomcat_server_xml
+        dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
+        ctx = {
+            "weave_ip": self.node.weave_ip,
+            "ip": self.node.ip,
+            "shibJksPass": self.cluster.decrypted_admin_pw,
+            "shibJksFn": self.cluster.shib_jks_fn,
+        }
+        self.render_template(src, dest, ctx)
+
+    @property
+    def tomcat_index_html(self):  # pragma: no cover
+        return self.get_template_path("salt/oxtrust/index.html")
+
+    def copy_tomcat_index_html(self):
+        src = self.tomcat_index_html
+        dest = "/opt/tomcat/webapps/ROOT/index.html"
+        self.salt.copy_file(self.node.id, src, dest)
+
+    def discover_httpd(self):
+        self.logger.info("discovering available httpd within same provider")
+        try:
+            # if we already have httpd node in the same provider,
+            # add entry to /etc/hosts and import the cert
+            httpd = self.provider.get_node_objects(type_="httpd")[0]
+            self.add_host_entries(httpd)
+            self.import_httpd_cert()
+        except IndexError:
+            pass
+
+    def after_setup(self):
+        self.discover_httpd()

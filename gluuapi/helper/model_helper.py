@@ -60,6 +60,8 @@ class BaseModelHelper(object):
     #: URL to image's Dockerfile. Must be overriden in subclass.
     dockerfile = ""
 
+    port_bindings = {}
+
     def __init__(self, cluster, provider, salt_master_ipaddr,
                  template_dir, log_dir):
         assert self.setup_class, "setup_class must be set"
@@ -118,6 +120,7 @@ class BaseModelHelper(object):
             container_id = self.docker.setup_container(
                 self.node.name, self.image,
                 self.dockerfile, self.salt_master_ipaddr,
+                port_bindings=self.port_bindings,
             )
 
             # container is not running
@@ -207,11 +210,10 @@ class BaseModelHelper(object):
         # mark node as FAILED
         self.node.state = STATE_FAILED
 
-        # if httpd node is FAILED, remove reference to oxAuth and oxTrust
+        # if httpd node is FAILED, remove reference to oxAuth
         # so we can use those 2 nodes for another httpd node
         if self.node.type == "httpd":
             self.node.oxauth_node_id = ""
-            self.node.oxtrust_node_id = ""
 
         db.update_to_table(
             "nodes",
@@ -242,6 +244,7 @@ class OxtrustModelHelper(BaseModelHelper):
     image = "gluuoxtrust"
     dockerfile = "https://raw.githubusercontent.com/GluuFederation" \
                  "/gluu-docker/master/ubuntu/14.04/gluuoxtrust/Dockerfile"
+    port_bindings = {8443: ("127.0.0.1", 8443)}
 
 
 class HttpdModelHelper(BaseModelHelper):

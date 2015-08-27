@@ -10,7 +10,7 @@ def test_setup(db, httpd_setup, oxauth_node, oxtrust_node, patched_salt_cmd):
 
 
 def test_after_setup(db, httpd_setup, oxauth_node, oxtrust_node,
-                     provider, patched_salt_cmd):
+                     provider, patched_salt_cmd, patched_sleep):
     from gluuapi.model import STATE_SUCCESS
 
     db.persist(provider, "providers")
@@ -21,7 +21,8 @@ def test_after_setup(db, httpd_setup, oxauth_node, oxtrust_node,
     httpd_setup.provider = provider
     httpd_setup.after_setup()
 
-def test_teardown(db, httpd_setup, oxtrust_node, provider, patched_salt_cmd):
+def test_teardown(db, httpd_setup, oxtrust_node, provider,
+                  patched_salt_cmd, patched_sleep):
     from gluuapi.model import STATE_SUCCESS
 
     db.persist(provider, "providers")

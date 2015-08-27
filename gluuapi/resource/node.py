@@ -246,13 +246,6 @@ status of the cluster node is available.""",
                 "dataType": "string",
                 "paramType": "form",
             },
-            {
-                "name": "oxtrust_node_id",
-                "description": "ID of oxtrust node (required when deploying httpd node).",
-                "required": False,
-                "dataType": "string",
-                "paramType": "form",
-            },
         ],
         responseMessages=[
             {
@@ -275,9 +268,10 @@ status of the cluster node is available.""",
         summary='Create a new node',
     )
     def post(self):
-        data, errors = NodeReq(
-            context={"node_type": request.form.get("node_type", "")}
-        ).load(request.form)
+        node_type = request.form.get("node_type", "")
+        ctx = {"node_type": node_type}
+        data, errors = NodeReq(context=ctx).load(request.form)
+
         if errors:
             return {
                 "status": 400,
@@ -291,6 +285,15 @@ status of the cluster node is available.""",
         cluster = data["context"]["cluster"]
         provider = data["context"]["provider"]
         params = data["params"]
+
+        if params["node_type"] == "oxtrust":
+            # only allow 1 oxtrust per provider
+            oxtrust_nodes = provider.get_node_objects(type_="oxtrust")
+            if oxtrust_nodes:
+                return {
+                    "status": 403,
+                    "message": "cannot deploy more oxtrust nodes to this provider",
+                }, 403
 
         addr, prefixlen = cluster.reserve_ip_addr()
         cluster.last_fetched_addr = addr
@@ -309,7 +312,6 @@ status of the cluster node is available.""",
 
         if helper.node.type == "httpd":
             helper.node.oxauth_node_id = params["oxauth_node_id"]
-            helper.node.oxtrust_node_id = params["oxtrust_node_id"]
 
         helper.setup(params["connect_delay"], params["exec_delay"])
 

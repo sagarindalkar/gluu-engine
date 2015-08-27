@@ -38,7 +38,6 @@ class HttpdNode(BaseModel):
         "type": String,
         "state": String,
         "oxauth_node_id": String,
-        "oxtrust_node_id": String,
     }
 
     def __init__(self):
@@ -59,13 +58,9 @@ class HttpdNode(BaseModel):
         self.httpd_csr = "/etc/certs/httpd.csr"
         self.httpd_crt = "/etc/certs/httpd.crt"
         self.oxauth_node_id = ""
-        self.oxtrust_node_id = ""
 
     def get_oxauth_object(self):
         return db.get(self.oxauth_node_id, "nodes")
-
-    def get_oxtrust_object(self):
-        return db.get(self.oxtrust_node_id, "nodes")
 
     @property
     def recovery_priority(self):

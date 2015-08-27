@@ -30,6 +30,7 @@ import requests
 from docker import Client
 from docker.tls import TLSConfig
 from docker.errors import TLSParameterError
+from docker.utils import create_host_config
 
 from gluuapi.log import create_file_logger
 
@@ -98,7 +99,7 @@ class DockerHelper(object):
             return False
         return True
 
-    def run_container(self, name, image):
+    def run_container(self, name, image, port_bindings=None):
         """Runs a docker container in detached mode.
 
         This is a two-steps operation:
@@ -111,6 +112,7 @@ class DockerHelper(object):
         :returns: A string of container ID in long format if container
                 is running successfully, otherwise an empty string.
         """
+        port_bindings = port_bindings or {}
         container_id = ""
 
         self.logger.info("creating container {!r}".format(name))
@@ -119,6 +121,7 @@ class DockerHelper(object):
         }
         container = self.docker.create_container(
             image=image, name=name, detach=True, environment=env,
+            host_config=create_host_config(port_bindings=port_bindings),
         )
         container_id = container["Id"]
         self.logger.info("container {!r} has been created".format(name))
@@ -172,7 +175,8 @@ class DockerHelper(object):
             shutil.rmtree(build_dir)
         return build_succeed
 
-    def setup_container(self, name, image, dockerfile, salt_master_ipaddr):
+    def setup_container(self, name, image, dockerfile,
+                        salt_master_ipaddr, port_bindings=None):
         """Builds and runs a container.
 
         :param name: Container name.
@@ -194,7 +198,7 @@ class DockerHelper(object):
             shutil.rmtree(build_dir)
 
         if build_succeed:
-            return self.run_container(name, image)
+            return self.run_container(name, image, port_bindings=port_bindings)
         return ""
 
     def get_container_ip(self, container_id):

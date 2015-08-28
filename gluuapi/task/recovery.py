@@ -31,6 +31,8 @@ from gluuapi.setup import LdapSetup
 from gluuapi.setup import OxauthSetup
 from gluuapi.setup import OxtrustSetup
 from gluuapi.setup import HttpdSetup
+from gluuapi.model import STATE_DISABLED
+from gluuapi.model import STATE_SUCCESS
 
 
 class RecoverProviderTask(object):
@@ -63,7 +65,15 @@ class RecoverProviderTask(object):
             self.logger.warn("weave container is not running")
             self.relaunch_weave()
 
-        nodes = sorted(self.provider.get_node_objects(),
+        success_nodes = self.provider.get_node_objects()
+
+        # disabled nodes must be recovered so we can enable again when
+        # expired license is updated
+        disabled_nodes = self.provider.get_node_objects(state=STATE_DISABLED)
+
+        # sort nodes by its recovery_priority property
+        # so we will have a fully recovered nodes
+        nodes = sorted(success_nodes + disabled_nodes,
                        key=lambda node: node.recovery_priority)
 
         for node in nodes:
@@ -97,11 +107,13 @@ class RecoverProviderTask(object):
         self.logger.info("re-running {} node {}".format(node.type, node.id))
         self.docker.start_container(node.id)
 
-        self.logger.info("attaching weave IP")
-        attach_cmd = "weave attach {}/{} {}".format(
-            node.weave_ip, self.cluster.prefixlen, node.id,
-        )
-        self.salt.cmd(self.provider.hostname, "cmd.run", [attach_cmd])
+        # only add successful nodes into weave network
+        if node.state == STATE_SUCCESS:
+            self.logger.info("attaching weave IP")
+            attach_cmd = "weave attach {}/{} {}".format(
+                node.weave_ip, self.cluster.prefixlen, node.id,
+            )
+            self.salt.cmd(self.provider.hostname, "cmd.run", [attach_cmd])
 
         # delay to prepare minion inside container
         time.sleep(float(self.exec_delay))

@@ -64,4 +64,4 @@ class HttpdNode(BaseModel):
 
     @property
     def recovery_priority(self):
-        return 4
+        return 3

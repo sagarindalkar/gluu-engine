@@ -65,4 +65,4 @@ class OxtrustNode(BaseModel):
 
     @property
     def recovery_priority(self):
-        return 3
+        return 4

@@ -3,6 +3,22 @@ Changelog
 
 Here you can see the full list of changes between each gluu-flask release.
 
+Version 0.3.1
+-------------
+
+Released on August 29th, 2015.
+
+* Fixed path and permission to deployment log files.
+* Fixed duplicated node's name (ref: https://github.com/GluuFederation/gluu-flask/issues/32).
+* Added `exec-delay` option in recovery command.
+* Added validation rule for cluster name.
+* oxAuth is upgraded to v2.3.3.
+* oxTrust is upgraded to v2.3.3.
+* Secured oxTrust by making it running in localhost only. Previously oxTrust is reachable from public network.
+* Templates are updated to conform to changes in Community Edition.
+* Added `force` optional parameter in Node API to delete specific node regardless of its state.
+* Disabled nodes are recovered through recovery command, but excluded from weave network.
+
 Version 0.3.0
 -------------
 

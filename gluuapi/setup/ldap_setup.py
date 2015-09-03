@@ -137,7 +137,7 @@ class LdapSetup(BaseSetup):
         src = self.ldap_setup_properties
         dest = os.path.join(self.node.ldap_base_folder, os.path.basename(src))
         ctx = {
-            "ldap_hostname": self.node.weave_ip,
+            "ldap_hostname": self.node.id,
             "ldap_port": self.node.ldap_port,
             "ldaps_port": self.node.ldaps_port,
             "ldap_jmx_port": self.node.ldap_jmx_port,

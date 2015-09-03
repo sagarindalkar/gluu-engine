@@ -177,7 +177,6 @@ def test_node_post_invalid_provider(app, db, cluster):
 @pytest.mark.parametrize("node_type, helper_class", [
     ("ldap", "LdapModelHelper"),
     ("oxauth", "OxauthModelHelper"),
-    ("oxtrust", "OxtrustModelHelper"),
     ("httpd", "HttpdModelHelper"),
 ])
 def test_node_post(monkeypatch, app, db, cluster, provider,
@@ -209,6 +208,29 @@ def test_node_post_duplicate_oxtrust(monkeypatch, app, db, cluster,
     db.persist(provider, "providers")
     oxtrust_node.state = "SUCCESS"
     db.persist(oxtrust_node, "nodes")
+
+    monkeypatch.setattr(
+        "gluuapi.helper.OxtrustModelHelper.setup",
+        lambda cls, connect_delay, exec_delay: None,
+    )
+    data = {
+        "cluster_id": cluster.id,
+        "provider_id": provider.id,
+        "node_type": "oxtrust",
+    }
+
+    resp = app.test_client().post("/nodes", data=data)
+    assert resp.status_code == 403
+
+
+def test_node_post_nonmaster_oxtrust(monkeypatch, app, db, cluster,
+                                     provider, license_key):
+    db.persist(cluster, "clusters")
+    provider.type = "consumer"
+    db.persist(provider, "providers")
+    license_key.valid = True
+    license_key.metadata["expiration_date"] = None
+    db.persist(license_key, "license_keys")
 
     monkeypatch.setattr(
         "gluuapi.helper.OxtrustModelHelper.setup",

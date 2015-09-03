@@ -287,12 +287,20 @@ status of the cluster node is available.""",
         params = data["params"]
 
         if params["node_type"] == "oxtrust":
-            # only allow 1 oxtrust per provider
-            oxtrust_nodes = provider.get_node_objects(type_="oxtrust")
-            if oxtrust_nodes:
+            # only allow 1 oxtrust per cluster
+            oxtrust_num = db.count_from_table(
+                "nodes",
+                db.where("type") == "oxtrust",
+            )
+            if oxtrust_num:
                 return {
                     "status": 403,
-                    "message": "cannot deploy more oxtrust nodes to this provider",
+                    "message": "cannot deploy additional oxtrust node to cluster",
+                }, 403
+            if provider.type != "master":
+                return {
+                    "status": 403,
+                    "message": "cannot deploy oxtrust node to non-master provider",
                 }, 403
 
         addr, prefixlen = cluster.reserve_ip_addr()

@@ -3,6 +3,14 @@ Changelog
 
 Here you can see the full list of changes between each gluu-flask release.
 
+Version 0.3.2
+-------------
+
+Released on September 4th, 2015.
+
+* Fixed CN value in OpenDJ self-signed certificate.
+* Decreased tokens lifetime in `oxauth-config.xml`.
+
 Version 0.3.1
 -------------
 

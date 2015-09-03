@@ -1,3 +1,10 @@
+gluu-flask (0.3.2-2) unstable; urgency=medium
+
+  * QA upload.
+  * New upstream release (fix opendj cert and tokens lifetime config).
+
+ -- Adrian Alves <tomcat@deb-repo.gluu.org>  Thu, 03 Sep 2015 18:11:38 -0400
+
 gluu-flask (0.3.2-1) unstable; urgency=medium
 
   * New upstream release  v0.3.2

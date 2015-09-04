@@ -1,3 +1,10 @@
+gluu-flask (0.3.3-2) unstable; urgency=medium
+
+  * QA upload.
+  * New upstream release (only allow 1 oxtrust node per cluster).
+
+ -- Adrian Alves <tomcat@deb-repo.gluu.org>  Fri, 04 Sep 2015 10:56:19 -0400
+
 gluu-flask (0.3.3-1) unstable; urgency=medium
 
   * New upstream release 0.3.3

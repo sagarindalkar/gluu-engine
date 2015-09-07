@@ -23,16 +23,23 @@ import logging
 import sys
 import time
 
-from gluuapi.helper import SaltHelper
-from gluuapi.helper import DockerHelper
-from gluuapi.helper import WeaveHelper
-from gluuapi.database import db
-from gluuapi.setup import LdapSetup
-from gluuapi.setup import OxauthSetup
-from gluuapi.setup import OxtrustSetup
-from gluuapi.setup import HttpdSetup
-from gluuapi.model import STATE_DISABLED
-from gluuapi.model import STATE_SUCCESS
+from ..helper import (
+    SaltHelper,
+    DockerHelper,
+    WeaveHelper,
+    PrometheusHelper,
+)
+from ..database import db
+from ..setup import (
+    LdapSetup,
+    OxauthSetup,
+    OxtrustSetup,
+    HttpdSetup,
+)
+from ..model import (
+    STATE_DISABLED,
+    STATE_SUCCESS,
+)
 
 
 class RecoverProviderTask(object):
@@ -50,6 +57,7 @@ class RecoverProviderTask(object):
 
         self.docker = DockerHelper(self.provider, logger=self.logger)
         self.salt = SaltHelper()
+        self.prometheus = PrometheusHelper(self.app.config["TEMPLATES_DIR"])
 
         self.cluster = db.all("clusters")[0]
         self.weave = WeaveHelper(self.provider,
@@ -90,12 +98,7 @@ class RecoverProviderTask(object):
 
     def relaunch_prometheus(self):
         self.logger.info("restarting prometheus")
-        prom_cmd = "docker start prometheus"
-        self.salt.cmd(self.provider.hostname, "cmd.run", [prom_cmd])
-
-        # needed by Prometheus helper
-        with open("/var/run/prometheus.cid", "w") as fp:
-            fp.write(self.docker.inspect_container("prometheus")["Id"])
+        self.prometheus.update()
 
     def check_node(self, node):
         self.logger.info("inspecting {} node {}".format(node.type, node.id))

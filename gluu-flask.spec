@@ -2,7 +2,7 @@ Name:           gluu-flask
 Version:        0.1
 Release:        1%{?dist}
 Summary:        Flask Management API Server
-License:        MIT
+License:        Gluu
 URL:            http://www.gluu.org
 Source0:        %{name}-%{version}.tar.gz
 BuildRequires:  python-devel,python-tox,swig,openssl-devel

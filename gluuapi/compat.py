@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
+# Copyright (c) 2015 Gluu
+#
+# All rights reserved.
+
 """Python 2/3 compatibility module."""
-
-
 import sys
 
 PY2 = int(sys.version[0]) == 2

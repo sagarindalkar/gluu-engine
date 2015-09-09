@@ -13,6 +13,7 @@ from requests.exceptions import SSLError
 from ..database import db
 from ..reqparser import NodeReq
 from ..model import STATE_IN_PROGRESS
+from ..model import STATE_SUCCESS
 from ..helper import DockerHelper
 from ..helper import SaltHelper
 from ..helper import PrometheusHelper
@@ -273,7 +274,7 @@ status of the cluster node is available.""",
             # only allow 1 oxtrust per cluster
             oxtrust_num = db.count_from_table(
                 "nodes",
-                db.where("type") == "oxtrust",
+                (db.where("type") == "oxtrust") & (db.where("state") == STATE_SUCCESS),
             )
             if oxtrust_num:
                 return {

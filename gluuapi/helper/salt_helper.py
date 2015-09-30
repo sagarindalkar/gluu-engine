@@ -6,18 +6,21 @@
 import codecs
 import os
 
+import salt.config
+import salt.key
+import salt.client
+import salt.utils.event
+
 
 class SaltHelper(object):
-    def __init__(self):
-        # salt supresses the flask logger, hence we import salt inside
-        # this function as a workaround
-        import salt.config
-        import salt.key
-        import salt.client
-
-        opts = salt.config.client_config("/etc/salt/master")
-        self.key_store = salt.key.Key(opts)
-        self.client = salt.client.get_local_client(opts["conf_file"])
+    client = salt.client.LocalClient()
+    key_store = salt.key.Key(client.opts)
+    event = salt.utils.event.get_event(
+        "master",
+        sock_dir=client.opts["sock_dir"],
+        transport=client.opts["transport"],
+        opts=client.opts,
+    )
 
     def register_minion(self, key):
         """Registers a minion.

@@ -14,6 +14,7 @@ from .app import create_app
 from .log import configure_global_logging
 from .task import LicenseExpirationTask
 from .task import RecoverProviderTask
+from .task import RecoverEventTask
 
 # global context settings
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
@@ -30,8 +31,8 @@ def run_app(app, use_reloader=True):
     crochet_setup()
 
     if not app.debug:
-        let = LicenseExpirationTask()
-        let.start()
+        LicenseExpirationTask().start()
+    RecoverEventTask(app).perform_job()
     app.run(port=app.config["PORT"], use_reloader=use_reloader)
 
 

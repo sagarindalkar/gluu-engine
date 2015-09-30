@@ -7,6 +7,9 @@ import logging
 import sys
 import time
 
+from crochet import run_in_reactor
+from twisted.internet.task import LoopingCall
+
 from ..helper import SaltHelper
 from ..helper import DockerHelper
 from ..helper import WeaveHelper
@@ -143,3 +146,39 @@ class RecoverProviderTask(object):
     def container_stopped(self, cid):
         meta = self.docker.inspect_container(cid)
         return not meta["State"]["Running"]
+
+
+class RecoverEventTask(object):
+    def __init__(self, app):
+        self.app = app
+        self.logger = logging.getLogger(
+            __name__ + "." + self.__class__.__name__,
+        )
+        self.salt = SaltHelper()
+
+    @run_in_reactor
+    def perform_job(self):
+        self.logger.info("Listening for recovery event")
+
+        # callback to handle error
+        def on_error(failure):
+            self.logger.error(failure.getTraceback())
+
+        lc = LoopingCall(self.respond_to_event)
+        deferred = lc.start(5, now=True)
+        deferred.addErrback(on_error)
+
+    def respond_to_event(self):
+        ret = self.salt.event.get_event(tag="gluu/cluster/provider/restarted")
+        if ret:
+            self.logger.info("got event from {} minion".format(ret["id"]))
+            try:
+                provider = db.search_from_table(
+                    "providers",
+                    db.where("hostname") == ret["id"],
+                )[0]
+                task = RecoverProviderTask(self.app, provider.id)
+                task.perform_job()
+            except IndexError:
+                self.logger.warn("unable to find provider "
+                                 "for {} minion".format(ret["id"]))

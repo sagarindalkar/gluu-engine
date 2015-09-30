@@ -1,3 +1,10 @@
+gluu-flask (0.3.3-4) unstable; urgency=medium
+
+  * QA upload.
+  * New upstream release (introduce RecoverEventTask).
+
+ -- Adrian Alves <tomcat@deb-repo.gluu.org>  Wed, 30 Sep 2015 12:23:55 -0400
+
 gluu-flask (0.3.3-3) unstable; urgency=medium
 
   * QA upload.

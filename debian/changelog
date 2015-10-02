@@ -1,3 +1,10 @@
+gluu-flask (0.3.3-5) unstable; urgency=medium
+
+  * QA upload.
+  * New upstream release (fixed prometheus.yml template).
+
+ -- Adrian Alves <tomcat@deb-repo.gluu.org>  Fri, 02 Oct 2015 10:14:03 -0400
+
 gluu-flask (0.3.3-4) unstable; urgency=medium
 
   * QA upload.

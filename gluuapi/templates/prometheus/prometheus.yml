@@ -21,7 +21,7 @@ scrape_configs:
 
 {%- for cluster in clusters %}
 {% set nodes = cluster.get_node_objects() %}
-  - job_name: '{{ cluster.name }}-container-metrics-collector'
+  - job_name: 'cluster_{{ cluster.id }}'
     scrape_interval: 15s
     scrape_interval: 30s
     target_groups:

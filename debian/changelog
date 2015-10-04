@@ -1,3 +1,10 @@
+gluu-flask (0.3.3-6) unstable; urgency=medium
+
+  * QA upload.
+  * New upstream release (add task to monitor provider).
+
+ -- Adrian Alves <tomcat@deb-repo.gluu.org>  Sun, 04 Oct 2015 09:30:22 -0400
+
 gluu-flask (0.3.3-5) unstable; urgency=medium
 
   * QA upload.

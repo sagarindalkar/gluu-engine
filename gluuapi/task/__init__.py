@@ -5,4 +5,4 @@
 
 from .expiration import LicenseExpirationTask  # noqa
 from .recovery import RecoverProviderTask  # noqa
-from .recovery import RecoverEventTask  # noqa
+from .recovery import AutoRecoveryTask  # noqa

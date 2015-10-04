@@ -9,6 +9,8 @@ import time
 
 from crochet import run_in_reactor
 from twisted.internet.task import LoopingCall
+from docker.errors import APIError
+from salt.exceptions import EauthAuthenticationError
 
 from ..helper import SaltHelper
 from ..helper import DockerHelper
@@ -73,6 +75,9 @@ class RecoverProviderTask(object):
             if self.container_stopped("prometheus"):
                 self.logger.warn("prometheus container is not running")
                 self.relaunch_prometheus()
+
+        self.logger.info("recovery process for provider {} "
+                         "is finished".format(self.provider.id))
 
     def relaunch_weave(self):
         self.weave.launch(register_minion=False)
@@ -148,7 +153,7 @@ class RecoverProviderTask(object):
         return not meta["State"]["Running"]
 
 
-class RecoverEventTask(object):
+class AutoRecoveryTask(object):
     def __init__(self, app):
         self.app = app
         self.logger = logging.getLogger(
@@ -158,27 +163,72 @@ class RecoverEventTask(object):
 
     @run_in_reactor
     def perform_job(self):
-        self.logger.info("Listening for recovery event")
+        self.logger.info("Monitoring available providers")
 
         # callback to handle error
         def on_error(failure):
             self.logger.error(failure.getTraceback())
 
-        lc = LoopingCall(self.respond_to_event)
-        deferred = lc.start(5, now=True)
+        lc = LoopingCall(self.monitor)
+        deferred = lc.start(60, now=True)
         deferred.addErrback(on_error)
 
-    def respond_to_event(self):
-        ret = self.salt.event.get_event(tag="gluu/cluster/provider/restarted")
-        if ret:
-            self.logger.info("got event from {} minion".format(ret["id"]))
-            try:
-                provider = db.search_from_table(
-                    "providers",
-                    db.where("hostname") == ret["id"],
-                )[0]
-                task = RecoverProviderTask(self.app, provider.id)
+    def monitor(self):
+        for provider in db.all("providers"):
+            # check if weave in provider is running;
+            # if weave stopped, we assume the provider is DOWN
+            if self.weave_stopped(provider):
+                self.logger.warn(
+                    "weave container at {} provider {} is not running;"
+                    " assuming the provider is DOWN".format(provider.type, provider.id))
+
+                self.logger.info(
+                    "trying to ping minion at "
+                    "{} provider {}".format(provider.type, provider.id)
+                )
+                # check if salt-minion is ping-able;
+                # if minion is not responded, skip over;
+                # otherwise, try to recover the provider
+                if not self.ping_minion(provider.hostname):
+                    self.logger.warn(
+                        "minion at {} provider {} "
+                        "is not ready; skipping".format(provider.type, provider.id)
+                    )
+                    continue
+
+                self.logger.info(
+                    "minion at {} provider {} "
+                    "is ready".format(provider.type, provider.id)
+                )
+                task = RecoverProviderTask(self.app, provider.id, 30)
                 task.perform_job()
-            except IndexError:
-                self.logger.warn("unable to find provider "
-                                 "for {} minion".format(ret["id"]))
+
+    def weave_stopped(self, provider):
+        docker = DockerHelper(provider)
+
+        try:
+            meta = docker.inspect_container("weave")
+            stopped = meta["State"]["Running"] is False
+        except APIError as exc:
+            err_code = exc.response.status_code
+            if err_code == 404:
+                # likely weave container is not installed correctly
+                self.logger.warn(
+                    "unable to find running/non-running "
+                    "weave container at {} provider {}; "
+                    "probably the provider is not "
+                    "registered correctly".format(provider.type, provider.id))
+            else:
+                self.logger.error(exc)
+            # we assume weave is not crashed/stopped
+            stopped = False
+        finally:
+            return stopped
+
+    def ping_minion(self, key):
+        try:
+            ret = self.salt.cmd(key, "test.ping")
+        except EauthAuthenticationError as exc:
+            self.logger.error(exc)
+            ret = {}
+        return ret

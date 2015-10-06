@@ -132,7 +132,6 @@ class RecoverProviderTask(object):
         elif node.type == "oxtrust":
             setup_obj = OxtrustSetup(node, self.cluster,
                                      self.logger, template_dir)
-            setup_obj.render_server_xml_template()
             setup_obj.start_tomcat()
             setup_obj.discover_httpd()
             for ldap in self.cluster.get_ldap_objects():

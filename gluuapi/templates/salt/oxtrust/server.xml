@@ -18,7 +18,7 @@
   <Service name="Catalina">
 
 
-  <Connector port="8443" address="%(ip)s"
+  <Connector port="8443" address="0.0.0.0"
         protocol="HTTP/1.1" scheme="https" secure="true"
         clientAuth="false" sslProtocol="TLS" SSLEnabled="true"
         keystoreFile="%(shibJksFn)s"

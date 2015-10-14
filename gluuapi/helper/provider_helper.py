@@ -20,9 +20,12 @@ def distribute_cluster_data(src):
     )
 
     for provider in consumer_providers:
-        salt.cmd(
-            provider.hostname,
-            "cmd.run",
-            ["mkdir -p {}".format(os.path.dirname(dest))]
-        )
-        salt.copy_file(provider.hostname, src, dest)
+        ping = salt.cmd(provider.hostname, "test.ping")
+        # wake up the minion (if idle)
+        if ping.get(provider.hostname):
+            salt.cmd(
+                provider.hostname,
+                "cmd.run",
+                ["mkdir -p {}".format(os.path.dirname(dest))]
+            )
+            salt.copy_file(provider.hostname, src, dest)

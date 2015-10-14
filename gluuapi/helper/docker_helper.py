@@ -102,6 +102,14 @@ class DockerHelper(object):
         env = {
             "SALT_MASTER_IPADDR": os.environ.get("SALT_MASTER_IPADDR"),
         }
+        # to impliment restart policy
+        # need docker-py v1.2.0 =<
+        # i guess need to pass restart_policy in create_host_config function
+        # restart_policy dict is 
+        #{
+        #    "MaximumRetryCount": 0,
+        #    "Name": "always"
+        #}
         container = self.docker.create_container(
             image=image, name=name, detach=True, environment=env,
             host_config=create_host_config(port_bindings=port_bindings),

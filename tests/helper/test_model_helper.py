@@ -10,6 +10,7 @@ def test_base_model_helper_init(app, cluster, provider):
         BaseModelHelper(cluster, provider, "127.0.0.1",
                         template_dir=app.config["TEMPLATES_DIR"],
                         log_dir=app.config["LOG_DIR"],
+                        database_uri=app.config["DATABASE_URI"],
                         )
 
 
@@ -26,6 +27,7 @@ def test_ldap_model_helper(monkeypatch, app, cluster, provider):
     helper = LdapModelHelper(cluster, provider, "127.0.0.1",
                              template_dir=app.config["TEMPLATES_DIR"],
                              log_dir=app.config["LOG_DIR"],
+                             database_uri=app.config["DATABASE_URI"],
                              )
 
     # some sanity checks
@@ -50,6 +52,7 @@ def test_oxauth_model_helper(monkeypatch, app, cluster, provider):
     helper = OxauthModelHelper(cluster, provider, "127.0.0.1",
                                template_dir=app.config["TEMPLATES_DIR"],
                                log_dir=app.config["LOG_DIR"],
+                               database_uri=app.config["DATABASE_URI"],
                                )
 
     # some sanity checks
@@ -74,6 +77,7 @@ def test_oxtrust_model_helper(monkeypatch, app, cluster, provider):
     helper = OxtrustModelHelper(cluster, provider, "127.0.0.1",
                                 template_dir=app.config["TEMPLATES_DIR"],
                                 log_dir=app.config["LOG_DIR"],
+                                database_uri=app.config["DATABASE_URI"],
                                 )
 
     # some sanity checks

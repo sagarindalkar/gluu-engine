@@ -21,6 +21,7 @@ from ..model import STATE_FAILED
 from ..model import STATE_IN_PROGRESS
 from .docker_helper import DockerHelper
 from .salt_helper import SaltHelper
+from .provider_helper import distribute_cluster_data
 from .prometheus_helper import PrometheusHelper
 from ..setup import LdapSetup
 from ..setup import OxauthSetup
@@ -46,7 +47,7 @@ class BaseModelHelper(object):
     port_bindings = {}
 
     def __init__(self, cluster, provider, salt_master_ipaddr,
-                 template_dir, log_dir):
+                 template_dir, log_dir, database_uri):
         assert self.setup_class, "setup_class must be set"
         assert self.node_class, "node_class must be set"
         assert self.image, "image attribute cannot be empty"
@@ -71,6 +72,7 @@ class BaseModelHelper(object):
         self.docker = DockerHelper(self.provider, logger=self.logger)
         self.salt = SaltHelper()
         self.template_dir = template_dir
+        self.database_uri = database_uri
 
     def prepare_minion(self, connect_delay=10, exec_delay=15):
         """Waits for minion to connect before doing any remote execution.
@@ -176,6 +178,8 @@ class BaseModelHelper(object):
         except Exception:
             self.logger.error(exc_traceback())
             self.on_setup_error()
+        finally:
+            distribute_cluster_data(self.database_uri)
 
     def on_setup_error(self):
         self.logger.info("destroying minion {}".format(self.node.name))

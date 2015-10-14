@@ -15,6 +15,7 @@ from ..reqparser import LicenseKeyReq
 from ..model import STATE_DISABLED
 from ..model import STATE_SUCCESS
 from ..helper import SaltHelper
+from ..helper import distribute_cluster_data
 from ..utils import decode_signed_license
 
 def format_license_key_resp(obj):
@@ -101,6 +102,7 @@ class LicenseKeyListResource(Resource):
             }, 400
         license_key = LicenseKey(fields=data)
         db.persist(license_key, "license_keys")
+        distribute_cluster_data(current_app.config["DATABASE_URI"])
 
         headers = {
             "Location": url_for("licensekey", license_key_id=license_key.id),
@@ -265,6 +267,8 @@ class LicenseKeyResource(Resource):
                     node.state = STATE_SUCCESS
                     db.update(node.id, node, "nodes")
                     salt.cmd(provider.hostname, "cmd.run", [attach_cmd])
+
+        distribute_cluster_data(current_app.config["DATABASE_URI"])
         return format_license_key_resp(license_key)
 
     @swagger.operation(
@@ -297,4 +301,5 @@ class LicenseKeyResource(Resource):
             return {"status": 403, "message": msg}, 403
 
         db.delete(license_key_id, "license_keys")
+        distribute_cluster_data(current_app.config["DATABASE_URI"])
         return {}, 204

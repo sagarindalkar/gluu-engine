@@ -15,6 +15,7 @@ from ..reqparser import EditProviderReq
 from ..model import Provider
 from ..helper import SaltHelper
 from ..helper import WeaveHelper
+from ..helper import distribute_cluster_data
 from ..utils import retrieve_signed_license
 from ..utils import decode_signed_license
 
@@ -87,6 +88,7 @@ class ProviderResource(Resource):
         db.delete(provider_id, "providers")
         salt = SaltHelper()
         salt.reject_minion(provider.hostname)
+        distribute_cluster_data(current_app.config["DATABASE_URI"])
         return {}, 204
 
     @swagger.operation(
@@ -180,6 +182,7 @@ class ProviderResource(Resource):
             provider, cluster, current_app.config["SALT_MASTER_IPADDR"],
         )
         weave.launch_async()
+        distribute_cluster_data(current_app.config["DATABASE_URI"])
         return format_provider_resp(provider)
 
 
@@ -350,6 +353,7 @@ class ProviderListResource(Resource):
             provider, cluster, current_app.config["SALT_MASTER_IPADDR"],
         )
         weave.launch_async()
+        distribute_cluster_data(current_app.config["DATABASE_URI"])
 
         headers = {
             "Location": url_for("provider", provider_id=provider.id),

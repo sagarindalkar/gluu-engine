@@ -21,6 +21,7 @@ from ..helper import LdapModelHelper
 from ..helper import OxauthModelHelper
 from ..helper import OxtrustModelHelper
 from ..helper import HttpdModelHelper
+from ..helper import distribute_cluster_data
 from ..setup import LdapSetup
 from ..setup import HttpdSetup
 from ..setup import OxauthSetup
@@ -156,6 +157,7 @@ class Node(Resource):
         # updating prometheus
         prometheus = PrometheusHelper(template_dir=template_dir)
         prometheus.update()
+        distribute_cluster_data(current_app.config["DATABASE_URI"])
         return {}, 204
 
 
@@ -266,6 +268,7 @@ status of the cluster node is available.""",
         salt_master_ipaddr = current_app.config["SALT_MASTER_IPADDR"]
         template_dir = current_app.config["TEMPLATES_DIR"]
         log_dir = current_app.config["LOG_DIR"]
+        database_uri = current_app.config["DATABASE_URI"]
         cluster = data["context"]["cluster"]
         provider = data["context"]["provider"]
         params = data["params"]
@@ -300,7 +303,7 @@ status of the cluster node is available.""",
         helper_class = helper_classes[params["node_type"]]
 
         helper = helper_class(cluster, provider, salt_master_ipaddr,
-                              template_dir, log_dir)
+                              template_dir, log_dir, database_uri)
 
         if helper.node.type == "httpd":
             helper.node.oxauth_node_id = params["oxauth_node_id"]

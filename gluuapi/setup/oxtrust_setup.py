@@ -189,6 +189,8 @@ class OxtrustSetup(OxauthSetup):
 
         self.symlink_jython_lib()
         self.copy_tomcat_index_html()
+        #add auto startup entry
+        self.add_auto_startup_entry()
         self.start_tomcat()
 
         self.change_cert_access("tomcat", "tomcat")

@@ -353,10 +353,22 @@ class LdapSetup(BaseSetup):
         # cleanups temporary password file
         setup_obj.delete_ldap_pw()
 
+    def add_auto_startup_entry(self):
+        #add supervisord entry
+        run_cmd = ' '.join([self.node.ldap_run_command, '--quiet'])
+        payload = '\n[program:{}]\ncommand={}\n'.format(self.node.type, run_cmd)
+        self.salt.cmd(
+            self.node.id,
+            'cmd.run',
+            ["echo -e '{}' >> /etc/supervisor/conf.d/supervisord.conf".format(payload)],
+        )
+
     def setup(self):
         self.write_ldap_pw()
         self.add_ldap_schema()
         self.setup_opendj()
+        #add auto startup entry
+        self.add_auto_startup_entry()
         self.configure_opendj()
         self.index_opendj("site")
         self.index_opendj("userRoot")

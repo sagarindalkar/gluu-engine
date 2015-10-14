@@ -182,6 +182,16 @@ class OxauthSetup(BaseSetup):
         touch_cmd = "touch {}/oxauth.config.reload".format(self.node.tomcat_conf_dir)
         self.salt.cmd(self.node.id, "cmd.run", [touch_cmd])
 
+    def add_auto_startup_entry(self):
+        #add supervisord entry
+        run_cmd = "{}/bin/catalina.sh start".format(self.node.tomcat_home)
+        payload = '\n[program:{}]\ncommand={}\nenvironment=CATALINA_PID="{}/bin/catalina.pid"\n'.format(self.node.type, run_cmd, self.node.tomcat_home)
+        self.salt.cmd(
+            self.node.id,
+            'cmd.run',
+            ["echo -e '{}' >> /etc/supervisor/conf.d/supervisord.conf".format(payload)],
+        )
+
     def setup(self):
         hostname = self.cluster.ox_cluster_hostname.split(":")[0]
         self.create_cert_dir()
@@ -213,6 +223,8 @@ class OxauthSetup(BaseSetup):
         self.gen_openid_keys()
         self.symlink_jython_lib()
 
+        #add auto startup entry
+        self.add_auto_startup_entry()
         # configure tomcat to run oxauth war file
         self.start_tomcat()
 

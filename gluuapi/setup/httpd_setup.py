@@ -43,6 +43,24 @@ class HttpdSetup(BaseSetup):
              ["service apache2 start"]],
         )
 
+    def add_auto_startup_entry(self):
+        '''
+        other ways to start apache2
+        [program:apache2]
+        command=/bin/bash -c "source /etc/apache2/envvars && exec /usr/sbin/apache2 -DFOREGROUND"
+        OR
+        [program:apache2]
+        command=/usr/sbin/apachectl start
+        '''
+        #add supervisord entry
+        run_cmd = '/bin/bash -c "service apache2 start"'
+        payload = '\n[program:{}]\ncommand={}\n'.format(self.node.type, run_cmd)
+        self.salt.cmd(
+            self.node.id,
+            'cmd.run',
+            ["echo -e '{}' >> /etc/supervisor/conf.d/supervisord.conf".format(payload)],
+        )
+
     def setup(self):
         hostname = self.cluster.ox_cluster_hostname.split(":")[0]
         self.create_cert_dir()
@@ -50,6 +68,8 @@ class HttpdSetup(BaseSetup):
                       "www-data", "www-data", hostname)
         self.change_cert_access("www-data", "www-data")
         self.render_https_conf_template(hostname)
+        #add auto startup entry
+        self.add_auto_startup_entry()
         self.start_httpd()
         return True
 

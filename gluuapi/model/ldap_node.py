@@ -64,7 +64,7 @@ class LdapNode(BaseModel):
         self.ldap_setup_command = '%s/setup' % self.ldap_base_folder
 
         # Full path to opendj run command
-        self.ldap_run_command = '%s/start-ds' % self.ldap_base_folder
+        self.ldap_run_command = '%s/bin/start-ds' % self.ldap_base_folder
 
         # Full path to dsconfig command
         self.ldap_dsconfig_command = "%s/bin/dsconfig" % self.ldap_base_folder

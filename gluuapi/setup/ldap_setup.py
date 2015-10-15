@@ -354,14 +354,18 @@ class LdapSetup(BaseSetup):
         setup_obj.delete_ldap_pw()
 
     def add_auto_startup_entry(self):
-        #add supervisord entry
+        # add supervisord entry
         run_cmd = ' '.join([self.node.ldap_run_command, '--quiet'])
-        payload = '\n[program:{}]\ncommand={}\n'.format(self.node.type, run_cmd)
+        payload = """
+[program:{}]
+command={}
+""".format(self.node.type, run_cmd)
+
         self.logger.info("adding supervisord entry")
         self.salt.cmd(
             self.node.id,
             'cmd.run',
-            ["echo -e '{}' >> /etc/supervisor/conf.d/supervisord.conf".format(payload)],
+            ["echo '{}' >> /etc/supervisor/conf.d/supervisord.conf".format(payload)],
         )
 
     def start_opendj(self):
@@ -377,7 +381,7 @@ class LdapSetup(BaseSetup):
         self.write_ldap_pw()
         self.add_ldap_schema()
         self.setup_opendj()
-        #add auto startup entry
+        # add auto startup entry
         self.add_auto_startup_entry()
         self.start_opendj()
         self.configure_opendj()
@@ -492,7 +496,3 @@ class LdapSetup(BaseSetup):
         self.logger.info("modifying oxIDPAuthentication entry")
         self.salt.cmd(self.node.id, "cmd.run", [ldapmod_cmd])
         self.delete_ldap_pw()
-
-    def start_opendj(self):
-        self.logger.info("starting OpenDJ server")
-        self.salt.cmd(self.node.id, "cmd.run", ["/opt/opendj/bin/start-ds"])

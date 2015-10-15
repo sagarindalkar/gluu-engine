@@ -52,13 +52,18 @@ class HttpdSetup(BaseSetup):
         [program:apache2]
         command=/usr/sbin/apachectl start
         '''
-        #add supervisord entry
+        # add supervisord entry
         run_cmd = '/bin/bash -c "service apache2 start"'
-        payload = '\n[program:{}]\ncommand={}\n'.format(self.node.type, run_cmd)
+        payload = """
+[program:{}]
+command={}
+""".format(self.node.type, run_cmd)
+
+        self.logger.info("adding supervisord entry")
         self.salt.cmd(
             self.node.id,
             'cmd.run',
-            ["echo -e '{}' >> /etc/supervisor/conf.d/supervisord.conf".format(payload)],
+            ["echo '{}' >> /etc/supervisor/conf.d/supervisord.conf".format(payload)],
         )
 
     def setup(self):
@@ -68,7 +73,7 @@ class HttpdSetup(BaseSetup):
                       "www-data", "www-data", hostname)
         self.change_cert_access("www-data", "www-data")
         self.render_https_conf_template(hostname)
-        #add auto startup entry
+        # add auto startup entry
         self.add_auto_startup_entry()
         self.start_httpd()
         return True

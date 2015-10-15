@@ -183,13 +183,19 @@ class OxauthSetup(BaseSetup):
         self.salt.cmd(self.node.id, "cmd.run", [touch_cmd])
 
     def add_auto_startup_entry(self):
-        #add supervisord entry
+        # add supervisord entry
         run_cmd = "{}/bin/catalina.sh start".format(self.node.tomcat_home)
-        payload = '\n[program:{}]\ncommand={}\nenvironment=CATALINA_PID="{}/bin/catalina.pid"\n'.format(self.node.type, run_cmd, self.node.tomcat_home)
+        payload = """
+[program:{}]
+command={}
+environment=CATALINA_PID="{}/bin/catalina.pid"
+""".format(self.node.type, run_cmd, self.node.tomcat_home)
+
+        self.logger.info("adding supervisord entry")
         self.salt.cmd(
             self.node.id,
             'cmd.run',
-            ["echo -e '{}' >> /etc/supervisor/conf.d/supervisord.conf".format(payload)],
+            ["echo '{}' >> /etc/supervisor/conf.d/supervisord.conf".format(payload)],
         )
 
     def setup(self):
@@ -223,7 +229,7 @@ class OxauthSetup(BaseSetup):
         self.gen_openid_keys()
         self.symlink_jython_lib()
 
-        #add auto startup entry
+        # add auto startup entry
         self.add_auto_startup_entry()
         # configure tomcat to run oxauth war file
         self.start_tomcat()

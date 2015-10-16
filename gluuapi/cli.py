@@ -11,10 +11,10 @@ from crochet import setup as crochet_setup
 from daemonocle import Daemon
 
 from .app import create_app
+from .helper import distribute_cluster_data
 from .log import configure_global_logging
 from .task import LicenseExpirationTask
-from .task import RecoverProviderTask
-from .task import AutoRecoveryTask
+# from .task import RecoverProviderTask
 
 # global context settings
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
@@ -32,7 +32,6 @@ def run_app(app, use_reloader=True):
 
     if not app.debug:
         LicenseExpirationTask().start()
-    AutoRecoveryTask(app).perform_job()
     app.run(port=app.config["PORT"], use_reloader=use_reloader)
 
 
@@ -107,17 +106,26 @@ def runserver():
     run_app(app)
 
 
-@main.command()
-@click.argument("provider_id")
-@click.option("--exec-delay", type=int, default=30,
-              help="Time to wait in seconds before start recovering "
-                   "each node.")
-def recover(provider_id, exec_delay):
-    """Recover provider and its nodes.
-    """
-    check_salt()
-    configure_global_logging()
-    app = create_app()
+# @main.command()
+# @click.argument("provider_id")
+# @click.option("--exec-delay", type=int, default=30,
+#               help="Time to wait in seconds before start recovering "
+#                    "each node.")
+# def recover(provider_id, exec_delay):
+#     """Recover provider and its nodes.
+#     """
+#     check_salt()
+#     configure_global_logging()
+#     app = create_app()
 
-    recovery = RecoverProviderTask(app, provider_id, exec_delay)
-    recovery.perform_job()
+#     recovery = RecoverProviderTask(app, provider_id, exec_delay)
+#     recovery.perform_job()
+
+
+@main.command("distribute-data")
+def distribute_data():
+    """Distribute cluster data to consumer providers.
+    """
+    crochet_setup()
+    app = create_app()
+    distribute_cluster_data(app.config["DATABASE_URI"])

@@ -3,13 +3,15 @@
 #
 # All rights reserved.
 
+from flask import current_app
 from flask import request
 from flask import url_for
 from flask_restful import Resource
 from flask_restful_swagger import swagger
 
-from ..model import GluuCluster
 from ..database import db
+from ..helper import distribute_cluster_data
+from ..model import GluuCluster
 from ..reqparser import ClusterReq
 
 
@@ -84,6 +86,7 @@ class Cluster(Resource):
             return {"status": 403, "message": msg}, 403
 
         db.delete(cluster_id, "clusters")
+        distribute_cluster_data(current_app.config["DATABASE_URI"])
         return {}, 204
 
 
@@ -239,4 +242,6 @@ class ClusterList(Resource):
         headers = {
             "Location": url_for("cluster", cluster_id=cluster.id),
         }
+
+        distribute_cluster_data(current_app.config["DATABASE_URI"])
         return format_cluster_resp(cluster), 201, headers

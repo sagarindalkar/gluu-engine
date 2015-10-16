@@ -5,14 +5,14 @@ flask-restful-swagger==0.15
 crochet==1.4.0
 
 # Docker
-docker-py==1.2.2
+docker-py==1.2.3
 
 #salt
 salt==2014.7.6
 pyzmq==14.6.0
 
 #storage
-tinydb==2.2.2
+tinydb==2.3.1
 jsonpickle==0.9.0
 
 netaddr==0.7.14

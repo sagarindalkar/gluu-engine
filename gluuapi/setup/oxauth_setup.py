@@ -60,7 +60,7 @@ class OxauthSetup(BaseSetup):
         classpath = ":".join([
             "{}/classes".format(web_inf),
             "{}/lib/bcprov-jdk16-1.46.jar".format(web_inf),
-            "{}/lib/oxauth-model-2.3.3.Final.jar".format(web_inf),
+            "{}/lib/oxauth-model-2.3.4.Final.jar".format(web_inf),
             "{}/lib/jettison-1.3.jar".format(web_inf),
             "{}/lib/commons-lang-2.6.jar".format(web_inf),
             "{}/lib/log4j-1.2.14.jar".format(web_inf),
@@ -210,6 +210,9 @@ environment=CATALINA_PID="{}/bin/catalina.pid"
         self.render_server_xml_template()
         self.write_salt_file()
         self.write_marker_file()
+        self.copy_duo_creds()
+        self.copy_duo_web()
+        self.copy_gplus_secrets()
 
         self.gen_cert("shibIDP", self.cluster.decrypted_admin_pw,
                       "tomcat", "tomcat", hostname)
@@ -280,3 +283,21 @@ environment=CATALINA_PID="{}/bin/catalina.pid"
         symlink_cmd = "ln -s /opt/jython/Lib " \
                       "/opt/tomcat/webapps/oxauth/WEB-INF/lib/Lib"
         self.salt.cmd(self.node.id, "cmd.run", [symlink_cmd])
+
+    def copy_duo_creds(self):
+        src = self.get_template_path("nodes/oxauth/duo_creds.json")
+        dest = "/etc/certs/duo_creds.json"
+        self.logger.info("copying duo_creds.json")
+        self.salt.copy_file(self.node.id, src, dest)
+
+    def copy_duo_web(self):
+        src = self.get_template_path("nodes/oxauth/duo_web.py")
+        dest = "/opt/tomcat/conf/python/duo_web.py"
+        self.logger.info("copying duo_web.py")
+        self.salt.copy_file(self.node.id, src, dest)
+
+    def copy_gplus_secrets(self):
+        src = self.get_template_path("nodes/oxauth/gplus_client_secrets.json")
+        dest = "/etc/certs/gplus_client_secrets.json"
+        self.logger.info("copying gplus_client_secrets.json")
+        self.salt.copy_file(self.node.id, src, dest)

@@ -3,6 +3,20 @@ Changelog
 
 Here you can see the full list of changes between each gluu-flask release.
 
+Version 0.3.3
+-------------
+
+Released on October 17th, 2015.
+
+* oxAuth is upgraded to v2.3.4.
+* oxTrust is upgraded to v2.3.4.
+* All nodes entrypoints are managed by supervisord.
+* Cluster data are distributed to all consumer providers after addition/update/deletion events.
+* Recovery command is removed in favor of [gluu-agent](https://github.com/GluuFederation/gluu-agent) recover command.
+* License is changed.
+* Fixed prometheus config template.
+* Fixed templates in oxTrust.
+
 Version 0.3.2
 -------------
 

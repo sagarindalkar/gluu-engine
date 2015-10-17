@@ -1,3 +1,10 @@
+gluu-flask (0.3.3-8) unstable; urgency=medium
+
+  * QA upload.
+  * New upstream release (finalize v0.3.3).
+
+ -- Adrian Alves <tomcat@repo.gluu.org>  Sat, 17 Oct 2015 16:48:12 +0000
+
 gluu-flask (0.3.3-7) unstable; urgency=medium
 
   * QA upload.

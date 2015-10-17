@@ -285,19 +285,19 @@ environment=CATALINA_PID="{}/bin/catalina.pid"
         self.salt.cmd(self.node.id, "cmd.run", [symlink_cmd])
 
     def copy_duo_creds(self):
-        src = self.get_template_path("nodes/oxauth/duo_creds.json")
+        src = self.get_template_path("salt/oxauth/duo_creds.json")
         dest = "/etc/certs/duo_creds.json"
         self.logger.info("copying duo_creds.json")
         self.salt.copy_file(self.node.id, src, dest)
 
     def copy_duo_web(self):
-        src = self.get_template_path("nodes/oxauth/duo_web.py")
+        src = self.get_template_path("salt/oxauth/duo_web.py")
         dest = "/opt/tomcat/conf/python/duo_web.py"
         self.logger.info("copying duo_web.py")
         self.salt.copy_file(self.node.id, src, dest)
 
     def copy_gplus_secrets(self):
-        src = self.get_template_path("nodes/oxauth/gplus_client_secrets.json")
+        src = self.get_template_path("salt/oxauth/gplus_client_secrets.json")
         dest = "/etc/certs/gplus_client_secrets.json"
         self.logger.info("copying gplus_client_secrets.json")
         self.salt.copy_file(self.node.id, src, dest)

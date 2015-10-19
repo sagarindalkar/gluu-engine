@@ -9,13 +9,14 @@ import time
 from crochet import run_in_reactor
 
 from .salt_helper import SaltHelper
+from .provider_helper import distribute_cluster_data
 
 
 class WeaveHelper(object):
-    def __init__(self, provider, cluster, master_ipaddr, logger=None):
+    def __init__(self, provider, cluster, app, logger=None):
         self.provider = provider
         self.cluster = cluster
-        self.master_ipaddr = master_ipaddr
+        self.app = app
         self.salt = SaltHelper()
         self.logger = logger or logging.getLogger(
             __name__ + "." + self.__class__.__name__,
@@ -78,6 +79,7 @@ class WeaveHelper(object):
             self.cluster.decrypted_admin_pw,
         )
         self.salt.cmd(self.provider.hostname, "cmd.run", [launch_cmd])
+        distribute_cluster_data(self.app.config["DATABASE_URI"])
 
     def launch_consumer(self):
         self.logger.info("re-launching weave for consumer provider")
@@ -86,6 +88,7 @@ class WeaveHelper(object):
         time.sleep(5)
         launch_cmd = "weave launch -password {} {}".format(
             self.cluster.decrypted_admin_pw,
-            self.master_ipaddr,
+            self.app.config["SALT_MASTER_IPADDR"],
         )
         self.salt.cmd(self.provider.hostname, "cmd.run", [launch_cmd])
+        distribute_cluster_data(self.app.config["DATABASE_URI"])

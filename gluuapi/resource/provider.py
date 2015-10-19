@@ -173,16 +173,10 @@ class ProviderResource(Resource):
         provider.populate(data)
         db.update(provider.id, provider, "providers")
 
-        # register provider so we can execute weave commands later on
-        salt = SaltHelper()
-        salt.register_minion(provider.hostname)
-
         cluster = db.all("clusters")[0]
-        weave = WeaveHelper(
-            provider, cluster, current_app.config["SALT_MASTER_IPADDR"],
-        )
+        weave = WeaveHelper(provider, cluster,
+                            current_app._get_current_object())
         weave.launch_async()
-        distribute_cluster_data(current_app.config["DATABASE_URI"])
         return format_provider_resp(provider)
 
 
@@ -349,11 +343,9 @@ class ProviderListResource(Resource):
         provider = Provider(fields=data)
         db.persist(provider, "providers")
 
-        weave = WeaveHelper(
-            provider, cluster, current_app.config["SALT_MASTER_IPADDR"],
-        )
+        weave = WeaveHelper(provider, cluster,
+                            current_app._get_current_object())
         weave.launch_async()
-        distribute_cluster_data(current_app.config["DATABASE_URI"])
 
         headers = {
             "Location": url_for("provider", provider_id=provider.id),

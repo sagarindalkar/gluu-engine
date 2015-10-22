@@ -14,7 +14,7 @@ from ..model import LicenseKey
 from ..reqparser import LicenseKeyReq
 from ..model import STATE_DISABLED
 from ..model import STATE_SUCCESS
-from ..helper import SaltHelper
+from ..helper import WeaveHelper
 from ..helper import distribute_cluster_data
 from ..utils import decode_signed_license
 
@@ -252,21 +252,18 @@ class LicenseKeyResource(Resource):
         # if consumer providers have disabled oxAuth nodes and license
         # key is not expired, try to re-enable the nodes
         if not license_key.expired:
-            salt = SaltHelper()
             for provider in license_key.get_provider_objects():
+                weave = WeaveHelper(provider, current_app._get_current_object())
                 oxauth_nodes = provider.get_node_objects(
                     type_="oxauth", state=STATE_DISABLED,
                 )
 
                 for node in oxauth_nodes:
-                    attach_cmd = "weave attach {}/{} {}".format(
-                        node.weave_ip,
-                        node.weave_prefixlen,
-                        node.id,
-                    )
                     node.state = STATE_SUCCESS
                     db.update(node.id, node, "nodes")
-                    salt.cmd(provider.hostname, "cmd.run", [attach_cmd])
+                    cidr = "{}/{}".format(node.weave_ip,
+                                          node.weave_prefixlen)
+                    weave.attach(cidr, node.id)
 
         distribute_cluster_data(current_app.config["DATABASE_URI"])
         return format_license_key_resp(license_key)

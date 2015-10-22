@@ -173,9 +173,7 @@ class ProviderResource(Resource):
         provider.populate(data)
         db.update(provider.id, provider, "providers")
 
-        cluster = db.all("clusters")[0]
-        weave = WeaveHelper(provider, cluster,
-                            current_app._get_current_object())
+        weave = WeaveHelper(provider, current_app._get_current_object())
         weave.launch_async()
         return format_provider_resp(provider)
 

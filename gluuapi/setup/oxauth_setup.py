@@ -5,7 +5,6 @@
 
 import codecs
 import os.path
-import time
 
 from .base import BaseSetup
 
@@ -51,9 +50,8 @@ class OxauthSetup(BaseSetup):
         unpack_cmd = "unzip -q /opt/tomcat/webapps/oxauth.war " \
                      "-d /opt/tomcat/webapps/oxauth"
         self.salt.cmd(self.node.id, "cmd.run", [unpack_cmd])
-
-        # waiting for oxauth.war to be unpacked
-        time.sleep(5)
+        jid = self.salt.cmd_async(self.node.id, "cmd.run", [unpack_cmd])
+        self.salt.subscribe_event(jid, self.node.id)
 
         openid_key_json_fn = os.path.join(self.node.cert_folder, "oxauth-web-keys.json")
         web_inf = "/opt/tomcat/webapps/oxauth/WEB-INF"
@@ -69,7 +67,8 @@ class OxauthSetup(BaseSetup):
         key_cmd = "java -cp {} org.xdi.oxauth.util.KeyGenerator > {}".format(
             classpath, openid_key_json_fn,
         )
-        self.salt.cmd(self.node.id, "cmd.run", [key_cmd])
+        jid = self.salt.cmd_async(self.node.id, "cmd.run", [key_cmd])
+        self.salt.subscribe_event(jid, self.node.id)
 
         self.logger.info("changing access to OpenID key file")
         self.salt.cmd(
@@ -83,7 +82,8 @@ class OxauthSetup(BaseSetup):
         self.logger.info("starting tomcat")
         start_cmd = "export CATALINA_PID={0}/bin/catalina.pid && " \
                     "{0}/bin/catalina.sh start".format(self.node.tomcat_home)
-        self.salt.cmd(self.node.id, "cmd.run", [start_cmd])
+        jid = self.salt.cmd_async(self.node.id, "cmd.run", [start_cmd])
+        self.salt.subscribe_event(jid, self.node.id)
 
     def gen_keystore(self, suffix, keystore_fn, keystore_pw, in_key,
                      in_cert, user, group, hostname):
@@ -99,7 +99,8 @@ class OxauthSetup(BaseSetup):
             '-name', hostname,
             '-passout', 'pass:%s' % keystore_pw,
         ])
-        self.salt.cmd(self.node.id, "cmd.run", [export_cmd])
+        jid = self.salt.cmd_async(self.node.id, "cmd.run", [export_cmd])
+        self.salt.subscribe_event(jid, self.node.id)
 
         # Import p12 to keystore
         import_cmd = " ".join([
@@ -113,7 +114,8 @@ class OxauthSetup(BaseSetup):
             '-keyalg', 'RSA',
             '-noprompt',
         ])
-        self.salt.cmd(self.node.id, "cmd.run", [import_cmd])
+        jid = self.salt.cmd_async(self.node.id, "cmd.run", [import_cmd])
+        self.salt.subscribe_event(jid, self.node.id)
 
         self.logger.info("changing access to keystore file")
         self.salt.cmd(
@@ -192,11 +194,12 @@ environment=CATALINA_PID="{}/bin/catalina.pid"
 """.format(self.node.type, run_cmd, self.node.tomcat_home)
 
         self.logger.info("adding supervisord entry")
-        self.salt.cmd(
+        jid = self.salt.cmd_async(
             self.node.id,
             'cmd.run',
             ["echo '{}' >> /etc/supervisor/conf.d/supervisord.conf".format(payload)],
         )
+        self.salt.subscribe_event(jid, self.node.id)
 
     def setup(self):
         hostname = self.cluster.ox_cluster_hostname.split(":")[0]
@@ -282,7 +285,8 @@ environment=CATALINA_PID="{}/bin/catalina.pid"
     def symlink_jython_lib(self):
         symlink_cmd = "ln -s /opt/jython/Lib " \
                       "/opt/tomcat/webapps/oxauth/WEB-INF/lib/Lib"
-        self.salt.cmd(self.node.id, "cmd.run", [symlink_cmd])
+        jid = self.salt.cmd_async(self.node.id, "cmd.run", [symlink_cmd])
+        self.salt.subscribe_event(jid, self.node.id)
 
     def copy_duo_creds(self):
         src = self.get_template_path("salt/oxauth/duo_creds.json")

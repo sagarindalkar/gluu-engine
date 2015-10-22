@@ -7,9 +7,10 @@ import logging
 
 from crochet import run_in_reactor
 from twisted.internet.task import LoopingCall
+from flask import current_app
 
 from ..database import db
-from ..helper import SaltHelper
+from ..helper import WeaveHelper
 from ..model import STATE_DISABLED
 from ..model import STATE_SUCCESS
 from ..utils import retrieve_signed_license
@@ -24,7 +25,6 @@ class LicenseExpirationTask(object):
         self.logger = logging.getLogger(
             __name__ + "." + self.__class__.__name__,
         )
-        self.salt = SaltHelper()
 
     @run_in_reactor
     def start(self, interval=_DEFAULT_INTERVAL):
@@ -93,29 +93,25 @@ class LicenseExpirationTask(object):
         return license_key
 
     def disable_oxauth_nodes(self, provider):
+        weave = WeaveHelper(provider, current_app._get_current_object(),
+                            self.logger)
+
         for node in provider.get_node_objects(type_="oxauth"):
-            self.logger.info("disabling oxAuth node {}".format(node.id))
-            detach_cmd = "weave detach {}/{} {}".format(
-                node.weave_ip,
-                node.weave_prefixlen,
-                node.id,
-            )
             node.state = STATE_DISABLED
             db.update(node.id, node, "nodes")
-            self.salt.cmd(provider.hostname, "cmd.run", [detach_cmd])
-            self.logger.info("oxAuth node {} has been "
-                             "disabled".format(node.id))
+
+            cidr = "{}/{}".format(node.weave_ip, node.weave_prefixlen)
+            weave.detach(cidr, node.id)
+            self.logger.info("{} node {} has been disabled".format("oxauth", node.id))
 
     def enable_oxauth_nodes(self, provider):
+        weave = WeaveHelper(provider, current_app._get_current_object(),
+                            self.logger)
+
         for node in provider.get_node_objects(type_="oxauth", state=STATE_DISABLED):
-            self.logger.info("enabling oxAuth node {}".format(node.id))
-            attach_cmd = "weave attach {}/{} {}".format(
-                node.weave_ip,
-                node.weave_prefixlen,
-                node.id,
-            )
             node.state = STATE_SUCCESS
             db.update(node.id, node, "nodes")
-            self.salt.cmd(provider.hostname, "cmd.run", [attach_cmd])
-            self.logger.info("oxAuth node {} has been "
-                             "enabled".format(node.id))
+
+            cidr = "{}/{}".format(node.weave_ip, node.weave_prefixlen)
+            weave.attach(cidr, node.id)
+            self.logger.info("{} node {} has been enabled".format("oxauth", node.id))

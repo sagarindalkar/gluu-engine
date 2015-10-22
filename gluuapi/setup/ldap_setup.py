@@ -132,29 +132,22 @@ class LdapSetup(BaseSetup):
 
         setupCmd = " ".join([
             self.node.ldap_setup_command,
-            '--no-prompt', '--cli', '--doNotStart', '--acceptLicense', '--propertiesFilePath',
-            dest,
+            '--no-prompt', '--cli', '--doNotStart', '--acceptLicense',
+            '--propertiesFilePath', dest,
         ])
 
         self.logger.info("running opendj setup")
-        self.salt.cmd(
-            self.node.id,
-            'cmd.run',
-            ["{}".format(setupCmd)],
-        )
+        jid = self.salt.cmd_async(self.node.id, 'cmd.run',
+                                  ["{}".format(setupCmd)])
+        self.salt.subscribe_event(jid, self.node.id)
 
         self.logger.info("running dsjavaproperties")
-        self.salt.cmd(
+        jid = self.salt.cmd_async(
             self.node.id,
             'cmd.run',
             [self.node.ldap_ds_java_prop_command],
         )
-
-        # wait for opendj being started before proceeding to next step
-        self.logger.info(
-            "warming up opendj server; "
-            "sleeping for {} seconds".format(self.node.ldap_start_timeout))
-        time.sleep(self.node.ldap_start_timeout)
+        self.salt.subscribe_event(jid, self.node.id)
 
     def configure_opendj(self):
         config_changes = [
@@ -174,8 +167,8 @@ class LdapSetup(BaseSetup):
                 '--bindPasswordFile', self.node.ldap_pass_fn,
             ] + changes)
             self.logger.info("configuring opendj config changes: {}".format(dsconfigCmd))
-            self.salt.cmd(self.node.id, 'cmd.run', [dsconfigCmd])
-            time.sleep(1)
+            jid = self.salt.cmd_async(self.node.id, 'cmd.run', [dsconfigCmd])
+            self.salt.subscribe_event(jid, self.node.id)
 
     def index_opendj(self, backend):
         with open(self.index_json, 'r') as fp:
@@ -208,7 +201,8 @@ class LdapSetup(BaseSetup):
                         '-j', self.node.ldap_pass_fn,
                         '--trustAll', '--noPropertiesFile', '--no-prompt',
                     ])
-                    self.salt.cmd(self.node.id, 'cmd.run', [index_cmd])
+                    jid = self.salt.cmd_async(self.node.id, 'cmd.run', [index_cmd])
+                    self.salt.subscribe_event(jid, self.node.id)
 
     def import_ldif(self):
         # template's context
@@ -257,8 +251,8 @@ class LdapSetup(BaseSetup):
                 '--append', '--trustAll',
             ])
             self.logger.info("importing {}".format(file_basename))
-            self.salt.cmd(self.node.id, 'cmd.run', [importCmd])
-            time.sleep(1)
+            jid = self.salt.cmd_async(self.node.id, 'cmd.run', [importCmd])
+            self.salt.subscribe_event(jid, self.node.id)
 
     def export_opendj_public_cert(self):
         # Load password to acces OpenDJ truststore
@@ -285,7 +279,8 @@ class LdapSetup(BaseSetup):
             '-alias', 'server-cert',
             '-rfc',
         ])
-        self.salt.cmd(self.node.id, 'cmd.run', [cmdsrt])
+        jid = self.salt.cmd_async(self.node.id, 'cmd.run', [cmdsrt])
+        self.salt.subscribe_event(jid, self.node.id)
 
         # Import OpenDJ certificate into java truststore
         cmdstr = ' '.join([
@@ -296,7 +291,8 @@ class LdapSetup(BaseSetup):
             "-storepass", "changeit", "-noprompt",
         ])
         self.logger.info("importing OpenDJ certificate into Java truststore")
-        self.salt.cmd(self.node.id, 'cmd.run', [cmdstr])
+        jid = self.salt.cmd_async(self.node.id, 'cmd.run', [cmdstr])
+        self.salt.subscribe_event(jid, self.node.id)
 
     def replicate_from(self, existing_node):
         setup_obj = LdapSetup(existing_node, self.cluster, logger=self.logger)
@@ -327,7 +323,8 @@ class LdapSetup(BaseSetup):
             self.logger.info("enabling {!r} replication between {} and {}".format(
                 base_dn, existing_node.weave_ip, self.node.weave_ip,
             ))
-            self.salt.cmd(self.node.id, "cmd.run", [enable_cmd])
+            jid = self.salt.cmd_async(self.node.id, "cmd.run", [enable_cmd])
+            self.salt.subscribe_event(jid, self.node.id)
 
             # wait before initializing the replication to ensure it
             # has been enabled
@@ -347,7 +344,8 @@ class LdapSetup(BaseSetup):
             self.logger.info("initializing {!r} replication between {} and {}".format(
                 base_dn, existing_node.weave_ip, self.node.weave_ip,
             ))
-            self.salt.cmd(self.node.id, "cmd.run", [init_cmd])
+            jid = self.salt.cmd_async(self.node.id, "cmd.run", [init_cmd])
+            self.salt.subscribe_event(jid, self.node.id)
             time.sleep(5)
 
         # cleanups temporary password file
@@ -362,20 +360,22 @@ command={}
 """.format(self.node.type, run_cmd)
 
         self.logger.info("adding supervisord entry")
-        self.salt.cmd(
+        jid = self.salt.cmd_async(
             self.node.id,
             'cmd.run',
             ["echo '{}' >> /etc/supervisor/conf.d/supervisord.conf".format(payload)],
         )
+        self.salt.subscribe_event(jid, self.node.id)
 
     def start_opendj(self):
         run_cmd = ' '.join([self.node.ldap_run_command, '--quiet'])
         self.logger.info("running opendj server")
-        self.salt.cmd(
+        jid = self.salt.cmd_async(
             self.node.id,
             'cmd.run',
             ["{}".format(run_cmd)],
         )
+        self.salt.subscribe_event(jid, self.node.id)
 
     def setup(self):
         self.write_ldap_pw()

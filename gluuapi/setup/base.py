@@ -67,12 +67,16 @@ class BaseSetup(object):
         csr = "{}/{}.csr".format(self.node.cert_folder, suffix)
         crt = "{}/{}.crt".format(self.node.cert_folder, suffix)
 
+        self.logger.info("generating certificates for {}".format(suffix))
+
         # command to create key with password file
         keypass_cmd = " ".join([
             "openssl", "genrsa", "-des3",
             "-out", key_with_password,
             "-passout", "pass:'{}'".format(password), "2048",
         ])
+        jid = self.salt.cmd_async(self.node.id, "cmd.run", [keypass_cmd])
+        self.salt.subscribe_event(jid, self.node.id)
 
         # command to create key file
         key_cmd = " ".join([
@@ -81,6 +85,8 @@ class BaseSetup(object):
             "pass:'{}'".format(password),
             "-out", key,
         ])
+        jid = self.salt.cmd_async(self.node.id, "cmd.run", [key_cmd])
+        self.salt.subscribe_event(jid, self.node.id)
 
         # command to create csr file
         csr_cmd = " ".join([
@@ -94,6 +100,8 @@ class BaseSetup(object):
                 self.cluster.state,
                 self.cluster.city,
             )])
+        jid = self.salt.cmd_async(self.node.id, "cmd.run", [csr_cmd])
+        self.salt.subscribe_event(jid, self.node.id)
 
         # command to create crt file
         crt_cmd = " ".join([
@@ -103,13 +111,8 @@ class BaseSetup(object):
             "-signkey", key,
             "-out", crt,
         ])
-
-        self.logger.info("generating certificates for {}".format(suffix))
-        self.salt.cmd(
-            self.node.id,
-            ["cmd.run", "cmd.run", "cmd.run", "cmd.run"],
-            [[keypass_cmd], [key_cmd], [csr_cmd], [crt_cmd]],
-        )
+        jid = self.salt.cmd_async(self.node.id, "cmd.run", [crt_cmd])
+        self.salt.subscribe_event(jid, self.node.id)
 
         self.logger.info("changing access to {} certificates".format(suffix))
         self.salt.cmd(

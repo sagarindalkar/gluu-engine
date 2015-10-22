@@ -7,6 +7,7 @@ import os.path
 import time
 import uuid
 
+from flask import current_app
 from requests.exceptions import SSLError
 from requests.exceptions import ConnectionError
 from crochet import run_in_reactor
@@ -23,6 +24,7 @@ from .docker_helper import DockerHelper
 from .salt_helper import SaltHelper
 from .provider_helper import distribute_cluster_data
 from .prometheus_helper import PrometheusHelper
+from .weave_helper import WeaveHelper
 from ..setup import LdapSetup
 from ..setup import OxauthSetup
 from ..setup import OxtrustSetup
@@ -71,8 +73,10 @@ class BaseModelHelper(object):
 
         self.docker = DockerHelper(self.provider, logger=self.logger)
         self.salt = SaltHelper()
+        self.app = current_app._get_current_object()
         self.template_dir = template_dir
         self.database_uri = database_uri
+        self.weave = WeaveHelper(self.provider, self.app, logger=self.logger)
 
     def prepare_minion(self, connect_delay=10, exec_delay=15):
         """Waits for minion to connect before doing any remote execution.
@@ -126,26 +130,18 @@ class BaseModelHelper(object):
                 self.on_setup_error()
                 return
 
-            addr = self.cluster.last_fetched_addr
-            prefixlen = self.cluster.prefixlen
-
-            # attach weave IP to container
-            self.logger.info("assigning weave IP address")
-            self.salt.cmd(
-                self.provider.hostname,
-                "cmd.run",
-                ["weave attach {}/{} {}".format(addr, prefixlen,
-                                                self.node.id)],
-            )
-            # save weave_ip for inter-node communications
             self.node.ip = self.docker.get_container_ip(self.node.id)
-            self.node.weave_ip = addr
-            self.node.weave_prefixlen = prefixlen
+            self.node.weave_ip = self.cluster.last_fetched_addr
+            self.node.weave_prefixlen = self.cluster.prefixlen
             db.update_to_table(
                 "nodes",
                 db.where("name") == self.node.name,
                 self.node,
             )
+
+            # attach weave IP to container
+            cidr = "{}/{}".format(self.node.weave_ip, self.node.weave_prefixlen)
+            self.weave.attach(cidr, self.node.id)
 
             self.logger.info("{} setup is started".format(self.image))
             start = time.time()

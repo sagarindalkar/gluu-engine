@@ -31,11 +31,15 @@ class OxtrustSetup(OxauthSetup):
         return self.get_template_path("salt/oxtrust/check_ssl")
 
     def import_httpd_cert(self):
+        self.logger.info("importing httpd cert")
+
         # imports httpd cert into oxtrust cacerts to avoid
         # "peer not authenticated" error
         cert_cmd = "echo -n | openssl s_client -connect {}:443 | " \
                    "sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' " \
                    "> /tmp/ox.cert".format(self.cluster.ox_cluster_hostname)
+        jid = self.salt.cmd_async(self.node.id, "cmd.run", [cert_cmd])
+        self.salt.subscribe_event(jid, self.node.id)
 
         import_cmd = " ".join([
             "keytool -importcert -trustcacerts",
@@ -44,12 +48,8 @@ class OxtrustSetup(OxauthSetup):
             "-keystore {}".format(self.node.truststore_fn),
             "-storepass changeit -noprompt",
         ])
-        self.logger.info("importing httpd cert")
-        self.salt.cmd(
-            self.node.id,
-            ["cmd.run", "cmd.run"],
-            [[cert_cmd], [import_cmd]]
-        )
+        jid = self.salt.cmd_async(self.node.id, "cmd.run", [import_cmd])
+        self.salt.subscribe_event(jid, self.node.id)
 
     def delete_httpd_cert(self):
         delete_cmd = " ".join([
@@ -71,7 +71,8 @@ class OxtrustSetup(OxauthSetup):
                    "|| echo '{0} {1}' >> /etc/hosts" \
                    .format(httpd.weave_ip,
                            self.cluster.ox_cluster_hostname)
-        self.salt.cmd(self.node.id, "cmd.run", [grep_cmd])
+        jid = self.salt.cmd_async(self.node.id, "cmd.run", [grep_cmd])
+        self.salt.subscribe_event(jid, self.node.id)
 
     def remove_host_entries(self, httpd):
         # TODO: use a real DNS
@@ -213,7 +214,8 @@ class OxtrustSetup(OxauthSetup):
         grep_cmd = "grep -q '^{0} {1}$' /etc/hosts " \
                    "|| echo '{0} {1}' >> /etc/hosts" \
             .format(ldap.weave_ip, ldap.id)
-        self.salt.cmd(self.node.id, "cmd.run", [grep_cmd])
+        jid = self.salt.cmd_async(self.node.id, "cmd.run", [grep_cmd])
+        self.salt.subscribe_event(jid, self.node.id)
 
     def remove_ldap_host_entry(self, ldap):
         # TODO: use a real DNS
@@ -248,7 +250,8 @@ class OxtrustSetup(OxauthSetup):
 
         symlink_cmd = "ln -s /opt/jython/Lib " \
                       "/opt/tomcat/webapps/identity/WEB-INF/lib/Lib"
-        self.salt.cmd(self.node.id, "cmd.run", [symlink_cmd])
+        jid = self.salt.cmd_async(self.node.id, "cmd.run", [symlink_cmd])
+        self.salt.subscribe_event(jid, self.node.id)
 
     @property
     def tomcat_server_xml(self):  # pragma: no cover

@@ -34,14 +34,22 @@ class HttpdSetup(BaseSetup):
 
     def start_httpd(self):
         self.logger.info("starting httpd")
-        self.salt.cmd(
-            self.node.id,
-            ["cmd.run", "cmd.run", "cmd.run", "cmd.run"],
-            [["a2enmod ssl headers proxy proxy_http proxy_ajp evasive"],
-             ["a2dissite 000-default"],
-             ["a2ensite gluu_https"],
-             ["service apache2 start"]],
-        )
+
+        a2enmod_cmd = "a2enmod ssl headers proxy proxy_http proxy_ajp evasive"
+        jid = self.salt.cmd_async(self.node.id, "cmd.run", [a2enmod_cmd])
+        self.salt.subscribe_event(jid, self.node.id)
+
+        a2dissite_cmd = "a2dissite 000-default"
+        jid = self.salt.cmd_async(self.node.id, "cmd.run", [a2dissite_cmd])
+        self.salt.subscribe_event(jid, self.node.id)
+
+        a2ensite_cmd = "a2ensite gluu_https"
+        jid = self.salt.cmd_async(self.node.id, "cmd.run", [a2ensite_cmd])
+        self.salt.subscribe_event(jid, self.node.id)
+
+        service_cmd = "service apache2 start"
+        jid = self.salt.cmd_async(self.node.id, "cmd.run", [service_cmd])
+        self.salt.subscribe_event(jid, self.node.id)
 
     def add_auto_startup_entry(self):
         '''
@@ -60,11 +68,12 @@ command={}
 """.format(self.node.type, run_cmd)
 
         self.logger.info("adding supervisord entry")
-        self.salt.cmd(
+        jid = self.salt.cmd_async(
             self.node.id,
             'cmd.run',
             ["echo '{}' >> /etc/supervisor/conf.d/supervisord.conf".format(payload)],
         )
+        self.salt.subscribe_event(jid, self.node.id)
 
     def setup(self):
         hostname = self.cluster.ox_cluster_hostname.split(":")[0]

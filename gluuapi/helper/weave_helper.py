@@ -10,12 +10,17 @@ from crochet import run_in_reactor
 
 from .salt_helper import SaltHelper
 from .provider_helper import distribute_cluster_data
+from ..database import db
 
 
 class WeaveHelper(object):
-    def __init__(self, provider, cluster, app, logger=None):
+    def __init__(self, provider, app, logger=None):
         self.provider = provider
-        self.cluster = cluster
+        try:
+            self.cluster = db.all("clusters")[0]
+        except IndexError:
+            self.cluster = None
+
         self.app = app
         self.salt = SaltHelper()
         self.logger = logger or logging.getLogger(
@@ -92,3 +97,19 @@ class WeaveHelper(object):
         )
         self.salt.cmd(self.provider.hostname, "cmd.run", [launch_cmd])
         distribute_cluster_data(self.app.config["DATABASE_URI"])
+
+    def attach(self, cidr, node_id):
+        attach_cmd = "weave attach {} {}".format(cidr, node_id)
+        self.logger.info("attaching weave IP address {}".format(cidr))
+        jid = self.salt.cmd_async(
+            self.provider.hostname, "cmd.run", [attach_cmd]
+        )
+        self.salt.subscribe_event(jid, self.provider.hostname)
+
+    def detach(self, cidr, node_id):
+        attach_cmd = "weave detach {} {}".format(cidr, node_id)
+        self.logger.info("detaching weave IP address {}".format(cidr))
+        jid = self.salt.cmd_async(
+            self.provider.hostname, "cmd.run", [attach_cmd]
+        )
+        self.salt.subscribe_event(jid, self.provider.hostname)

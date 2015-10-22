@@ -11,6 +11,8 @@ import salt.key
 import salt.client
 import salt.utils.event
 
+from ..errors import SaltEventError
+
 
 class SaltHelper(object):
     client = salt.client.LocalClient()
@@ -72,3 +74,27 @@ class SaltHelper(object):
 
     def reject_minion(self, key):
         return self.key_store.reject(key, include_accepted=True)
+
+    def cmd_async(self, tgt, fun, arg=()):
+        return self.client.cmd_async(tgt, fun, arg)
+
+    @classmethod
+    def subscribe_event(cls, jid, key, wait=60, skip_retcodes=None,
+                        silent=False, err_msg=""):
+        skip_retcodes = skip_retcodes or []
+        skip_retcodes = set(skip_retcodes + [0])
+        err_msg = err_msg or "failed to execute command"
+
+        tag = "salt/job/{}/ret/{}".format(jid, key)
+        ret = cls.event.get_event(wait=wait, tag=tag, full=True) or {}
+
+        if not silent:
+            if not ret:
+                cmd_err = "unable to get response from minion {} " \
+                          "for jid {} within {} seconds".format(key, jid, wait)
+                raise SaltEventError(err_msg, cmd_err)
+
+            if ret["data"]["retcode"] not in skip_retcodes:
+                raise SaltEventError(err_msg, ret["data"]["return"],
+                                     exit_code=ret["data"]["retcode"])
+        return ret

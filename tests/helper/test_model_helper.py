@@ -24,19 +24,21 @@ def test_ldap_model_helper(monkeypatch, app, cluster, provider):
         "docker.Client.inspect_container",
         lambda cls, container: {"NetworkSettings": {"IPAddress": ipaddr}},
     )
-    helper = LdapModelHelper(cluster, provider, "127.0.0.1",
-                             template_dir=app.config["TEMPLATES_DIR"],
-                             log_dir=app.config["LOG_DIR"],
-                             database_uri=app.config["DATABASE_URI"],
-                             )
 
-    # some sanity checks
-    assert helper.setup_class == LdapSetup
-    assert helper.node_class == LdapNode
-    assert helper.image == "gluuopendj"
-    assert helper.dockerfile == "https://raw.githubusercontent.com" \
-                                "/GluuFederation/gluu-docker/master" \
-                                "/ubuntu/14.04/gluuopendj/Dockerfile"
+    with app.test_request_context():
+        helper = LdapModelHelper(cluster, provider, "127.0.0.1",
+                                 template_dir=app.config["TEMPLATES_DIR"],
+                                 log_dir=app.config["LOG_DIR"],
+                                 database_uri=app.config["DATABASE_URI"],
+                                 )
+
+        # some sanity checks
+        assert helper.setup_class == LdapSetup
+        assert helper.node_class == LdapNode
+        assert helper.image == "gluuopendj"
+        assert helper.dockerfile == "https://raw.githubusercontent.com" \
+                                    "/GluuFederation/gluu-docker/master" \
+                                    "/ubuntu/14.04/gluuopendj/Dockerfile"
 
 
 def test_oxauth_model_helper(monkeypatch, app, cluster, provider):
@@ -49,19 +51,21 @@ def test_oxauth_model_helper(monkeypatch, app, cluster, provider):
         "docker.Client.inspect_container",
         lambda cls, container: {"NetworkSettings": {"IPAddress": ipaddr}},
     )
-    helper = OxauthModelHelper(cluster, provider, "127.0.0.1",
-                               template_dir=app.config["TEMPLATES_DIR"],
-                               log_dir=app.config["LOG_DIR"],
-                               database_uri=app.config["DATABASE_URI"],
-                               )
 
-    # some sanity checks
-    assert helper.setup_class == OxauthSetup
-    assert helper.node_class == OxauthNode
-    assert helper.image == "gluuoxauth"
-    assert helper.dockerfile == "https://raw.githubusercontent.com" \
-                                "/GluuFederation/gluu-docker/master" \
-                                "/ubuntu/14.04/gluuoxauth/Dockerfile"
+    with app.test_request_context():
+        helper = OxauthModelHelper(cluster, provider, "127.0.0.1",
+                                   template_dir=app.config["TEMPLATES_DIR"],
+                                   log_dir=app.config["LOG_DIR"],
+                                   database_uri=app.config["DATABASE_URI"],
+                                   )
+
+        # some sanity checks
+        assert helper.setup_class == OxauthSetup
+        assert helper.node_class == OxauthNode
+        assert helper.image == "gluuoxauth"
+        assert helper.dockerfile == "https://raw.githubusercontent.com" \
+                                    "/GluuFederation/gluu-docker/master" \
+                                    "/ubuntu/14.04/gluuoxauth/Dockerfile"
 
 
 def test_oxtrust_model_helper(monkeypatch, app, cluster, provider):
@@ -74,16 +78,18 @@ def test_oxtrust_model_helper(monkeypatch, app, cluster, provider):
         "docker.Client.inspect_container",
         lambda cls, container: {"NetworkSettings": {"IPAddress": ipaddr}},
     )
-    helper = OxtrustModelHelper(cluster, provider, "127.0.0.1",
-                                template_dir=app.config["TEMPLATES_DIR"],
-                                log_dir=app.config["LOG_DIR"],
-                                database_uri=app.config["DATABASE_URI"],
-                                )
 
-    # some sanity checks
-    assert helper.setup_class == OxtrustSetup
-    assert helper.node_class == OxtrustNode
-    assert helper.image == "gluuoxtrust"
-    assert helper.dockerfile == "https://raw.githubusercontent.com" \
-                                "/GluuFederation/gluu-docker/master" \
-                                "/ubuntu/14.04/gluuoxtrust/Dockerfile"
+    with app.test_request_context():
+        helper = OxtrustModelHelper(cluster, provider, "127.0.0.1",
+                                    template_dir=app.config["TEMPLATES_DIR"],
+                                    log_dir=app.config["LOG_DIR"],
+                                    database_uri=app.config["DATABASE_URI"],
+                                    )
+
+        # some sanity checks
+        assert helper.setup_class == OxtrustSetup
+        assert helper.node_class == OxtrustNode
+        assert helper.image == "gluuoxtrust"
+        assert helper.dockerfile == "https://raw.githubusercontent.com" \
+                                    "/GluuFederation/gluu-docker/master" \
+                                    "/ubuntu/14.04/gluuoxtrust/Dockerfile"

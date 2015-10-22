@@ -75,7 +75,11 @@ def test_license_key_put(app, db, license_key, validator_ok):
 
 
 def test_license_key_put_enable_nodes(app, db, license_key, validator_ok,
-                                      oxauth_node, provider, patched_salt_cmd):
+                                      oxauth_node, provider,
+                                      patched_salt_cmd,
+                                      patched_salt_cmd_async,
+                                      salt_event_ok,
+                                      ):
     provider.type = "consumer"
     db.persist(provider, "providers")
     oxauth_node.provider_id = provider.id

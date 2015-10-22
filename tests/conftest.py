@@ -195,3 +195,19 @@ def validator_expired(monkeypatch):
         lambda cmd, exit_on_error: """Random line
 {"valid":true,"metadata":{"expiration_date":{}}}""".format(timestamp_millis() - 1000000),
     )
+
+
+@pytest.fixture
+def patched_salt_cmd_async(monkeypatch):
+    monkeypatch.setattr(
+        "salt.client.LocalClient.cmd_async",
+        lambda cls, tgt, fun, arg: None,
+    )
+
+
+@pytest.fixture
+def salt_event_ok(monkeypatch):
+    monkeypatch.setattr(
+        "salt.utils.event.MasterEvent.get_event",
+        lambda cls, wait, tag, full: {"tag": "salt/job", "data": {"retcode": 0}},
+    )

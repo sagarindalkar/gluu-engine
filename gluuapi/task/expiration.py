@@ -7,7 +7,6 @@ import logging
 
 from crochet import run_in_reactor
 from twisted.internet.task import LoopingCall
-from flask import current_app
 
 from ..database import db
 from ..helper import WeaveHelper
@@ -21,10 +20,11 @@ _DEFAULT_INTERVAL = 60 * 60 * 24
 
 
 class LicenseExpirationTask(object):
-    def __init__(self):
+    def __init__(self, app):
         self.logger = logging.getLogger(
             __name__ + "." + self.__class__.__name__,
         )
+        self.app = app
 
     @run_in_reactor
     def start(self, interval=_DEFAULT_INTERVAL):
@@ -93,8 +93,7 @@ class LicenseExpirationTask(object):
         return license_key
 
     def disable_oxauth_nodes(self, provider):
-        weave = WeaveHelper(provider, current_app._get_current_object(),
-                            self.logger)
+        weave = WeaveHelper(provider, self.app, self.logger)
 
         for node in provider.get_node_objects(type_="oxauth"):
             node.state = STATE_DISABLED
@@ -105,8 +104,7 @@ class LicenseExpirationTask(object):
             self.logger.info("{} node {} has been disabled".format("oxauth", node.id))
 
     def enable_oxauth_nodes(self, provider):
-        weave = WeaveHelper(provider, current_app._get_current_object(),
-                            self.logger)
+        weave = WeaveHelper(provider, self.app, self.logger)
 
         for node in provider.get_node_objects(type_="oxauth", state=STATE_DISABLED):
             node.state = STATE_SUCCESS

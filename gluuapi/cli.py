@@ -14,7 +14,6 @@ from .app import create_app
 from .helper import distribute_cluster_data
 from .log import configure_global_logging
 from .task import LicenseExpirationTask
-# from .task import RecoverProviderTask
 
 # global context settings
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
@@ -31,7 +30,7 @@ def run_app(app, use_reloader=True):
     crochet_setup()
 
     if not app.debug:
-        LicenseExpirationTask().start()
+        LicenseExpirationTask(app).start()
     app.run(port=app.config["PORT"], use_reloader=use_reloader)
 
 
@@ -104,22 +103,6 @@ def runserver():
     configure_global_logging()
     app = create_app()
     run_app(app)
-
-
-# @main.command()
-# @click.argument("provider_id")
-# @click.option("--exec-delay", type=int, default=30,
-#               help="Time to wait in seconds before start recovering "
-#                    "each node.")
-# def recover(provider_id, exec_delay):
-#     """Recover provider and its nodes.
-#     """
-#     check_salt()
-#     configure_global_logging()
-#     app = create_app()
-
-#     recovery = RecoverProviderTask(app, provider_id, exec_delay)
-#     recovery.perform_job()
 
 
 @main.command("distribute-data")

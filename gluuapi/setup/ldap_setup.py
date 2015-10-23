@@ -318,13 +318,13 @@ class LdapSetup(BaseSetup):
                 "--adminPasswordFile", self.node.ldap_pass_fn,
                 "--baseDN", "'{}'".format(base_dn),
                 "--secureReplication1", "--secureReplication2",
-                "-X", "-n",
+                "-X", "-n", "-Q",
             ])
             self.logger.info("enabling {!r} replication between {} and {}".format(
                 base_dn, existing_node.weave_ip, self.node.weave_ip,
             ))
             jid = self.salt.cmd_async(self.node.id, "cmd.run", [enable_cmd])
-            self.salt.subscribe_event(jid, self.node.id)
+            self.salt.subscribe_event(jid, self.node.id, silent=True)
 
             # wait before initializing the replication to ensure it
             # has been enabled
@@ -339,13 +339,13 @@ class LdapSetup(BaseSetup):
                 "--portSource", existing_node.ldap_admin_port,
                 "--hostDestination", self.node.weave_ip,
                 "--portDestination", self.node.ldap_admin_port,
-                "-X", "-n"
+                "-X", "-n", "-Q",
             ])
             self.logger.info("initializing {!r} replication between {} and {}".format(
                 base_dn, existing_node.weave_ip, self.node.weave_ip,
             ))
             jid = self.salt.cmd_async(self.node.id, "cmd.run", [init_cmd])
-            self.salt.subscribe_event(jid, self.node.id)
+            self.salt.subscribe_event(jid, self.node.id, silent=True)
             time.sleep(5)
 
         # cleanups temporary password file

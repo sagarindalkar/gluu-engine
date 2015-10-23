@@ -26,6 +26,7 @@ class LdapNode(BaseModel):
         "name": String,
         "weave_ip": String,
         "state": String,
+        "domain_name": String,
     }
 
     def __init__(self):
@@ -40,6 +41,7 @@ class LdapNode(BaseModel):
         self.type = 'ldap'
         self.state = ""
         self.setup_logpath = ""
+        self.domain_name = ""
 
         # Filesystem path to Java truststore
         self.truststore_fn = '/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/security/cacerts'

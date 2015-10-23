@@ -196,8 +196,8 @@ class OxtrustSetup(OxauthSetup):
 
         self.change_cert_access("tomcat", "tomcat")
 
-        for ldap in self.cluster.get_ldap_objects():
-            self.add_ldap_host_entry(ldap)
+        # for ldap in self.cluster.get_ldap_objects():
+        #     self.add_ldap_host_entry(ldap)
         return True
 
     def teardown(self):
@@ -208,37 +208,37 @@ class OxtrustSetup(OxauthSetup):
         touch_cmd = "touch {}/oxtrust.config.reload".format(self.node.tomcat_conf_dir)
         self.salt.cmd(self.node.id, "cmd.run", [touch_cmd])
 
-    def add_ldap_host_entry(self, ldap):
-        self.logger.info("adding LDAP entry into oxTrust /etc/hosts file")
-        # add the entry only if line is not exist in /etc/hosts
-        grep_cmd = "grep -q '^{0} {1}$' /etc/hosts " \
-                   "|| echo '{0} {1}' >> /etc/hosts" \
-            .format(ldap.weave_ip, ldap.id)
-        jid = self.salt.cmd_async(self.node.id, "cmd.run", [grep_cmd])
-        self.salt.subscribe_event(jid, self.node.id)
+    # def add_ldap_host_entry(self, ldap):
+    #     self.logger.info("adding LDAP entry into oxTrust /etc/hosts file")
+    #     # add the entry only if line is not exist in /etc/hosts
+    #     grep_cmd = "grep -q '^{0} {1}$' /etc/hosts " \
+    #                "|| echo '{0} {1}' >> /etc/hosts" \
+    #         .format(ldap.weave_ip, ldap.id)
+    #     jid = self.salt.cmd_async(self.node.id, "cmd.run", [grep_cmd])
+    #     self.salt.subscribe_event(jid, self.node.id)
 
-    def remove_ldap_host_entry(self, ldap):
-        # TODO: use a real DNS
-        #
-        # currently we need to remove httpd container hostname
-        # updating ``/etc/hosts`` in-place will raise
-        # "resource or device is busy" error, hence we use
-        # the following steps instead:
-        #
-        # 1. copy the original ``/etc/hosts``
-        # 2. find-and-replace entries in copied file
-        # 3. overwrite the original ``/etc/hosts``
-        self.logger.info("removing LDAP entry from oxTrust /etc/hosts file")
-        backup_cmd = "cp /etc/hosts /tmp/hosts"
-        sed_cmd = "sed -i 's/{} {}//g' /tmp/hosts && sed -i '/^$/d' /tmp/hosts".format(
-            ldap.weave_ip, ldap.id,
-        )
-        overwrite_cmd = "cp /tmp/hosts /etc/hosts"
-        self.salt.cmd(
-            self.node.id,
-            ["cmd.run", "cmd.run", "cmd.run"],
-            [[backup_cmd], [sed_cmd], [overwrite_cmd]],
-        )
+    # def remove_ldap_host_entry(self, ldap):
+    #     # TODO: use a real DNS
+    #     #
+    #     # currently we need to remove httpd container hostname
+    #     # updating ``/etc/hosts`` in-place will raise
+    #     # "resource or device is busy" error, hence we use
+    #     # the following steps instead:
+    #     #
+    #     # 1. copy the original ``/etc/hosts``
+    #     # 2. find-and-replace entries in copied file
+    #     # 3. overwrite the original ``/etc/hosts``
+    #     self.logger.info("removing LDAP entry from oxTrust /etc/hosts file")
+    #     backup_cmd = "cp /etc/hosts /tmp/hosts"
+    #     sed_cmd = "sed -i 's/{} {}//g' /tmp/hosts && sed -i '/^$/d' /tmp/hosts".format(
+    #         ldap.weave_ip, ldap.id,
+    #     )
+    #     overwrite_cmd = "cp /tmp/hosts /etc/hosts"
+    #     self.salt.cmd(
+    #         self.node.id,
+    #         ["cmd.run", "cmd.run", "cmd.run"],
+    #         [[backup_cmd], [sed_cmd], [overwrite_cmd]],
+    #     )
 
     def symlink_jython_lib(self):
         unpack_cmd = "unzip -q /opt/tomcat/webapps/identity.war " \

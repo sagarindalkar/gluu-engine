@@ -48,6 +48,8 @@ class BaseModelHelper(object):
 
     port_bindings = {}
 
+    volumes = {}
+
     def __init__(self, cluster, provider, salt_master_ipaddr,
                  template_dir, log_dir, database_uri):
         assert self.setup_class, "setup_class must be set"
@@ -106,10 +108,18 @@ class BaseModelHelper(object):
             self.node.state = STATE_IN_PROGRESS
             db.persist(self.node, "nodes")
 
+            # get docker bridge IP as it's where weavedns runs
+            bridge_ip = self.weave.docker_bridge_ip()
+
             container_id = self.docker.setup_container(
-                self.node.name, self.image,
-                self.dockerfile, self.salt_master_ipaddr,
+                self.node.name,
+                self.image,
+                self.dockerfile,
+                self.salt_master_ipaddr,
                 port_bindings=self.port_bindings,
+                volumes=self.volumes,
+                dns=[bridge_ip],
+                dns_search=["gluu.local"],
             )
 
             # container is not running
@@ -133,6 +143,9 @@ class BaseModelHelper(object):
             self.node.ip = self.docker.get_container_ip(self.node.id)
             self.node.weave_ip = self.cluster.last_fetched_addr
             self.node.weave_prefixlen = self.cluster.prefixlen
+            self.node.domain_name = "{}.{}.gluu.local".format(
+                self.node.id, self.node.type,
+            )
             db.update_to_table(
                 "nodes",
                 db.where("name") == self.node.name,
@@ -140,8 +153,12 @@ class BaseModelHelper(object):
             )
 
             # attach weave IP to container
-            cidr = "{}/{}".format(self.node.weave_ip, self.node.weave_prefixlen)
+            cidr = "{}/{}".format(self.node.weave_ip,
+                                  self.node.weave_prefixlen)
             self.weave.attach(cidr, self.node.id)
+
+            # add DNS record
+            self.weave.dns_add(self.node.id, self.node.domain_name)
 
             self.logger.info("{} setup is started".format(self.image))
             start = time.time()

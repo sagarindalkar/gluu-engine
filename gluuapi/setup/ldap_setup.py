@@ -120,7 +120,7 @@ class LdapSetup(BaseSetup):
         src = self.ldap_setup_properties
         dest = os.path.join(self.node.ldap_base_folder, os.path.basename(src))
         ctx = {
-            "ldap_hostname": self.node.id,
+            "ldap_hostname": self.node.domain_name,
             "ldap_port": self.node.ldap_port,
             "ldaps_port": self.node.ldaps_port,
             "ldap_jmx_port": self.node.ldap_jmx_port,
@@ -161,7 +161,7 @@ class LdapSetup(BaseSetup):
         for changes in config_changes:
             dsconfigCmd = " ".join([
                 self.node.ldap_dsconfig_command, '--trustAll', '--no-prompt',
-                '--hostname', self.node.weave_ip,
+                '--hostname', self.node.domain_name,
                 '--port', self.node.ldap_admin_port,
                 '--bindDN', '"%s"' % self.node.ldap_binddn,
                 '--bindPasswordFile', self.node.ldap_pass_fn,
@@ -195,7 +195,7 @@ class LdapSetup(BaseSetup):
                         '--index-name', attr_name,
                         '--set', 'index-type:%s' % index_type,
                         '--set', 'index-entry-limit:4000',
-                        '--hostName', self.node.weave_ip,
+                        '--hostName', self.node.domain_name,
                         '--port', self.node.ldap_admin_port,
                         '--bindDN', '"%s"' % self.node.ldap_binddn,
                         '-j', self.node.ldap_pass_fn,
@@ -212,7 +212,7 @@ class LdapSetup(BaseSetup):
             "encoded_ldap_pw": self.cluster.encoded_ldap_pw,
             "encoded_ox_ldap_pw": self.cluster.encoded_ox_ldap_pw,
             "inumAppliance": self.cluster.inum_appliance,
-            "hostname": self.node.weave_ip,
+            "hostname": self.node.domain_name,
             "ox_cluster_hostname": self.cluster.ox_cluster_hostname,
             "ldaps_port": self.node.ldaps_port,
             "ldap_binddn": self.node.ldap_binddn,
@@ -244,7 +244,7 @@ class LdapSetup(BaseSetup):
                 self.node.import_ldif_command,
                 '--ldifFile', dest,
                 '--backendID', backend_id,
-                '--hostname', self.node.weave_ip,
+                '--hostname', self.node.domain_name,
                 '--port', self.node.ldap_admin_port,
                 '--bindDN', '"%s"' % self.node.ldap_binddn,
                 '-j', self.node.ldap_pass_fn,
@@ -304,12 +304,12 @@ class LdapSetup(BaseSetup):
         for base_dn in base_dns:
             enable_cmd = " ".join([
                 "/opt/opendj/bin/dsreplication", "enable",
-                "--host1", existing_node.weave_ip,
+                "--host1", existing_node.domain_name,
                 "--port1", existing_node.ldap_admin_port,
                 "--bindDN1", "'{}'".format(existing_node.ldap_binddn),
                 "--bindPasswordFile1", self.node.ldap_pass_fn,
                 "--replicationPort1", existing_node.ldap_replication_port,
-                "--host2", self.node.weave_ip,
+                "--host2", self.node.domain_name,
                 "--port2", self.node.ldap_admin_port,
                 "--bindDN2", "'{}'".format(self.node.ldap_binddn),
                 "--bindPasswordFile2", self.node.ldap_pass_fn,
@@ -335,9 +335,9 @@ class LdapSetup(BaseSetup):
                 "--baseDN", "'{}'".format(base_dn),
                 "--adminUID", "admin",
                 "--adminPasswordFile", self.node.ldap_pass_fn,
-                "--hostSource", existing_node.weave_ip,
+                "--hostSource", existing_node.domain_name,
                 "--portSource", existing_node.ldap_admin_port,
-                "--hostDestination", self.node.weave_ip,
+                "--hostDestination", self.node.domain_name,
                 "--portDestination", self.node.ldap_admin_port,
                 "-X", "-n", "-Q",
             ])
@@ -420,30 +420,30 @@ command={}
         # modify oxIDPAuthentication entry when we have more LDAP nodes
         self.modify_oxidp_auth()
 
-        # add ldap entry into ``/etc/hosts`` file
-        for oxauth in self.cluster.get_oxauth_objects():
-            setup_obj = OxauthSetup(oxauth, self.cluster, logger=self.logger,
-                                    template_dir=self.template_dir)
-            setup_obj.add_ldap_host_entry(self.node)
+        # # add ldap entry into ``/etc/hosts`` file
+        # for oxauth in self.cluster.get_oxauth_objects():
+        #     setup_obj = OxauthSetup(oxauth, self.cluster, logger=self.logger,
+        #                             template_dir=self.template_dir)
+        #     setup_obj.add_ldap_host_entry(self.node)
 
-        for oxtrust in self.cluster.get_oxtrust_objects():
-            setup_obj = OxtrustSetup(oxtrust, self.cluster, logger=self.logger,
-                                     template_dir=self.template_dir)
-            setup_obj.add_ldap_host_entry(self.node)
+        # for oxtrust in self.cluster.get_oxtrust_objects():
+        #     setup_obj = OxtrustSetup(oxtrust, self.cluster, logger=self.logger,
+        #                              template_dir=self.template_dir)
+        #     setup_obj.add_ldap_host_entry(self.node)
 
     def teardown(self):
         self.modify_oxidp_auth()
 
-        # remove ldap entry from ``/etc/hosts`` file
-        for oxauth in self.cluster.get_oxauth_objects():
-            setup_obj = OxauthSetup(oxauth, self.cluster, logger=self.logger,
-                                    template_dir=self.template_dir)
-            setup_obj.remove_ldap_host_entry(self.node)
+        # # remove ldap entry from ``/etc/hosts`` file
+        # for oxauth in self.cluster.get_oxauth_objects():
+        #     setup_obj = OxauthSetup(oxauth, self.cluster, logger=self.logger,
+        #                             template_dir=self.template_dir)
+        #     setup_obj.remove_ldap_host_entry(self.node)
 
-        for oxtrust in self.cluster.get_oxtrust_objects():
-            setup_obj = OxtrustSetup(oxtrust, self.cluster, logger=self.logger,
-                                     template_dir=self.template_dir)
-            setup_obj.remove_ldap_host_entry(self.node)
+        # for oxtrust in self.cluster.get_oxtrust_objects():
+        #     setup_obj = OxtrustSetup(oxtrust, self.cluster, logger=self.logger,
+        #                              template_dir=self.template_dir)
+        #     setup_obj.remove_ldap_host_entry(self.node)
 
         # stop the replication agreement
         ldap_num = len(self.cluster.get_ldap_objects())
@@ -453,7 +453,7 @@ command={}
             disable_repl_cmd = " ".join([
                 "{}/bin/dsreplication".format(self.node.ldap_base_folder),
                 "disable",
-                "--hostname", self.node.weave_ip,
+                "--hostname", self.node.domain_name,
                 "--port", self.node.ldap_admin_port,
                 "--adminUID", "admin",
                 "--adminPasswordFile", self.node.ldap_pass_fn,

@@ -82,7 +82,8 @@ class DockerHelper(object):
             return False
         return True
 
-    def run_container(self, name, image, port_bindings=None):
+    def run_container(self, name, image, port_bindings=None, volumes=None,
+                      dns=None, dns_search=None):
         """Runs a docker container in detached mode.
 
         This is a two-steps operation:
@@ -96,7 +97,10 @@ class DockerHelper(object):
                 is running successfully, otherwise an empty string.
         """
         port_bindings = port_bindings or {}
+        volumes = volumes or {}
         container_id = ""
+        dns = dns or []
+        dns_search = dns_search or []
 
         self.logger.info("creating container {!r}".format(name))
         env = {
@@ -105,14 +109,19 @@ class DockerHelper(object):
         # to impliment restart policy
         # need docker-py v1.2.0 =<
         # i guess need to pass restart_policy in create_host_config function
-        # restart_policy dict is 
+        # restart_policy dict is
         #{
         #    "MaximumRetryCount": 0,
         #    "Name": "always"
         #}
         container = self.docker.create_container(
             image=image, name=name, detach=True, environment=env,
-            host_config=create_host_config(port_bindings=port_bindings),
+            host_config=create_host_config(
+                port_bindings=port_bindings,
+                binds=volumes,
+                dns=dns,
+                dns_search=dns_search,
+            ),
         )
         container_id = container["Id"]
         self.logger.info("container {!r} has been created".format(name))
@@ -166,8 +175,9 @@ class DockerHelper(object):
             shutil.rmtree(build_dir)
         return build_succeed
 
-    def setup_container(self, name, image, dockerfile,
-                        salt_master_ipaddr, port_bindings=None):
+    def setup_container(self, name, image, dockerfile, salt_master_ipaddr,
+                        port_bindings=None, volumes=None,
+                        dns=None, dns_search=None):
         """Builds and runs a container.
 
         :param name: Container name.
@@ -189,7 +199,10 @@ class DockerHelper(object):
             shutil.rmtree(build_dir)
 
         if build_succeed:
-            return self.run_container(name, image, port_bindings=port_bindings)
+            return self.run_container(
+                name, image, port_bindings=port_bindings,
+                volumes=volumes, dns=dns, dns_search=dns_search,
+            )
         return ""
 
     def get_container_ip(self, container_id):

@@ -101,15 +101,19 @@ class LicenseExpirationTask(object):
 
             cidr = "{}/{}".format(node.weave_ip, node.weave_prefixlen)
             weave.detach(cidr, node.id)
-            self.logger.info("{} node {} has been disabled".format("oxauth", node.id))
+            self.logger.info("{} node {} has been "
+                             "disabled".format("oxauth", node.id))
 
     def enable_oxauth_nodes(self, provider):
         weave = WeaveHelper(provider, self.app, self.logger)
 
-        for node in provider.get_node_objects(type_="oxauth", state=STATE_DISABLED):
+        nodes = provider.get_node_objects(type_="oxauth", state=STATE_DISABLED)
+        for node in nodes:
             node.state = STATE_SUCCESS
             db.update(node.id, node, "nodes")
 
             cidr = "{}/{}".format(node.weave_ip, node.weave_prefixlen)
             weave.attach(cidr, node.id)
-            self.logger.info("{} node {} has been enabled".format("oxauth", node.id))
+            weave.dns_add(node.id, node.domain_name)
+            self.logger.info("{} node {} has been "
+                             "enabled".format("oxauth", node.id))

@@ -264,6 +264,7 @@ class LicenseKeyResource(Resource):
                     cidr = "{}/{}".format(node.weave_ip,
                                           node.weave_prefixlen)
                     weave.attach(cidr, node.id)
+                    weave.dns_add(node.id, node.domain_name)
 
         distribute_cluster_data(current_app.config["DATABASE_URI"])
         return format_license_key_resp(license_key)

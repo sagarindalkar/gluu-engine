@@ -80,9 +80,15 @@ class WeaveHelper(object):
         stop_cmd = "weave stop"
         self.salt.cmd(self.provider.hostname, "cmd.run", [stop_cmd])
         time.sleep(5)
-        launch_cmd = "weave launch -password {}".format(
-            self.cluster.decrypted_admin_pw,
-        )
+
+        ctx = {
+            "password": self.cluster.decrypted_admin_pw,
+            "ipnet": self.cluster.weave_ip_network,
+        }
+        launch_cmd = "weave launch-router --password {password} " \
+                     "--dns-domain gluu.local " \
+                     "--ipalloc-range {ipnet} " \
+                     "--ipalloc-default-subnet {ipnet}".format(**ctx)
         self.salt.cmd(self.provider.hostname, "cmd.run", [launch_cmd])
         distribute_cluster_data(self.app.config["DATABASE_URI"])
 
@@ -91,10 +97,17 @@ class WeaveHelper(object):
         stop_cmd = "weave stop"
         self.salt.cmd(self.provider.hostname, "cmd.run", [stop_cmd])
         time.sleep(5)
-        launch_cmd = "weave launch -password {} {}".format(
-            self.cluster.decrypted_admin_pw,
-            self.app.config["SALT_MASTER_IPADDR"],
-        )
+
+        ctx = {
+            "password": self.cluster.decrypted_admin_pw,
+            "ipnet": self.cluster.weave_ip_network,
+            "master_ipaddr": self.app.config["SALT_MASTER_IPADDR"],
+        }
+        launch_cmd = "weave launch-router --password {password} " \
+                     "--dns-domain gluu.local " \
+                     "--ipalloc-range {ipnet} " \
+                     "--ipalloc-default-subnet {ipnet} " \
+                     "{master_ipaddr}".format(**ctx)
         self.salt.cmd(self.provider.hostname, "cmd.run", [launch_cmd])
         distribute_cluster_data(self.app.config["DATABASE_URI"])
 
@@ -113,3 +126,16 @@ class WeaveHelper(object):
             self.provider.hostname, "cmd.run", [attach_cmd]
         )
         self.salt.subscribe_event(jid, self.provider.hostname)
+
+    def dns_add(self, node_id, domain_name):
+        dns_cmd = "weave dns-add {} -h {}".format(node_id, domain_name)
+        self.logger.info("adding {} to local DNS server".format(domain_name))
+        jid = self.salt.cmd_async(self.provider.hostname, "cmd.run", [dns_cmd])
+        self.salt.subscribe_event(jid, self.provider.hostname)
+
+    def docker_bridge_ip(self):
+        jid = self.salt.cmd_async(
+            self.provider.hostname, "cmd.run", ["weave docker-bridge-ip"]
+        )
+        resp = self.salt.subscribe_event(jid, self.provider.hostname)
+        return resp["data"]["return"]

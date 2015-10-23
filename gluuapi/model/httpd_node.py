@@ -22,6 +22,7 @@ class HttpdNode(BaseModel):
         "type": String,
         "state": String,
         "oxauth_node_id": String,
+        "domain_name": String,
     }
 
     def __init__(self):
@@ -35,6 +36,7 @@ class HttpdNode(BaseModel):
         self.type = "httpd"
         self.state = ""
         self.setup_logpath = ""
+        self.domain_name = ""
 
         self.cert_folder = "/etc/certs"
         self.httpd_key = "/etc/certs/httpd.key"

@@ -21,6 +21,7 @@ class OxtrustNode(BaseModel):
         "provider_id": String(attribute="Provider ID"),
         "weave_ip": String,
         "state": String,
+        "domain_name": String,
     }
 
     def __init__(self):
@@ -35,6 +36,7 @@ class OxtrustNode(BaseModel):
         self.type = "oxtrust"
         self.state = ""
         self.setup_logpath = ""
+        self.domain_name = ""
 
         self.ldap_binddn = 'cn=directory manager'
         self.cert_folder = "/etc/certs"

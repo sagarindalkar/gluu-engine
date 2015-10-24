@@ -14,6 +14,7 @@ from .app import create_app
 from .helper import distribute_cluster_data
 from .log import configure_global_logging
 from .task import LicenseExpirationTask
+from .task import SamlWatcherTask
 
 # global context settings
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
@@ -31,6 +32,7 @@ def run_app(app, use_reloader=True):
 
     if not app.debug:
         LicenseExpirationTask(app).start()
+    SamlWatcherTask().perform_job()
     app.run(port=app.config["PORT"], use_reloader=use_reloader)
 
 

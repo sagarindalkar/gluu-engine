@@ -52,7 +52,7 @@ class HttpdNode(BaseModel):
 
     @property
     def recovery_priority(self):
-        return 3
+        return 4
 
     def get_saml_object(self):
         return db.get(self.saml_node_id, "nodes")

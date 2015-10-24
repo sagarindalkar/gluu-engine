@@ -42,13 +42,10 @@ class OxtrustNode(BaseModel):
         self.cert_folder = "/etc/certs"
         self.truststore_fn = '/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/security/cacerts'
 
-        # enabled if we have saml
-        self.oxtrust_config_generation = "disabled"
-
         self.tomcat_home = "/opt/tomcat"
         self.tomcat_conf_dir = "/opt/tomcat/conf"
         self.tomcat_log_folder = "/opt/tomcat/logs"
 
     @property
     def recovery_priority(self):
-        return 4
+        return 5

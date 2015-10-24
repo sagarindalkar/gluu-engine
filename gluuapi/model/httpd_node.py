@@ -22,6 +22,7 @@ class HttpdNode(BaseModel):
         "type": String,
         "state": String,
         "oxauth_node_id": String,
+        "saml_node_id": String,
         "domain_name": String,
     }
 
@@ -44,6 +45,7 @@ class HttpdNode(BaseModel):
         self.httpd_csr = "/etc/certs/httpd.csr"
         self.httpd_crt = "/etc/certs/httpd.crt"
         self.oxauth_node_id = ""
+        self.saml_node_id = ""
 
     def get_oxauth_object(self):
         return db.get(self.oxauth_node_id, "nodes")
@@ -51,3 +53,6 @@ class HttpdNode(BaseModel):
     @property
     def recovery_priority(self):
         return 3
+
+    def get_saml_object(self):
+        return db.get(self.saml_node_id, "nodes")

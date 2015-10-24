@@ -9,6 +9,7 @@ from .ldap_node import LdapNode  # noqa
 from .oxauth_node import OxauthNode  # noqa
 from .oxtrust_node import OxtrustNode  # noqa
 from .httpd_node import HttpdNode  # noqa
+from .saml_node import SamlNode  # noqa
 from .license import LicenseKey  # noqa
 from .base import STATE_IN_PROGRESS  # noqa
 from .base import STATE_FAILED  # noqa

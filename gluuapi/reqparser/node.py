@@ -12,18 +12,26 @@ from ..database import db
 from ..extensions import ma
 from ..model import STATE_SUCCESS
 
-NODE_CHOICES = ["ldap", "oxauth", "oxtrust", "httpd"]
+NODE_CHOICES = ["ldap", "oxauth", "oxtrust", "httpd", "saml"]
 
 
 class NodeReq(ma.Schema):
     cluster_id = ma.Str(required=True)
     provider_id = ma.Str(required=True)
-    node_type = ma.Select(choices=NODE_CHOICES, error="unsupported type")
+
+    try:
+        node_type = ma.Select(choices=NODE_CHOICES)
+    except AttributeError:
+        # marshmallow.Select is removed starting from 2.0.0
+        from marshmallow.validate import OneOf
+        node_type = ma.Str(validate=OneOf(NODE_CHOICES))
+
     connect_delay = ma.Int(default=10, missing=10,
                            error="must use numerical value")
     exec_delay = ma.Int(default=15, missing=15,
                         error="must use numerical value")
     oxauth_node_id = ma.Str(default="", missing="")
+    saml_node_id = ma.Str(default="", missing="")
 
     @validates("cluster_id")
     def validate_cluster(self, value):
@@ -53,6 +61,7 @@ class NodeReq(ma.Schema):
     def finalize_data(self, data):
         if data.get("node_type") != "httpd":
             data.pop("oxauth_node_id", None)
+            data.pop("saml_node_id", None)
 
         out = {"params": data}
         out.update({"context": self.context})
@@ -61,6 +70,7 @@ class NodeReq(ma.Schema):
     @validates_schema
     def validate_schema(self, data):
         self.validate_oxauth(data.get("oxauth_node_id"))
+        self.validate_saml(data.get("saml_node_id"))
 
     def validate_oxauth(self, value):
         if self.context.get("node_type") == "httpd":
@@ -69,7 +79,7 @@ class NodeReq(ma.Schema):
                 db.where("oxauth_node_id") == value,
             )
             if node_in_use:
-                raise ValidationError("cannot reuse the oxAuth node",
+                raise ValidationError("cannot reuse the oxauth node",
                                       "oxauth_node_id")
 
             try:
@@ -81,17 +91,51 @@ class NodeReq(ma.Schema):
                 node = None
 
             if not node:
-                raise ValidationError("invalid oxAuth node",
+                raise ValidationError("invalid oxauth node",
                                       "oxauth_node_id")
 
             if node.provider_id != self.context["provider"].id:
                 raise ValidationError(
-                    "only oxAuth node within same provider is allowed",
+                    "only oxauth node within same provider is allowed",
                     "oxauth_node_id",
                 )
 
             if node.state != STATE_SUCCESS:
                 raise ValidationError(
-                    "only oxAuth node with SUCCESS state is allowed",
+                    "only oxauth node with SUCCESS state is allowed",
                     "oxauth_node_id",
+                )
+
+    def validate_saml(self, value):
+        if self.context.get("node_type") == "httpd":
+            node_in_use = db.count_from_table(
+                "nodes",
+                db.where("saml_node_id") == value,
+            )
+            if node_in_use:
+                raise ValidationError("cannot reuse the saml node",
+                                      "saml_node_id")
+
+            try:
+                node = db.search_from_table(
+                    "nodes",
+                    (db.where("id") == value) & (db.where("type") == "saml")
+                )[0]
+            except IndexError:
+                node = None
+
+            if not node:
+                raise ValidationError("invalid saml node",
+                                      "saml_node_id")
+
+            if node.provider_id != self.context["provider"].id:
+                raise ValidationError(
+                    "only saml node within same provider is allowed",
+                    "saml_node_id",
+                )
+
+            if node.state != STATE_SUCCESS:
+                raise ValidationError(
+                    "only saml node with SUCCESS state is allowed",
+                    "saml_node_id",
                 )

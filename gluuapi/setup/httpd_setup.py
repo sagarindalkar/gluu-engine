@@ -13,24 +13,26 @@ from .oxtrust_setup import OxtrustSetup
 class HttpdSetup(BaseSetup):
     @property
     def https_conf(self):
-        return self.get_template_path("salt/httpd/gluu_https.conf")
+        return "salt/httpd/gluu_https.conf"
 
     def render_https_conf_template(self, hostname):
         src = self.https_conf
         file_basename = os.path.basename(src)
         dest = os.path.join("/etc/apache2/sites-available", file_basename)
 
-        oxauth_ip = self.node.get_oxauth_object().weave_ip
+        oxauth = self.node.get_oxauth_object()
+        saml = self.node.get_saml_object()
 
         ctx = {
             "hostname": hostname,
             "ip": self.node.weave_ip,
-            "oxauth_ip": oxauth_ip,
+            "oxauth": oxauth,
+            "saml": saml,
             "httpdCertFn": self.node.httpd_crt,
             "httpdKeyFn": self.node.httpd_key,
             "admin_email": self.cluster.admin_email,
         }
-        self.render_template(src, dest, ctx)
+        self.render_jinja_template(src, dest, ctx)
 
     def start_httpd(self):
         self.logger.info("starting httpd")

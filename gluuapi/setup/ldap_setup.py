@@ -381,7 +381,6 @@ command={}
         self.write_ldap_pw()
         self.add_ldap_schema()
         self.setup_opendj()
-        # add auto startup entry
         self.add_auto_startup_entry()
         self.start_opendj()
         self.configure_opendj()
@@ -416,35 +415,11 @@ command={}
         """Runs post-setup.
         """
         self.render_ox_ldap_props()
-
         # modify oxIDPAuthentication entry when we have more LDAP nodes
         self.modify_oxidp_auth()
 
-        # # add ldap entry into ``/etc/hosts`` file
-        # for oxauth in self.cluster.get_oxauth_objects():
-        #     setup_obj = OxauthSetup(oxauth, self.cluster, logger=self.logger,
-        #                             template_dir=self.template_dir)
-        #     setup_obj.add_ldap_host_entry(self.node)
-
-        # for oxtrust in self.cluster.get_oxtrust_objects():
-        #     setup_obj = OxtrustSetup(oxtrust, self.cluster, logger=self.logger,
-        #                              template_dir=self.template_dir)
-        #     setup_obj.add_ldap_host_entry(self.node)
-
     def teardown(self):
         self.modify_oxidp_auth()
-
-        # # remove ldap entry from ``/etc/hosts`` file
-        # for oxauth in self.cluster.get_oxauth_objects():
-        #     setup_obj = OxauthSetup(oxauth, self.cluster, logger=self.logger,
-        #                             template_dir=self.template_dir)
-        #     setup_obj.remove_ldap_host_entry(self.node)
-
-        # for oxtrust in self.cluster.get_oxtrust_objects():
-        #     setup_obj = OxtrustSetup(oxtrust, self.cluster, logger=self.logger,
-        #                              template_dir=self.template_dir)
-        #     setup_obj.remove_ldap_host_entry(self.node)
-
         # stop the replication agreement
         ldap_num = len(self.cluster.get_ldap_objects())
         if ldap_num > 0:

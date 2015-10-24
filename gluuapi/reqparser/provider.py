@@ -18,6 +18,8 @@ from ..extensions import ma
 # regex pattern for hostname as defined by RFC 952 and RFC 1123
 HOSTNAME_RE = re.compile('^(?![0-9]+$)(?!-)[a-zA-Z0-9-]{,63}(?<!-)$')
 
+PROVIDER_CHOICES = ("master", "consumer",)
+
 
 class BaseProviderReq(ma.Schema):
     hostname = ma.Str(required=True)
@@ -81,7 +83,12 @@ class BaseProviderReq(ma.Schema):
 
 
 class ProviderReq(BaseProviderReq):
-    type = ma.Select(choices=["master", "consumer"], required=True)
+    try:
+        type = ma.Select(choices=PROVIDER_CHOICES, required=True)
+    except AttributeError:
+        # marshmallow.Select is removed starting from 2.0.0
+        from marshmallow.validate import OneOf
+        node_type = ma.Str(validate=OneOf(PROVIDER_CHOICES))
 
 
 # backward-compat

@@ -5,6 +5,7 @@
 
 import os.path
 import time
+from glob import iglob
 
 from .oxauth_setup import OxauthSetup
 
@@ -166,6 +167,13 @@ class OxtrustSetup(OxauthSetup):
         self.render_cache_props_template()
         self.render_log_config_template()
         self.render_props_template()
+
+        self.copy_shib_config("idp")
+        self.copy_shib_config("idp/schema")
+        self.copy_shib_config("idp/ProfileConfiguration")
+        self.copy_shib_config("idp/MetadataFilter")
+        self.copy_shib_config("sp")
+
         self.render_ldap_props_template()
         self.render_server_xml_template()
         self.write_salt_file()
@@ -261,3 +269,23 @@ class OxtrustSetup(OxauthSetup):
         src = self.import_person_properties
         dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
         self.salt.copy_file(self.node.id, src, dest)
+
+    def copy_shib_config(self, parent_dir):
+        """Copy config files located under shibboleth2 directory.
+        """
+        # create a generator to keep the result of globbing
+        files = iglob(self.get_template_path(
+            "salt/oxtrust/shibboleth2/{}/*".format(parent_dir)
+        ))
+
+        parent_dest = "/opt/tomcat/conf/shibboleth2/{}".format(parent_dir)
+        mkdir_cmd = "mkdir -p {}".format(parent_dest)
+        self.salt.cmd(self.node.id, "cmd.run", [mkdir_cmd])
+
+        for src in files:
+            if os.path.isdir(src):
+                continue
+            fn = os.path.basename(src)
+            dest = "{}/{}".format(parent_dest, fn)
+            self.logger.info("copying {}".format(fn))
+            self.salt.copy_file(self.node.id, src, dest)

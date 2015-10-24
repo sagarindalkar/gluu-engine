@@ -16,39 +16,39 @@ from .oxtrust_setup import OxtrustSetup
 class LdapSetup(BaseSetup):
     @property
     def ldif_base(self):  # pragma: no cover
-        return self.get_template_path('salt/opendj/ldif/base.ldif')
+        return self.get_template_path('nodes/opendj/ldif/base.ldif')
 
     @property
     def ldif_appliance(self):  # pragma: no cover
-        return self.get_template_path('salt/opendj/ldif/appliance.ldif')
+        return self.get_template_path('nodes/opendj/ldif/appliance.ldif')
 
     @property
     def ldif_attributes(self):  # pragma: no cover
-        return self.get_template_path('salt/opendj/ldif/attributes.ldif')
+        return self.get_template_path('nodes/opendj/ldif/attributes.ldif')
 
     @property
     def ldif_scopes(self):  # pragma: no cover
-        return self.get_template_path('salt/opendj/ldif/scopes.ldif')
+        return self.get_template_path('nodes/opendj/ldif/scopes.ldif')
 
     @property
     def ldif_clients(self):  # pragma: no cover
-        return self.get_template_path('salt/opendj/ldif/clients.ldif')
+        return self.get_template_path('nodes/opendj/ldif/clients.ldif')
 
     @property
     def ldif_people(self):  # pragma: no cover
-        return self.get_template_path('salt/opendj/ldif/people.ldif')
+        return self.get_template_path('nodes/opendj/ldif/people.ldif')
 
     @property
     def ldif_groups(self):  # pragma: no cover
-        return self.get_template_path('salt/opendj/ldif/groups.ldif')
+        return self.get_template_path('nodes/opendj/ldif/groups.ldif')
 
     @property
     def ldif_site(self):  # pragma: no cover
-        return self.get_template_path('salt/opendj/ldif/o_site.ldif')
+        return self.get_template_path('nodes/opendj/ldif/o_site.ldif')
 
     @property
     def ldif_scripts(self):  # pragma: no cover
-        return self.get_template_path('salt/opendj/ldif/scripts.ldif')
+        return self.get_template_path('nodes/opendj/ldif/scripts.ldif')
 
     @property
     def ldif_files(self):  # pragma: no cover
@@ -67,19 +67,19 @@ class LdapSetup(BaseSetup):
 
     @property
     def index_json(self):  # pragma: no cover
-        return self.get_template_path("salt/opendj/opendj_index.json")
+        return self.get_template_path("nodes/opendj/opendj_index.json")
 
     @property
     def ldap_setup_properties(self):  # pragma: no cover
-        return self.get_template_path("salt/opendj/opendj-setup.properties")
+        return self.get_template_path("nodes/opendj/opendj-setup.properties")
 
     @property
     def schema_files(self):  # pragma: no cover
         templates = [
-            "salt/opendj/schema/77-customAttributes.ldif",
-            "salt/opendj/schema/101-ox.ldif",
-            "salt/opendj/schema/96-eduperson.ldif",
-            "salt/opendj/schema/100-user.ldif",
+            "nodes/opendj/schema/77-customAttributes.ldif",
+            "nodes/opendj/schema/101-ox.ldif",
+            "nodes/opendj/schema/96-eduperson.ldif",
+            "nodes/opendj/schema/100-user.ldif",
         ]
         return map(self.get_template_path, templates)
 
@@ -445,7 +445,7 @@ command={}
 
     @property
     def ldif_appliance_mod(self):
-        return "salt/opendj/ldif/appliance-mod.ldif"
+        return "nodes/opendj/ldif/appliance-mod.ldif"
 
     def modify_oxidp_auth(self):
         nodes = self.cluster.get_ldap_objects()

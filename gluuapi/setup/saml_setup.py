@@ -26,18 +26,18 @@ class SamlSetup(OxauthSetup):
             self.logger.info("copying {}".format(src))
             self.salt.copy_file(
                 self.node.id,
-                self.get_template_path("salt/shib/{}".format(src)),
+                self.get_template_path("nodes/shib/{}".format(src)),
                 dest,
             )
 
     @property
     def tomcat_server_xml(self):  # pragma: no cover
-        return self.get_template_path("salt/shib/server.xml")
+        return self.get_template_path("nodes/shib/server.xml")
 
     @property
     def oxtrust_properties(self):  # pragma: no cover
         # currently oxIdp reads oxTrust.properties to load the configuration
-        return self.get_template_path("salt/shib/oxTrust.properties")
+        return self.get_template_path("nodes/shib/oxTrust.properties")
 
     def render_props_template(self):
         src = self.oxtrust_properties
@@ -149,7 +149,7 @@ class SamlSetup(OxauthSetup):
     def render_memcached_conf(self):
         ctx = {"saml": self.node}
         self.render_jinja_template(
-            "salt/shib/memcached.conf",
+            "nodes/shib/memcached.conf",
             "/etc/memcached.conf",
             ctx,
         )
@@ -165,7 +165,7 @@ class SamlSetup(OxauthSetup):
             "saml_nodes": self.cluster.get_saml_objects(),
         }
         self.render_jinja_template(
-            "salt/shib/nutcracker.yml",
+            "nodes/shib/nutcracker.yml",
             "/etc/nutcracker.yml",
             ctx,
         )

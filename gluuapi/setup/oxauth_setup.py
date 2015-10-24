@@ -12,27 +12,27 @@ from .base import BaseSetup
 class OxauthSetup(BaseSetup):
     @property
     def oxauth_errors_json(self):  # pragma: no cover
-        return self.get_template_path("salt/oxauth/oxauth-errors.json")
+        return self.get_template_path("nodes/oxauth/oxauth-errors.json")
 
     @property
     def oxauth_ldap_properties(self):  # pragma: no cover
-        return self.get_template_path("salt/oxauth/oxauth-ldap.properties")
+        return self.get_template_path("nodes/oxauth/oxauth-ldap.properties")
 
     @property
     def oxauth_config_xml(self):  # pragma: no cover
-        return self.get_template_path("salt/oxauth/oxauth-config.xml")
+        return self.get_template_path("nodes/oxauth/oxauth-config.xml")
 
     @property
     def oxauth_static_conf_json(self):  # pragma: no cover
-        return self.get_template_path("salt/oxauth/oxauth-static-conf.json")
+        return self.get_template_path("nodes/oxauth/oxauth-static-conf.json")
 
     @property
     def tomcat_server_xml(self):  # pragma: no cover
-        return self.get_template_path("salt/oxauth/server.xml")
+        return self.get_template_path("nodes/oxauth/server.xml")
 
     @property
     def oxauth_config_marker(self):  # pragma: no cover
-        return self.get_template_path("salt/oxauth/oxauth.config.reload")
+        return self.get_template_path("nodes/oxauth/oxauth.config.reload")
 
     def write_salt_file(self):
         self.logger.info("writing salt file")
@@ -249,19 +249,19 @@ environment=CATALINA_PID="{}/bin/catalina.pid"
         self.salt.subscribe_event(jid, self.node.id)
 
     def copy_duo_creds(self):
-        src = self.get_template_path("salt/oxauth/duo_creds.json")
+        src = self.get_template_path("nodes/oxauth/duo_creds.json")
         dest = "/etc/certs/duo_creds.json"
         self.logger.info("copying duo_creds.json")
         self.salt.copy_file(self.node.id, src, dest)
 
     def copy_duo_web(self):
-        src = self.get_template_path("salt/oxauth/duo_web.py")
+        src = self.get_template_path("nodes/oxauth/duo_web.py")
         dest = "/opt/tomcat/conf/python/duo_web.py"
         self.logger.info("copying duo_web.py")
         self.salt.copy_file(self.node.id, src, dest)
 
     def copy_gplus_secrets(self):
-        src = self.get_template_path("salt/oxauth/gplus_client_secrets.json")
+        src = self.get_template_path("nodes/oxauth/gplus_client_secrets.json")
         dest = "/etc/certs/gplus_client_secrets.json"
         self.logger.info("copying gplus_client_secrets.json")
         self.salt.copy_file(self.node.id, src, dest)

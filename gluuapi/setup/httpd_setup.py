@@ -13,7 +13,7 @@ from .oxtrust_setup import OxtrustSetup
 class HttpdSetup(BaseSetup):
     @property
     def https_conf(self):
-        return "salt/httpd/gluu_https.conf"
+        return "nodes/httpd/gluu_https.conf"
 
     def render_https_conf_template(self, hostname):
         src = self.https_conf

@@ -13,23 +13,23 @@ from .oxauth_setup import OxauthSetup
 class OxtrustSetup(OxauthSetup):
     @property
     def oxtrust_properties(self):  # pragma: no cover
-        return self.get_template_path("salt/oxtrust/oxTrust.properties")
+        return self.get_template_path("nodes/oxtrust/oxTrust.properties")
 
     @property
     def oxtrust_ldap_properties(self):  # pragma: no cover
-        return self.get_template_path("salt/oxtrust/oxTrustLdap.properties")
+        return self.get_template_path("nodes/oxtrust/oxTrustLdap.properties")
 
     @property
     def oxtrust_log_rotation_configuration(self):  # pragma: no cover
-        return self.get_template_path("salt/oxtrust/oxTrustLogRotationConfiguration.xml")
+        return self.get_template_path("nodes/oxtrust/oxTrustLogRotationConfiguration.xml")
 
     @property
     def oxtrust_cache_refresh_properties(self):  # pragma: no cover
-        return self.get_template_path("salt/oxtrust/oxTrustCacheRefresh-template.properties.vm")
+        return self.get_template_path("nodes/oxtrust/oxTrustCacheRefresh-template.properties.vm")
 
     @property
     def check_ssl_template(self):  # pragma: no cover
-        return self.get_template_path("salt/oxtrust/check_ssl")
+        return self.get_template_path("nodes/oxtrust/check_ssl")
 
     def import_httpd_cert(self):
         self.logger.info("importing httpd cert")
@@ -226,7 +226,7 @@ class OxtrustSetup(OxauthSetup):
 
     @property
     def tomcat_server_xml(self):  # pragma: no cover
-        return self.get_template_path("salt/oxtrust/server.xml")
+        return self.get_template_path("nodes/oxtrust/server.xml")
 
     def render_server_xml_template(self):
         src = self.tomcat_server_xml
@@ -240,7 +240,7 @@ class OxtrustSetup(OxauthSetup):
 
     @property
     def tomcat_index_html(self):  # pragma: no cover
-        return self.get_template_path("salt/oxtrust/index.html")
+        return self.get_template_path("nodes/oxtrust/index.html")
 
     def copy_tomcat_index_html(self):
         src = self.tomcat_index_html
@@ -263,7 +263,7 @@ class OxtrustSetup(OxauthSetup):
 
     @property
     def import_person_properties(self):  # pragma: no cover
-        return self.get_template_path("salt/oxtrust/gluuImportPerson.properties")
+        return self.get_template_path("nodes/oxtrust/gluuImportPerson.properties")
 
     def copy_import_person_properties(self):
         src = self.import_person_properties
@@ -275,7 +275,7 @@ class OxtrustSetup(OxauthSetup):
         """
         # create a generator to keep the result of globbing
         files = iglob(self.get_template_path(
-            "salt/oxtrust/shibboleth2/{}/*".format(parent_dir)
+            "nodes/oxtrust/shibboleth2/{}/*".format(parent_dir)
         ))
 
         parent_dest = "/opt/tomcat/conf/shibboleth2/{}".format(parent_dir)

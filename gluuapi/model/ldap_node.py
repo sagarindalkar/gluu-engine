@@ -3,33 +3,29 @@
 #
 # All rights reserved.
 
-from flask_restful.fields import String
-from flask_restful_swagger import swagger
-
 from .base import BaseModel
 
 
-@swagger.model
 class LdapNode(BaseModel):
-    # Swager Doc
-    resource_fields = {
-        'id': String(attribute='Node unique identifier'),
-        'type': String(attribute='Node type'),
-        'cluster_id': String(attribute='Cluster ID'),
-        'provider_id': String(attribute='Provider ID'),
-        'ip': String(attribute='IP address of the node'),
-        'ldap_binddn': String(attribute='LDAP super user Bind DN. Probably should leave it default cn=directory manager.'),
-        'ldap_port': String(attribute='Non SSL LDAP port (not used)'),
-        'ldaps_port': String(attribute='LDAPS port'),
-        'ldap_admin_port': String(attribute='Admin port'),
-        'ldap_jmx_port': String(attribute='JMX port (not used)'),
-        "name": String,
-        "weave_ip": String,
-        "state": String,
-        "domain_name": String,
-    }
+    resource_fields = dict.fromkeys([
+        'id',
+        'type',
+        'cluster_id',
+        'provider_id',
+        'ip',
+        'ldap_binddn',
+        'ldap_port',
+        'ldaps_port',
+        'ldap_admin_port',
+        'ldap_jmx_port',
+        "name",
+        "weave_ip",
+        "state",
+        "domain_name",
+    ])
 
     def __init__(self):
+        # Node unique identifier
         self.id = ''
         self.cluster_id = ""
         self.provider_id = ""

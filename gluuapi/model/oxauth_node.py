@@ -3,26 +3,21 @@
 #
 # All rights reserved.
 
-from flask_restful_swagger import swagger
-from flask_restful.fields import String
-
 from .base import BaseModel
 
 
-@swagger.model
 class OxauthNode(BaseModel):
-    # Swager Doc
-    resource_fields = {
-        "id": String(attribute="Node unique identifier"),
-        "name": String(attribute="Node name"),
-        "type": String(attribute="Node type"),
-        "ip": String(attribute="Node IP address"),
-        "cluster_id": String(attribute="Cluster ID"),
-        "provider_id": String(attribute="Provider ID"),
-        "weave_ip": String,
-        "state": String,
-        "domain_name": String,
-    }
+    resource_fields = dict.fromkeys([
+        "id",
+        "name",
+        "type",
+        "ip",
+        "cluster_id",
+        "provider_id",
+        "weave_ip",
+        "state",
+        "domain_name",
+    ])
 
     def __init__(self):
         self.id = ""

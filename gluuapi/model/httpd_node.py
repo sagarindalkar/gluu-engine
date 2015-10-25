@@ -3,28 +3,24 @@
 #
 # All rights reserved.
 
-from flask_restful.fields import String
-from flask_restful_swagger import swagger
-
 from .base import BaseModel
 from ..database import db
 
 
-@swagger.model
 class HttpdNode(BaseModel):
-    resource_fields = {
-        "id": String,
-        "cluster_id": String,
-        "provider_id": String,
-        "ip": String,
-        "weave_ip": String,
-        "name": String,
-        "type": String,
-        "state": String,
-        "oxauth_node_id": String,
-        "saml_node_id": String,
-        "domain_name": String,
-    }
+    resource_fields = dict.fromkeys([
+        "id",
+        "cluster_id",
+        "provider_id",
+        "ip",
+        "weave_ip",
+        "name",
+        "type",
+        "state",
+        "oxauth_node_id",
+        "saml_node_id",
+        "domain_name",
+    ])
 
     def __init__(self):
         self.id = ""

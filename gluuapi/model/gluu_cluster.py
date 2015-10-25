@@ -5,8 +5,6 @@
 
 import uuid
 
-from flask_restful_swagger import swagger
-from flask_restful.fields import String
 from netaddr import IPNetwork
 from netaddr import IPAddress
 
@@ -21,36 +19,39 @@ from ..utils import generate_passkey
 from ..utils import ldap_encode
 
 
-@swagger.model
 class GluuCluster(BaseModel):
-    # Swager Doc
-    resource_fields = {
-        'id': String(attribute='GluuCluster unique identifier'),
-        'name': String(attribute='GluuCluster name'),
-        'description': String(attribute='Description of cluster'),
-        'ox_cluster_hostname': String,
-        'ldaps_port': String,
-        'org_name': String(attribute='Name of org for X.509 certificate'),  # noqa
-        'org_short_name': String(attribute='Short name of org for X.509 certificate'),  # noqa
-        'country_code': String(attribute='ISO 3166-1 alpha-2 country code'),  # noqa
-        'city': String(attribute='City for X.509 certificate'),
-        'state': String(attribute='State or province for X.509 certificate'),  # noqa
-        'admin_email': String(attribute='Admin email address for X.509 certificate'),  # noqa
-        'base_inum': String(attribute='Unique identifier for domain'),
-        'inum_org': String(attribute='Unique identifier for organization'),  # noqa
-        'inum_org_fn': String(attribute='Unique organization identifier sans special characters.'),  # noqa
-        'inum_appliance': String(attribute='Unique identifier for cluster'),  # noqa
-        'inum_appliance_fn': String(attribute='Unique cluster identifier sans special characters.'),  # noqa
-        'weave_ip_network': String(attribute='Weave IP network'),  # noqa
-    }
+    resource_fields = dict.fromkeys([
+        'id',
+        'name',
+        'description',
+        'ox_cluster_hostname',
+        'ldaps_port',
+        'org_name',
+        'org_short_name',
+        'country_code',
+        'city',
+        'state',
+        'admin_email',
+        'base_inum',
+        'inum_org',
+        'inum_org_fn',
+        'inum_appliance',
+        'inum_appliance_fn',
+        'weave_ip_network',
+    ])
 
     def __init__(self, fields=None):
         fields = fields or {}
 
         # GluuCluster unique identifier
         self.id = "{}".format(uuid.uuid4())
+
+        # GluuCluster name
         self.name = fields.get("name")
+
+        # Description of cluster
         self.description = fields.get("description")
+
         self.ldap_nodes = []
         self.oxauth_nodes = []
         self.oxtrust_nodes = []
@@ -58,12 +59,22 @@ class GluuCluster(BaseModel):
         self.ox_cluster_hostname = fields.get("ox_cluster_hostname")
         self.ldaps_port = "1636"
 
-        # X.509 Certificate Information
+        # Name of org for X.509 certificate
         self.org_name = fields.get("org_name")
+
+        # Short name of org for X.509 certificate
         self.org_short_name = fields.get("org_short_name")
+
+        # ISO 3166-1 alpha-2 country code
         self.country_code = fields.get("country_code")
+
+        # City for X.509 certificate
         self.city = fields.get("city")
+
+        # State or province for X.509 certificate
         self.state = fields.get("state")
+
+        # Admin email address for X.509 certificate
         self.admin_email = fields.get("admin_email")
 
         # pass key
@@ -75,16 +86,21 @@ class GluuCluster(BaseModel):
         self.encoded_ldap_pw = ldap_encode(admin_pw)
         self.encoded_ox_ldap_pw = self.admin_pw
 
-        # Inums
+        # Unique identifier for domain
         self.base_inum = '@!%s.%s.%s.%s' % tuple([get_quad() for i in xrange(4)])
 
+        # Unique identifier for organization
         org_quads = '%s.%s' % tuple([get_quad() for i in xrange(2)])
         self.inum_org = '%s!0001!%s' % (self.base_inum, org_quads)
 
+        # Unique identifier for cluster
         appliance_quads = '%s.%s' % tuple([get_quad() for i in xrange(2)])
         self.inum_appliance = '%s!0002!%s' % (self.base_inum, appliance_quads)
 
+        # Unique organization identifier sans special characters
         self.inum_org_fn = self.inum_org.replace('@', '').replace('!', '').replace('.', '')
+
+        # Unique cluster identifier sans special characters
         self.inum_appliance_fn = self.inum_appliance.replace('@', '').replace('!', '').replace('.', '')
 
         # ox-related attrs
@@ -96,8 +112,9 @@ class GluuCluster(BaseModel):
         # key store
         self.encoded_shib_jks_pw = self.admin_pw
         self.shib_jks_fn = "/etc/certs/shibIDP.jks"
+
+        # Weave IP network
         self.weave_ip_network = fields.get("weave_ip_network", "10.2.1.0/24")
-        self.reserved_ip_addrs = []
 
         # a pointer to last fetched address
         self.last_fetched_addr = ""
@@ -160,13 +177,6 @@ class GluuCluster(BaseModel):
         """
         # represents a pool of IP addresses
         pool = IPNetwork(self.weave_ip_network)
-
-        if not self.last_fetched_addr:
-            # import from reserved_ip_addrs for backward-compat
-            try:
-                self.last_fetched_addr = self.reserved_ip_addrs[-1]
-            except IndexError:
-                pass
 
         if self.last_fetched_addr:
             addr = str(IPAddress(self.last_fetched_addr) + 1)

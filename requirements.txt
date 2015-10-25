@@ -1,7 +1,6 @@
 # Flask
 Flask==0.10.1
 flask-restful==0.3.1
-flask-restful-swagger==0.15
 crochet==1.4.0
 
 # Docker

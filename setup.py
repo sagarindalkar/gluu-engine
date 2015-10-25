@@ -34,7 +34,6 @@ setup(
     packages=find_packages(),
     zip_safe=False,
     install_requires=[
-        "flask-restful-swagger",
         "Flask-RESTful",
         "Flask",
         "crochet",

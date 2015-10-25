@@ -7,7 +7,6 @@ from flask import current_app
 from flask import request
 from flask import url_for
 from flask_restful import Resource
-from flask_restful_swagger import swagger
 from requests.exceptions import SSLError
 
 from ..database import db
@@ -31,26 +30,6 @@ from ..setup import SamlSetup
 
 
 class Node(Resource):
-    @swagger.operation(
-        notes='Gives a node info/state',
-        nickname='getnode',
-        parameters=[],
-        responseMessages=[
-            {
-                "code": 200,
-                "message": "Node information",
-            },
-            {
-                "code": 404,
-                "message": "Node not found",
-            },
-            {
-                "code": 500,
-                "message": "Internal Server Error"
-            },
-        ],
-        summary='Get existing provider',
-    )
     def get(self, node_id):
         try:
             node = db.search_from_table(
@@ -64,38 +43,6 @@ class Node(Resource):
             return {"status": 404, "message": "Node not found"}, 404
         return node.as_dict()
 
-    @swagger.operation(
-        notes='delete a node',
-        nickname='delnode',
-        parameters=[
-            {
-                "name": "force",
-                "description": "Force delete",
-                "required": False,
-                "dataType": "string",
-                "paramType": "query",
-            },
-        ],
-        responseMessages=[
-            {
-                "code": 204,
-                "message": "Node deleted",
-            },
-            {
-                "code": 403,
-                "message": "Forbidden",
-            },
-            {
-                "code": 404,
-                "message": "Node not found",
-            },
-            {
-                "code": 500,
-                "message": "Internal Server Error",
-            },
-        ],
-        summary='Delete existing node',
-    )
     def delete(self, node_id):
         template_dir = current_app.config["TEMPLATES_DIR"]
         truthy = ("1", "True", "true", "t",)
@@ -166,97 +113,10 @@ class Node(Resource):
 
 
 class NodeList(Resource):
-    @swagger.operation(
-        notes='Gives node list info/state',
-        nickname='listnode',
-        parameters=[],
-        responseMessages=[
-            {
-                "code": 200,
-                "message": "List node information",
-            },
-            {
-                "code": 500,
-                "message": "Internal Server Error"
-            },
-        ],
-        summary='Get a list of existing nodes',
-    )
     def get(self):
         obj_list = db.all("nodes")
         return [item.as_dict() for item in obj_list]
 
-    @swagger.operation(
-        notes="""This API will create a new Gluu Server cluster node. This may take a while, so the process
-is handled asyncronously by the Twisted reactor. It includes creating a new docker instance, deploying
-the necessary software components, and updating the configuration of the target node and any
-other dependent cluster nodes. Subsequent GET requests will be necessary to find out when the
-status of the cluster node is available.""",
-        nickname='postnode',
-        parameters=[
-            {
-                "name": "cluster_id",
-                "description": "The ID of the cluster",
-                "required": True,
-                "dataType": "string",
-                "paramType": "form",
-            },
-            {
-                "name": "node_type",
-                "description": "one of 'ldap', 'oxauth', 'oxtrust', or 'httpd'",
-                "required": True,
-                "dataType": "string",
-                "paramType": "form",
-            },
-            {
-                "name": "provider_id",
-                "description": "The ID of the provider",
-                "required": True,
-                "dataType": "string",
-                "paramType": "form",
-            },
-            {
-                "name": "connect_delay",
-                "description": "Time to wait (in seconds) before start connecting to node (default to 10 seconds).",
-                "required": False,
-                "dataType": "integer",
-                "paramType": "form",
-            },
-            {
-                "name": "exec_delay",
-                "description": "Time to wait (in seconds) before start executing command in node (default to 15 seconds).",
-                "required": False,
-                "dataType": "integer",
-                "paramType": "form",
-            },
-            {
-                "name": "oxauth_node_id",
-                "description": "ID of oxauth node (required when deploying httpd node).",
-                "required": False,
-                "dataType": "string",
-                "paramType": "form",
-            },
-        ],
-        responseMessages=[
-            {
-                "code": 202,
-                "message": "Accepted",
-            },
-            {
-                "code": 400,
-                "message": "Bad Request",
-            },
-            {
-                "code": 403,
-                "message": "Forbidden",
-            },
-            {
-                "code": 500,
-                "message": "Internal Server Error",
-            }
-        ],
-        summary='Create a new node',
-    )
     def post(self):
         node_type = request.form.get("node_type", "")
         ctx = {"node_type": node_type}

@@ -8,28 +8,24 @@ import os
 import stat
 import uuid
 
-from flask_restful_swagger import swagger
-from flask.ext.restful import fields
-
 from ..database import db
 from .base import BaseModel
 from .base import STATE_SUCCESS
 
 
-@swagger.model
 class Provider(BaseModel):
     """Provider is a model represents a Docker host.
 
     Docker host could be any reachable machine, either local or remote.
     """
-    resource_fields = {
-        "id": fields.String,
-        "docker_base_url": fields.String,
-        "hostname": fields.String,
-        "ssl_key": fields.String,
-        "ssl_cert": fields.String,
-        "ca_cert": fields.String,
-    }
+    resource_fields = dict.fromkeys([
+        "id",
+        "docker_base_url",
+        "hostname",
+        "ssl_key",
+        "ssl_cert",
+        "ca_cert",
+    ])
 
     def __init__(self, fields=None):
         self.id = str(uuid.uuid4())

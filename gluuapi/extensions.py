@@ -7,13 +7,7 @@
 in app.py
 """
 from flask_restful import Api
-from flask_restful_swagger import swagger
 from flask_marshmallow import Marshmallow
 
-restapi = swagger.docs(
-    Api(catch_all_404s=True),
-    apiVersion='0.2.0',
-    api_spec_url='/api/spec',
-    description='gluu cluster API',
-)
+restapi = Api(catch_all_404s=True)
 ma = Marshmallow()

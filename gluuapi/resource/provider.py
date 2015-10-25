@@ -7,7 +7,6 @@ from flask import request
 from flask import url_for
 from flask import current_app
 from flask_restful import Resource
-from flask_restful_swagger import swagger
 
 from ..database import db
 from ..reqparser import ProviderReq
@@ -27,54 +26,12 @@ def format_provider_resp(provider):
 
 
 class ProviderResource(Resource):
-    @swagger.operation(
-        notes="Gives provider info/state",
-        nickname="getprovider",
-        responseMessages=[
-            {
-                "code": 200,
-                "message": "Provider information",
-            },
-            {
-                "code": 404,
-                "message": "Provider not found",
-            },
-            {
-                "code": 500,
-                "message": "Internal Server Error",
-            },
-        ],
-        summary='Get a list of existing providers',
-    )
     def get(self, provider_id):
         obj = db.get(provider_id, "providers")
         if not obj:
             return {"status": 404, "message": "Provider not found"}, 404
         return format_provider_resp(obj)
 
-    @swagger.operation(
-        notes="Deletes a provider",
-        nickname="delprovider",
-        responseMessages=[
-            {
-                "code": 204,
-                "message": "Provider deleted",
-            },
-            {
-                "code": 404,
-                "message": "Provider not found",
-            },
-            {
-                "code": 500,
-                "message": "Internal Server Error",
-            },
-            {
-                "code": 403,
-                "message": "Access denied",
-            },
-        ],
-        summary='Delete existing provider',
-    )
     def delete(self, provider_id):
         provider = db.get(provider_id, "providers")
         if not provider:
@@ -91,66 +48,6 @@ class ProviderResource(Resource):
         distribute_cluster_data(current_app.config["DATABASE_URI"])
         return {}, 204
 
-    @swagger.operation(
-        notes="Updates a provider",
-        nickname="editprovider",
-        responseMessages=[
-            {
-                "code": 200,
-                "message": "Provider updated",
-            },
-            {
-                "code": 400,
-                "message": "Bad Request",
-            },
-            {
-                "code": 404,
-                "message": "Provider not found",
-            },
-            {
-                "code": 500,
-                "message": "Internal Server Error",
-            },
-        ],
-        parameters=[
-            {
-                "name": "hostname",
-                "description": "Hostname of the provider",
-                "required": True,
-                "dataType": "string",
-                "paramType": "form"
-            },
-            {
-                "name": "docker_base_url",
-                "description": "URL to Docker API (e.g. 'unix:///var/run/docker.sock' or 'https://ip:port')",
-                "required": True,
-                "dataType": "string",
-                "paramType": "form"
-            },
-            {
-                "name": "ssl_key",
-                "description": "The contents of SSL client key file",
-                "required": False,
-                "dataType": "string",
-                "paramType": "form"
-            },
-            {
-                "name": "ssl_cert",
-                "description": "The contents of SSL client cert file",
-                "required": False,
-                "dataType": "string",
-                "paramType": "form"
-            },
-            {
-                "name": "ca_cert",
-                "description": "The contents of SSL CA cert file",
-                "required": False,
-                "dataType": "string",
-                "paramType": "form"
-            },
-        ],
-        summary='Update existing provider',
-    )
     def put(self, provider_id):
         provider = db.get(provider_id, "providers")
         if not provider:
@@ -179,77 +76,6 @@ class ProviderResource(Resource):
 
 
 class ProviderListResource(Resource):
-    @swagger.operation(
-        notes="Creates a new provider",
-        nickname="postprovider",
-        parameters=[
-            {
-                "name": "hostname",
-                "description": "Hostname of the provider",
-                "required": True,
-                "dataType": "string",
-                "paramType": "form"
-            },
-            {
-                "name": "docker_base_url",
-                "description": "URL to Docker API (e.g. 'unix:///var/run/docker.sock' or 'https://ip:port')",
-                "required": True,
-                "dataType": "string",
-                "paramType": "form"
-            },
-            {
-                "name": "type",
-                "description": "Provider type (either 'master' or 'consumer')",
-                "required": True,
-                "dataType": "string",
-                "paramType": "form"
-            },
-            {
-                "name": "ssl_key",
-                "description": "The contents of SSL client key file",
-                "required": False,
-                "dataType": "string",
-                "paramType": "form"
-            },
-            {
-                "name": "ssl_cert",
-                "description": "The contents of SSL client cert file",
-                "required": False,
-                "dataType": "string",
-                "paramType": "form"
-            },
-            {
-                "name": "ca_cert",
-                "description": "The contents of SSL CA cert file",
-                "required": False,
-                "dataType": "string",
-                "paramType": "form"
-            },
-        ],
-        responseMessages=[
-            {
-                "code": 201,
-                "message": "Created",
-            },
-            {
-                "code": 400,
-                "message": "Bad Request",
-            },
-            {
-                "code": 403,
-                "message": "Forbidden",
-            },
-            {
-                "code": 422,
-                "message": "Unprocessable Entity",
-            },
-            {
-                "code": 500,
-                "message": "Internal Server Error",
-            },
-        ],
-        summary='Create a new provider',
-    )
     def post(self):
         try:
             cluster = db.all("clusters")[0]
@@ -350,21 +176,6 @@ class ProviderListResource(Resource):
         }
         return format_provider_resp(provider), 201, headers
 
-    @swagger.operation(
-        notes="Gives provider info/state",
-        nickname="listprovider",
-        responseMessages=[
-            {
-                "code": 200,
-                "message": "Provider list information",
-            },
-            {
-                "code": 500,
-                "message": "Internal Server Error",
-            },
-        ],
-        summary='Get existing provider',
-    )
     def get(self):
         obj_list = db.all("providers")
         return [format_provider_resp(item) for item in obj_list]

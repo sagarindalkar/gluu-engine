@@ -5,11 +5,6 @@
 
 import uuid
 
-from flask_restful_swagger import swagger
-from flask_restful.fields import String
-from flask_restful.fields import Boolean
-from flask_restful.fields import Nested
-
 from ..database import db
 from .base import BaseModel
 from ..utils import generate_passkey
@@ -18,15 +13,14 @@ from ..utils import encrypt_text
 from ..utils import decrypt_text
 
 
-@swagger.model
 class LicenseKey(BaseModel):
-    resource_fields = {
-        "id": String,
-        "name": String,
-        "code": String,
-        "valid": Boolean,
-        "metadata": Nested,
-    }
+    resource_fields = dict.fromkeys([
+        "id",
+        "name",
+        "code",
+        "valid",
+        "metadata",
+    ])
 
     def __init__(self, fields=None):
         self.id = "{}".format(uuid.uuid4())

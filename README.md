@@ -131,9 +131,3 @@ tox
 ```
 
 See `tox.ini` for details.
-
-## Flask Swagger Docs
-
-gluu-flask publishes swagger API documentation. You should be able view this interactive HTML page that lets you play with the API to some extent.
-
-http://localhost:8080/api/spec.html

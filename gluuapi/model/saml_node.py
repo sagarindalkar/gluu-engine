@@ -3,26 +3,22 @@
 #
 # All rights reserved.
 
-from flask_restful.fields import String
-from flask_restful_swagger import swagger
-
 from .base import BaseModel
 
 
-@swagger.model
 class SamlNode(BaseModel):
-    resource_fields = {
-        "id": String,
-        "type": String,
-        "cluster_id": String,
-        "provider_id": String,
-        "ip": String,
-        "name": String,
-        "weave_ip": String,
-        "state": String,
-        "saml_type": String,
-        "domain_name": String,
-    }
+    resource_fields = dict.fromkeys([
+        "id",
+        "type",
+        "cluster_id",
+        "provider_id",
+        "ip",
+        "name",
+        "weave_ip",
+        "state",
+        "saml_type",
+        "domain_name",
+    ])
 
     def __init__(self):
         self.id = ""

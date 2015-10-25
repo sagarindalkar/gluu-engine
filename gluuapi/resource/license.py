@@ -253,18 +253,21 @@ class LicenseKeyResource(Resource):
         # key is not expired, try to re-enable the nodes
         if not license_key.expired:
             for provider in license_key.get_provider_objects():
-                weave = WeaveHelper(provider, current_app._get_current_object())
-                oxauth_nodes = provider.get_node_objects(
-                    type_="oxauth", state=STATE_DISABLED,
+                weave = WeaveHelper(
+                    provider, current_app._get_current_object(),
                 )
+                for type_ in ["oxauth", "saml"]:
+                    nodes = provider.get_node_objects(
+                        type_=type_, state=STATE_DISABLED,
+                    )
 
-                for node in oxauth_nodes:
-                    node.state = STATE_SUCCESS
-                    db.update(node.id, node, "nodes")
-                    cidr = "{}/{}".format(node.weave_ip,
-                                          node.weave_prefixlen)
-                    weave.attach(cidr, node.id)
-                    weave.dns_add(node.id, node.domain_name)
+                    for node in nodes:
+                        node.state = STATE_SUCCESS
+                        db.update(node.id, node, "nodes")
+                        cidr = "{}/{}".format(node.weave_ip,
+                                              node.weave_prefixlen)
+                        weave.attach(cidr, node.id)
+                        weave.dns_add(node.id, node.domain_name)
 
         distribute_cluster_data(current_app.config["DATABASE_URI"])
         return format_license_key_resp(license_key)

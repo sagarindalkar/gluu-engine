@@ -55,13 +55,15 @@ class LicenseExpirationTask(object):
                 new_license_key = self.update_license_key(license_key)
                 if new_license_key.expired:
                     # unable to do license_key renewal, hence we're going to
-                    # disable oxAuth nodes
-                    self.disable_oxauth_nodes(provider)
+                    # disable oxauth and saml nodes
+                    for type_ in ["oxauth", "saml"]:
+                        self.disable_nodes(provider, type_)
                 else:
-                    # if we have disabled oxAuth nodes in provider
+                    # if we have disabled oxauth and saml nodes in provider
                     # and license key is not expired, try to re-enable
                     # the nodes
-                    self.enable_oxauth_nodes(provider)
+                    for type_ in ["oxauth", "saml"]:
+                        self.enable_nodes(provider, type_)
 
     def update_license_key(self, license_key):
         resp = retrieve_signed_license(license_key.code)
@@ -92,22 +94,22 @@ class LicenseExpirationTask(object):
         db.update(license_key.id, license_key, "license_keys")
         return license_key
 
-    def disable_oxauth_nodes(self, provider):
+    def disable_nodes(self, provider, type_):
         weave = WeaveHelper(provider, self.app, self.logger)
 
-        for node in provider.get_node_objects(type_="oxauth"):
+        for node in provider.get_node_objects(type_=type_):
             node.state = STATE_DISABLED
             db.update(node.id, node, "nodes")
 
             cidr = "{}/{}".format(node.weave_ip, node.weave_prefixlen)
             weave.detach(cidr, node.id)
             self.logger.info("{} node {} has been "
-                             "disabled".format("oxauth", node.id))
+                             "disabled".format(type_, node.id))
 
-    def enable_oxauth_nodes(self, provider):
+    def enable_nodes(self, provider, type_):
         weave = WeaveHelper(provider, self.app, self.logger)
 
-        nodes = provider.get_node_objects(type_="oxauth", state=STATE_DISABLED)
+        nodes = provider.get_node_objects(type_=type_, state=STATE_DISABLED)
         for node in nodes:
             node.state = STATE_SUCCESS
             db.update(node.id, node, "nodes")
@@ -116,4 +118,4 @@ class LicenseExpirationTask(object):
             weave.attach(cidr, node.id)
             weave.dns_add(node.id, node.domain_name)
             self.logger.info("{} node {} has been "
-                             "enabled".format("oxauth", node.id))
+                             "enabled".format(type_, node.id))

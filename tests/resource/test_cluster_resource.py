@@ -3,7 +3,7 @@ import json
 import pytest
 
 
-def test_cluster_post(app, db, patched_salt_cmd):
+def test_cluster_post(app, db, patched_salt):
     from gluuapi.model import GluuCluster
 
     resp = app.test_client().post(
@@ -102,7 +102,7 @@ def test_cluster_post_max_cluster_reached(app, db, cluster):
     assert resp.status_code == 403
 
 
-def test_cluster_post_invalid_country_code(app, db, patched_salt_cmd):
+def test_cluster_post_invalid_country_code(app, db, patched_salt):
     resp = app.test_client().post(
         "/clusters",
         data={
@@ -127,7 +127,7 @@ def test_cluster_post_invalid_country_code(app, db, patched_salt_cmd):
     "10.2.1.0",
     "500.1.2.3/256",
 ])
-def test_cluster_post_invalid_weave_network(app, db, patched_salt_cmd, weave_ip_network):
+def test_cluster_post_invalid_weave_network(app, db, patched_salt, weave_ip_network):
     resp = app.test_client().post(
         "/clusters",
         data={

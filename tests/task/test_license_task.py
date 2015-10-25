@@ -16,7 +16,7 @@ def test_perform_job_renewal(db, license_key, provider,
 
 
 def test_perform_job_disable_nodes(db, license_key, provider, oxauth_node,
-                                   oxd_resp_err, patched_salt_cmd, app):
+                                   oxd_resp_err, patched_salt, app):
     from gluuapi.task import LicenseExpirationTask
     from gluuapi.utils import timestamp_millis
 

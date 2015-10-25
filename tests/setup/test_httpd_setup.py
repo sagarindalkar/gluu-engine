@@ -1,5 +1,5 @@
-def test_setup(db, httpd_setup, oxauth_node, oxtrust_node, patched_salt_cmd,
-               patched_salt_cmd_async, salt_event_ok):
+def test_setup(db, httpd_setup, oxauth_node, oxtrust_node, patched_salt,
+               salt_event_ok):
     from gluuapi.model import STATE_SUCCESS
 
     oxauth_node.state = STATE_SUCCESS
@@ -11,8 +11,8 @@ def test_setup(db, httpd_setup, oxauth_node, oxtrust_node, patched_salt_cmd,
 
 
 def test_after_setup(db, httpd_setup, oxauth_node, oxtrust_node,
-                     provider, patched_salt_cmd, patched_sleep,
-                     patched_salt_cmd_async, salt_event_ok):
+                     provider, patched_salt, patched_sleep,
+                     salt_event_ok):
     from gluuapi.model import STATE_SUCCESS
 
     db.persist(provider, "providers")
@@ -24,8 +24,8 @@ def test_after_setup(db, httpd_setup, oxauth_node, oxtrust_node,
     httpd_setup.after_setup()
 
 def test_teardown(db, httpd_setup, oxtrust_node, provider,
-                  patched_salt_cmd, patched_sleep,
-                  patched_salt_cmd_async, salt_event_ok):
+                  patched_salt, patched_sleep,
+                  salt_event_ok):
     from gluuapi.model import STATE_SUCCESS
 
     db.persist(provider, "providers")
@@ -35,6 +35,5 @@ def test_teardown(db, httpd_setup, oxtrust_node, provider,
     httpd_setup.teardown()
 
 
-def test_remove_pidfile(httpd_setup, patched_salt_cmd,
-                        patched_salt_cmd_async, salt_event_ok):
+def test_remove_pidfile(httpd_setup, patched_salt, salt_event_ok):
     httpd_setup.remove_pidfile()

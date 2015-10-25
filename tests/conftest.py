@@ -91,7 +91,7 @@ def provider():
 
 
 @pytest.fixture()
-def httpd_node(cluster, provider, oxauth_node, oxtrust_node):
+def httpd_node(cluster, provider, oxauth_node, saml_node):
     from gluuapi.model import HttpdNode
 
     node = HttpdNode()
@@ -100,14 +100,18 @@ def httpd_node(cluster, provider, oxauth_node, oxtrust_node):
     node.provider_id = provider.id
     node.name = "httpd-node"
     node.oxauth_node_id = oxauth_node.id
-    node.oxtrust_node_id = oxtrust_node.id
+    node.saml_node_id = saml_node.id
     return node
 
 
 @pytest.fixture
-def patched_salt_cmd(monkeypatch):
+def patched_salt(monkeypatch):
     monkeypatch.setattr(
         "salt.client.LocalClient.cmd",
+        lambda cls, tgt, fun, arg: None,
+    )
+    monkeypatch.setattr(
+        "salt.client.LocalClient.cmd_async",
         lambda cls, tgt, fun, arg: None,
     )
 
@@ -198,16 +202,19 @@ def validator_expired(monkeypatch):
 
 
 @pytest.fixture
-def patched_salt_cmd_async(monkeypatch):
-    monkeypatch.setattr(
-        "salt.client.LocalClient.cmd_async",
-        lambda cls, tgt, fun, arg: None,
-    )
-
-
-@pytest.fixture
 def salt_event_ok(monkeypatch):
     monkeypatch.setattr(
         "salt.utils.event.MasterEvent.get_event",
         lambda cls, wait, tag, full: {"tag": "salt/job", "data": {"retcode": 0}},
     )
+
+
+@pytest.fixture()
+def saml_node(cluster, provider):
+    from gluuapi.model import SamlNode
+
+    node = SamlNode()
+    node.id = "saml_{}_123".format(cluster.id)
+    node.cluster_id = cluster.id
+    node.provider_id = provider.id
+    return node

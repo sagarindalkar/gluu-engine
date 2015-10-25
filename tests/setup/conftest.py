@@ -1,5 +1,3 @@
-import shutil
-
 import pytest
 
 
@@ -51,6 +49,20 @@ def httpd_setup(request, app, httpd_node, cluster):
 
     setup_obj = HttpdSetup(httpd_node, cluster,
                            template_dir=app.config["TEMPLATES_DIR"])
+
+    def teardown():
+        setup_obj.remove_build_dir()
+
+    request.addfinalizer(teardown)
+    return setup_obj
+
+
+@pytest.fixture()
+def saml_setup(request, app, saml_node, cluster):
+    from gluuapi.setup import SamlSetup
+
+    setup_obj = SamlSetup(saml_node, cluster,
+                          template_dir=app.config["TEMPLATES_DIR"])
 
     def teardown():
         setup_obj.remove_build_dir()

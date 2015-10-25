@@ -14,7 +14,7 @@ def test_provider_no_cluster(app):
 
 
 def test_provider_list_post_master(monkeypatch, app, db, cluster,
-                                   patched_salt_cmd, patched_sleep):
+                                   patched_salt, patched_sleep):
     monkeypatch.setattr(
         "gluuapi.helper.WeaveHelper.launch",
         lambda cls: None,
@@ -109,7 +109,7 @@ def test_provider_list_post_consumer_unretrieved_license(
 
 
 def test_provider_list_post_consumer(monkeypatch, app, db, cluster,
-                                     patched_salt_cmd, patched_sleep,
+                                     patched_salt, patched_sleep,
                                      license_key, oxd_resp_ok,
                                      validator_ok, provider):
     db.persist(cluster, "clusters")
@@ -130,7 +130,7 @@ def test_provider_list_post_consumer(monkeypatch, app, db, cluster,
 
 
 def test_provider_list_post_consumer_no_meta(
-        monkeypatch, app, db, cluster, patched_salt_cmd, patched_sleep,
+        monkeypatch, app, db, cluster, patched_salt, patched_sleep,
         license_key, oxd_resp_ok, validator_err, provider):
     db.persist(cluster, "clusters")
     # create master provider first
@@ -210,7 +210,7 @@ def test_provider_put_missing_params(app, db, provider):
 
 
 def test_provider_put_updated(app, db, provider, oxauth_node,
-                              patched_salt_cmd, license_key,
+                              patched_salt, license_key,
                               validator_ok, cluster, patched_sleep):
     from gluuapi.model import STATE_DISABLED
 

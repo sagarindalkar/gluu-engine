@@ -1,6 +1,5 @@
-def test_setup(oxauth_setup, patched_salt_cmd, patched_sleep,
-               ldap_node, cluster, db, patched_salt_cmd_async,
-               salt_event_ok):
+def test_setup(oxauth_setup, patched_salt, patched_sleep,
+               ldap_node, cluster, db, salt_event_ok):
     db.persist(cluster, "clusters")
     ldap_node.state = "SUCCESS"
     db.persist(ldap_node, "nodes")

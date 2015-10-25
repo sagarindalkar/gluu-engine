@@ -59,3 +59,51 @@ def test_validate_oxauth_notfound():
     node_req = NodeReq(context=ctx)
     with pytest.raises(ValidationError):
         node_req.validate_oxauth("abc")
+
+
+def test_validate_saml_reused(db, httpd_node):
+    from gluuapi.reqparser import NodeReq
+
+    db.persist(httpd_node, "nodes")
+    ctx = {"node_type": "httpd"}
+    node_req = NodeReq(context=ctx)
+
+    with pytest.raises(ValidationError):
+        node_req.validate_saml(httpd_node.saml_node_id)
+
+
+def test_validate_saml_invalid_provider(db, saml_node, provider):
+    from gluuapi.reqparser import NodeReq
+
+    db.persist(provider, "providers")
+    saml_node.provider_id = "xyz"
+    db.persist(saml_node, "nodes")
+
+    ctx = {"node_type": "httpd", "provider": provider}
+    node_req = NodeReq(context=ctx)
+
+    with pytest.raises(ValidationError):
+        node_req.validate_saml(saml_node.id)
+
+
+def test_validate_saml_invalid_state(db, saml_node, provider):
+    from gluuapi.reqparser import NodeReq
+
+    db.persist(provider, "providers")
+    saml_node.provider_id = provider.id
+    db.persist(saml_node, "nodes")
+
+    ctx = {"node_type": "httpd", "provider": provider}
+    node_req = NodeReq(context=ctx)
+
+    with pytest.raises(ValidationError):
+        node_req.validate_saml(saml_node.id)
+
+
+def test_validate_saml_notfound():
+    from gluuapi.reqparser import NodeReq
+
+    ctx = {"node_type": "httpd"}
+    node_req = NodeReq(context=ctx)
+    with pytest.raises(ValidationError):
+        node_req.validate_saml("abc")

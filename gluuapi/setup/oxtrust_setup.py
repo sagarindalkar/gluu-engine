@@ -116,6 +116,10 @@ class OxtrustSetup(OxauthSetup):
     def render_props_template(self):
         src = self.oxtrust_properties
         dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
+        ldap_hosts = ",".join([
+            "{}:{}".format(ldap.domain_name, ldap.ldaps_port)
+            for ldap in self.cluster.get_ldap_objects()
+        ])
         ctx = {
             "inumAppliance": self.cluster.inum_appliance,
             "inumOrg": self.cluster.inum_org,
@@ -133,6 +137,7 @@ class OxtrustSetup(OxauthSetup):
             "oxauthClient_encoded_pw": self.cluster.oxauth_client_encoded_pw,
             "inumApplianceFN": self.cluster.inum_appliance_fn,
             "truststore_fn": self.node.truststore_fn,
+            "ldap_hosts": ldap_hosts,
         }
         self.render_template(src, dest, ctx)
 
@@ -141,7 +146,7 @@ class OxtrustSetup(OxauthSetup):
         dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
 
         ldap_hosts = ",".join([
-            "{}:{}".format(ldap.weave_ip, ldap.ldaps_port)
+            "{}:{}".format(ldap.domain_name, ldap.ldaps_port)
             for ldap in self.cluster.get_ldap_objects()
         ])
         ctx = {

@@ -167,8 +167,7 @@ class ProviderListResource(Resource):
         provider = Provider(fields=data)
         db.persist(provider, "providers")
 
-        weave = WeaveHelper(provider, cluster,
-                            current_app._get_current_object())
+        weave = WeaveHelper(provider, current_app._get_current_object())
         weave.launch_async()
 
         headers = {

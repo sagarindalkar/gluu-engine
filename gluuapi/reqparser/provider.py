@@ -88,7 +88,7 @@ class ProviderReq(BaseProviderReq):
     except AttributeError:
         # marshmallow.Select is removed starting from 2.0.0
         from marshmallow.validate import OneOf
-        node_type = ma.Str(validate=OneOf(PROVIDER_CHOICES))
+        type = ma.Str(validate=OneOf(PROVIDER_CHOICES))
 
 
 # backward-compat

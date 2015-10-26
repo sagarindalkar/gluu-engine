@@ -23,7 +23,7 @@ scrape_configs:
 {% set nodes = cluster.get_node_objects() %}
   - job_name: 'cluster_{{ cluster.id }}'
     scrape_interval: 15s
-    scrape_interval: 30s
+    scrape_timeout: 30s
     target_groups:
       - targets: [{% for node in nodes %}'{{ node.weave_ip }}:9100'{% if loop.index != nodes|length %},{% endif %}{% endfor %}]
         labels:

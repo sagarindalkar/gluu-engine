@@ -26,7 +26,7 @@ For the impatient, just type:
 curl -sSL https://get.docker.com/ubuntu/ | sudo sh
 ```
 
-Note: gluu-flask only supports docker v1.5.0 or above.
+Note: gluu-flask only supports docker v1.6.2 at the moment.
 
 ### Install salt-master and salt-minion
 
@@ -48,11 +48,11 @@ sudo dpkg -i oxd-license-validator_3.0.1-SNAPSHOT-1_all.deb
 
 ### Install weave
 
-Currently `gluu-flask` only supports weave v0.10.0.
+Currently `gluu-flask` only supports weave v1.1.0.
 
 ```
-wget http://repo.gluu.org/ubuntu/pool/main/trusty-devel/weave_0.10.0-1_all.deb
-sudo dpkg -i weave_0.10.0-1_all.deb
+wget http://repo.gluu.org/ubuntu/pool/main/trusty-devel/weave-docker_1.1.0-1_all.deb
+sudo dpkg -i weave-docker_1.1.0-1_all.deb
 ```
 
 ## Deployment
@@ -72,6 +72,7 @@ $ git clone https://github.com/GluuFederation/gluu-flask.git
 $ cd gluu-flask
 $ virtualenv env
 $ source env/bin/activate
+$ pip install -r requirements.txt
 $ python setup.py install
 ```
 
@@ -83,7 +84,6 @@ $ python setup.py install
 * prometheus
 
 Download `postinstall.py` script and run it.
-Note: this script will ask `SALT_MASTER_IPADDR` and provider type (`master` or `consumer`) value.
 
 ```
 wget https://raw.githubusercontent.com/GluuFederation/gluu-cluster-postinstall/master/postinstall.py

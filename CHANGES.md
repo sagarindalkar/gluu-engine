@@ -3,6 +3,23 @@ Changelog
 
 Here you can see the full list of changes between each gluu-flask release.
 
+Version 0.4.0
+-------------
+
+(release date to be announced)
+
+* Added new `gluushib` docker image based on oxIDP v2.3.4.
+* Added new `saml` node (docker container for gluushib).
+* Added background task (`gluuapi.task.fswatcher.SAMLWatcherTask`) to monitor and distribute schema and metadata for `saml` node.
+* License expiration task is now monitoring `saml` node as well.
+* Recovery priority for httpd node is changed to 4. Previous recovery priority value is now taken by `saml` node.
+* `weave` is upgraded to v1.1.0.
+* `prometheus` container is attached to the weave network due to changes in weave (since v0.11.0).
+* Introduced local DNS server using weaveDNS.
+* Swagger UI is removed.
+* Added salt event handler to catch errors in some deployment tasks.
+* Moved templates from `gluuapi/templates/salt` to `gluuapi/templates/nodes`.
+
 Version 0.3.3
 -------------
 

@@ -164,7 +164,7 @@ class GluuCluster(BaseModel):
     def exposed_weave_ip(self):
         pool = IPNetwork(self.weave_ip_network)
         # as the last element of pool is a broadcast address, we cannot use it;
-        # hence we fetch the last element before broadcast address
+        # hence we fetch the last 2nd element of the pool
         addr = pool[-2]
         return str(addr), pool.prefixlen
 
@@ -185,7 +185,7 @@ class GluuCluster(BaseModel):
             addr = str(pool[1])
 
         if addr in (self.exposed_weave_ip[0], str(pool.network),
-                    str(pool.broadcast)):
+                    str(pool.broadcast), self.prometheus_weave_ip[0]):
             # there's no available IP address
             return "", pool.prefixlen
         return addr, pool.prefixlen
@@ -198,3 +198,11 @@ class GluuCluster(BaseModel):
     def nodes_count(self):
         condition = db.where("cluster_id") == self.id
         return db.count_from_table("nodes", condition)
+
+    @property
+    def prometheus_weave_ip(self):
+        pool = IPNetwork(self.weave_ip_network)
+        # as the last element of pool is a broadcast address, we cannot use it;
+        # hence we fetch the last 3rd element of the pool
+        addr = pool[-3]
+        return str(addr), pool.prefixlen

@@ -81,3 +81,14 @@ def test_get_nodes_by_state(db, cluster, ldap_node):
     ldap_node.state = "FAILED"
     db.persist(ldap_node, "nodes")
     assert cluster.get_node_objects(type_="ldap", state="FAILED")
+
+
+def test_prometheus_weave_ip():
+    from gluuapi.model import GluuCluster
+
+    cluster = GluuCluster()
+    cluster.weave_ip_network = "10.2.1.0/24"
+
+    addr, prefixlen = cluster.prometheus_weave_ip
+    assert addr == "10.2.1.253"
+    assert prefixlen == 24

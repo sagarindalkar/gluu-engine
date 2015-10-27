@@ -19,7 +19,7 @@ scrape_configs:
     target_groups:
       - targets: ['localhost:9090']
 
-{%- for cluster in clusters %}
+{%- if cluster %}
 {% set nodes = cluster.get_node_objects() %}
   - job_name: 'cluster_{{ cluster.id }}'
     scrape_interval: 15s
@@ -28,4 +28,4 @@ scrape_configs:
       - targets: [{% for node in nodes %}'{{ node.weave_ip }}:9100'{% if loop.index != nodes|length %},{% endif %}{% endfor %}]
         labels:
           group: '{{ cluster.name }}'
-{%- endfor -%}
+{%- endif -%}

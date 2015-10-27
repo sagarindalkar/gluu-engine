@@ -3,29 +3,40 @@
 #
 # All rights reserved.
 
-import os.path
-
-from jinja2 import Template
 from docker import Client
+from jinja2 import Environment
+from jinja2 import PackageLoader
 
+from .weave_helper import WeaveHelper
 from ..database import db
 
+
 class PrometheusHelper(object):
-    def __init__(self, template_dir):
-        self.clusters = []
-        self.template_dir = template_dir
-        self.template = self.get_template_path('prometheus/prometheus.yml')
+    def __init__(self, app):
+        try:
+            self.cluster = db.all("clusters")[0]
+        except IndexError:
+            self.cluster = None
+
+        try:
+            self.provider = db.search_from_table(
+                "providers",
+                db.where("type") == "master",
+            )[0]
+        except IndexError:
+            self.provider = None
+
         self.target_path = '/etc/gluu/prometheus/prometheus.yml'
         self.docker = Client("unix:///var/run/docker.sock")
-
-    def __load_clusters(self):
-        self.clusters = db.all("clusters")
+        self.jinja_env = Environment(
+            loader=PackageLoader("gluuapi", "templates")
+        )
+        self.app = app
+        self.weave = WeaveHelper(self.provider, self.app)
 
     def __render(self):
-        with open(self.template, 'r') as fp:
-            tmpl = fp.read()
-        template = Template(tmpl)
-        rtxt = template.render(clusters=self.clusters)
+        template = self.jinja_env.get_template("prometheus/prometheus.yml")
+        rtxt = template.render(cluster=self.cluster)
         with open(self.target_path, 'w') as fp:
             fp.write(rtxt)
 
@@ -33,10 +44,13 @@ class PrometheusHelper(object):
         self.docker.restart(container="prometheus")
 
     def update(self):
-        self.__load_clusters()
         self.__render()
         self.__restart()
 
-    def get_template_path(self, path):
-        template_path = os.path.join(self.template_dir, path)
-        return template_path
+        # attach weave IP for prometheus container
+        # so prometheus can scrape all metrics from all
+        # nodes
+        if all([self.cluster, self.provider]):
+            addr, prefixlen = self.cluster.prometheus_weave_ip
+            cidr = "{}/{}".format(addr, prefixlen)
+            self.weave.attach(cidr, "prometheus")

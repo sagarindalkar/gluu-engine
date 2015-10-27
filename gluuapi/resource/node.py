@@ -106,7 +106,7 @@ class Node(Resource):
         salt.unregister_minion(node.id)
 
         # updating prometheus
-        prometheus = PrometheusHelper(template_dir=template_dir)
+        prometheus = PrometheusHelper(current_app._get_current_object())
         prometheus.update()
         distribute_cluster_data(current_app.config["DATABASE_URI"])
         return {}, 204

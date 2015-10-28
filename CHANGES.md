@@ -19,6 +19,7 @@ Version 0.4.0
 * Swagger UI is removed.
 * Added salt event handler to catch errors in some deployment tasks.
 * Moved templates from `gluuapi/templates/salt` to `gluuapi/templates/nodes`.
+* Enforced `docker_base_url` value to use either `unix` or `https` prefix. Related issue: [#42](https://github.com/GluuFederation/gluu-flask/issues/42).
 
 Version 0.3.3
 -------------

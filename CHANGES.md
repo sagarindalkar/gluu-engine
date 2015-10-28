@@ -20,6 +20,7 @@ Version 0.4.0
 * Added salt event handler to catch errors in some deployment tasks.
 * Moved templates from `gluuapi/templates/salt` to `gluuapi/templates/nodes`.
 * Enforced `docker_base_url` value to use either `unix` or `https` prefix. Related issue: [#42](https://github.com/GluuFederation/gluu-flask/issues/42).
+* `force` option in Node API is renamed to `force_rm`.
 
 Version 0.3.3
 -------------

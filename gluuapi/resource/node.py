@@ -48,7 +48,7 @@ class Node(Resource):
         truthy = ("1", "True", "true", "t",)
         falsy = ("0", "false", "False", "f",)
 
-        force_delete = request.args.get("force", False)
+        force_delete = request.args.get("force_rm", False)
 
         if force_delete in falsy:
             force_delete = False

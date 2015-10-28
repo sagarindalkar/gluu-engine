@@ -266,7 +266,13 @@ def test_node_post_expired_license(app, db, provider, cluster, license_key):
 
 @pytest.mark.parametrize("force_delete, status_code", [
     (0, 403),
+    ("false", 403),
+    ("False", 403),
+    ("f", 403),
     (1, 204),
+    ("true", 204),
+    ("True", 204),
+    ("t", 204),
 ])
 def test_node_delete_force(monkeypatch, app, db, ldap_node, cluster,
                            provider, force_delete, status_code):
@@ -288,6 +294,6 @@ def test_node_delete_force(monkeypatch, app, db, ldap_node, cluster,
     db.persist(ldap_node, "nodes")
 
     resp = app.test_client().delete(
-        "/nodes/{}?force={}".format(ldap_node.id, force_delete),
+        "/nodes/{}?force_rm={}".format(ldap_node.id, force_delete),
     )
     assert resp.status_code == status_code

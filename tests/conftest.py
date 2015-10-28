@@ -85,7 +85,7 @@ def provider():
 
     provider = Provider({
         "docker_base_url": "unix:///var/run/docker.sock",
-        "hostname": "local",
+        "hostname": "gluu-master",
     })
     return provider
 

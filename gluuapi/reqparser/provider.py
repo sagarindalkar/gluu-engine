@@ -14,6 +14,7 @@ from docker.utils import parse_host
 from docker.errors import DockerException
 
 from ..extensions import ma
+from ..database import db
 
 # regex pattern for hostname as defined by RFC 952 and RFC 1123
 HOSTNAME_RE = re.compile('^(?![0-9]+$)(?!-)[a-zA-Z0-9-]{,63}(?<!-)$')
@@ -35,6 +36,15 @@ class BaseProviderReq(ma.Schema):
         valid = all(HOSTNAME_RE.match(v) for v in value.split("."))
         if not valid:
             raise ValidationError("invalid hostname")
+
+        # ensure hostname is unique (not taken by existing providers)
+        hostname_num = db.count_from_table(
+            "providers",
+            db.where("hostname") == value,
+        )
+        if hostname_num:
+            raise ValidationError("hostname has been taken by "
+                                  "existing provider")
 
     @post_load
     def finalize_data(self, data):
@@ -93,5 +103,23 @@ class ProviderReq(BaseProviderReq):
         type = ma.Str(validate=OneOf(PROVIDER_CHOICES))
 
 
-# backward-compat
-EditProviderReq = BaseProviderReq
+class EditProviderReq(BaseProviderReq):
+    @validates("hostname")
+    def validate_hostname(self, value):
+        provider = self.context.get("provider")
+
+        # some provider like AWS uses dotted hostname,
+        # e.g. ip-172-31-24-54.ec2.internal
+        valid = all(HOSTNAME_RE.match(v) for v in value.split("."))
+        if not valid:
+            raise ValidationError("invalid hostname")
+
+        if provider:
+            # ensure hostname is unique (not taken by another provider)
+            hostname_num = db.count_from_table(
+                "providers",
+                (db.where("hostname") == value) & (db.where("id") != provider.id),
+            )
+            if hostname_num:
+                raise ValidationError("hostname has been taken by "
+                                      "existing provider")

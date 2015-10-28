@@ -95,3 +95,44 @@ kye8qHB5Sm43E/PJL+oAPU0OSYe3H7f9pJMwvx0 T7Sa4T8FKl10W76Rn==
         assert data["ssl_cert"] == """-----BEGIN CERTIFICATE-----\n
 kye8qHB5Sm43E/PJL+oAPU0OSYe3H7f9pJMwvx0+T7Sa4T8FKl10W76Rn==\n
 -----END CERTIFICATE-----\n"""
+
+
+def test_validate_hostname_duplicated(db, provider):
+    from gluuapi.reqparser import ProviderReq
+    from marshmallow import ValidationError
+
+    db.persist(provider, "providers")
+
+    reqparser = ProviderReq()
+    with pytest.raises(ValidationError):
+        reqparser.validate_hostname(provider.hostname)
+
+
+def test_validate_hostname_invalid_update(db, provider):
+    from gluuapi.reqparser import EditProviderReq
+    from marshmallow import ValidationError
+
+    db.persist(provider, "providers")
+    reqparser = EditProviderReq(context={"provider": provider})
+
+    with pytest.raises(ValidationError):
+        reqparser.validate_hostname("-a")
+
+
+def test_validate_hostname_duplicated_update(db, provider):
+    from gluuapi.reqparser import EditProviderReq
+    from gluuapi.model import Provider
+    from marshmallow import ValidationError
+
+    # provider that needs to be updated
+    db.persist(provider, "providers")
+
+    # existing provider
+    provider2 = Provider()
+    provider2.hostname = "random"
+    db.persist(provider2, "providers")
+
+    reqparser = EditProviderReq(context={"provider": provider})
+    with pytest.raises(ValidationError):
+        # hostname is taken by provider2
+        reqparser.validate_hostname(provider2.hostname)

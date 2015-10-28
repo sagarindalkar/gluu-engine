@@ -52,7 +52,12 @@ class BaseProviderReq(ma.Schema):
 
     @validates("docker_base_url")
     def validate_docker_base_url(self, value):
+        # enforce value to use `unix` or `https` prefix
+        if not any([value.startswith("unix"), value.startswith("https")]):
+            raise ValidationError("Must use unix or https prefix")
+
         try:
+            # check whether value is supported by docker
             parse_host(value)
         except DockerException as exc:
             raise ValidationError(exc.message)
@@ -60,26 +65,23 @@ class BaseProviderReq(ma.Schema):
     @validates("ssl_cert")
     def validate_ssl_cert(self, value):
         base_url = self.context.get("docker_base_url", "")
-        if base_url.startswith("https"):
-            if not value:
-                raise ValidationError("Field is required when "
-                                      "'docker_base_url' uses https")
+        if base_url.startswith("https") and not value:
+            raise ValidationError("Field is required when "
+                                  "'docker_base_url' uses https")
 
     @validates("ssl_key")
     def validate_ssl_key(self, value):
         base_url = self.context.get("docker_base_url", "")
-        if base_url.startswith("https"):
-            if not value:
-                raise ValidationError("Field is required when "
-                                      "'docker_base_url' uses https")
+        if base_url.startswith("https") and not value:
+            raise ValidationError("Field is required when "
+                                  "'docker_base_url' uses https")
 
     @validates("ca_cert")
     def validate_ca_cert(self, value):
         base_url = self.context.get("docker_base_url", "")
-        if base_url.startswith("https"):
-            if not value:
-                raise ValidationError("Field is required when "
-                                      "'docker_base_url' uses https")
+        if base_url.startswith("https") and not value:
+            raise ValidationError("Field is required when "
+                                  "'docker_base_url' uses https")
 
 
 class ProviderReq(BaseProviderReq):

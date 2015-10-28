@@ -30,13 +30,20 @@ def test_validate_hostname_invalid(hostname):
         reqparser.validate_hostname(hostname)
 
 
-def test_validate_docker_base_url():
+@pytest.mark.parametrize("base_url", [
+    "abc",
+    "http://1.1.1.1:2375",  # plain http is forbidden
+    "https://abc",  # uses https, but port is missing
+    "unixabc",  # prefixed with unix but the path is incorrect
+    "httpsabc",  # prefixed with https but the path is incorrect
+])
+def test_validate_docker_base_url(base_url):
     from gluuapi.reqparser import ProviderReq
     from marshmallow import ValidationError
 
     reqparser = ProviderReq()
     with pytest.raises(ValidationError):
-        reqparser.validate_docker_base_url("abc")
+        reqparser.validate_docker_base_url(base_url)
 
 
 def test_validate_ssl_cert():

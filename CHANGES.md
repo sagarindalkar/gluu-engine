@@ -21,6 +21,8 @@ Version 0.4.0
 * Moved templates from `gluuapi/templates/salt` to `gluuapi/templates/nodes`.
 * Enforced `docker_base_url` value to use either `unix` or `https` prefix. Related issue: [#42](https://github.com/GluuFederation/gluu-flask/issues/42).
 * `force` option in Node API is renamed to `force_rm`.
+* Fixed missing `/var/ox` directory and its subdirectories in oxtrust node.
+* Add validation rule to ensure provider's hostname is unique.
 
 Version 0.3.3
 -------------

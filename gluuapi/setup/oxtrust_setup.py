@@ -201,6 +201,7 @@ class OxtrustSetup(OxauthSetup):
             hostname,
         )
 
+        self.create_ox_dirs()
         self.symlink_jython_lib()
         self.copy_tomcat_index_html()
         self.add_auto_startup_entry()
@@ -294,3 +295,13 @@ class OxtrustSetup(OxauthSetup):
             dest = "{}/{}".format(parent_dest, fn)
             self.logger.info("copying {}".format(fn))
             self.salt.copy_file(self.node.id, src, dest)
+
+    def create_ox_dirs(self):
+        paths = [
+            "/var/ox/photos",
+            "/var/ox/oxtrust/removed",
+            "/var/ox/oxtrust/vds-snapshots",
+        ]
+        for path in paths:
+            self.logger.info("creating {} directory".format(path))
+            self.salt.cmd(self.node.id, "cmd.run", ["mkdir -p {}".format(path)])

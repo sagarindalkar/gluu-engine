@@ -5,8 +5,7 @@ import pytest
 def ldap_setup(request, app, ldap_node, cluster):
     from gluuapi.setup import LdapSetup
 
-    setup_obj = LdapSetup(ldap_node, cluster,
-                          template_dir=app.config["TEMPLATES_DIR"])
+    setup_obj = LdapSetup(ldap_node, cluster, app)
 
     def teardown():
         setup_obj.remove_build_dir()
@@ -19,8 +18,7 @@ def ldap_setup(request, app, ldap_node, cluster):
 def oxauth_setup(request, app, oxauth_node, cluster):
     from gluuapi.setup import OxauthSetup
 
-    setup_obj = OxauthSetup(oxauth_node, cluster,
-                            template_dir=app.config["TEMPLATES_DIR"])
+    setup_obj = OxauthSetup(oxauth_node, cluster, app)
 
     def teardown():
         setup_obj.remove_build_dir()
@@ -33,8 +31,7 @@ def oxauth_setup(request, app, oxauth_node, cluster):
 def oxtrust_setup(request, app, oxtrust_node, cluster):
     from gluuapi.setup import OxtrustSetup
 
-    setup_obj = OxtrustSetup(oxtrust_node, cluster,
-                             template_dir=app.config["TEMPLATES_DIR"])
+    setup_obj = OxtrustSetup(oxtrust_node, cluster, app)
 
     def teardown():
         setup_obj.remove_build_dir()
@@ -47,8 +44,7 @@ def oxtrust_setup(request, app, oxtrust_node, cluster):
 def httpd_setup(request, app, httpd_node, cluster):
     from gluuapi.setup import HttpdSetup
 
-    setup_obj = HttpdSetup(httpd_node, cluster,
-                           template_dir=app.config["TEMPLATES_DIR"])
+    setup_obj = HttpdSetup(httpd_node, cluster, app)
 
     def teardown():
         setup_obj.remove_build_dir()
@@ -61,8 +57,7 @@ def httpd_setup(request, app, httpd_node, cluster):
 def saml_setup(request, app, saml_node, cluster):
     from gluuapi.setup import SamlSetup
 
-    setup_obj = SamlSetup(saml_node, cluster,
-                          template_dir=app.config["TEMPLATES_DIR"])
+    setup_obj = SamlSetup(saml_node, cluster, app)
 
     def teardown():
         setup_obj.remove_build_dir()

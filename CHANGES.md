@@ -23,6 +23,7 @@ Version 0.4.0
 * `force` option in Node API is renamed to `force_rm`.
 * Fixed missing `/var/ox` directory and its subdirectories in oxtrust node.
 * Add validation rule to ensure provider's hostname is unique.
+* Fixed validation rule in Node API caused by missing `node_type` parameter.
 
 Version 0.3.3
 -------------

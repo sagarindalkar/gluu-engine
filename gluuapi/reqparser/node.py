@@ -20,11 +20,11 @@ class NodeReq(ma.Schema):
     provider_id = ma.Str(required=True)
 
     try:
-        node_type = ma.Select(choices=NODE_CHOICES)
+        node_type = ma.Select(choices=NODE_CHOICES, required=True)
     except AttributeError:
         # marshmallow.Select is removed starting from 2.0.0
         from marshmallow.validate import OneOf
-        node_type = ma.Str(validate=OneOf(NODE_CHOICES))
+        node_type = ma.Str(validate=OneOf(NODE_CHOICES), required=True)
 
     connect_delay = ma.Int(default=10, missing=10,
                            error="must use numerical value")

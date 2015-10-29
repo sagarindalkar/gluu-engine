@@ -4,6 +4,7 @@
 # All rights reserved.
 
 import codecs
+from glob import iglob
 import json
 import os.path
 import time
@@ -295,7 +296,8 @@ class LdapSetup(BaseSetup):
         self.salt.subscribe_event(jid, self.node.id)
 
     def replicate_from(self, existing_node):
-        setup_obj = LdapSetup(existing_node, self.cluster, logger=self.logger)
+        setup_obj = LdapSetup(existing_node, self.cluster,
+                              self.app, logger=self.logger)
 
         # creates temporary password file
         setup_obj.write_ldap_pw()
@@ -380,6 +382,7 @@ command={}
     def setup(self):
         self.write_ldap_pw()
         self.add_ldap_schema()
+        self.import_custom_schema()
         self.setup_opendj()
         self.add_auto_startup_entry()
         self.start_opendj()
@@ -402,13 +405,13 @@ command={}
 
     def render_ox_ldap_props(self):
         for oxauth in self.cluster.get_oxauth_objects():
-            setup_obj = OxauthSetup(oxauth, self.cluster, logger=self.logger,
-                                    template_dir=self.template_dir)
+            setup_obj = OxauthSetup(oxauth, self.cluster,
+                                    self.app, logger=self.logger)
             setup_obj.render_ldap_props_template()
 
         for oxtrust in self.cluster.get_oxtrust_objects():
-            setup_obj = OxtrustSetup(oxtrust, self.cluster, logger=self.logger,
-                                     template_dir=self.template_dir)
+            setup_obj = OxtrustSetup(oxtrust, self.cluster,
+                                     self.app, logger=self.logger)
             setup_obj.render_ldap_props_template()
 
     def after_setup(self):
@@ -471,3 +474,13 @@ command={}
         self.logger.info("modifying oxIDPAuthentication entry")
         self.salt.cmd(self.node.id, "cmd.run", [ldapmod_cmd])
         self.delete_ldap_pw()
+
+    def import_custom_schema(self):
+        files = iglob("{}/*.ldif".format(self.app.config["CUSTOM_LDAP_SCHEMA_DIR"]))
+        for file_ in files:
+            if not os.path.isfile(file_):
+                continue
+            basename = os.path.basename(file_)
+            dest = "{}/{}".format(self.node.schema_folder, basename)
+            self.logger.info("copying {}".format(basename))
+            self.salt.copy_file(self.node.id, file_, dest)

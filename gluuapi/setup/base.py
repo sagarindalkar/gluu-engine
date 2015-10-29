@@ -20,15 +20,18 @@ from ..helper import SaltHelper
 class BaseSetup(object):
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, node, cluster, logger=None, template_dir=""):
+    def __init__(self, node, cluster, app, logger=None):
         self.logger = logger or create_file_logger()
         self.build_dir = tempfile.mkdtemp()
-        self.template_dir = template_dir
         self.salt = SaltHelper()
         self.node = node
         self.cluster = cluster
         self.provider = db.get(node.provider_id, "providers")
-        self.jinja_env = Environment(loader=PackageLoader("gluuapi", "templates"))
+        self.jinja_env = Environment(
+            loader=PackageLoader("gluuapi", "templates")
+        )
+        self.app = app
+        self.template_dir = self.app.config["TEMPLATES_DIR"]
 
     @abc.abstractmethod
     def setup(self):

@@ -93,8 +93,7 @@ command={}
         try:
             oxtrust = self.provider.get_node_objects(type_="oxtrust")[0]
             setup_obj = OxtrustSetup(oxtrust, self.cluster,
-                                     logger=self.logger,
-                                     template_dir=self.template_dir)
+                                     self.app, logger=self.logger)
             setup_obj.delete_httpd_cert()
             setup_obj.remove_host_entries(self.node)
 
@@ -112,8 +111,7 @@ command={}
         try:
             oxtrust = self.provider.get_node_objects(type_="oxtrust")[0]
             setup_obj = OxtrustSetup(oxtrust, self.cluster,
-                                     logger=self.logger,
-                                     template_dir=self.template_dir)
+                                     self.app, logger=self.logger)
             setup_obj.delete_httpd_cert()
             setup_obj.remove_host_entries(self.node)
 

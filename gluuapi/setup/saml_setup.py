@@ -122,8 +122,7 @@ class SamlSetup(OxauthSetup):
                 continue
 
             setup_obj = SamlSetup(node, self.cluster,
-                                  logger=self.logger,
-                                  template_dir=self.template_dir)
+                                  self.app, logger=self.logger)
             setup_obj.render_nutcracker_conf()
             setup_obj.restart_nutcracker()
 
@@ -188,8 +187,7 @@ class SamlSetup(OxauthSetup):
     def teardown(self):
         for node in self.cluster.get_saml_objects():
             setup_obj = SamlSetup(node, self.cluster,
-                                  logger=self.logger,
-                                  template_dir=self.template_dir)
+                                  self.app, logger=self.logger)
             setup_obj.render_nutcracker_conf()
             setup_obj.restart_nutcracker()
         self.after_teardown()

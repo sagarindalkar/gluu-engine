@@ -52,14 +52,14 @@ class BaseModelHelper(object):
 
     volumes = {}
 
-    def __init__(self, cluster, provider, salt_master_ipaddr,
-                 template_dir, log_dir, database_uri):
+    def __init__(self, cluster, provider, app):
         assert self.setup_class, "setup_class must be set"
         assert self.node_class, "node_class must be set"
         assert self.image, "image attribute cannot be empty"
         assert self.dockerfile, "dockerfile attribute cannot be empty"
 
-        self.salt_master_ipaddr = salt_master_ipaddr
+        self.salt_master_ipaddr = app.config["SALT_MASTER_IPADDR"]
+        self.log_dir = app.config["LOG_DIR"]
         self.cluster = cluster
         self.provider = provider
 
@@ -68,18 +68,18 @@ class BaseModelHelper(object):
         self.node.provider_id = provider.id
         self.node.name = "{}_{}".format(self.image, uuid.uuid4())
 
-        if not os.path.exists(log_dir):
-            os.makedirs(log_dir)
+        if not os.path.exists(self.log_dir):
+            os.makedirs(self.log_dir)
 
-        self.logpath = os.path.join(log_dir, self.node.name + "-setup.log")
+        self.logpath = os.path.join(self.log_dir, self.node.name + "-setup.log")
         self.node.setup_logpath = self.logpath
         self.logger = create_file_logger(self.logpath, name=self.node.name)
 
         self.docker = DockerHelper(self.provider, logger=self.logger)
         self.salt = SaltHelper()
         self.app = current_app._get_current_object()
-        self.template_dir = template_dir
-        self.database_uri = database_uri
+        self.template_dir = app.config["TEMPLATES_DIR"]
+        self.database_uri = app.config["DATABASE_URI"]
         self.weave = WeaveHelper(self.provider, self.app, logger=self.logger)
 
     def prepare_minion(self, connect_delay=10, exec_delay=15):
@@ -166,7 +166,7 @@ class BaseModelHelper(object):
             start = time.time()
 
             setup_obj = self.setup_class(self.node, self.cluster,
-                                         self.logger, self.template_dir)
+                                         self.app, logger=self.logger)
             setup_obj.setup()
 
             # mark node as SUCCESS

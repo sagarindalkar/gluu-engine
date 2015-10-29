@@ -44,7 +44,6 @@ class Node(Resource):
         return node.as_dict()
 
     def delete(self, node_id):
-        template_dir = current_app.config["TEMPLATES_DIR"]
         truthy = ("1", "True", "true", "t",)
         falsy = ("0", "false", "False", "f",)
 
@@ -82,18 +81,18 @@ class Node(Resource):
 
         cluster = db.get(node.cluster_id, "clusters")
         provider = db.get(node.provider_id, "providers")
+        app = current_app._get_current_object()
 
-        if node.type == "ldap":
-            setup_obj = LdapSetup(node, cluster, template_dir=template_dir)
-        elif node.type == "httpd":
-            setup_obj = HttpdSetup(node, cluster, template_dir=template_dir)
-        elif node.type == "oxauth":  # pragma: no cover
-            setup_obj = OxauthSetup(node, cluster, template_dir=template_dir)
-        elif node.type == "oxtrust":  # pragma: no cover
-            setup_obj = OxtrustSetup(node, cluster, template_dir=template_dir)
-        elif node.type == "saml":  # pragma: no cover
-            setup_obj = SamlSetup(node, cluster, template_dir=template_dir)
-        setup_obj.teardown()
+        setup_classes = {
+            "ldap": LdapSetup,
+            "httpd": HttpdSetup,
+            "oxauth": OxauthSetup,
+            "oxtrust": OxtrustSetup,
+            "saml": SamlSetup,
+        }
+        setup_cls = setup_classes.get(node.type)
+        if setup_cls:
+            setup_cls(node, cluster, app).teardown()
 
         docker = DockerHelper(provider)
         salt = SaltHelper()
@@ -129,10 +128,6 @@ class NodeList(Resource):
                 "params": errors,
             }, 400
 
-        salt_master_ipaddr = current_app.config["SALT_MASTER_IPADDR"]
-        template_dir = current_app.config["TEMPLATES_DIR"]
-        log_dir = current_app.config["LOG_DIR"]
-        database_uri = current_app.config["DATABASE_URI"]
         cluster = data["context"]["cluster"]
         provider = data["context"]["provider"]
         params = data["params"]
@@ -167,8 +162,7 @@ class NodeList(Resource):
         }
         helper_class = helper_classes[params["node_type"]]
 
-        helper = helper_class(cluster, provider, salt_master_ipaddr,
-                              template_dir, log_dir, database_uri)
+        helper = helper_class(cluster, provider, current_app._get_current_object())
 
         if helper.node.type == "httpd":
             helper.node.oxauth_node_id = params["oxauth_node_id"]

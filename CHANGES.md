@@ -24,6 +24,7 @@ Version 0.4.0
 * Fixed missing `/var/ox` directory and its subdirectories in oxtrust node.
 * Add validation rule to ensure provider's hostname is unique.
 * Fixed validation rule in Node API caused by missing `node_type` parameter.
+* Added support to import custom schema for LDAP. Related issue: [#38](https://github.com/GluuFederation/gluu-flask/issues/38).
 
 Version 0.3.3
 -------------

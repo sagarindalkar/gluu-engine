@@ -5,11 +5,7 @@ def test_dev_config():
 
     # sanity checks
     assert cfg.DEBUG is True
-    assert cfg.LOG_DIR == "/var/log/gluu-dev"
-    assert cfg.DATA_DIR == "/var/lib/gluu-cluster-dev"
-    assert cfg.DATABASE_URI == "/var/lib/gluu-cluster-dev/db/db_dev.json"
-    assert cfg.INSTANCE_DIR == "/var/lib/gluu-cluster-dev/instance"
-    assert cfg.DOCKER_CERT_DIR == "/var/lib/gluu-cluster-dev/docker_certs"
+    assert cfg.DATABASE_URI == "/var/lib/gluu-cluster/db/db_dev.json"
 
 
 def test_test_config():
@@ -20,11 +16,7 @@ def test_test_config():
     # sanity checks
     assert cfg.DEBUG is True
     assert cfg.TESTING is True
-    assert cfg.LOG_DIR == "/var/log/gluu-test"
-    assert cfg.DATA_DIR == "/var/lib/gluu-cluster-test"
-    assert cfg.DATABASE_URI == "/var/lib/gluu-cluster-test/db/db_test.json"
-    assert cfg.INSTANCE_DIR == "/var/lib/gluu-cluster-test/instance"
-    assert cfg.DOCKER_CERT_DIR == "/var/lib/gluu-cluster-test/docker_certs"
+    assert cfg.DATABASE_URI == "/var/lib/gluu-cluster/db/db_test.json"
 
 
 def test_prod_config():

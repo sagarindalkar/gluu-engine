@@ -1,0 +1,37 @@
+{
+    "sourceConfigs":[
+    ],
+    "inumConfig":{
+        "configId":"local_inum",
+        "bindDN":"{{ ldap_binddn }}",
+        "bindPassword":"{{ encoded_ox_ldap_pw }}",
+        "servers": {{ ldap_hosts }},
+        "maxConnections":10,
+        "useSSL":true,
+        "baseDNs":[
+            "o=site"
+        ],
+        "primaryKey":null,
+        "localPrimaryKey":null,
+        "useAnonymousBind":false,
+        "enabled":true,
+        "version":0
+    },
+    "targetConfig":{
+    },
+    "ldapSearchSizeLimit":1000,
+    "keyAttributes":[
+    ],
+    "keyObjectClasses":[
+    ],
+    "sourceAttributes":[
+    ],
+    "customLdapFilter":null,
+    "updateMethod":"copy",
+    "keepExternalPerson":true,
+    "useSearchLimit":false,
+    "attributeMapping":[
+    ],
+    "snapshotFolder":"/var/ox/oxtrust/vds-snapshots",
+    "snapshotMaxCount":10
+}

@@ -4,33 +4,12 @@
 # All rights reserved.
 
 import os.path
-import time
 from glob import iglob
 
 from .oxauth_setup import OxauthSetup
 
 
 class OxtrustSetup(OxauthSetup):
-    @property
-    def oxtrust_properties(self):  # pragma: no cover
-        return self.get_template_path("nodes/oxtrust/oxTrust.properties")
-
-    @property
-    def oxtrust_ldap_properties(self):  # pragma: no cover
-        return self.get_template_path("nodes/oxtrust/oxTrustLdap.properties")
-
-    @property
-    def oxtrust_log_rotation_configuration(self):  # pragma: no cover
-        return self.get_template_path("nodes/oxtrust/oxTrustLogRotationConfiguration.xml")
-
-    @property
-    def oxtrust_cache_refresh_properties(self):  # pragma: no cover
-        return self.get_template_path("nodes/oxtrust/oxTrustCacheRefresh-template.properties.vm")
-
-    @property
-    def check_ssl_template(self):  # pragma: no cover
-        return self.get_template_path("nodes/oxtrust/check_ssl")
-
     def import_httpd_cert(self):
         self.logger.info("importing httpd cert")
 
@@ -97,52 +76,55 @@ class OxtrustSetup(OxauthSetup):
             [[backup_cmd], [sed_cmd], [overwrite_cmd]],
         )
 
-    def render_cache_props_template(self):
-        src = self.oxtrust_cache_refresh_properties
-        dest_dir = os.path.join(self.node.tomcat_conf_dir, "template", "conf")
-        dest = os.path.join(dest_dir, os.path.basename(src))
-        self.salt.cmd(self.node.id, "cmd.run",
-                      ["mkdir -p {}".format(dest_dir)])
-        self.render_template(src, dest)
+    def render_cache_refresh_template(self):
+        src = "nodes/oxtrust/oxtrust-cache-refresh.json"
+        dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
+
+        ldap_hosts = [
+            "{}:{}".format(ldap.domain_name, ldap.ldaps_port)
+            for ldap in self.cluster.get_ldap_objects()
+        ]
+        ctx = {
+            "ldap_binddn": self.node.ldap_binddn,
+            "encoded_ox_ldap_pw": self.cluster.encoded_ox_ldap_pw,
+            "ldap_hosts": ldap_hosts,
+        }
+        self.render_jinja_template(src, dest, ctx)
 
     def render_log_config_template(self):
-        src = self.oxtrust_log_rotation_configuration
+        src = "nodes/oxtrust/oxTrustLogRotationConfiguration.xml"
         dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
         ctx = {
             "tomcat_log_folder": self.node.tomcat_log_folder,
         }
-        self.render_template(src, dest, ctx)
+        self.render_jinja_template(src, dest, ctx)
 
-    def render_props_template(self):
-        src = self.oxtrust_properties
+    def render_config_template(self):
+        src = "nodes/oxtrust/oxtrust-config.json"
         dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
         ldap_hosts = ",".join([
             "{}:{}".format(ldap.domain_name, ldap.ldaps_port)
             for ldap in self.cluster.get_ldap_objects()
         ])
         ctx = {
-            "inumAppliance": self.cluster.inum_appliance,
-            "inumOrg": self.cluster.inum_org,
-            "orgName": self.cluster.org_name,
-            "orgShortName": self.cluster.org_short_name,
+            "inum_appliance": self.cluster.inum_appliance,
+            "inum_org": self.cluster.inum_org,
             "admin_email": self.cluster.admin_email,
             "ox_cluster_hostname": self.cluster.ox_cluster_hostname,
-            "shibJksFn": self.cluster.shib_jks_fn,
-            "shibJksPass": self.cluster.decrypted_admin_pw,
-            "inumOrgFN": self.cluster.inum_org_fn,
-            "oxTrustConfigGeneration": "enabled",
+            "shib_jks_fn": self.cluster.shib_jks_fn,
+            "shib_jks_pass": self.cluster.decrypted_admin_pw,
+            "inum_org_fn": self.cluster.inum_org_fn,
             "encoded_shib_jks_pw": self.cluster.encoded_shib_jks_pw,
             "encoded_ox_ldap_pw": self.cluster.encoded_ox_ldap_pw,
             "oxauth_client_id": self.cluster.oxauth_client_id,
-            "oxauthClient_encoded_pw": self.cluster.oxauth_client_encoded_pw,
-            "inumApplianceFN": self.cluster.inum_appliance_fn,
+            "oxauth_client_encoded_pw": self.cluster.oxauth_client_encoded_pw,
             "truststore_fn": self.node.truststore_fn,
             "ldap_hosts": ldap_hosts,
         }
-        self.render_template(src, dest, ctx)
+        self.render_jinja_template(src, dest, ctx)
 
     def render_ldap_props_template(self):
-        src = self.oxtrust_ldap_properties
+        src = "nodes/oxtrust/oxtrust-ldap.properties"
         dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
 
         ldap_hosts = ",".join([
@@ -153,12 +135,12 @@ class OxtrustSetup(OxauthSetup):
             "ldap_binddn": self.node.ldap_binddn,
             "encoded_ox_ldap_pw": self.cluster.encoded_ox_ldap_pw,
             "ldap_hosts": ldap_hosts,
-            "inumAppliance": self.cluster.inum_appliance,
+            "inum_appliance": self.cluster.inum_appliance,
         }
-        self.render_template(src, dest, ctx)
+        self.render_jinja_template(src, dest, ctx)
 
     def render_check_ssl_template(self):
-        src = self.check_ssl_template
+        src = self.get_template_path("nodes/oxtrust/check_ssl")
         dest = "/usr/bin/{}".format(os.path.basename(src))
         ctx = {"ox_cluster_hostname": self.cluster.ox_cluster_hostname}
         self.render_template(src, dest, ctx)
@@ -169,9 +151,9 @@ class OxtrustSetup(OxauthSetup):
         self.create_cert_dir()
 
         # render config templates
-        self.render_cache_props_template()
+        self.render_cache_refresh_template()
         self.render_log_config_template()
-        self.render_props_template()
+        self.render_config_template()
 
         self.copy_shib_config("idp")
         self.copy_shib_config("idp/schema")
@@ -182,7 +164,6 @@ class OxtrustSetup(OxauthSetup):
         self.render_ldap_props_template()
         self.render_server_xml_template()
         self.write_salt_file()
-        self.write_marker_file()
         self.render_check_ssl_template()
         self.copy_import_person_properties()
 
@@ -201,8 +182,6 @@ class OxtrustSetup(OxauthSetup):
             hostname,
         )
 
-        self.create_ox_dirs()
-        self.symlink_jython_lib()
         self.copy_tomcat_index_html()
         self.add_auto_startup_entry()
         self.start_tomcat()
@@ -212,44 +191,18 @@ class OxtrustSetup(OxauthSetup):
     def teardown(self):
         self.after_teardown()
 
-    def write_marker_file(self):
-        self.logger.info("writing config marker file")
-        touch_cmd = "touch {}/oxtrust.config.reload".format(self.node.tomcat_conf_dir)
-        self.salt.cmd(self.node.id, "cmd.run", [touch_cmd])
-
-    def symlink_jython_lib(self):
-        unpack_cmd = "unzip -q /opt/tomcat/webapps/identity.war " \
-                     "-d /opt/tomcat/webapps/identity"
-        self.salt.cmd(self.node.id, "cmd.run", [unpack_cmd])
-
-        # waiting for identity.war to be unpacked
-        time.sleep(5)
-
-        symlink_cmd = "ln -s /opt/jython/Lib " \
-                      "/opt/tomcat/webapps/identity/WEB-INF/lib/Lib"
-        jid = self.salt.cmd_async(self.node.id, "cmd.run", [symlink_cmd])
-        self.salt.subscribe_event(jid, self.node.id)
-
-    @property
-    def tomcat_server_xml(self):  # pragma: no cover
-        return self.get_template_path("nodes/oxtrust/server.xml")
-
     def render_server_xml_template(self):
-        src = self.tomcat_server_xml
+        src = "nodes/oxtrust/server.xml"
         dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
         ctx = {
             "weave_ip": self.node.weave_ip,
-            "shibJksPass": self.cluster.decrypted_admin_pw,
-            "shibJksFn": self.cluster.shib_jks_fn,
+            "shib_jks_pass": self.cluster.decrypted_admin_pw,
+            "shib_jks_fn": self.cluster.shib_jks_fn,
         }
-        self.render_template(src, dest, ctx)
-
-    @property
-    def tomcat_index_html(self):  # pragma: no cover
-        return self.get_template_path("nodes/oxtrust/index.html")
+        self.render_jinja_template(src, dest, ctx)
 
     def copy_tomcat_index_html(self):
-        src = self.tomcat_index_html
+        src = self.get_template_path("nodes/oxtrust/index.html")
         dest = "/opt/tomcat/webapps/ROOT/index.html"
         self.salt.copy_file(self.node.id, src, dest)
 
@@ -267,12 +220,8 @@ class OxtrustSetup(OxauthSetup):
     def after_setup(self):
         self.discover_httpd()
 
-    @property
-    def import_person_properties(self):  # pragma: no cover
-        return self.get_template_path("nodes/oxtrust/gluuImportPerson.properties")
-
     def copy_import_person_properties(self):
-        src = self.import_person_properties
+        src = self.get_template_path("nodes/oxtrust/gluuImportPerson.properties")
         dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
         self.salt.copy_file(self.node.id, src, dest)
 
@@ -295,13 +244,3 @@ class OxtrustSetup(OxauthSetup):
             dest = "{}/{}".format(parent_dest, fn)
             self.logger.info("copying {}".format(fn))
             self.salt.copy_file(self.node.id, src, dest)
-
-    def create_ox_dirs(self):
-        paths = [
-            "/var/ox/photos",
-            "/var/ox/oxtrust/removed",
-            "/var/ox/oxtrust/vds-snapshots",
-        ]
-        for path in paths:
-            self.logger.info("creating {} directory".format(path))
-            self.salt.cmd(self.node.id, "cmd.run", ["mkdir -p {}".format(path)])

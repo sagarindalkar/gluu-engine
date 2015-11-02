@@ -30,17 +30,8 @@ class SamlSetup(OxauthSetup):
                 dest,
             )
 
-    @property
-    def tomcat_server_xml(self):  # pragma: no cover
-        return self.get_template_path("nodes/shib/server.xml")
-
-    @property
-    def oxtrust_properties(self):  # pragma: no cover
-        # currently oxIdp reads oxTrust.properties to load the configuration
-        return self.get_template_path("nodes/shib/oxTrust.properties")
-
     def render_props_template(self):
-        src = self.oxtrust_properties
+        src = self.get_template_path("nodes/shib/oxTrust.properties")
         dest = os.path.join("/opt/tomcat/conf", os.path.basename(src))
         ldap_hosts = " ".join([
             "{}:{}".format(ldap.domain_name, ldap.ldaps_port)
@@ -180,7 +171,6 @@ class SamlSetup(OxauthSetup):
 
     def restart_nutcracker(self):
         self.logger.info("restarting twemproxy in {}".format(self.node.name))
-        # restart_cmd = "kill -HUP `cat /var/run/nutcracker.pid`"
         restart_cmd = "supervisorctl restart nutcracker"
         self.salt.cmd(self.node.id, "cmd.run", [restart_cmd])
 
@@ -214,7 +204,7 @@ class SamlSetup(OxauthSetup):
         payload = """
 [program:saml]
 command=/opt/tomcat/bin/catalina.sh start
-environment=CATALINA_PID="/opt/tomcat/bin/catalina.pid"
+environment=CATALINA_PID="/var/run/tomcat.pid"
 
 [program:memcached]
 command=service memcached start
@@ -230,3 +220,13 @@ command=nutcracker -c /etc/nutcracker.yml -p /var/run/nutcracker.pid -o /var/log
             ["echo '{}' >> /etc/supervisor/conf.d/supervisord.conf".format(payload)],
         )
         self.salt.subscribe_event(jid, self.node.id)
+
+    def render_server_xml_template(self):
+        src = "nodes/shib/server.xml"
+        dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
+        ctx = {
+            "address": self.node.weave_ip,
+            "shib_jks_pass": self.cluster.decrypted_admin_pw,
+            "shib_jks_fn": self.cluster.shib_jks_fn,
+        }
+        self.render_jinja_template(src, dest, ctx)

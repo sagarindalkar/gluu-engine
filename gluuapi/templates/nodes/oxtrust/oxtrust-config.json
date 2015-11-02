@@ -123,5 +123,7 @@
     "umaScope":null,
 
     "cssLocation":null,
-    "jsLocation":null
+    "jsLocation":null,
+
+    "configGeneration":"{{ config_generation }}"
 }

@@ -120,6 +120,7 @@ class OxtrustSetup(OxauthSetup):
             "oxauth_client_encoded_pw": self.cluster.oxauth_client_encoded_pw,
             "truststore_fn": self.node.truststore_fn,
             "ldap_hosts": ldap_hosts,
+            "config_generation": "true",
         }
         self.render_jinja_template(src, dest, ctx)
 

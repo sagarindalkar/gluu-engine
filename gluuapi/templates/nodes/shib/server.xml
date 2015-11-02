@@ -19,12 +19,12 @@
         <Connector port="8443" address="localhost"
             protocol="HTTP/1.1" scheme="https" secure="true"
             clientAuth="false" sslProtocol="TLS" SSLEnabled="true"
-            keystoreFile="%(shibJksFn)s"
-            keystoreType="JKS" keystorePass="%(shibJksPass)s"
-            truststoreFile="%(shibJksFn)s"
-            truststorePass="%(shibJksPass)s" truststoreType="JKS"/>
+            keystoreFile="{{ shib_jks_fn }}"
+            keystoreType="JKS" keystorePass="{{ shib_jks_pass }}"
+            truststoreFile="{{ shib_jks_fn }}"
+            truststorePass="{{ shib_jks_pass }}" truststoreType="JKS"/>
 
-        <Connector port="8009" address="%(address)s" protocol="AJP/1.3"
+        <Connector port="8009" address="{{ address }}" protocol="AJP/1.3"
             redirectPort="8443" tomcatAuthentication="false" />
 
         <Engine name="Catalina" defaultHost="localhost">

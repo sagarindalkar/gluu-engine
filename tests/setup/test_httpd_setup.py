@@ -33,7 +33,3 @@ def test_teardown(db, httpd_setup, oxtrust_node, provider,
     db.persist(oxtrust_node, "nodes")
     httpd_setup.provider = provider
     httpd_setup.teardown()
-
-
-def test_remove_pidfile(httpd_setup, patched_salt, salt_event_ok):
-    httpd_setup.remove_pidfile()

@@ -11,12 +11,8 @@ from .oxtrust_setup import OxtrustSetup
 
 
 class HttpdSetup(BaseSetup):
-    @property
-    def https_conf(self):
-        return "nodes/httpd/gluu_https.conf"
-
     def render_https_conf_template(self, hostname):
-        src = self.https_conf
+        src = "nodes/httpd/gluu_https.conf"
         file_basename = os.path.basename(src)
         dest = os.path.join("/etc/apache2/sites-available", file_basename)
 
@@ -28,8 +24,8 @@ class HttpdSetup(BaseSetup):
             "ip": self.node.weave_ip,
             "oxauth": oxauth,
             "saml": saml,
-            "httpdCertFn": self.node.httpd_crt,
-            "httpdKeyFn": self.node.httpd_key,
+            "httpd_cert_fn": self.node.httpd_crt,
+            "httpd_key_fn": self.node.httpd_key,
             "admin_email": self.cluster.admin_email,
         }
         self.render_jinja_template(src, dest, ctx)
@@ -37,7 +33,7 @@ class HttpdSetup(BaseSetup):
     def start_httpd(self):
         self.logger.info("starting httpd")
 
-        a2enmod_cmd = "a2enmod ssl headers proxy proxy_http proxy_ajp evasive"
+        a2enmod_cmd = "a2enmod ssl headers proxy proxy_http proxy_ajp"
         jid = self.salt.cmd_async(self.node.id, "cmd.run", [a2enmod_cmd])
         self.salt.subscribe_event(jid, self.node.id)
 
@@ -54,14 +50,13 @@ class HttpdSetup(BaseSetup):
         self.salt.subscribe_event(jid, self.node.id)
 
     def add_auto_startup_entry(self):
-        '''
-        other ways to start apache2
-        [program:apache2]
-        command=/bin/bash -c "source /etc/apache2/envvars && exec /usr/sbin/apache2 -DFOREGROUND"
-        OR
-        [program:apache2]
-        command=/usr/sbin/apachectl start
-        '''
+        # other ways to start apache2
+        # [program:apache2]
+        # command=/bin/bash -c "source /etc/apache2/envvars && exec /usr/sbin/apache2 -DFOREGROUND"
+        # OR
+        # [program:apache2]
+        # command=/usr/sbin/apachectl start
+
         # add supervisord entry
         run_cmd = '/bin/bash -c "service apache2 start"'
         payload = """
@@ -125,32 +120,17 @@ command={}
         self.after_teardown()
 
     def add_iptables_rule(self):
-        # expose port 80
-        iptables_cmd = "iptables -t nat -A PREROUTING -p tcp " \
-                       "-i eth0 --dport 80 -j DNAT " \
-                       "--to-destination {0}:80".format(self.node.weave_ip)
-        self.salt.cmd(self.provider.hostname, "cmd.run", [iptables_cmd])
-
-        # expose port 443
-        iptables_cmd = "iptables -t nat -A PREROUTING -p tcp " \
-                       "-i eth0 --dport 443 -j DNAT " \
-                       "--to-destination {0}:443".format(self.node.weave_ip)
-        self.salt.cmd(self.provider.hostname, "cmd.run", [iptables_cmd])
+        # expose port 80 and 443
+        for port in [80, 443]:
+            iptables_cmd = "iptables -t nat -A PREROUTING -p tcp " \
+                           "-i eth0 --dport {0} -j DNAT " \
+                           "--to-destination {1}:{0}".format(port, self.node.weave_ip)
+            self.salt.cmd(self.provider.hostname, "cmd.run", [iptables_cmd])
 
     def remove_iptables_rule(self):
-        # unexpose port 80
-        iptables_cmd = "iptables -t nat -D PREROUTING -p tcp " \
-                       "-i eth0 --dport 80 -j DNAT " \
-                       "--to-destination {}:80".format(self.node.weave_ip)
-        self.salt.cmd(self.provider.hostname, "cmd.run", [iptables_cmd])
-
-        # unexpose port 443
-        iptables_cmd = "iptables -t nat -D PREROUTING -p tcp " \
-                       "-i eth0 --dport 443 -j DNAT " \
-                       "--to-destination {}:443".format(self.node.weave_ip)
-        self.salt.cmd(self.provider.hostname, "cmd.run", [iptables_cmd])
-
-    def remove_pidfile(self):
-        # prevent error 'Unclean shutdown of previous Apache run?'
-        rm_cmd = "rm /var/run/apache2/apache2.pid"
-        self.salt.cmd(self.node.id, "cmd.run", [rm_cmd])
+        # unexpose port 80 and 443
+        for port in [80, 443]:
+            iptables_cmd = "iptables -t nat -D PREROUTING -p tcp " \
+                           "-i eth0 --dport {0} -j DNAT " \
+                           "--to-destination {1}:{0}".format(port, self.node.weave_ip)
+            self.salt.cmd(self.provider.hostname, "cmd.run", [iptables_cmd])

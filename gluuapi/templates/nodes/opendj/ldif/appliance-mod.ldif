@@ -1,4 +1,4 @@
-dn: inum={{ inumAppliance }},ou=appliances,o=gluu
+dn: inum={{ inum_appliance }},ou=appliances,o=gluu
 changetype: modify
 replace: oxIDPAuthentication
 oxIDPAuthentication: {"type": "auth",
@@ -8,12 +8,12 @@ oxIDPAuthentication: {"type": "auth",
   "enabled": true,
   "version": 0,
   "config": "{\"configId\": \"auth_ldap_server\",
-            \"servers\": [{% for node in nodes %}{\"value\":\"{{ node.domain_name}}:{{ node.ldaps_port }}\"}{% if loop.index != nodes|length %},{% endif %}{% endfor %}],
+            \"servers\": [{% for node in nodes %}\"{{ node.domain_name}}:{{ node.ldaps_port }}\"{% if loop.index != nodes|length %},{% endif %}{% endfor %}],
             \"maxConnections\": 1000,
             \"bindDN\": \"{{ ldap_binddn }}\",
             \"bindPassword\": \"{{ encoded_ox_ldap_pw }}\",
             \"useSSL\": \"true\",
-            \"baseDNs\": [{\"value\":\"o=gluu\"}],
+            \"baseDNs\": [\"o=gluu\"],
             \"primaryKey\": \"uid\",
             \"localPrimaryKey\": \"uid\",
             \"useAnonymousBind\": false,

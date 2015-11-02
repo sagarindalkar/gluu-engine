@@ -16,55 +16,23 @@ from .oxtrust_setup import OxtrustSetup
 
 class LdapSetup(BaseSetup):
     @property
-    def ldif_base(self):  # pragma: no cover
-        return self.get_template_path('nodes/opendj/ldif/base.ldif')
-
-    @property
-    def ldif_appliance(self):  # pragma: no cover
-        return self.get_template_path('nodes/opendj/ldif/appliance.ldif')
-
-    @property
-    def ldif_attributes(self):  # pragma: no cover
-        return self.get_template_path('nodes/opendj/ldif/attributes.ldif')
-
-    @property
-    def ldif_scopes(self):  # pragma: no cover
-        return self.get_template_path('nodes/opendj/ldif/scopes.ldif')
-
-    @property
-    def ldif_clients(self):  # pragma: no cover
-        return self.get_template_path('nodes/opendj/ldif/clients.ldif')
-
-    @property
-    def ldif_people(self):  # pragma: no cover
-        return self.get_template_path('nodes/opendj/ldif/people.ldif')
-
-    @property
-    def ldif_groups(self):  # pragma: no cover
-        return self.get_template_path('nodes/opendj/ldif/groups.ldif')
-
-    @property
-    def ldif_site(self):  # pragma: no cover
-        return self.get_template_path('nodes/opendj/ldif/o_site.ldif')
-
-    @property
-    def ldif_scripts(self):  # pragma: no cover
-        return self.get_template_path('nodes/opendj/ldif/scripts.ldif')
-
-    @property
     def ldif_files(self):  # pragma: no cover
         # List of initial ldif files
-        return [
-            self.ldif_base,
-            self.ldif_appliance,
-            self.ldif_attributes,
-            self.ldif_scopes,
-            self.ldif_clients,
-            self.ldif_people,
-            self.ldif_groups,
-            self.ldif_site,
-            self.ldif_scripts,
+        templates = [
+            'nodes/opendj/ldif/base.ldif',
+            'nodes/opendj/ldif/appliance.ldif',
+            'nodes/opendj/ldif/attributes.ldif',
+            'nodes/opendj/ldif/scopes.ldif',
+            'nodes/opendj/ldif/clients.ldif',
+            'nodes/opendj/ldif/people.ldif',
+            'nodes/opendj/ldif/groups.ldif',
+            'nodes/opendj/ldif/o_site.ldif',
+            'nodes/opendj/ldif/scripts.ldif',
+
+            # TODO: usecase on persisting LDAP config upfront
+            # 'nodes/opendj/ldif/configuration.ldif',
         ]
+        return map(self.get_template_path, templates)
 
     @property
     def index_json(self):  # pragma: no cover
@@ -107,7 +75,7 @@ class LdapSetup(BaseSetup):
 
     def add_ldap_schema(self):
         ctx = {
-            "inumOrgFN": self.cluster.inum_org_fn,
+            "inum_org_fn": self.cluster.inum_org_fn,
         }
 
         # render schema templates
@@ -209,17 +177,17 @@ class LdapSetup(BaseSetup):
         # template's context
         ctx = {
             "oxauth_client_id": self.cluster.oxauth_client_id,
-            "oxauthClient_encoded_pw": self.cluster.oxauth_client_encoded_pw,
+            "oxauth_client_encoded_pw": self.cluster.oxauth_client_encoded_pw,
             "encoded_ldap_pw": self.cluster.encoded_ldap_pw,
             "encoded_ox_ldap_pw": self.cluster.encoded_ox_ldap_pw,
-            "inumAppliance": self.cluster.inum_appliance,
+            "inum_appliance": self.cluster.inum_appliance,
             "hostname": self.node.domain_name,
             "ox_cluster_hostname": self.cluster.ox_cluster_hostname,
             "ldaps_port": self.node.ldaps_port,
             "ldap_binddn": self.node.ldap_binddn,
-            "inumOrg": self.cluster.inum_org,
-            "inumOrgFN": self.cluster.inum_org_fn,
-            "orgName": self.cluster.org_name,
+            "inum_org": self.cluster.inum_org,
+            "inum_org_fn": self.cluster.inum_org_fn,
+            "org_name": self.cluster.org_name,
         }
 
         ldifFolder = '%s/ldif' % self.node.ldap_base_folder
@@ -403,7 +371,7 @@ command={}
         self.delete_ldap_pw()
         return True
 
-    def render_ox_ldap_props(self):
+    def notify_ox(self):
         for oxauth in self.cluster.get_oxauth_objects():
             setup_obj = OxauthSetup(oxauth, self.cluster,
                                     self.app, logger=self.logger)
@@ -413,37 +381,47 @@ command={}
             setup_obj = OxtrustSetup(oxtrust, self.cluster,
                                      self.app, logger=self.logger)
             setup_obj.render_ldap_props_template()
+            setup_obj.render_cache_refresh_template()
 
     def after_setup(self):
         """Runs post-setup.
         """
-        self.render_ox_ldap_props()
+        self.notify_ox()
+
         # modify oxIDPAuthentication entry when we have more LDAP nodes
+        self.write_ldap_pw()
+        # wait for password file creation
+        time.sleep(5)
+
+        # update appliance
         self.modify_oxidp_auth()
 
+        # remove password file
+        self.delete_ldap_pw()
+
     def teardown(self):
+        self.write_ldap_pw()
+        # wait for password file creation
+        time.sleep(5)
+
+        # update appliance
         self.modify_oxidp_auth()
+
         # stop the replication agreement
         ldap_num = len(self.cluster.get_ldap_objects())
         if ldap_num > 0:
-            self.write_ldap_pw()
-            self.logger.info("disabling replication")
-            disable_repl_cmd = " ".join([
-                "{}/bin/dsreplication".format(self.node.ldap_base_folder),
-                "disable",
-                "--hostname", self.node.domain_name,
-                "--port", self.node.ldap_admin_port,
-                "--adminUID", "admin",
-                "--adminPasswordFile", self.node.ldap_pass_fn,
-                "-X", "-n", "--disableAll",
-            ])
-            self.salt.cmd(self.node.id, "cmd.run", [disable_repl_cmd])
-            self.delete_ldap_pw()
+            self.disable_replication()
+            # wait for process to run in the background
+            time.sleep(5)
 
         # stop the server
         stop_cmd = "{}/bin/stop-ds".format(self.node.ldap_base_folder)
         self.salt.cmd(self.node.id, "cmd.run", [stop_cmd])
-        self.render_ox_ldap_props()
+
+        # remove password file
+        self.delete_ldap_pw()
+
+        self.notify_ox()
         self.after_teardown()
 
     @property
@@ -457,12 +435,11 @@ command={}
             "/opt/opendj/ldif/appliance-mod.ldif",
             ctx={
                 "nodes": nodes,
-                "inumAppliance": self.cluster.inum_appliance,
+                "inum_appliance": self.cluster.inum_appliance,
                 "ldap_binddn": self.node.ldap_binddn,
                 "encoded_ox_ldap_pw": self.cluster.encoded_ox_ldap_pw,
             },
         )
-        self.write_ldap_pw()
         ldapmod_cmd = " ".join([
             "/opt/opendj/bin/ldapmodify",
             "-f /opt/opendj/ldif/appliance-mod.ldif",
@@ -473,7 +450,6 @@ command={}
         ])
         self.logger.info("modifying oxIDPAuthentication entry")
         self.salt.cmd(self.node.id, "cmd.run", [ldapmod_cmd])
-        self.delete_ldap_pw()
 
     def import_custom_schema(self):
         files = iglob("{}/*.ldif".format(self.app.config["CUSTOM_LDAP_SCHEMA_DIR"]))
@@ -484,3 +460,16 @@ command={}
             dest = "{}/{}".format(self.node.schema_folder, basename)
             self.logger.info("copying {}".format(basename))
             self.salt.copy_file(self.node.id, file_, dest)
+
+    def disable_replication(self):
+        self.logger.info("disabling replication for {}".format(self.node.weave_ip))
+        disable_repl_cmd = " ".join([
+            "{}/bin/dsreplication".format(self.node.ldap_base_folder),
+            "disable",
+            "--hostname", self.node.domain_name,
+            "--port", self.node.ldap_admin_port,
+            "--adminUID", "admin",
+            "--adminPasswordFile", self.node.ldap_pass_fn,
+            "-X", "-n", "--disableAll",
+        ])
+        self.salt.cmd(self.node.id, "cmd.run", [disable_repl_cmd])

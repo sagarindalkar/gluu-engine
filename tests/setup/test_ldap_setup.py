@@ -20,7 +20,7 @@ def test_setup_with_replication(ldap_setup, db, cluster, patched_salt,
 
 
 def test_after_setup(cluster, ldap_setup, patched_salt,
-                     salt_event_ok):
+                     salt_event_ok, patched_sleep):
     from gluuapi.database import db
     from gluuapi.model import OxauthNode
     from gluuapi.model import OxtrustNode
@@ -88,15 +88,15 @@ def test_replicate_from(ldap_setup, db, patched_salt, patched_sleep,
     ldap_setup.replicate_from(peer_node)
 
 
-def test_render_ox_ldap_props(ldap_setup, db, oxauth_node,
-                              oxtrust_node, patched_salt):
+def test_notify_ox(ldap_setup, db, oxauth_node,
+                   oxtrust_node, patched_salt):
     from gluuapi.model import STATE_SUCCESS
 
     oxauth_node.state = STATE_SUCCESS
     db.persist(oxauth_node, "nodes")
     oxtrust_node.state = STATE_SUCCESS
     db.persist(oxtrust_node, "nodes")
-    ldap_setup.render_ox_ldap_props()
+    ldap_setup.notify_ox()
 
 
 def test_start_opendj(ldap_setup, patched_salt, salt_event_ok):

@@ -138,7 +138,7 @@ class SamlSetup(OxauthSetup):
 
     def render_memcached_conf(self):
         ctx = {"saml": self.node}
-        self.render_jinja_template(
+        self.copy_rendered_jinja_template(
             "nodes/shib/memcached.conf",
             "/etc/memcached.conf",
             ctx,
@@ -154,7 +154,7 @@ class SamlSetup(OxauthSetup):
         ctx = {
             "saml_nodes": self.cluster.get_saml_objects(),
         }
-        self.render_jinja_template(
+        self.copy_rendered_jinja_template(
             "nodes/shib/nutcracker.yml",
             "/etc/nutcracker.yml",
             ctx,
@@ -229,4 +229,4 @@ command=nutcracker -c /etc/nutcracker.yml -p /var/run/nutcracker.pid -o /var/log
             "shib_jks_pass": self.cluster.decrypted_admin_pw,
             "shib_jks_fn": self.cluster.shib_jks_fn,
         }
-        self.render_jinja_template(src, dest, ctx)
+        self.copy_rendered_jinja_template(src, dest, ctx)

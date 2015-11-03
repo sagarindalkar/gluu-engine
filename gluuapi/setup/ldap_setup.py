@@ -28,9 +28,6 @@ class LdapSetup(BaseSetup):
             'nodes/opendj/ldif/groups.ldif',
             'nodes/opendj/ldif/o_site.ldif',
             'nodes/opendj/ldif/scripts.ldif',
-
-            # TODO: usecase on persisting LDAP config upfront
-            # 'nodes/opendj/ldif/configuration.ldif',
         ]
         return map(self.get_template_path, templates)
 
@@ -366,6 +363,7 @@ command={}
             self.replicate_from(peer_node)
         except IndexError:
             self.import_ldif()
+            self.import_base64_config()
 
         self.export_opendj_public_cert()
         self.delete_ldap_pw()
@@ -381,7 +379,7 @@ command={}
             setup_obj = OxtrustSetup(oxtrust, self.cluster,
                                      self.app, logger=self.logger)
             setup_obj.render_ldap_props_template()
-            setup_obj.render_cache_refresh_template()
+            # setup_obj.render_cache_refresh_template()
 
     def after_setup(self):
         """Runs post-setup.
@@ -424,14 +422,10 @@ command={}
         self.notify_ox()
         self.after_teardown()
 
-    @property
-    def ldif_appliance_mod(self):
-        return "nodes/opendj/ldif/appliance-mod.ldif"
-
     def modify_oxidp_auth(self):
         nodes = self.cluster.get_ldap_objects()
-        self.render_jinja_template(
-            self.ldif_appliance_mod,
+        self.copy_rendered_jinja_template(
+            "nodes/opendj/ldif/appliance-mod.ldif",
             "/opt/opendj/ldif/appliance-mod.ldif",
             ctx={
                 "nodes": nodes,
@@ -473,3 +467,125 @@ command={}
             "-X", "-n", "--disableAll",
         ])
         self.salt.cmd(self.node.id, "cmd.run", [disable_repl_cmd])
+
+    def import_base64_config(self):
+        ctx = {
+            "inum_appliance": self.cluster.inum_appliance,
+            "oxauth_config_base64": generate_base64_contents(self.render_oxauth_config(), 1),
+            "oxauth_static_conf_base64": generate_base64_contents(self.render_oxauth_static_config(), 1),
+            "oxauth_error_base64": generate_base64_contents(self.render_oxauth_error_config(), 1),
+            "oxauth_openid_key_base64": generate_base64_contents(self.gen_openid_key(), 1),
+            "oxtrust_config_base64": generate_base64_contents(self.render_oxtrust_config(), 1),
+            "oxtrust_cache_refresh_base64": generate_base64_contents(self.render_oxtrust_cache_refresh(), 1)
+        }
+        self.copy_rendered_jinja_template(
+            "nodes/opendj/ldif/configuration.ldif",
+            "/opt/opendj/ldif/configuration.ldif",
+            ctx,
+        )
+        import_cmd = " ".join([
+            self.node.import_ldif_command,
+            '--ldifFile', "/opt/opendj/ldif/configuration.ldif",
+            '--backendID', "userRoot",
+            '--hostname', self.node.domain_name,
+            '--port', self.node.ldap_admin_port,
+            '--bindDN', '"%s"' % self.node.ldap_binddn,
+            '-j', self.node.ldap_pass_fn,
+            '--append', '--trustAll',
+        ])
+        self.logger.info("importing configuration.ldif")
+        jid = self.salt.cmd_async(self.node.id, 'cmd.run', [import_cmd])
+        self.salt.subscribe_event(jid, self.node.id)
+
+    def gen_openid_key(self):
+        self.logger.info("generating OpenID key file")
+
+        def extra_jar_abspath(jar):
+            return "/opt/gluu/lib/{}".format(jar)
+
+        jars = map(extra_jar_abspath, [
+            "bcprov-jdk16-1.46.jar",
+            "jettison-1.3.jar",
+            "commons-lang-2.6.jar",
+            "log4j-1.2.17.jar",
+            "commons-codec-1.5.jar",
+            "oxauth-model-2.4.0.Final.jar",
+            "oxauth-server-2.4.0.Final.jar",
+        ])
+        classpath = ":".join(jars)
+        resp = self.salt.cmd(
+            self.node.id,
+            "cmd.run",
+            ["java -cp {} org.xdi.oxauth.util.KeyGenerator".format(classpath)],
+        )
+        return resp.get(self.node.id)
+
+    def render_oxauth_config(self):
+        src = "nodes/oxauth/oxauth-config.json"
+        ctx = {
+            "ox_cluster_hostname": self.cluster.ox_cluster_hostname,
+            "inum_appliance": self.cluster.inum_appliance,
+            "inum_org": self.cluster.inum_org,
+        }
+        return self.render_jinja_template(src, ctx)
+
+    def render_oxauth_static_config(self):
+        src = "nodes/oxauth/oxauth-static-conf.json"
+        ctx = {
+            "inum_org": self.cluster.inum_org,
+        }
+        return self.render_jinja_template(src, ctx)
+
+    def render_oxauth_error_config(self):
+        src = "nodes/oxauth/oxauth-errors.json"
+        return self.render_jinja_template(src)
+
+    def render_oxtrust_config(self):
+        src = "nodes/oxtrust/oxtrust-config.json"
+        ldap_hosts = ",".join([
+            "{}:{}".format(ldap.domain_name, ldap.ldaps_port)
+            for ldap in self.cluster.get_ldap_objects()
+        ])
+        ctx = {
+            "inum_appliance": self.cluster.inum_appliance,
+            "inum_org": self.cluster.inum_org,
+            "admin_email": self.cluster.admin_email,
+            "ox_cluster_hostname": self.cluster.ox_cluster_hostname,
+            "shib_jks_fn": self.cluster.shib_jks_fn,
+            "shib_jks_pass": self.cluster.decrypted_admin_pw,
+            "inum_org_fn": self.cluster.inum_org_fn,
+            "encoded_shib_jks_pw": self.cluster.encoded_shib_jks_pw,
+            "encoded_ox_ldap_pw": self.cluster.encoded_ox_ldap_pw,
+            "oxauth_client_id": self.cluster.oxauth_client_id,
+            "oxauth_client_encoded_pw": self.cluster.oxauth_client_encoded_pw,
+            "truststore_fn": self.node.truststore_fn,
+            "ldap_hosts": ldap_hosts,
+            "config_generation": "true",
+        }
+        return self.render_jinja_template(src, ctx)
+
+    def render_oxtrust_cache_refresh(self):
+        src = "nodes/oxtrust/oxtrust-cache-refresh.json"
+        ldap_hosts = [
+            "{}:{}".format(ldap.domain_name, ldap.ldaps_port)
+            for ldap in self.cluster.get_ldap_objects()
+        ]
+        ctx = {
+            "ldap_binddn": self.node.ldap_binddn,
+            "encoded_ox_ldap_pw": self.cluster.encoded_ox_ldap_pw,
+            "ldap_hosts": ldap_hosts,
+        }
+        return self.render_jinja_template(src, ctx)
+
+
+def reindent(text, num_spaces):
+    text = [(num_spaces * " ") + line.lstrip() for line in text.splitlines()]
+    text = "\n".join(text)
+    return text
+
+
+def generate_base64_contents(text, num_spaces):
+    text = text.encode("base64").strip()
+    if num_spaces:
+        text = reindent(text, 1)
+    return text

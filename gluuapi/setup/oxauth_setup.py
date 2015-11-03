@@ -103,7 +103,7 @@ class OxauthSetup(BaseSetup):
     def render_errors_template(self):
         src = "nodes/oxauth/oxauth-errors.json"
         dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
-        self.render_jinja_template(src, dest)
+        self.copy_rendered_jinja_template(src, dest)
 
     def render_config_template(self):
         src = "nodes/oxauth/oxauth-config.json"
@@ -113,7 +113,7 @@ class OxauthSetup(BaseSetup):
             "inum_appliance": self.cluster.inum_appliance,
             "inum_org": self.cluster.inum_org,
         }
-        self.render_jinja_template(src, dest, ctx)
+        self.copy_rendered_jinja_template(src, dest, ctx)
 
     def render_ldap_props_template(self):
         src = "nodes/oxauth/oxauth-ldap.properties"
@@ -130,7 +130,7 @@ class OxauthSetup(BaseSetup):
             "inum_appliance": self.cluster.inum_appliance,
             "cert_folder": self.node.cert_folder,
         }
-        self.render_jinja_template(src, dest, ctx)
+        self.copy_rendered_jinja_template(src, dest, ctx)
 
     def render_static_conf_template(self):
         src = "nodes/oxauth/oxauth-static-conf.json"
@@ -138,7 +138,7 @@ class OxauthSetup(BaseSetup):
         ctx = {
             "inum_org": self.cluster.inum_org,
         }
-        self.render_jinja_template(src, dest, ctx)
+        self.copy_rendered_jinja_template(src, dest, ctx)
 
     def render_server_xml_template(self):
         src = "nodes/oxauth/server.xml"
@@ -148,7 +148,7 @@ class OxauthSetup(BaseSetup):
             "shib_jks_pass": self.cluster.decrypted_admin_pw,
             "shib_jks_fn": self.cluster.shib_jks_fn,
         }
-        self.render_jinja_template(src, dest, ctx)
+        self.copy_rendered_jinja_template(src, dest, ctx)
 
     def add_auto_startup_entry(self):
         # add supervisord entry
@@ -172,10 +172,10 @@ environment=CATALINA_PID="/var/run/tomcat.pid"
         self.create_cert_dir()
 
         # render config templates
-        self.render_errors_template()
-        self.render_config_template()
+        # self.render_errors_template()
+        # self.render_config_template()
         self.render_ldap_props_template()
-        self.render_static_conf_template()
+        # self.render_static_conf_template()
         self.render_server_xml_template()
         self.write_salt_file()
         self.copy_duo_creds()
@@ -197,7 +197,7 @@ environment=CATALINA_PID="/var/run/tomcat.pid"
             hostname,
         )
 
-        self.gen_openid_keys()
+        # self.gen_openid_keys()
         self.add_auto_startup_entry()
         self.start_tomcat()
         self.change_cert_access("tomcat", "tomcat")

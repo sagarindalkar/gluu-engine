@@ -89,7 +89,7 @@ class OxtrustSetup(OxauthSetup):
             "encoded_ox_ldap_pw": self.cluster.encoded_ox_ldap_pw,
             "ldap_hosts": ldap_hosts,
         }
-        self.render_jinja_template(src, dest, ctx)
+        self.copy_rendered_jinja_template(src, dest, ctx)
 
     def render_log_config_template(self):
         src = "nodes/oxtrust/oxTrustLogRotationConfiguration.xml"
@@ -97,7 +97,7 @@ class OxtrustSetup(OxauthSetup):
         ctx = {
             "tomcat_log_folder": self.node.tomcat_log_folder,
         }
-        self.render_jinja_template(src, dest, ctx)
+        self.copy_rendered_jinja_template(src, dest, ctx)
 
     def render_config_template(self):
         src = "nodes/oxtrust/oxtrust-config.json"
@@ -122,7 +122,7 @@ class OxtrustSetup(OxauthSetup):
             "ldap_hosts": ldap_hosts,
             "config_generation": "true",
         }
-        self.render_jinja_template(src, dest, ctx)
+        self.copy_rendered_jinja_template(src, dest, ctx)
 
     def render_ldap_props_template(self):
         src = "nodes/oxtrust/oxtrust-ldap.properties"
@@ -138,7 +138,7 @@ class OxtrustSetup(OxauthSetup):
             "ldap_hosts": ldap_hosts,
             "inum_appliance": self.cluster.inum_appliance,
         }
-        self.render_jinja_template(src, dest, ctx)
+        self.copy_rendered_jinja_template(src, dest, ctx)
 
     def render_check_ssl_template(self):
         src = self.get_template_path("nodes/oxtrust/check_ssl")
@@ -152,9 +152,9 @@ class OxtrustSetup(OxauthSetup):
         self.create_cert_dir()
 
         # render config templates
-        self.render_cache_refresh_template()
+        # self.render_cache_refresh_template()
         self.render_log_config_template()
-        self.render_config_template()
+        # self.render_config_template()
 
         self.copy_shib_config("idp")
         self.copy_shib_config("idp/schema")
@@ -200,7 +200,7 @@ class OxtrustSetup(OxauthSetup):
             "shib_jks_pass": self.cluster.decrypted_admin_pw,
             "shib_jks_fn": self.cluster.shib_jks_fn,
         }
-        self.render_jinja_template(src, dest, ctx)
+        self.copy_rendered_jinja_template(src, dest, ctx)
 
     def copy_tomcat_index_html(self):
         src = self.get_template_path("nodes/oxtrust/index.html")

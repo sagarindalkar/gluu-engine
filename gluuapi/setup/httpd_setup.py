@@ -28,7 +28,7 @@ class HttpdSetup(BaseSetup):
             "httpd_key_fn": self.node.httpd_key,
             "admin_email": self.cluster.admin_email,
         }
-        self.render_jinja_template(src, dest, ctx)
+        self.copy_rendered_jinja_template(src, dest, ctx)
 
     def start_httpd(self):
         self.logger.info("starting httpd")

@@ -157,10 +157,13 @@ class BaseSetup(object):
         # remove logs directory
         self.remove_build_dir()
 
-    def render_jinja_template(self, src, dest, ctx=None):
+    def render_jinja_template(self, src, ctx=None):
         ctx = ctx or {}
         template = self.jinja_env.get_template(src)
-        rendered_content = template.render(**ctx)
+        return template.render(**ctx)
+
+    def copy_rendered_jinja_template(self, src, dest, ctx=None):
+        rendered_content = self.render_jinja_template(src, ctx)
         file_basename = os.path.basename(src)
         local = os.path.join(self.build_dir, file_basename)
 

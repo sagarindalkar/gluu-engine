@@ -386,12 +386,6 @@ attributeTypes: ( gluuOrgShortName-oid NAME 'gluuOrgShortName'
   EQUALITY caseIgnoreMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
   X-ORIGIN 'Gluu created attribute' )
-attributeTypes: ( gluuOwnerGroup-oid NAME 'gluuOwnerGroup'
-  DESC 'Deprecated. Use gluuManagerGroup'
-  SUBSTR caseIgnoreSubstringsMatch
-  EQUALITY caseIgnoreMatch
-  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
-  X-ORIGIN 'Gluu created attribute' )
 attributeTypes: ( gluuPaidUntil-oid NAME 'gluuPaidUntil'
   DESC 'TODO - in use?'
   SUBSTR caseIgnoreSubstringsMatch
@@ -1218,14 +1212,7 @@ attributeTypes: ( oxAuthenticationMode-oid NAME 'oxAuthenticationMode'
   EQUALITY caseIgnoreMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
   X-ORIGIN 'Gluu created attribute' )
-attributeTypes: ( oxClusterType-oid NAME 'oxClusterType'
-  DESC 'Type of the underlying clustering mechanism'
-  SUBSTR caseIgnoreSubstringsMatch
-  EQUALITY caseIgnoreMatch
-  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
-  X-ORIGIN 'Gluu created attribute' )
-attributeTypes: ( oxClusteredServers-oid NAME 'oxClusteredServers'
-  DESC 'List of the clustering partners of this server'
+attributeTypes: ( oxTrustAuthenticationMode-oid NAME 'oxTrustAuthenticationMode'
   SUBSTR caseIgnoreSubstringsMatch
   EQUALITY caseIgnoreMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
@@ -1291,12 +1278,6 @@ attributeTypes: ( oxIconUrl-oid NAME 'oxIconUrl'
   X-ORIGIN 'Gluu created attribute' )
 attributeTypes: ( oxId-oid NAME 'oxId'
   DESC 'Identifier'
-  SUBSTR caseIgnoreSubstringsMatch
-  EQUALITY caseIgnoreMatch
-  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
-  X-ORIGIN 'Gluu created attribute' )
-attributeTypes: ( oxInviteCode-oid NAME 'oxInviteCode'
-  DESC 'Invite Code'
   SUBSTR caseIgnoreSubstringsMatch
   EQUALITY caseIgnoreMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
@@ -1373,12 +1354,6 @@ attributeTypes: ( oxLogViewerConfig-oid NAME 'oxLogViewerConfig'
   EQUALITY caseIgnoreMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
   X-ORIGIN 'Gluu created attribute' )
-attributeTypes: ( oxMemcachedServerAddress-oid NAME 'oxMemcachedServerAddress'
-  DESC 'Initialization string for memcached client'
-  SUBSTR caseIgnoreSubstringsMatch
-  EQUALITY caseIgnoreMatch
-  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
-  X-ORIGIN 'Gluu created attribute' )
 attributeTypes: ( oxMultivaluedAttribute-oid NAME 'oxMultivaluedAttribute'
   SUBSTR caseIgnoreSubstringsMatch
   EQUALITY caseIgnoreMatch
@@ -1396,7 +1371,7 @@ attributeTypes: ( oxNameIdType-oid NAME 'oxNameIdType'
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
   X-ORIGIN 'Gluu created attribute' )
 attributeTypes: ( oxPolicyRule-oid NAME 'oxPolicyRule'
-  DESC 'Revision'
+  DESC 'Policy Rule'
   SUBSTR caseIgnoreSubstringsMatch
   EQUALITY caseIgnoreMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
@@ -1587,6 +1562,12 @@ attributeTypes: ( oxTrustAddresses-oid NAME 'oxTrustAddresses'
   X-ORIGIN 'Gluu created attribute' )
 attributeTypes: ( oxTrustConfApplication-oid NAME 'oxTrustConfApplication'
   DESC 'oxTrust Application Configuration'
+  SUBSTR caseIgnoreSubstringsMatch
+  EQUALITY caseIgnoreMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  X-ORIGIN 'Gluu created attribute' )
+attributeTypes: ( oxTrustConfCacheRefresh-oid NAME 'oxTrustConfCacheRefresh'
+  DESC 'oxTrust Cache Refresh Configuration'
   SUBSTR caseIgnoreSubstringsMatch
   EQUALITY caseIgnoreMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
@@ -2041,14 +2022,20 @@ attributeTypes: ( oxSectorIdentifierURI-oid NAME 'oxSectorIdentifierURI'
   EQUALITY caseIgnoreMatch
   SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
   X-ORIGIN 'Gluu created attribute' )
+attributeTypes: ( oxPersistClientAuthorizations-oid NAME 'oxPersistClientAuthorizations'
+  DESC 'ox Persist Client Authorizations'
+  SUBSTR caseIgnoreSubstringsMatch
+  EQUALITY caseIgnoreMatch
+  SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
+  X-ORIGIN 'Gluu created attribute' )
 objectclasses: ( pairwiseIdentifier-oid NAME 'pairwiseIdentifier' SUP top STRUCTURAL MUST objectclass MAY
    ( oxId $ oxSectorIdentifierURI )
     X-ORIGIN 'Gluu created objectclass' )
-objectclasses: ( gluuPerson-oid NAME 'gluuPerson' SUP top STRUCTURAL MUST objectclass MAY 
- ( associatedClient $ c $ displayName $ givenName $ gluuManagedOrganizations
+objectclasses: ( gluuPerson-oid NAME 'gluuPerson' SUP top STRUCTURAL MUST objectclass MAY
+  ( associatedClient $ c $ displayName $ givenName $ gluuManagedOrganizations
   $ gluuOptOuts $ gluuStatus $ gluuWhitePagesListed $ iname $ inum
   $ mail $ gluuSLAManager $ memberOf $ o $ oxAuthPersistentJWT $ oxCreationTimestamp $ oxExternalUid
-  $ oxInviteCode $ oxLastLogonTime $ oxTrustActive $ oxTrustAddresses $ oxTrustEmail
+  $ oxLastLogonTime $ oxTrustActive $ oxTrustAddresses $ oxTrustEmail
   $ oxTrustEntitlements $ oxTrustExternalId $ oxTrustImsValue
   $ oxTrustMetaCreated $ oxTrustMetaLastModified $ oxTrustMetaLocation $ oxTrustMetaVersion
   $ oxTrustNameFormatted $ oxTrustPhoneValue
@@ -2068,7 +2055,7 @@ objectclasses: ( gluuOrganization-oid NAME 'gluuOrganization' SUP top STRUCTURAL
   $ gluuAdditionalUsers $ gluuApplianceUpdateRequestList $ gluuCustomMessage
   $ gluuFaviconImage $ gluuFederationHostingEnabled $ gluuInvoiceNo $ gluuLogoImage
   $ gluuManageIdentityPermission $ gluuManager $ gluuManagerGroup $ gluuOrgProfileMgt
-  $ gluuOrgShortName $ gluuOwnerGroup $ gluuPaidUntil $ gluuPaymentProcessorTimestamp
+  $ gluuOrgShortName $ gluuPaidUntil $ gluuPaymentProcessorTimestamp
   $ gluuProStoresUser $ gluuStatus $ gluuTempFaviconImage $ gluuThemeColor
   $ gluuWhitePagesEnabled $ iname $ inum $ l $ mail $ memberOf $ nonProfit $ o $ objectClass
   $ oxCreationTimestamp $ oxLinkLinktrack $ oxLinktrackEnabled $ oxLinktrackLogin
@@ -2087,15 +2074,15 @@ objectclasses: ( gluuAppliance-oid NAME 'gluuAppliance' SUP top STRUCTURAL MUST 
   $ gluuPaidUntil $ gluuPaymentProcessorTimestamp $ gluuPersonCount 
   $ gluuPrivate $ gluuPublishIdpMetadata $ gluuResizeInitiated $ gluuSPTR $ gluuScimEnabled
   $ gluuShibAssertionsIssued $ gluuShibFailedAuth $ gluuShibSecurityEvents
-  $ gluuShibSuccessfulAuths $ gluuSmtpFromEmailAddress $ gluuSmtpFromName
+  $ gluuShibSuccessfulAuths $ oxTrustEmail $ gluuSmtpFromEmailAddress $ gluuSmtpFromName
   $ gluuSmtpHost $ gluuSmtpPassword $ gluuSmtpPort $ gluuSmtpRequiresAuthentication
   $ gluuSmtpRequiresSsl $ gluuSmtpUserName $ gluuSslExpiry $ gluuStatus 
   $ gluuSystemUptime $ gluuTargetRAM $ gluuUrl $ gluuVDSenabled $ gluuVDSstatus
   $ gluuVdsCacheRefreshEnabled $ gluuVdsCacheRefreshLastUpdate $ gluuVdsCacheRefreshLastUpdateCount
   $ gluuVdsCacheRefreshPollingInterval $ gluuVdsCacheRefreshProblemCount
   $ gluuWhitePagesEnabled $ iname $ inum $ inumFN $ o $ oxAuthenticationMode
-  $ oxClusterType $ oxClusteredServers $ oxIDPAuthentication $ oxLogViewerConfig
-  $ oxMemcachedServerAddress $ oxSmtpConfiguration $ oxTrustStoreCert $ oxTrustStoreConf
+  $ oxTrustAuthenticationMode $ oxIDPAuthentication $ oxLogViewerConfig
+  $ oxSmtpConfiguration $ oxTrustStoreCert $ oxTrustStoreConf
   $ passwordResetAllowed $ softwareVersion $ userPassword $ oxTrustCacheRefreshServerIpAddress )
   X-ORIGIN 'Gluu created objectclass' )
 objectclasses: ( gluuAttribute-oid NAME 'gluuAttribute' SUP top STRUCTURAL MUST objectclass MAY 
@@ -2121,7 +2108,7 @@ objectclasses: ( gluuInumMap-oid NAME 'gluuInumMap' SUP top STRUCTURAL MUST obje
 objectclasses: ( gluuInvoice-oid NAME 'gluuInvoice' SUP top STRUCTURAL MUST objectclass MAY 
  ( gluuInvoiceAmount $ gluuInvoiceDate $ gluuInvoiceLineItemName $ gluuInvoiceNumber
   $ gluuInvoiceProductNumber $ gluuInvoiceQuantity $ gluuInvoiceStatus $ inum
-  ) 
+  )
   X-ORIGIN 'Gluu created objectclass' )
 objectclasses: ( gluuPasswordResetRequest-oid NAME 'gluuPasswordResetRequest' SUP top STRUCTURAL MUST objectclass MAY 
  ( creationDate $ oxGuid $ personInum ) 
@@ -2158,7 +2145,7 @@ objectclasses: ( oxAuthClient-oid NAME 'oxAuthClient' SUP top STRUCTURAL MUST ob
   $ oxAuthResponseType $ oxAuthScope $ oxAuthSectorIdentifierURI $ oxAuthSignedResponseAlg
   $ oxAuthSubjectType $ oxAuthTokenEndpointAuthMethod $ oxAuthTosURI $ oxAuthTrustedClient
   $ oxAuthUserInfoEncryptedResponseAlg $ oxAuthUserInfoEncryptedResponseEnc $ oxAuthExtraConf
-  $ oxLastAccessTime $ oxLastLogonTime ) 
+  $ oxLastAccessTime $ oxLastLogonTime $ oxPersistClientAuthorizations )
   X-ORIGIN 'Gluu created objectclass' )
 objectclasses: ( oxAuthCustomScope-oid NAME 'oxAuthCustomScope' SUP top STRUCTURAL MUST objectclass MAY 
  ( defaultScope $ description $ displayName $ inum $ oxScopeType $ oxAuthClaim $ oxAuthGroupClaims )
@@ -2188,11 +2175,11 @@ objectclasses: ( oxAuthSessionId-oid NAME 'oxAuthSessionId' SUP top STRUCTURAL M
   X-ORIGIN 'Gluu created objectclass' )
 objectclasses: ( oxAuthConfiguration-oid NAME 'oxAuthConfiguration' SUP top STRUCTURAL MUST objectclass MAY 
  ( ou $ oxAuthConfCustomAuthMethod $ oxAuthConfDynamic $ oxAuthConfErrors
-  $ oxAuthConfIdPythonScript $ oxAuthConfLdapAuth $ oxAuthConfStatic $ oxAuthConfWebKeys
-  ) 
+  $ oxAuthConfIdPythonScript $ oxAuthConfLdapAuth $ oxAuthConfStatic $ oxAuthConfWebKeys $ oxRevision
+  )
   X-ORIGIN 'Gluu created objectclass' )
 objectclasses: ( oxTrustConfiguration-oid NAME 'oxTrustConfiguration' SUP top STRUCTURAL MUST objectclass MAY 
- ( ou $ oxTrustConfApplication ) 
+ ( ou $ oxTrustConfApplication $ oxTrustConfCacheRefresh $ oxRevision ) 
   X-ORIGIN 'Gluu created objectclass' )
 objectclasses: ( oxAuthUmaResourceSet-oid NAME 'oxAuthUmaResourceSet' SUP top STRUCTURAL MUST objectclass MAY 
  ( displayName $ inum $ owner $ oxAssociatedClient $ oxAuthUmaScope $ oxFaviconImage
@@ -2206,11 +2193,14 @@ objectclasses: ( oxAuthUmaResourceSetPermission-oid NAME 'oxAuthUmaResourceSetPe
  ( oxAmHost $ oxAuthExpiration $ oxAuthUmaScope $ oxConfigurationCode $ oxHost
   $ oxResourceSetId $ oxTicket ) 
   X-ORIGIN 'Gluu created objectclass' )
-objectclasses: ( oxAuthToken-oid NAME 'oxAuthToken' SUP top STRUCTURAL MUST objectclass MAY 
- ( createTimestamp $ oxAuthAuthenticationTime $ oxAuthAuthorizationCode
+objectclasses: ( oxAuthGrant-oid NAME 'oxAuthGrant' SUP top STRUCTURAL MUST objectclass MAY
+   ( oxAuthGrantId )
+    X-ORIGIN 'Gluu created objectclass' )
+objectclasses: ( oxAuthToken-oid NAME 'oxAuthToken' SUP top STRUCTURAL MUST objectclass MAY
+  ( createTimestamp $ oxAuthAuthenticationTime $ oxAuthAuthorizationCode
   $ oxAuthCreation $ oxAuthExpiration $ oxAuthGrantId $ oxAuthGrantType $ oxAuthJwtRequest
-  $ oxAuthNonce $ oxAuthScope $ oxAuthTokenCode $ oxAuthTokenType $ oxAuthUserId
-  $ oxAuthenticationMode $ oxAuthClientId $ uniqueIdentifier ) 
+  $ oxAuthNonce $ oxAuthScope $ oxAuthTokenCode $ oxAuthTokenType $ oxAuthUserId $ oxAuthClientId
+  $ oxAuthenticationMode $ uniqueIdentifier )
   X-ORIGIN 'Gluu created objectclass' )
 objectclasses: ( oxAuthUmaRPT-oid NAME 'oxAuthUmaRPT' SUP top STRUCTURAL MUST objectclass MAY 
  ( oxAmHost $ oxAuthAuthenticationTime $ oxAuthClientId $ oxAuthCreation $ oxAuthExpiration
@@ -2228,11 +2218,11 @@ objectclasses: ( oxProxOp-oid NAME 'oxProxOp' SUP top STRUCTURAL MUST objectclas
   X-ORIGIN 'Gluu created objectclass' )
 objectclasses: ( oxProxClient-oid NAME 'oxProxClient' SUP top STRUCTURAL MUST objectclass MAY 
  ( displayName $ inum $ oxProxyClaimMapping $ oxProxyScope $ oxProxyToOpClientMapping
-  ) 
+  )
   X-ORIGIN 'Gluu created objectclass' )
 objectclasses: ( oxProxAccessToken-oid NAME 'oxProxAccessToken' SUP top STRUCTURAL MUST objectclass MAY 
  ( oxAuthCreation $ oxAuthExpiration $ oxProxyAccessToken $ oxProxyClientId
-  ) 
+  )
   X-ORIGIN 'Gluu created objectclass' )
 objectclasses: ( oxScript-oid NAME 'oxScript' SUP top STRUCTURAL MUST objectclass MAY 
  ( inum $ oxScript $ oxScriptType ) 
@@ -2256,4 +2246,6 @@ objectclasses: ( oxU2fRequest-oid NAME 'oxU2fRequest' SUP top STRUCTURAL MUST ob
 objectclasses: ( oxMetric-oid NAME 'oxMetric' SUP top STRUCTURAL MUST objectclass MAY 
  ( uniqueIdentifier $ oxStartDate $ oxEndDate $ oxApplicationType $ oxMetricType $ creationDate $ oxData ) 
   X-ORIGIN 'Gluu created objectclass' )
-  
+objectclasses: ( oxClientAuthorizations-oid NAME 'oxClientAuthorizations' SUP top STRUCTURAL MUST objectclass MAY
+  ( oxId $ oxAuthClientId $ oxAuthScope )
+  X-ORIGIN 'Gluu created objectclass' )

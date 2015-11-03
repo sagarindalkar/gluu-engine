@@ -42,6 +42,13 @@
     },
 
     {
+        "attribute": "oxSectorIdentifierURI",
+        "type": "string",
+        "index": ["equality"],
+        "backend": ["userRoot"]
+    },
+
+    {
         "attribute": "gluuStatus",
         "type": "string",
         "index": ["equality"],

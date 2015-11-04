@@ -76,51 +76,11 @@ class OxtrustSetup(OxauthSetup):
             [[backup_cmd], [sed_cmd], [overwrite_cmd]],
         )
 
-    def render_cache_refresh_template(self):
-        src = "nodes/oxtrust/oxtrust-cache-refresh.json"
-        dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
-
-        ldap_hosts = [
-            "{}:{}".format(ldap.domain_name, ldap.ldaps_port)
-            for ldap in self.cluster.get_ldap_objects()
-        ]
-        ctx = {
-            "ldap_binddn": self.node.ldap_binddn,
-            "encoded_ox_ldap_pw": self.cluster.encoded_ox_ldap_pw,
-            "ldap_hosts": ldap_hosts,
-        }
-        self.copy_rendered_jinja_template(src, dest, ctx)
-
     def render_log_config_template(self):
         src = "nodes/oxtrust/oxTrustLogRotationConfiguration.xml"
         dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
         ctx = {
             "tomcat_log_folder": self.node.tomcat_log_folder,
-        }
-        self.copy_rendered_jinja_template(src, dest, ctx)
-
-    def render_config_template(self):
-        src = "nodes/oxtrust/oxtrust-config.json"
-        dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
-        ldap_hosts = ",".join([
-            "{}:{}".format(ldap.domain_name, ldap.ldaps_port)
-            for ldap in self.cluster.get_ldap_objects()
-        ])
-        ctx = {
-            "inum_appliance": self.cluster.inum_appliance,
-            "inum_org": self.cluster.inum_org,
-            "admin_email": self.cluster.admin_email,
-            "ox_cluster_hostname": self.cluster.ox_cluster_hostname,
-            "shib_jks_fn": self.cluster.shib_jks_fn,
-            "shib_jks_pass": self.cluster.decrypted_admin_pw,
-            "inum_org_fn": self.cluster.inum_org_fn,
-            "encoded_shib_jks_pw": self.cluster.encoded_shib_jks_pw,
-            "encoded_ox_ldap_pw": self.cluster.encoded_ox_ldap_pw,
-            "oxauth_client_id": self.cluster.oxauth_client_id,
-            "oxauth_client_encoded_pw": self.cluster.oxauth_client_encoded_pw,
-            "truststore_fn": self.node.truststore_fn,
-            "ldap_hosts": ldap_hosts,
-            "config_generation": "true",
         }
         self.copy_rendered_jinja_template(src, dest, ctx)
 
@@ -152,10 +112,7 @@ class OxtrustSetup(OxauthSetup):
         self.create_cert_dir()
 
         # render config templates
-        # self.render_cache_refresh_template()
         self.render_log_config_template()
-        # self.render_config_template()
-
         self.copy_shib_config("idp")
         self.copy_shib_config("idp/schema")
         self.copy_shib_config("idp/ProfileConfiguration")

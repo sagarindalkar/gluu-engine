@@ -215,6 +215,7 @@ class LdapSetup(BaseSetup):
                 '--bindDN', '"%s"' % self.node.ldap_binddn,
                 '-j', self.node.ldap_pass_fn,
                 '--append', '--trustAll',
+                # "--rejectFile", "/tmp/rejected-{}".format(file_basename),
             ])
             self.logger.info("importing {}".format(file_basename))
             jid = self.salt.cmd_async(self.node.id, 'cmd.run', [importCmd])
@@ -379,7 +380,6 @@ command={}
             setup_obj = OxtrustSetup(oxtrust, self.cluster,
                                      self.app, logger=self.logger)
             setup_obj.render_ldap_props_template()
-            # setup_obj.render_cache_refresh_template()
 
     def after_setup(self):
         """Runs post-setup.
@@ -476,7 +476,8 @@ command={}
             "oxauth_error_base64": generate_base64_contents(self.render_oxauth_error_config(), 1),
             "oxauth_openid_key_base64": generate_base64_contents(self.gen_openid_key(), 1),
             "oxtrust_config_base64": generate_base64_contents(self.render_oxtrust_config(), 1),
-            "oxtrust_cache_refresh_base64": generate_base64_contents(self.render_oxtrust_cache_refresh(), 1)
+            "oxtrust_cache_refresh_base64": generate_base64_contents(self.render_oxtrust_cache_refresh(), 1),
+            "oxidp_config_base64": generate_base64_contents(self.render_oxidp_config(), 1),
         }
         self.copy_rendered_jinja_template(
             "nodes/opendj/ldif/configuration.ldif",
@@ -492,6 +493,7 @@ command={}
             '--bindDN', '"%s"' % self.node.ldap_binddn,
             '-j', self.node.ldap_pass_fn,
             '--append', '--trustAll',
+            # "--rejectFile", "/tmp/rejected-configuration.ldif",
         ])
         self.logger.info("importing configuration.ldif")
         jid = self.salt.cmd_async(self.node.id, 'cmd.run', [import_cmd])
@@ -574,6 +576,15 @@ command={}
             "ldap_binddn": self.node.ldap_binddn,
             "encoded_ox_ldap_pw": self.cluster.encoded_ox_ldap_pw,
             "ldap_hosts": ldap_hosts,
+        }
+        return self.render_jinja_template(src, ctx)
+
+    def render_oxidp_config(self):
+        src = "nodes/shib/oxidp-config.json"
+        ctx = {
+            "ox_cluster_hostname": self.cluster.ox_cluster_hostname,
+            "oxauth_client_id": self.cluster.oxauth_client_id,
+            "oxauth_client_encoded_pw": self.cluster.oxauth_client_encoded_pw,
         }
         return self.render_jinja_template(src, ctx)
 

@@ -31,29 +31,15 @@ class SamlSetup(OxauthSetup):
             )
 
     def render_props_template(self):
-        src = self.get_template_path("nodes/shib/oxTrust.properties")
+        src = self.get_template_path("nodes/shib/oxidp-ldap.properties")
         dest = os.path.join("/opt/tomcat/conf", os.path.basename(src))
-        ldap_hosts = " ".join([
+        ldap_hosts = ",".join([
             "{}:{}".format(ldap.domain_name, ldap.ldaps_port)
             for ldap in self.cluster.get_ldap_objects()
         ])
         ctx = {
-            "inumAppliance": self.cluster.inum_appliance,
-            "inumOrg": self.cluster.inum_org,
-            "orgName": self.cluster.org_name,
-            "orgShortName": self.cluster.org_short_name,
-            "admin_email": self.cluster.admin_email,
-            "ox_cluster_hostname": self.cluster.ox_cluster_hostname,
-            "shibJksFn": self.cluster.shib_jks_fn,
-            "shibJksPass": self.cluster.decrypted_admin_pw,
-            "inumOrgFN": self.cluster.inum_org_fn,
-            "oxTrustConfigGeneration": "enabled",
-            "encoded_shib_jks_pw": self.cluster.encoded_shib_jks_pw,
+            "inum_appliance": self.cluster.inum_appliance,
             "encoded_ox_ldap_pw": self.cluster.encoded_ox_ldap_pw,
-            "oxauth_client_id": self.cluster.oxauth_client_id,
-            "oxauthClient_encoded_pw": self.cluster.oxauth_client_encoded_pw,
-            "inumApplianceFN": self.cluster.inum_appliance_fn,
-            "truststore_fn": self.node.truststore_fn,
             "ldap_hosts": ldap_hosts,
             "ldap_binddn": self.node.ldap_binddn,
         }

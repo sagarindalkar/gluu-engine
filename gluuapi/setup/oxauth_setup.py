@@ -20,35 +20,6 @@ class OxauthSetup(BaseSetup):
         remote_dest = os.path.join(self.node.tomcat_conf_dir, "salt")
         self.salt.copy_file(self.node.id, local_dest, remote_dest)
 
-    def gen_openid_keys(self):
-        self.logger.info("generating OpenID key file")
-
-        openid_key_json_fn = os.path.join(self.node.cert_folder,
-                                          "oxauth-web-keys.json")
-        web_inf = "/opt/tomcat/webapps/oxauth/WEB-INF"
-        classpath = ":".join([
-            "{}/classes".format(web_inf),
-            "{}/lib/bcprov-jdk16-1.46.jar".format(web_inf),
-            "{}/lib/oxauth-model-2.4.0.Final.jar".format(web_inf),
-            "{}/lib/jettison-1.3.jar".format(web_inf),
-            "{}/lib/commons-lang-2.6.jar".format(web_inf),
-            "{}/lib/log4j-1.2.17.jar".format(web_inf),
-            "{}/lib/commons-codec-1.5.jar".format(web_inf),
-        ])
-        key_cmd = "java -cp {} org.xdi.oxauth.util.KeyGenerator > {}".format(
-            classpath, openid_key_json_fn,
-        )
-        jid = self.salt.cmd_async(self.node.id, "cmd.run", [key_cmd])
-        self.salt.subscribe_event(jid, self.node.id)
-
-        self.logger.info("changing access to OpenID key file")
-        self.salt.cmd(
-            self.node.id,
-            ["cmd.run", "cmd.run"],
-            [["chown {0}:{0} {1}".format("tomcat", openid_key_json_fn)],
-             ["chmod 700 {}".format(openid_key_json_fn)]],
-        )
-
     def start_tomcat(self):
         self.logger.info("starting tomcat")
         start_cmd = "export CATALINA_PID=/var/run/tomcat.pid && " \
@@ -100,21 +71,6 @@ class OxauthSetup(BaseSetup):
             ],
         )
 
-    def render_errors_template(self):
-        src = "nodes/oxauth/oxauth-errors.json"
-        dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
-        self.copy_rendered_jinja_template(src, dest)
-
-    def render_config_template(self):
-        src = "nodes/oxauth/oxauth-config.json"
-        dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
-        ctx = {
-            "ox_cluster_hostname": self.cluster.ox_cluster_hostname,
-            "inum_appliance": self.cluster.inum_appliance,
-            "inum_org": self.cluster.inum_org,
-        }
-        self.copy_rendered_jinja_template(src, dest, ctx)
-
     def render_ldap_props_template(self):
         src = "nodes/oxauth/oxauth-ldap.properties"
         dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
@@ -129,14 +85,6 @@ class OxauthSetup(BaseSetup):
             "ldap_hosts": ldap_hosts,
             "inum_appliance": self.cluster.inum_appliance,
             "cert_folder": self.node.cert_folder,
-        }
-        self.copy_rendered_jinja_template(src, dest, ctx)
-
-    def render_static_conf_template(self):
-        src = "nodes/oxauth/oxauth-static-conf.json"
-        dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
-        ctx = {
-            "inum_org": self.cluster.inum_org,
         }
         self.copy_rendered_jinja_template(src, dest, ctx)
 
@@ -172,10 +120,7 @@ environment=CATALINA_PID="/var/run/tomcat.pid"
         self.create_cert_dir()
 
         # render config templates
-        # self.render_errors_template()
-        # self.render_config_template()
         self.render_ldap_props_template()
-        # self.render_static_conf_template()
         self.render_server_xml_template()
         self.write_salt_file()
         self.copy_duo_creds()
@@ -197,7 +142,6 @@ environment=CATALINA_PID="/var/run/tomcat.pid"
             hostname,
         )
 
-        # self.gen_openid_keys()
         self.add_auto_startup_entry()
         self.start_tomcat()
         self.change_cert_access("tomcat", "tomcat")

@@ -10,10 +10,10 @@ from .oxauth_setup import OxauthSetup
 
 
 class OxtrustSetup(OxauthSetup):
-    def import_httpd_cert(self):
-        self.logger.info("importing httpd cert")
+    def import_nginx_cert(self):
+        self.logger.info("importing nginx cert")
 
-        # imports httpd cert into oxtrust cacerts to avoid
+        # imports nginx cert into oxtrust cacerts to avoid
         # "peer not authenticated" error
         cert_cmd = "echo -n | openssl s_client -connect {}:443 | " \
                    "sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' " \
@@ -31,43 +31,43 @@ class OxtrustSetup(OxauthSetup):
         jid = self.salt.cmd_async(self.node.id, "cmd.run", [import_cmd])
         self.salt.subscribe_event(jid, self.node.id)
 
-    def delete_httpd_cert(self):
+    def delete_nginx_cert(self):
         delete_cmd = " ".join([
             "keytool -delete",
             "-alias {}".format(self.cluster.ox_cluster_hostname),
             "-keystore {}".format(self.node.truststore_fn),
             "-storepass changeit -noprompt",
         ])
-        self.logger.info("deleting httpd cert")
+        self.logger.info("deleting nginx cert")
         self.salt.cmd(self.node.id, "cmd.run", [delete_cmd])
 
-    def add_host_entries(self, httpd):
-        # currently we need to add httpd container hostname
+    def add_host_entries(self, nginx):
+        # currently we need to add nginx container hostname
         # to prevent "peer not authenticated" raised by oxTrust;
         # TODO: use a real DNS
-        self.logger.info("adding HTTPD entry in oxTrust /etc/hosts file")
+        self.logger.info("adding nginx entry in oxTrust /etc/hosts file")
         # add the entry only if line is not exist in /etc/hosts
         grep_cmd = "grep -q '^{0} {1}$' /etc/hosts " \
                    "|| echo '{0} {1}' >> /etc/hosts" \
-                   .format(httpd.weave_ip,
+                   .format(nginx.weave_ip,
                            self.cluster.ox_cluster_hostname)
         jid = self.salt.cmd_async(self.node.id, "cmd.run", [grep_cmd])
         self.salt.subscribe_event(jid, self.node.id)
 
-    def remove_host_entries(self, httpd):
+    def remove_host_entries(self, nginx):
         # TODO: use a real DNS
         #
-        # currently we need to remove httpd container hostname
+        # currently we need to remove nginx container hostname
         # updating ``/etc/hosts`` in-place will raise "resource or device is busy"
         # error, hence we use the following steps instead:
         #
         # 1. copy the original ``/etc/hosts``
         # 2. find-and-replace entries in copied file
         # 3. overwrite the original ``/etc/hosts``
-        self.logger.info("removing HTTPD entry in oxTrust /etc/hosts file")
+        self.logger.info("removing nginx entry in oxTrust /etc/hosts file")
         backup_cmd = "cp /etc/hosts /tmp/hosts"
         sed_cmd = "sed -i 's/{} {}//g' /tmp/hosts && sed -i '/^$/d' /tmp/hosts".format(
-            httpd.weave_ip, self.cluster.ox_cluster_hostname
+            nginx.weave_ip, self.cluster.ox_cluster_hostname
         )
         overwrite_cmd = "cp /tmp/hosts /etc/hosts"
         self.salt.cmd(
@@ -142,8 +142,8 @@ class OxtrustSetup(OxauthSetup):
 
         self.copy_tomcat_index_html()
         self.add_auto_startup_entry()
-        self.start_tomcat()
         self.change_cert_access("tomcat", "tomcat")
+        self.reload_supervisor()
         return True
 
     def teardown(self):
@@ -164,19 +164,19 @@ class OxtrustSetup(OxauthSetup):
         dest = "/opt/tomcat/webapps/ROOT/index.html"
         self.salt.copy_file(self.node.id, src, dest)
 
-    def discover_httpd(self):
-        self.logger.info("discovering available httpd within same provider")
+    def discover_nginx(self):
+        self.logger.info("discovering available nginx node")
         try:
-            # if we already have httpd node in the same provider,
+            # if we already have nginx node in the the cluster,
             # add entry to /etc/hosts and import the cert
-            httpd = self.provider.get_node_objects(type_="httpd")[0]
-            self.add_host_entries(httpd)
-            self.import_httpd_cert()
+            nginx = self.provider.get_node_objects(type_="nginx")[0]
+            self.add_host_entries(nginx)
+            self.import_nginx_cert()
         except IndexError:
             pass
 
     def after_setup(self):
-        self.discover_httpd()
+        self.discover_nginx()
 
     def copy_import_person_properties(self):
         src = self.get_template_path("nodes/oxtrust/gluuImportPerson.properties")
@@ -202,3 +202,18 @@ class OxtrustSetup(OxauthSetup):
             dest = "{}/{}".format(parent_dest, fn)
             self.logger.info("copying {}".format(fn))
             self.salt.copy_file(self.node.id, src, dest)
+
+    def add_auto_startup_entry(self):
+        payload = """
+[program:{}]
+command=/opt/tomcat/bin/catalina.sh run
+environment=CATALINA_PID="/var/run/tomcat.pid"
+""".format(self.node.type)
+
+        self.logger.info("adding supervisord entry")
+        jid = self.salt.cmd_async(
+            self.node.id,
+            'cmd.run',
+            ["echo '{}' >> /etc/supervisor/conf.d/supervisord.conf".format(payload)],
+        )
+        self.salt.subscribe_event(jid, self.node.id)

@@ -164,7 +164,7 @@ class DockerHelper(object):
         if not self.image_exists("gluubase"):
             # There must be a better way than to hard code every file one by one
             DOCKER_REPO = 'https://raw.githubusercontent.com/GluuFederation' \
-                          '/gluu-docker/master/ubuntu/14.04'
+                          '/gluu-docker/develop/ubuntu/14.04'
             minion_file = DOCKER_REPO + '/gluubase/minion'
             supervisor_conf = DOCKER_REPO + '/gluubase/supervisord.conf'
             render = DOCKER_REPO + '/gluubase/render.sh'

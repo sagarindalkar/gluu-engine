@@ -230,7 +230,7 @@ class LdapModelHelper(BaseModelHelper):
     node_class = LdapNode
     image = "gluuopendj"
     dockerfile = "https://raw.githubusercontent.com/GluuFederation" \
-                 "/gluu-docker/master/ubuntu/14.04/gluuopendj/Dockerfile"
+                 "/gluu-docker/develop/ubuntu/14.04/gluuopendj/Dockerfile"
 
 
 class OxauthModelHelper(BaseModelHelper):
@@ -238,7 +238,7 @@ class OxauthModelHelper(BaseModelHelper):
     node_class = OxauthNode
     image = "gluuoxauth"
     dockerfile = "https://raw.githubusercontent.com/GluuFederation" \
-                 "/gluu-docker/master/ubuntu/14.04/gluuoxauth/Dockerfile"
+                 "/gluu-docker/develop/ubuntu/14.04/gluuoxauth/Dockerfile"
 
 
 class OxtrustModelHelper(BaseModelHelper):
@@ -246,7 +246,7 @@ class OxtrustModelHelper(BaseModelHelper):
     node_class = OxtrustNode
     image = "gluuoxtrust"
     dockerfile = "https://raw.githubusercontent.com/GluuFederation" \
-                 "/gluu-docker/master/ubuntu/14.04/gluuoxtrust/Dockerfile"
+                 "/gluu-docker/develop/ubuntu/14.04/gluuoxtrust/Dockerfile"
     port_bindings = {8443: ("127.0.0.1", 8443)}
     volumes = {
         "/etc/gluu/saml": {
@@ -261,7 +261,7 @@ class HttpdModelHelper(BaseModelHelper):
     node_class = HttpdNode
     image = "gluuhttpd"
     dockerfile = "https://raw.githubusercontent.com/GluuFederation" \
-                 "/gluu-docker/master/ubuntu/14.04/gluuhttpd/Dockerfile"
+                 "/gluu-docker/develop/ubuntu/14.04/gluuhttpd/Dockerfile"
 
 
 class SamlModelHelper(BaseModelHelper):
@@ -269,4 +269,4 @@ class SamlModelHelper(BaseModelHelper):
     node_class = SamlNode
     image = "gluushib"
     dockerfile = "https://raw.githubusercontent.com/GluuFederation" \
-                 "/gluu-docker/master/ubuntu/14.04/gluushib/Dockerfile"
+                 "/gluu-docker/develop/ubuntu/14.04/gluushib/Dockerfile"

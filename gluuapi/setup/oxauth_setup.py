@@ -7,6 +7,7 @@ import codecs
 import os.path
 
 from .base import BaseSetup
+from .nginx_setup import NginxSetup
 
 
 class OxauthSetup(BaseSetup):
@@ -19,13 +20,6 @@ class OxauthSetup(BaseSetup):
 
         remote_dest = os.path.join(self.node.tomcat_conf_dir, "salt")
         self.salt.copy_file(self.node.id, local_dest, remote_dest)
-
-    def start_tomcat(self):
-        self.logger.info("starting tomcat")
-        start_cmd = "export CATALINA_PID=/var/run/tomcat.pid && " \
-                    "{}/bin/catalina.sh start".format(self.node.tomcat_home)
-        jid = self.salt.cmd_async(self.node.id, "cmd.run", [start_cmd])
-        self.salt.subscribe_event(jid, self.node.id)
 
     def gen_keystore(self, suffix, keystore_fn, keystore_pw, in_key,
                      in_cert, user, group, hostname):
@@ -99,13 +93,14 @@ class OxauthSetup(BaseSetup):
         self.copy_rendered_jinja_template(src, dest, ctx)
 
     def add_auto_startup_entry(self):
-        # add supervisord entry
-        run_cmd = "{}/bin/catalina.sh start".format(self.node.tomcat_home)
         payload = """
 [program:{}]
-command={}
+command=/opt/tomcat/bin/catalina.sh run
 environment=CATALINA_PID="/var/run/tomcat.pid"
-""".format(self.node.type, run_cmd)
+
+[program:httpd]
+command=/usr/sbin/apache2ctl -DFOREGROUND
+""".format(self.node.type)
 
         self.logger.info("adding supervisord entry")
         jid = self.salt.cmd_async(
@@ -116,8 +111,8 @@ environment=CATALINA_PID="/var/run/tomcat.pid"
         self.salt.subscribe_event(jid, self.node.id)
 
     def setup(self):
-        hostname = self.cluster.ox_cluster_hostname.split(":")[0]
-        self.create_cert_dir()
+        # hostname = self.cluster.ox_cluster_hostname.split(":")[0]
+        hostname = self.node.domain_name
 
         # render config templates
         self.render_ldap_props_template()
@@ -126,9 +121,13 @@ environment=CATALINA_PID="/var/run/tomcat.pid"
         self.copy_duo_creds()
         self.copy_duo_web()
         self.copy_gplus_secrets()
+        self.render_httpd_conf()
+        self.configure_vhost()
 
         self.gen_cert("shibIDP", self.cluster.decrypted_admin_pw,
                       "tomcat", "tomcat", hostname)
+        self.gen_cert("httpd", self.cluster.decrypted_admin_pw,
+                      "www-data", "www-data", hostname)
 
         # IDP keystore
         self.gen_keystore(
@@ -143,12 +142,16 @@ environment=CATALINA_PID="/var/run/tomcat.pid"
         )
 
         self.add_auto_startup_entry()
-        self.start_tomcat()
         self.change_cert_access("tomcat", "tomcat")
+        self.reload_supervisor()
         return True
 
     def teardown(self):
+        self.notify_nginx()
         self.after_teardown()
+
+    def after_setup(self):
+        self.notify_nginx()
 
     def copy_duo_creds(self):
         src = self.get_template_path("nodes/oxauth/duo_creds.json")
@@ -167,3 +170,36 @@ environment=CATALINA_PID="/var/run/tomcat.pid"
         dest = "/etc/certs/gplus_client_secrets.json"
         self.logger.info("copying gplus_client_secrets.json")
         self.salt.copy_file(self.node.id, src, dest)
+
+    def configure_vhost(self):
+        a2enmod_cmd = "a2enmod ssl headers proxy proxy_http proxy_ajp"
+        jid = self.salt.cmd_async(self.node.id, "cmd.run", [a2enmod_cmd])
+        self.salt.subscribe_event(jid, self.node.id)
+
+        a2dissite_cmd = "a2dissite 000-default"
+        jid = self.salt.cmd_async(self.node.id, "cmd.run", [a2dissite_cmd])
+        self.salt.subscribe_event(jid, self.node.id)
+
+        a2ensite_cmd = "a2ensite gluu_httpd"
+        jid = self.salt.cmd_async(self.node.id, "cmd.run", [a2ensite_cmd])
+        self.salt.subscribe_event(jid, self.node.id)
+
+    def render_httpd_conf(self):
+        src = "nodes/oxauth/gluu_httpd.conf"
+        file_basename = os.path.basename(src)
+        dest = os.path.join("/etc/apache2/sites-available", file_basename)
+
+        ctx = {
+            "hostname": self.node.domain_name,
+            "weave_ip": self.node.weave_ip,
+            "httpd_cert_fn": "/etc/certs/httpd.crt",
+            "httpd_key_fn": "/etc/certs/httpd.key",
+        }
+        self.copy_rendered_jinja_template(src, dest, ctx)
+
+    def notify_nginx(self):
+        for nginx in self.cluster.get_nginx_objects():
+            setup_obj = NginxSetup(nginx, self.cluster,
+                                   self.app, logger=self.logger)
+            setup_obj.render_https_conf()
+            setup_obj.restart_nginx()

@@ -5,14 +5,12 @@
 
 from marshmallow import post_load
 from marshmallow import validates
-from marshmallow import validates_schema
 from marshmallow import ValidationError
 
 from ..database import db
 from ..extensions import ma
-from ..model import STATE_SUCCESS
 
-NODE_CHOICES = ["ldap", "oxauth", "oxtrust", "httpd", "oxidp"]
+NODE_CHOICES = ["ldap", "oxauth", "oxtrust", "oxidp", "nginx"]
 
 
 class NodeReq(ma.Schema):
@@ -30,8 +28,6 @@ class NodeReq(ma.Schema):
                            error="must use numerical value")
     exec_delay = ma.Int(default=15, missing=15,
                         error="must use numerical value")
-    oxauth_node_id = ma.Str(default="", missing="")
-    oxidp_node_id = ma.Str(default="", missing="")
 
     @validates("cluster_id")
     def validate_cluster(self, value):
@@ -59,86 +55,6 @@ class NodeReq(ma.Schema):
 
     @post_load
     def finalize_data(self, data):
-        if data.get("node_type") != "httpd":
-            data.pop("oxauth_node_id", None)
-            data.pop("oxidp_node_id", None)
-
         out = {"params": data}
         out.update({"context": self.context})
         return out
-
-    @validates_schema
-    def validate_schema(self, data):
-        if self.context.get("node_type") == "httpd":
-            oxauth_node_id = data.get("oxauth_node_id")
-            self.validate_oxauth(oxauth_node_id)
-
-            oxidp_node_id = data.get("oxidp_node_id")
-            if oxidp_node_id:
-                self.validate_oxidp(oxidp_node_id)
-
-    def validate_oxauth(self, value):
-        node_in_use = db.count_from_table(
-            "nodes",
-            db.where("oxauth_node_id") == value,
-        )
-        if node_in_use:
-            raise ValidationError("cannot reuse the oxauth node",
-                                  "oxauth_node_id")
-
-        try:
-            node = db.search_from_table(
-                "nodes",
-                (db.where("id") == value) & (db.where("type") == "oxauth")
-            )[0]
-        except IndexError:
-            node = None
-
-        if not node:
-            raise ValidationError("invalid oxauth node",
-                                  "oxauth_node_id")
-
-        if node.provider_id != self.context["provider"].id:
-            raise ValidationError(
-                "only oxauth node within same provider is allowed",
-                "oxauth_node_id",
-            )
-
-        if node.state != STATE_SUCCESS:
-            raise ValidationError(
-                "only oxauth node with SUCCESS state is allowed",
-                "oxauth_node_id",
-            )
-
-    def validate_oxidp(self, value):
-        node_in_use = db.count_from_table(
-            "nodes",
-            db.where("oxidp_node_id") == value,
-        )
-        if node_in_use:
-            raise ValidationError("cannot reuse the oxidp node",
-                                  "oxidp_node_id")
-
-        try:
-            node = db.search_from_table(
-                "nodes",
-                (db.where("id") == value) & (db.where("type") == "oxidp")
-            )[0]
-        except IndexError:
-            node = None
-
-        if not node:
-            raise ValidationError("invalid oxidp node",
-                                  "oxidp_node_id")
-
-        if node.provider_id != self.context["provider"].id:
-            raise ValidationError(
-                "only oxidp node within same provider is allowed",
-                "oxidp_node_id",
-            )
-
-        if node.state != STATE_SUCCESS:
-            raise ValidationError(
-                "only oxidp node with SUCCESS state is allowed",
-                "oxidp_node_id",
-            )

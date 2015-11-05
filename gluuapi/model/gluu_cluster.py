@@ -148,14 +148,15 @@ class GluuCluster(BaseModel):
         """
         return self.get_node_objects(type_="oxidp", state=state)
 
+    def get_nginx_objects(self, state=STATE_SUCCESS):
+        """Get available nginx objects (models).
+        """
+        return self.get_node_objects(type_="nginx", state=state)
+
     def get_node_objects(self, type_="", state=STATE_SUCCESS):
         condition = db.where("cluster_id") == self.id
         if state:
-            if state == STATE_SUCCESS:
-                # backward-compat for node without state field
-                condition = (condition) & ((db.where("state") == STATE_SUCCESS) | (~db.where("state")))
-            else:
-                condition = (condition) & (db.where("state") == state)
+            condition = (condition) & (db.where("state") == state)
         if type_:
             condition = (condition) & (db.where("type") == type_)
         return db.search_from_table("nodes", condition)

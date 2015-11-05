@@ -8,3 +8,4 @@ from .oxauth_setup import OxauthSetup  # noqa
 from .oxtrust_setup import OxtrustSetup  # noqa
 from .httpd_setup import HttpdSetup  # noqa
 from .oxidp_setup import OxidpSetup  # noqa
+from .nginx_setup import NginxSetup  # noqa

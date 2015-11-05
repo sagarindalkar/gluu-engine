@@ -18,6 +18,7 @@ from ..model import OxauthNode
 from ..model import OxtrustNode
 from ..model import HttpdNode
 from ..model import OxidpNode
+from ..model import NginxNode
 from ..model import STATE_SUCCESS
 from ..model import STATE_FAILED
 from ..model import STATE_IN_PROGRESS
@@ -31,6 +32,7 @@ from ..setup import OxauthSetup
 from ..setup import OxtrustSetup
 from ..setup import HttpdSetup
 from ..setup import OxidpSetup
+from ..setup import NginxSetup
 from ..log import create_file_logger
 from ..utils import exc_traceback
 
@@ -212,12 +214,6 @@ class BaseModelHelper(object):
         # mark node as FAILED
         self.node.state = STATE_FAILED
 
-        # if httpd node is FAILED, remove reference to oxAuth and oxIDP
-        # so we can use those 2 nodes for another httpd node
-        if self.node.type == "httpd":
-            self.node.oxauth_node_id = ""
-            self.node.oxidp_node_id = ""
-
         db.update_to_table(
             "nodes",
             db.where("name") == self.node.name,
@@ -270,3 +266,13 @@ class OxidpModelHelper(BaseModelHelper):
     image = "gluushib"
     dockerfile = "https://raw.githubusercontent.com/GluuFederation" \
                  "/gluu-docker/develop/ubuntu/14.04/gluushib/Dockerfile"
+
+
+class NginxModelHelper(BaseModelHelper):
+    setup_class = NginxSetup
+    node_class = NginxNode
+    image = "gluunginx"
+    dockerfile = "https://raw.githubusercontent.com/GluuFederation" \
+                 "/gluu-docker/develop/ubuntu/14.04/gluunginx/Dockerfile"
+
+    port_bindings = {80: ("0.0.0.0", 80), 443: ("0.0.0.0", 443)}

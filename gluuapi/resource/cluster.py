@@ -18,6 +18,8 @@ def format_cluster_resp(cluster):
     item["httpd_nodes"] = [node.id for node in cluster.get_httpd_objects()]
     item["oxauth_nodes"] = [node.id for node in cluster.get_oxauth_objects()]
     item["oxtrust_nodes"] = [node.id for node in cluster.get_oxtrust_objects()]
+    item["oxidp_nodes"] = [node.id for node in cluster.get_oxidp_objects()]
+    item["nginx_nodes"] = [node.id for node in cluster.get_nginx_objects()]
     return item
 
 

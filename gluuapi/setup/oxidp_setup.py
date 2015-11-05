@@ -47,13 +47,14 @@ class OxidpSetup(OxauthSetup):
 
     def setup(self):
         hostname = self.cluster.ox_cluster_hostname.split(":")[0]
-        self.create_cert_dir()
 
         # render config templates
         self.render_server_xml_template()
         self.copy_static_conf()
         self.render_props_template()
         self.write_salt_file()
+        self.render_httpd_conf()
+        self.configure_vhost()
 
         self.gen_cert("shibIDP", self.cluster.decrypted_admin_pw,
                       "tomcat", "tomcat", hostname)
@@ -74,23 +75,18 @@ class OxidpSetup(OxauthSetup):
         for ldap in self.cluster.get_ldap_objects():
             self.import_ldap_cert(ldap)
 
-        self.render_memcached_conf()
-        self.start_memcached()
-
         # copy existing oxidp config only if peer exists
         if len(self.cluster.get_oxidp_objects()):
             self.pull_shib_config()
 
         # add auto startup entry
         self.add_auto_startup_entry()
-
-        self.start_tomcat()
         self.change_cert_access("tomcat", "tomcat")
+        self.reload_supervisor()
         return True
 
     def after_setup(self):
         self.render_nutcracker_conf()
-        self.start_nutcracker()
 
         # notify oxidp peers to re-render their nutcracker.yml
         # and restart the daemon
@@ -102,6 +98,8 @@ class OxidpSetup(OxauthSetup):
                                    self.app, logger=self.logger)
             setup_obj.render_nutcracker_conf()
             setup_obj.restart_nutcracker()
+
+        self.notify_nginx()
 
     def import_ldap_cert(self, ldap):
         self.logger.info("importing ldap cert")
@@ -122,20 +120,6 @@ class OxidpSetup(OxauthSetup):
         jid = self.salt.cmd_async(self.node.id, "cmd.run", [import_cmd])
         self.salt.subscribe_event(jid, self.node.id)
 
-    def render_memcached_conf(self):
-        ctx = {"oxidp": self.node}
-        self.copy_rendered_jinja_template(
-            "nodes/shib/memcached.conf",
-            "/etc/memcached.conf",
-            ctx,
-        )
-
-    def start_memcached(self):
-        self.logger.info("starting memcached")
-        jid = self.salt.cmd_async(self.node.id, "cmd.run",
-                                  ["service memcached start"])
-        self.salt.subscribe_event(jid, self.node.id)
-
     def render_nutcracker_conf(self):
         ctx = {
             "oxidp_nodes": self.cluster.get_oxidp_objects(),
@@ -145,15 +129,6 @@ class OxidpSetup(OxauthSetup):
             "/etc/nutcracker.yml",
             ctx,
         )
-
-    def start_nutcracker(self):
-        self.logger.info("starting twemproxy")
-        start_cmd = "nutcracker -c /etc/nutcracker.yml " \
-                    "-p /var/run/nutcracker.pid " \
-                    "-o /var/log/nutcracker.log " \
-                    "-v 11 -d"
-        jid = self.salt.cmd_async(self.node.id, "cmd.run", [start_cmd])
-        self.salt.subscribe_event(jid, self.node.id)
 
     def restart_nutcracker(self):
         self.logger.info("restarting twemproxy in {}".format(self.node.name))
@@ -166,6 +141,8 @@ class OxidpSetup(OxauthSetup):
                                    self.app, logger=self.logger)
             setup_obj.render_nutcracker_conf()
             setup_obj.restart_nutcracker()
+
+        self.notify_nginx()
         self.after_teardown()
 
     def pull_shib_config(self):
@@ -186,18 +163,20 @@ class OxidpSetup(OxauthSetup):
                 self.salt.copy_file(self.node.id, src, dest)
 
     def add_auto_startup_entry(self):
-        # add supervisord entry
         payload = """
-[program:oxidp]
-command=/opt/tomcat/bin/catalina.sh start
+[program:{}]
+command=/opt/tomcat/bin/catalina.sh run
 environment=CATALINA_PID="/var/run/tomcat.pid"
 
 [program:memcached]
-command=service memcached start
+command=/usr/bin/memcached -p 11211 -u memcache -m 64 -t 4 -l 127.0.0.1 -l {}
 
 [program:nutcracker]
-command=nutcracker -c /etc/nutcracker.yml -p /var/run/nutcracker.pid -o /var/log/nutcracker.log -v 11 -d
-"""
+command=nutcracker -c /etc/nutcracker.yml -p /var/run/nutcracker.pid -o /var/log/nutcracker.log -v 11
+
+[program:httpd]
+command=/usr/sbin/apache2ctl -DFOREGROUND
+""".format(self.node.type, self.node.weave_ip)
 
         self.logger.info("adding supervisord entry")
         jid = self.salt.cmd_async(
@@ -214,5 +193,18 @@ command=nutcracker -c /etc/nutcracker.yml -p /var/run/nutcracker.pid -o /var/log
             "address": self.node.weave_ip,
             "shib_jks_pass": self.cluster.decrypted_admin_pw,
             "shib_jks_fn": self.cluster.shib_jks_fn,
+        }
+        self.copy_rendered_jinja_template(src, dest, ctx)
+
+    def render_httpd_conf(self):
+        src = "nodes/shib/gluu_httpd.conf"
+        file_basename = os.path.basename(src)
+        dest = os.path.join("/etc/apache2/sites-available", file_basename)
+
+        ctx = {
+            "hostname": self.node.domain_name,
+            "weave_ip": self.node.weave_ip,
+            "httpd_cert_fn": "/etc/certs/httpd.crt",
+            "httpd_key_fn": "/etc/certs/httpd.key",
         }
         self.copy_rendered_jinja_template(src, dest, ctx)

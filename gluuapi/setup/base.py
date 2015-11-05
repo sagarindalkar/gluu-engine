@@ -172,3 +172,8 @@ class BaseSetup(object):
 
         self.logger.info("rendering {}".format(file_basename))
         self.salt.copy_file(self.node.id, local, dest)
+
+    def reload_supervisor(self):
+        reload_cmd = "kill -HUP `cat /var/run/supervisord.pid`"
+        jid = self.salt.cmd_async(self.node.id, "cmd.run", [reload_cmd])
+        self.salt.subscribe_event(jid, self.node.id)

@@ -364,7 +364,6 @@ command={}
             self.replicate_from(peer_node)
         except IndexError:
             self.import_ldif()
-            self.import_base64_config()
 
         self.export_opendj_public_cert()
         self.delete_ldap_pw()
@@ -393,6 +392,10 @@ command={}
 
         # update appliance
         self.modify_oxidp_auth()
+
+        # if this is the first ldap, import configuration.ldif
+        if len(self.cluster.get_ldap_objects()) == 1:
+            self.import_base64_config()
 
         # remove password file
         self.delete_ldap_pw()
@@ -568,10 +571,7 @@ command={}
 
     def render_oxtrust_cache_refresh(self):
         src = "nodes/oxtrust/oxtrust-cache-refresh.json"
-        ldap_hosts = [
-            "{}:{}".format(ldap.domain_name, ldap.ldaps_port)
-            for ldap in self.cluster.get_ldap_objects()
-        ]
+        ldap_hosts = self.cluster.get_ldap_objects()
         ctx = {
             "ldap_binddn": self.node.ldap_binddn,
             "encoded_ox_ldap_pw": self.cluster.encoded_ox_ldap_pw,

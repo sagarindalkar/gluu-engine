@@ -31,8 +31,8 @@ class OxidpSetup(OxauthSetup):
             )
 
     def render_props_template(self):
-        src = self.get_template_path("nodes/shib/oxidp-ldap.properties")
-        dest = os.path.join("/opt/tomcat/conf", os.path.basename(src))
+        src = "nodes/shib/oxidp-ldap.properties"
+        dest = os.path.join("/opt/tomcat/conf/oxidp-ldap.properties")
         ldap_hosts = ",".join([
             "{}:{}".format(ldap.domain_name, ldap.ldaps_port)
             for ldap in self.cluster.get_ldap_objects()
@@ -43,7 +43,7 @@ class OxidpSetup(OxauthSetup):
             "ldap_hosts": ldap_hosts,
             "ldap_binddn": self.node.ldap_binddn,
         }
-        self.render_template(src, dest, ctx)
+        self.copy_rendered_jinja_template(src, dest, ctx)
 
     def setup(self):
         hostname = self.cluster.ox_cluster_hostname.split(":")[0]

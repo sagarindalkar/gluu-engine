@@ -55,14 +55,14 @@ class LicenseExpirationTask(object):
                 new_license_key = self.update_license_key(license_key)
                 if new_license_key.expired:
                     # unable to do license_key renewal, hence we're going to
-                    # disable oxauth and saml nodes
-                    for type_ in ["oxauth", "saml"]:
+                    # disable oxauth and oxidp nodes
+                    for type_ in ["oxauth", "oxidp"]:
                         self.disable_nodes(provider, type_)
                 else:
-                    # if we have disabled oxauth and saml nodes in provider
+                    # if we have disabled oxauth and oxidp nodes in provider
                     # and license key is not expired, try to re-enable
                     # the nodes
-                    for type_ in ["oxauth", "saml"]:
+                    for type_ in ["oxauth", "oxidp"]:
                         self.enable_nodes(provider, type_)
 
     def update_license_key(self, license_key):

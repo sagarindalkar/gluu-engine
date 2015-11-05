@@ -17,13 +17,13 @@ class HttpdSetup(BaseSetup):
         dest = os.path.join("/etc/apache2/sites-available", file_basename)
 
         oxauth = self.node.get_oxauth_object()
-        saml = self.node.get_saml_object()
+        oxidp = self.node.get_oxidp_object()
 
         ctx = {
             "hostname": hostname,
             "ip": self.node.weave_ip,
             "oxauth": oxauth,
-            "saml": saml,
+            "oxidp": oxidp,
             "httpd_cert_fn": self.node.httpd_crt,
             "httpd_key_fn": self.node.httpd_key,
             "admin_email": self.cluster.admin_email,

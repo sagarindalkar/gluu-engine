@@ -1,9 +1,9 @@
-saml:
+oxidp:
   listen: 127.0.0.1:22122
   distribution: ketama
   hash: fnv1a_64
   auto_eject_hosts: false
   servers:
-{%- for saml in saml_nodes %}
-    - {{ saml.weave_ip }}:11211:1
+{%- for node in oxidp_nodes %}
+    - {{ node.weave_ip }}:11211:1
 {%- endfor %}

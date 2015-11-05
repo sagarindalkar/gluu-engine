@@ -13,7 +13,7 @@ from ..database import db
 from ..helper import SaltHelper
 
 
-class SamlWatcherTask(object):
+class OxidpWatcherTask(object):
     def __init__(self):
         self.logger = logging.getLogger(
             __name__ + "." + self.__class__.__name__,
@@ -23,7 +23,7 @@ class SamlWatcherTask(object):
 
         # path to a directory where all filesystem
         # should be watched for
-        self.path = "/etc/gluu/saml"
+        self.path = "/etc/gluu/oxidp"
 
         # list of file extensions should be watched for
         self.allowed_extensions = (
@@ -85,7 +85,7 @@ class SamlWatcherTask(object):
         self.distribute_file(fp.path)
 
     def distribute_file(self, src):
-        """Copy the files from mapped volume to all saml nodes.
+        """Copy the files from mapped volume to all oxidp nodes.
         """
         if not self.cluster:
             self.logger.warn("Unable to find existing cluster; "
@@ -94,22 +94,22 @@ class SamlWatcherTask(object):
 
         # oxTrust will generate required files for Shib configuration
         # under ``/opt/idp`` inside the container; this directory
-        # is mapped as ``/etc/gluu/saml`` inside the host
+        # is mapped as ``/etc/gluu/oxidp`` inside the host
         #
         # for example, given a file ``/opt/idp/conf/attribute-resolver.xml``
         # created inside the container, it will be mapped to
-        # ``/etc/gluu/saml/conf/attribute-resolver.xml`` inside the host
+        # ``/etc/gluu/oxidp/conf/attribute-resolver.xml`` inside the host
         #
         # we need to distribute this file to
-        # ``/opt/idp/conf/attribute-resolver.xml`` inside the saml node
+        # ``/opt/idp/conf/attribute-resolver.xml`` inside the oxidp node
         # (gluushib)
-        dest = src.replace("/etc/gluu/saml", "/opt/idp")
-        saml_nodes = self.cluster.get_saml_objects()
+        dest = src.replace("/etc/gluu/oxidp", "/opt/idp")
+        oxidp_nodes = self.cluster.get_oxidp_objects()
 
-        for saml in saml_nodes:
-            self.logger.info("Found existing saml node "
-                             "with ID {}".format(saml.id))
+        for node in oxidp_nodes:
+            self.logger.info("Found existing oxidp node "
+                             "with ID {}".format(node.id))
             self.logger.info("copying {} to {}:{}".format(
-                src, saml.name, dest,
+                src, node.name, dest,
             ))
-            self.salt.copy_file(saml.id, src, dest)
+            self.salt.copy_file(node.id, src, dest)

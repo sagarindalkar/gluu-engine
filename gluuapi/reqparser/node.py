@@ -12,7 +12,7 @@ from ..database import db
 from ..extensions import ma
 from ..model import STATE_SUCCESS
 
-NODE_CHOICES = ["ldap", "oxauth", "oxtrust", "httpd", "saml"]
+NODE_CHOICES = ["ldap", "oxauth", "oxtrust", "httpd", "oxidp"]
 
 
 class NodeReq(ma.Schema):
@@ -31,7 +31,7 @@ class NodeReq(ma.Schema):
     exec_delay = ma.Int(default=15, missing=15,
                         error="must use numerical value")
     oxauth_node_id = ma.Str(default="", missing="")
-    saml_node_id = ma.Str(default="", missing="")
+    oxidp_node_id = ma.Str(default="", missing="")
 
     @validates("cluster_id")
     def validate_cluster(self, value):
@@ -61,7 +61,7 @@ class NodeReq(ma.Schema):
     def finalize_data(self, data):
         if data.get("node_type") != "httpd":
             data.pop("oxauth_node_id", None)
-            data.pop("saml_node_id", None)
+            data.pop("oxidp_node_id", None)
 
         out = {"params": data}
         out.update({"context": self.context})
@@ -73,9 +73,9 @@ class NodeReq(ma.Schema):
             oxauth_node_id = data.get("oxauth_node_id")
             self.validate_oxauth(oxauth_node_id)
 
-            saml_node_id = data.get("saml_node_id")
-            if saml_node_id:
-                self.validate_saml(saml_node_id)
+            oxidp_node_id = data.get("oxidp_node_id")
+            if oxidp_node_id:
+                self.validate_oxidp(oxidp_node_id)
 
     def validate_oxauth(self, value):
         node_in_use = db.count_from_table(
@@ -110,35 +110,35 @@ class NodeReq(ma.Schema):
                 "oxauth_node_id",
             )
 
-    def validate_saml(self, value):
+    def validate_oxidp(self, value):
         node_in_use = db.count_from_table(
             "nodes",
-            db.where("saml_node_id") == value,
+            db.where("oxidp_node_id") == value,
         )
         if node_in_use:
-            raise ValidationError("cannot reuse the saml node",
-                                  "saml_node_id")
+            raise ValidationError("cannot reuse the oxidp node",
+                                  "oxidp_node_id")
 
         try:
             node = db.search_from_table(
                 "nodes",
-                (db.where("id") == value) & (db.where("type") == "saml")
+                (db.where("id") == value) & (db.where("type") == "oxidp")
             )[0]
         except IndexError:
             node = None
 
         if not node:
-            raise ValidationError("invalid saml node",
-                                  "saml_node_id")
+            raise ValidationError("invalid oxidp node",
+                                  "oxidp_node_id")
 
         if node.provider_id != self.context["provider"].id:
             raise ValidationError(
-                "only saml node within same provider is allowed",
-                "saml_node_id",
+                "only oxidp node within same provider is allowed",
+                "oxidp_node_id",
             )
 
         if node.state != STATE_SUCCESS:
             raise ValidationError(
-                "only saml node with SUCCESS state is allowed",
-                "saml_node_id",
+                "only oxidp node with SUCCESS state is allowed",
+                "oxidp_node_id",
             )

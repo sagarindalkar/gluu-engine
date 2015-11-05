@@ -8,7 +8,7 @@ import os.path
 from .oxauth_setup import OxauthSetup
 
 
-class SamlSetup(OxauthSetup):
+class OxidpSetup(OxauthSetup):
     def copy_static_conf(self):
         static_conf = {
             "idp.xml": "/opt/tomcat/conf/Catalina/localhost/idp.xml",
@@ -77,8 +77,8 @@ class SamlSetup(OxauthSetup):
         self.render_memcached_conf()
         self.start_memcached()
 
-        # copy existing saml config only if peer exists
-        if len(self.cluster.get_saml_objects()):
+        # copy existing oxidp config only if peer exists
+        if len(self.cluster.get_oxidp_objects()):
             self.pull_shib_config()
 
         # add auto startup entry
@@ -92,14 +92,14 @@ class SamlSetup(OxauthSetup):
         self.render_nutcracker_conf()
         self.start_nutcracker()
 
-        # notify saml peers to re-render their nutcracker.yml
+        # notify oxidp peers to re-render their nutcracker.yml
         # and restart the daemon
-        for node in self.cluster.get_saml_objects():
+        for node in self.cluster.get_oxidp_objects():
             if node.id == self.node.id:
                 continue
 
-            setup_obj = SamlSetup(node, self.cluster,
-                                  self.app, logger=self.logger)
+            setup_obj = OxidpSetup(node, self.cluster,
+                                   self.app, logger=self.logger)
             setup_obj.render_nutcracker_conf()
             setup_obj.restart_nutcracker()
 
@@ -123,7 +123,7 @@ class SamlSetup(OxauthSetup):
         self.salt.subscribe_event(jid, self.node.id)
 
     def render_memcached_conf(self):
-        ctx = {"saml": self.node}
+        ctx = {"oxidp": self.node}
         self.copy_rendered_jinja_template(
             "nodes/shib/memcached.conf",
             "/etc/memcached.conf",
@@ -138,7 +138,7 @@ class SamlSetup(OxauthSetup):
 
     def render_nutcracker_conf(self):
         ctx = {
-            "saml_nodes": self.cluster.get_saml_objects(),
+            "oxidp_nodes": self.cluster.get_oxidp_objects(),
         }
         self.copy_rendered_jinja_template(
             "nodes/shib/nutcracker.yml",
@@ -161,9 +161,9 @@ class SamlSetup(OxauthSetup):
         self.salt.cmd(self.node.id, "cmd.run", [restart_cmd])
 
     def teardown(self):
-        for node in self.cluster.get_saml_objects():
-            setup_obj = SamlSetup(node, self.cluster,
-                                  self.app, logger=self.logger)
+        for node in self.cluster.get_oxidp_objects():
+            setup_obj = OxidpSetup(node, self.cluster,
+                                   self.app, logger=self.logger)
             setup_obj.render_nutcracker_conf()
             setup_obj.restart_nutcracker()
         self.after_teardown()
@@ -171,7 +171,7 @@ class SamlSetup(OxauthSetup):
     def pull_shib_config(self):
         allowed_extensions = (".xml", ".dtd", ".config", ".xsd",)
 
-        for root, dirs, files in os.walk("/etc/gluu/saml"):
+        for root, dirs, files in os.walk("/etc/gluu/oxidp"):
             fn_list = [
                 file_ for file_ in files
                 if os.path.splitext(file_)[-1] in allowed_extensions
@@ -179,7 +179,7 @@ class SamlSetup(OxauthSetup):
 
             for fn in fn_list:
                 src = os.path.join(root, fn)
-                dest = src.replace("/etc/gluu/saml", "/opt/idp")
+                dest = src.replace("/etc/gluu/oxidp", "/opt/idp")
                 self.logger.info("copying {} to {}:{}".format(
                     os.path.basename(src), self.node.name, dest,
                 ))
@@ -188,7 +188,7 @@ class SamlSetup(OxauthSetup):
     def add_auto_startup_entry(self):
         # add supervisord entry
         payload = """
-[program:saml]
+[program:oxidp]
 command=/opt/tomcat/bin/catalina.sh start
 environment=CATALINA_PID="/var/run/tomcat.pid"
 

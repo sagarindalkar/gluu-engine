@@ -6,7 +6,7 @@
 from .base import BaseModel
 
 
-class SamlNode(BaseModel):
+class OxidpNode(BaseModel):
     resource_fields = dict.fromkeys([
         "id",
         "type",
@@ -27,7 +27,7 @@ class SamlNode(BaseModel):
         self.ip = ""
         self.weave_ip = ""
         self.weave_prefixlen = ""
-        self.type = "saml"
+        self.type = "oxidp"
         self.state = ""
         self.setup_logpath = ""
         self.domain_name = ""

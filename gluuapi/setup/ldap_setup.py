@@ -520,7 +520,7 @@ command={}
             "cmd.run",
             ["java -cp {} org.xdi.oxauth.util.KeyGenerator".format(classpath)],
         )
-        return resp.get(self.node.id)
+        return resp.get(self.node.id, "")
 
     def render_oxauth_config(self):
         src = "nodes/oxauth/oxauth-config.json"

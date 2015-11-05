@@ -143,10 +143,10 @@ class GluuCluster(BaseModel):
         """
         return self.get_node_objects(type_="httpd", state=state)
 
-    def get_saml_objects(self, state=STATE_SUCCESS):
-        """Get available saml objects (models).
+    def get_oxidp_objects(self, state=STATE_SUCCESS):
+        """Get available oxidp objects (models).
         """
-        return self.get_node_objects(type_="saml", state=state)
+        return self.get_node_objects(type_="oxidp", state=state)
 
     def get_node_objects(self, type_="", state=STATE_SUCCESS):
         condition = db.where("cluster_id") == self.id

@@ -54,10 +54,10 @@ def httpd_setup(request, app, httpd_node, cluster):
 
 
 @pytest.fixture()
-def saml_setup(request, app, saml_node, cluster):
-    from gluuapi.setup import SamlSetup
+def oxidp_setup(request, app, oxidp_node, cluster):
+    from gluuapi.setup import OxidpSetup
 
-    setup_obj = SamlSetup(saml_node, cluster, app)
+    setup_obj = OxidpSetup(oxidp_node, cluster, app)
 
     def teardown():
         setup_obj.remove_build_dir()

@@ -7,4 +7,4 @@ from .ldap_setup import LdapSetup  # noqa
 from .oxauth_setup import OxauthSetup  # noqa
 from .oxtrust_setup import OxtrustSetup  # noqa
 from .httpd_setup import HttpdSetup  # noqa
-from .saml_setup import SamlSetup  # noqa
+from .oxidp_setup import OxidpSetup  # noqa

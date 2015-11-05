@@ -13,7 +13,7 @@ def test_perform_job_license_not_expired(
 
 
 def test_perform_job_disable_nodes(db, license_key, provider,
-                                   oxauth_node, saml_node, app,
+                                   oxauth_node, oxidp_node, app,
                                    oxd_resp_err, patched_salt,
                                    salt_event_ok):
     from gluuapi.task import LicenseExpirationTask
@@ -32,10 +32,10 @@ def test_perform_job_disable_nodes(db, license_key, provider,
     oxauth_node.state = "SUCCESS"
     db.persist(oxauth_node, "nodes")
 
-    # saml nodes that will be enabled
-    saml_node.provider_id = provider.id
-    saml_node.state = "SUCCESS"
-    db.persist(saml_node, "nodes")
+    # oxidp nodes that will be enabled
+    oxidp_node.provider_id = provider.id
+    oxidp_node.state = "SUCCESS"
+    db.persist(oxidp_node, "nodes")
 
     with app.test_request_context():
         let = LicenseExpirationTask(app)
@@ -44,7 +44,7 @@ def test_perform_job_disable_nodes(db, license_key, provider,
 
 
 def test_perform_job_enable_nodes(db, license_key, provider, app,
-                                  oxauth_node, saml_node,
+                                  oxauth_node, oxidp_node,
                                   oxd_resp_ok, validator_ok,
                                   patched_salt, salt_event_ok):
     from gluuapi.task import LicenseExpirationTask
@@ -63,10 +63,10 @@ def test_perform_job_enable_nodes(db, license_key, provider, app,
     oxauth_node.state = "DISABLED"
     db.persist(oxauth_node, "nodes")
 
-    # saml nodes that will be enabled
-    saml_node.provider_id = provider.id
-    saml_node.state = "DISABLED"
-    db.persist(saml_node, "nodes")
+    # oxidp nodes that will be enabled
+    oxidp_node.provider_id = provider.id
+    oxidp_node.state = "DISABLED"
+    db.persist(oxidp_node, "nodes")
 
     with app.test_request_context():
         let = LicenseExpirationTask(app)

@@ -20,13 +20,13 @@ from ..helper import LdapModelHelper
 from ..helper import OxauthModelHelper
 from ..helper import OxtrustModelHelper
 from ..helper import HttpdModelHelper
-from ..helper import SamlModelHelper
+from ..helper import OxidpModelHelper
 from ..helper import distribute_cluster_data
 from ..setup import LdapSetup
 from ..setup import HttpdSetup
 from ..setup import OxauthSetup
 from ..setup import OxtrustSetup
-from ..setup import SamlSetup
+from ..setup import OxidpSetup
 
 
 class Node(Resource):
@@ -88,7 +88,7 @@ class Node(Resource):
             "httpd": HttpdSetup,
             "oxauth": OxauthSetup,
             "oxtrust": OxtrustSetup,
-            "saml": SamlSetup,
+            "oxidp": OxidpSetup,
         }
         setup_cls = setup_classes.get(node.type)
         if setup_cls:
@@ -158,7 +158,7 @@ class NodeList(Resource):
             "oxauth": OxauthModelHelper,
             "oxtrust": OxtrustModelHelper,
             "httpd": HttpdModelHelper,
-            "saml": SamlModelHelper,
+            "oxidp": OxidpModelHelper,
         }
         helper_class = helper_classes[params["node_type"]]
 
@@ -166,7 +166,7 @@ class NodeList(Resource):
 
         if helper.node.type == "httpd":
             helper.node.oxauth_node_id = params["oxauth_node_id"]
-            helper.node.saml_node_id = params["saml_node_id"]
+            helper.node.oxidp_node_id = params["oxidp_node_id"]
 
         helper.setup(params["connect_delay"], params["exec_delay"])
 

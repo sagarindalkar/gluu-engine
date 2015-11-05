@@ -99,7 +99,7 @@ class LicenseKeyResource(Resource):
                 weave = WeaveHelper(
                     provider, current_app._get_current_object(),
                 )
-                for type_ in ["oxauth", "saml"]:
+                for type_ in ["oxauth", "oxidp"]:
                     nodes = provider.get_node_objects(
                         type_=type_, state=STATE_DISABLED,
                     )

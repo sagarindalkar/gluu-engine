@@ -91,7 +91,7 @@ def provider():
 
 
 @pytest.fixture()
-def httpd_node(cluster, provider, oxauth_node, saml_node):
+def httpd_node(cluster, provider, oxauth_node, oxidp_node):
     from gluuapi.model import HttpdNode
 
     node = HttpdNode()
@@ -100,7 +100,7 @@ def httpd_node(cluster, provider, oxauth_node, saml_node):
     node.provider_id = provider.id
     node.name = "httpd-node"
     node.oxauth_node_id = oxauth_node.id
-    node.saml_node_id = saml_node.id
+    node.oxidp_node_id = oxidp_node.id
     return node
 
 
@@ -108,11 +108,11 @@ def httpd_node(cluster, provider, oxauth_node, saml_node):
 def patched_salt(monkeypatch):
     monkeypatch.setattr(
         "salt.client.LocalClient.cmd",
-        lambda cls, tgt, fun, arg: None,
+        lambda cls, tgt, fun, arg: {},
     )
     monkeypatch.setattr(
         "salt.client.LocalClient.cmd_async",
-        lambda cls, tgt, fun, arg: None,
+        lambda cls, tgt, fun, arg: "",
     )
 
 
@@ -210,11 +210,11 @@ def salt_event_ok(monkeypatch):
 
 
 @pytest.fixture()
-def saml_node(cluster, provider):
-    from gluuapi.model import SamlNode
+def oxidp_node(cluster, provider):
+    from gluuapi.model import OxidpNode
 
-    node = SamlNode()
-    node.id = "saml_{}_123".format(cluster.id)
+    node = OxidpNode()
+    node.id = "oxidp_{}_123".format(cluster.id)
     node.cluster_id = cluster.id
     node.provider_id = provider.id
     return node

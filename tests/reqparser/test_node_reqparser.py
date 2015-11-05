@@ -61,7 +61,7 @@ def test_validate_oxauth_notfound():
         node_req.validate_oxauth("abc")
 
 
-def test_validate_saml_reused(db, httpd_node):
+def test_validate_oxidp_reused(db, httpd_node):
     from gluuapi.reqparser import NodeReq
 
     db.persist(httpd_node, "nodes")
@@ -69,41 +69,41 @@ def test_validate_saml_reused(db, httpd_node):
     node_req = NodeReq(context=ctx)
 
     with pytest.raises(ValidationError):
-        node_req.validate_saml(httpd_node.saml_node_id)
+        node_req.validate_oxidp(httpd_node.oxidp_node_id)
 
 
-def test_validate_saml_invalid_provider(db, saml_node, provider):
+def test_validate_oxidp_invalid_provider(db, oxidp_node, provider):
     from gluuapi.reqparser import NodeReq
 
     db.persist(provider, "providers")
-    saml_node.provider_id = "xyz"
-    db.persist(saml_node, "nodes")
+    oxidp_node.provider_id = "xyz"
+    db.persist(oxidp_node, "nodes")
 
     ctx = {"node_type": "httpd", "provider": provider}
     node_req = NodeReq(context=ctx)
 
     with pytest.raises(ValidationError):
-        node_req.validate_saml(saml_node.id)
+        node_req.validate_oxidp(oxidp_node.id)
 
 
-def test_validate_saml_invalid_state(db, saml_node, provider):
+def test_validate_oxidp_invalid_state(db, oxidp_node, provider):
     from gluuapi.reqparser import NodeReq
 
     db.persist(provider, "providers")
-    saml_node.provider_id = provider.id
-    db.persist(saml_node, "nodes")
+    oxidp_node.provider_id = provider.id
+    db.persist(oxidp_node, "nodes")
 
     ctx = {"node_type": "httpd", "provider": provider}
     node_req = NodeReq(context=ctx)
 
     with pytest.raises(ValidationError):
-        node_req.validate_saml(saml_node.id)
+        node_req.validate_oxidp(oxidp_node.id)
 
 
-def test_validate_saml_notfound():
+def test_validate_oxidp_notfound():
     from gluuapi.reqparser import NodeReq
 
     ctx = {"node_type": "httpd"}
     node_req = NodeReq(context=ctx)
     with pytest.raises(ValidationError):
-        node_req.validate_saml("abc")
+        node_req.validate_oxidp("abc")

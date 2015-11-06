@@ -5,7 +5,7 @@ def test_setup(oxtrust_setup, patched_salt, patched_sleep,
 
 
 def test_delete_web_cert(oxtrust_setup, patched_salt):
-    oxtrust_setup.delete_httpd_cert()
+    oxtrust_setup.delete_nginx_cert()
 
 
 def test_teardown(oxtrust_setup, patched_salt):

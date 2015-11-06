@@ -4,10 +4,10 @@
 # All rights reserved.
 
 import os.path
-import time
+# import time
 
 from .base import BaseSetup
-from .oxtrust_setup import OxtrustSetup
+# from .oxtrust_setup import OxtrustSetup
 
 
 class HttpdSetup(BaseSetup):
@@ -85,36 +85,36 @@ command={}
         return True
 
     def after_setup(self):
-        try:
-            oxtrust = self.provider.get_node_objects(type_="oxtrust")[0]
-            setup_obj = OxtrustSetup(oxtrust, self.cluster,
-                                     self.app, logger=self.logger)
-            setup_obj.delete_httpd_cert()
-            setup_obj.remove_host_entries(self.node)
+        # try:
+        #     oxtrust = self.provider.get_node_objects(type_="oxtrust")[0]
+        #     setup_obj = OxtrustSetup(oxtrust, self.cluster,
+        #                              self.app, logger=self.logger)
+        #     setup_obj.delete_httpd_cert()
+        #     setup_obj.remove_host_entries(self.node)
 
-            # tell oxtrust to find another httpd node
-            time.sleep(2)
-            setup_obj.discover_httpd()
-        except IndexError:
-            pass
+        #     # tell oxtrust to find another httpd node
+        #     time.sleep(2)
+        #     setup_obj.discover_httpd()
+        # except IndexError:
+        #     pass
 
         # clear iptables rule for this node
         self.remove_iptables_rule()
         self.add_iptables_rule()
 
     def teardown(self):
-        try:
-            oxtrust = self.provider.get_node_objects(type_="oxtrust")[0]
-            setup_obj = OxtrustSetup(oxtrust, self.cluster,
-                                     self.app, logger=self.logger)
-            setup_obj.delete_httpd_cert()
-            setup_obj.remove_host_entries(self.node)
+        # try:
+        #     oxtrust = self.provider.get_node_objects(type_="oxtrust")[0]
+        #     setup_obj = OxtrustSetup(oxtrust, self.cluster,
+        #                              self.app, logger=self.logger)
+        #     setup_obj.delete_httpd_cert()
+        #     setup_obj.remove_host_entries(self.node)
 
-            # tell oxtrust to find another httpd node
-            time.sleep(2)
-            setup_obj.discover_httpd()
-        except IndexError:
-            pass
+        #     # tell oxtrust to find another httpd node
+        #     time.sleep(2)
+        #     setup_obj.discover_httpd()
+        # except IndexError:
+        #     pass
 
         self.remove_iptables_rule()
         self.after_teardown()

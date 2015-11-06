@@ -177,7 +177,7 @@ def test_node_post_invalid_provider(app, db, cluster):
 @pytest.mark.parametrize("node_type, helper_class", [
     ("ldap", "LdapModelHelper"),
     ("oxauth", "OxauthModelHelper"),
-    ("httpd", "HttpdModelHelper"),
+    # ("httpd", "HttpdModelHelper"),
 ])
 def test_node_post(monkeypatch, app, db, cluster, provider,
                    node_type, helper_class, oxauth_node):

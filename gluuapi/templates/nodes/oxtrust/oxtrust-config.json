@@ -1,6 +1,6 @@
 {
     "orgInum":"{{ inum_org }}",
-    "orgIname":null,
+    "orgIname":"",
     "orgSupportEmail":"{{ admin_email }}",
 
     "applianceInum":"{{ inum_appliance }}",
@@ -61,7 +61,7 @@
 
     "velocityLog":"/opt/tomcat/logs/velocity.log",
 
-    "spMetadataPath":null,
+    "spMetadataPath":"",
 
     "logoLocation":"/var/ox/photos",
 
@@ -81,16 +81,16 @@
     "idpBindPassword":"{{ encoded_ox_ldap_pw }}",
     "idpLdapProtocol":"ldaps",
     "idpLdapServer":"{{ ldap_hosts }}",
-    "idpUserFields":null,
+    "idpUserFields":"",
 
-    "mysqlUrl":null,
-    "mysqlUser":null,
-    "mysqlPassword":null,
+    "mysqlUrl":"",
+    "mysqlUser":"",
+    "mysqlPassword":"",
 
     "ldifStore":"/var/ox/oxtrust/removed",
 
     "caCertsLocation":"{{ truststore_fn }}",
-    "caCertsPassphrase":null,
+    "caCertsPassphrase":"",
 
     "certDir":"/etc/certs/",
     "tempCertDir":"/etc/certs/temp",
@@ -116,14 +116,12 @@
     "loginRedirectUrl":"https://localhost:8443/identity/authentication/authcode",
     "logoutRedirectUrl":"https://localhost:8443/identity/authentication/finishlogout",
 
-    "umaIssuer":null,
-    "umaClientId":null,
-    "umaClientPassword":null,
-    "umaResourceId":null,
-    "umaScope":null,
+    "umaIssuer":"",
+    "umaClientId":"",
+    "umaClientPassword":"",
+    "umaResourceId":"",
+    "umaScope":"",
 
-    "cssLocation":null,
-    "jsLocation":null,
-
-    "configGeneration":"{{ config_generation }}"
+    "cssLocation":"",
+    "jsLocation":""
 }

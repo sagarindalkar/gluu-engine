@@ -52,11 +52,16 @@ def test_teardown(ldap_setup, patched_salt, cluster, oxauth_node, db,
     ldap_setup.teardown()
 
 
-def test_teardown_with_replication(ldap_setup, cluster,
+def test_teardown_with_replication(monkeypatch, ldap_setup, cluster,
                                    patched_salt, patched_sleep):
     from gluuapi.database import db
     from gluuapi.model import LdapNode
     from gluuapi.model import STATE_SUCCESS
+
+    monkeypatch.setattr(
+        "gluuapi.setup.LdapSetup.get_ldap_conn",
+        lambda cls, uri, user, passwd: None,
+    )
 
     node1 = LdapNode()
     node1.id = "ldap-123"

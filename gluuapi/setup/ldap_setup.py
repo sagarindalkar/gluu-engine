@@ -9,9 +9,12 @@ import json
 import os.path
 import time
 
+import ldap as ldaplib
+
 from .base import BaseSetup
 from .oxauth_setup import OxauthSetup
 from .oxtrust_setup import OxtrustSetup
+from ..utils import generate_base64_contents
 
 
 class LdapSetup(BaseSetup):
@@ -291,9 +294,9 @@ class LdapSetup(BaseSetup):
             self.logger.info("enabling {!r} replication between {} and {}".format(
                 base_dn, existing_node.weave_ip, self.node.weave_ip,
             ))
-            jid = self.salt.cmd_async(self.node.id, "cmd.run", [enable_cmd])
-            self.salt.subscribe_event(jid, self.node.id, silent=True)
-
+            resp = self.salt.cmd(self.node.id, "cmd.run", [enable_cmd])
+            if self.node.id in resp:
+                self.logger.info(resp[self.node.id])
             # wait before initializing the replication to ensure it
             # has been enabled
             time.sleep(10)
@@ -312,8 +315,9 @@ class LdapSetup(BaseSetup):
             self.logger.info("initializing {!r} replication between {} and {}".format(
                 base_dn, existing_node.weave_ip, self.node.weave_ip,
             ))
-            jid = self.salt.cmd_async(self.node.id, "cmd.run", [init_cmd])
-            self.salt.subscribe_event(jid, self.node.id, silent=True)
+            resp = self.salt.cmd(self.node.id, "cmd.run", [init_cmd])
+            if self.node.id in resp:
+                self.logger.info(resp[self.node.id])
             time.sleep(5)
 
         # cleanups temporary password file
@@ -357,7 +361,7 @@ command={}
         self.index_opendj("userRoot")
 
         try:
-            peer_node = self.cluster.get_ldap_objects()[-1]
+            peer_node = self.cluster.get_ldap_objects()[0]
             # Initialize data from existing ldap node.
             # To create fully meshed replication, update the other
             # ldap node to use this new ldap node as a master.
@@ -396,6 +400,12 @@ command={}
         # if this is the first ldap, import configuration.ldif
         if len(self.cluster.get_ldap_objects()) == 1:
             self.import_base64_config()
+        else:
+            try:
+                peer_node = self.cluster.get_ldap_objects()[0]
+                self.modify_oxtrust_config(peer_node)
+            except IndexError:
+                pass
 
         # remove password file
         self.delete_ldap_pw()
@@ -421,6 +431,12 @@ command={}
 
         # remove password file
         self.delete_ldap_pw()
+
+        try:
+            peer_node = self.cluster.get_ldap_objects()[0]
+            self.modify_oxtrust_config(peer_node)
+        except IndexError:
+            pass
 
         self.notify_ox()
         self.after_teardown()
@@ -588,15 +604,86 @@ command={}
         }
         return self.render_jinja_template(src, ctx)
 
+    def modify_oxtrust_config(self, node):
+        self.logger.info("modifying oxTrust configuration")
 
-def reindent(text, num_spaces):
-    text = [(num_spaces * " ") + line.lstrip() for line in text.splitlines()]
-    text = "\n".join(text)
-    return text
+        # we're using weave IP instead since domain_name is available
+        # only from inside the container
+        uri = "ldaps://{}:{}".format(node.weave_ip, node.ldaps_port)
 
+        # credentials to authenticate to LDAP server
+        user = node.ldap_binddn
+        passwd = self.cluster.decrypted_admin_pw
 
-def generate_base64_contents(text, num_spaces):
-    text = text.encode("base64").strip()
-    if num_spaces:
-        text = reindent(text, 1)
-    return text
+        # base DN for oxtrust config
+        oxtrust_base = ",".join([
+            "ou=oxtrust",
+            "ou=configuration",
+            "inum={}".format(self.cluster.inum_appliance),
+            "ou=appliances",
+            "o=gluu",
+        ])
+        scope = ldaplib.SCOPE_BASE
+
+        conn = self.get_ldap_conn(uri, user, passwd)
+        if conn:
+            dn, attrs = self.search_from_ldap(conn, oxtrust_base, scope)
+            if dn:
+                ox_rev = str(int(attrs["oxRevision"][0]) + 1)
+
+                # we only care about ``idpLdapServer``
+                app_conf = json.loads(attrs["oxTrustConfApplication"][0])
+                app_conf["idpLdapServer"] = ",".join([
+                    "{}:{}".format(node_.domain_name, node_.ldaps_port)
+                    for node_ in self.cluster.get_ldap_objects()
+                ])
+                serialized_app_conf = json.dumps(app_conf)
+
+                # we only care about ``inumConfig`` -> ``servers``
+                cr_conf = json.loads(attrs["oxTrustConfCacheRefresh"][0])
+                cr_conf["inumConfig"]["servers"] = [
+                    "{}:{}".format(node_.domain_name, node_.ldaps_port)
+                    for node_ in self.cluster.get_ldap_objects()
+                ]
+                serialized_cr_conf = json.dumps(cr_conf)
+
+                # list of attributes need to be updated
+                modlist = [
+                    (ldaplib.MOD_REPLACE, "oxRevision", ox_rev),
+                    (ldaplib.MOD_REPLACE, "oxTrustConfApplication",
+                     serialized_app_conf),
+                    (ldaplib.MOD_REPLACE, "oxTrustConfCacheRefresh",
+                     serialized_cr_conf),
+                ]
+                # update the attributes
+                conn.modify_s(dn, modlist)
+
+            # release the connection to LDAP server
+            conn.unbind_s()
+
+    def get_ldap_conn(self, uri, user, passwd):
+        ldaplib.set_option(ldaplib.OPT_X_TLS_REQUIRE_CERT,
+                           ldaplib.OPT_X_TLS_NEVER)
+
+        try:
+            conn = ldaplib.initialize(uri)
+            conn.set_option(ldaplib.OPT_REFERRALS, 0)
+            conn.set_option(ldaplib.OPT_PROTOCOL_VERSION, 3)
+            conn.set_option(ldaplib.OPT_X_TLS, ldaplib.OPT_X_TLS_DEMAND)
+            conn.set_option(ldaplib.OPT_X_TLS_DEMAND, True)
+            conn.set_option(ldaplib.OPT_DEBUG_LEVEL, 255)
+            conn.simple_bind_s(user, passwd)
+        except ldaplib.SERVER_DOWN as exc:
+            self.logger.error(exc.message)
+        return conn
+
+    def search_from_ldap(self, conn, base, scope,
+                         filterstr="(objectClass=*)",
+                         attrlist=None, attrsonly=0):
+        try:
+            result = conn.search_s(base, scope)
+            ret = result[0]
+        except ldaplib.NO_SUCH_OBJECT as exc:
+            self.logger.error(exc.message)
+            ret = ("", {})
+        return ret

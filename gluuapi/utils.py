@@ -149,3 +149,16 @@ def timestamp_millis():
     """Time in milliseconds since the EPOCH.
     """
     return time.time() * 1000
+
+
+def reindent(text, num_spaces):
+    text = [(num_spaces * " ") + line.lstrip() for line in text.splitlines()]
+    text = "\n".join(text)
+    return text
+
+
+def generate_base64_contents(text, num_spaces):
+    text = text.encode("base64").strip()
+    if num_spaces:
+        text = reindent(text, 1)
+    return text

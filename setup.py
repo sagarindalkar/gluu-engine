@@ -47,6 +47,7 @@ setup(
         "daemonocle",
         "marshmallow>=2.0.0b3",
         "flask_marshmallow",
+        "python-ldap",
     ],
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",

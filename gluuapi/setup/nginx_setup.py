@@ -16,6 +16,7 @@ class NginxSetup(BaseSetup):
             "key_file": "/etc/certs/nginx.key",
             "oxauth_nodes": self.cluster.get_oxauth_objects(),
             "oxidp_nodes": self.cluster.get_oxidp_objects(),
+            "oxtrust_nodes": self.cluster.get_oxtrust_objects(),
         }
 
         src = "nodes/nginx/gluu_https.conf"

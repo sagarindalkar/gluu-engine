@@ -113,8 +113,8 @@
     "oxAuthClientPassword":"{{ oxauth_client_encoded_pw }}",
     "oxAuthClientScope":"openid+profile+email+user_name",
 
-    "loginRedirectUrl":"https://localhost:8443/identity/authentication/authcode",
-    "logoutRedirectUrl":"https://localhost:8443/identity/authentication/finishlogout",
+    "loginRedirectUrl":"https://{{ ox_cluster_hostname }}/identity/authentication/authcode",
+    "logoutRedirectUrl":"https://{{ ox_cluster_hostname }}/identity/authentication/finishlogout",
 
     "umaIssuer":"",
     "umaClientId":"",

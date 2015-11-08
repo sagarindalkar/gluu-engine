@@ -108,8 +108,7 @@ class OxtrustSetup(OxauthSetup):
         self.salt.cmd(self.node.id, "cmd.run", ["chmod +x {}".format(dest)])
 
     def setup(self):
-        hostname = "localhost"
-        self.create_cert_dir()
+        hostname = self.node.domain_name
 
         # render config templates
         self.render_log_config_template()
@@ -124,9 +123,13 @@ class OxtrustSetup(OxauthSetup):
         self.write_salt_file()
         self.render_check_ssl_template()
         self.copy_import_person_properties()
+        self.render_httpd_conf()
+        self.configure_vhost()
 
         self.gen_cert("shibIDP", self.cluster.decrypted_admin_pw,
                       "tomcat", "tomcat", hostname)
+        self.gen_cert("httpd", self.cluster.decrypted_admin_pw,
+                      "www-data", "www-data", hostname)
 
         # IDP keystore
         self.gen_keystore(
@@ -140,13 +143,13 @@ class OxtrustSetup(OxauthSetup):
             hostname,
         )
 
-        self.copy_tomcat_index_html()
         self.add_auto_startup_entry()
         self.change_cert_access("tomcat", "tomcat")
         self.reload_supervisor()
         return True
 
     def teardown(self):
+        self.notify_nginx()
         self.after_teardown()
 
     def render_server_xml_template(self):
@@ -158,11 +161,6 @@ class OxtrustSetup(OxauthSetup):
             "shib_jks_fn": self.cluster.shib_jks_fn,
         }
         self.copy_rendered_jinja_template(src, dest, ctx)
-
-    def copy_tomcat_index_html(self):
-        src = self.get_template_path("nodes/oxtrust/index.html")
-        dest = "/opt/tomcat/webapps/ROOT/index.html"
-        self.salt.copy_file(self.node.id, src, dest)
 
     def discover_nginx(self):
         self.logger.info("discovering available nginx node")
@@ -177,6 +175,7 @@ class OxtrustSetup(OxauthSetup):
 
     def after_setup(self):
         self.discover_nginx()
+        self.notify_nginx()
 
     def copy_import_person_properties(self):
         src = self.get_template_path("nodes/oxtrust/gluuImportPerson.properties")
@@ -203,17 +202,15 @@ class OxtrustSetup(OxauthSetup):
             self.logger.info("copying {}".format(fn))
             self.salt.copy_file(self.node.id, src, dest)
 
-    def add_auto_startup_entry(self):
-        payload = """
-[program:{}]
-command=/opt/tomcat/bin/catalina.sh run
-environment=CATALINA_PID="/var/run/tomcat.pid"
-""".format(self.node.type)
+    def render_httpd_conf(self):
+        src = "nodes/oxtrust/gluu_httpd.conf"
+        file_basename = os.path.basename(src)
+        dest = os.path.join("/etc/apache2/sites-available", file_basename)
 
-        self.logger.info("adding supervisord entry")
-        jid = self.salt.cmd_async(
-            self.node.id,
-            'cmd.run',
-            ["echo '{}' >> /etc/supervisor/conf.d/supervisord.conf".format(payload)],
-        )
-        self.salt.subscribe_event(jid, self.node.id)
+        ctx = {
+            "hostname": self.node.domain_name,
+            "weave_ip": self.node.weave_ip,
+            "httpd_cert_fn": "/etc/certs/httpd.crt",
+            "httpd_key_fn": "/etc/certs/httpd.key",
+        }
+        self.copy_rendered_jinja_template(src, dest, ctx)

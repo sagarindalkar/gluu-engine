@@ -243,7 +243,6 @@ class OxtrustModelHelper(BaseModelHelper):
     image = "gluuoxtrust"
     dockerfile = "https://raw.githubusercontent.com/GluuFederation" \
                  "/gluu-docker/develop/ubuntu/14.04/gluuoxtrust/Dockerfile"
-    port_bindings = {8443: ("127.0.0.1", 8443)}
     volumes = {
         "/etc/gluu/oxidp": {
             "bind": "/opt/idp",
@@ -274,5 +273,4 @@ class NginxModelHelper(BaseModelHelper):
     image = "gluunginx"
     dockerfile = "https://raw.githubusercontent.com/GluuFederation" \
                  "/gluu-docker/develop/ubuntu/14.04/gluunginx/Dockerfile"
-
     port_bindings = {80: ("0.0.0.0", 80), 443: ("0.0.0.0", 443)}

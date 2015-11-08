@@ -111,7 +111,6 @@ command=/usr/sbin/apache2ctl -DFOREGROUND
         self.salt.subscribe_event(jid, self.node.id)
 
     def setup(self):
-        # hostname = self.cluster.ox_cluster_hostname.split(":")[0]
         hostname = self.node.domain_name
 
         # render config templates

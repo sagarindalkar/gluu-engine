@@ -26,12 +26,12 @@ class OxidpSetup(OxauthSetup):
             self.logger.info("copying {}".format(src))
             self.salt.copy_file(
                 self.node.id,
-                self.get_template_path("nodes/shib/{}".format(src)),
+                self.get_template_path("nodes/oxidp/{}".format(src)),
                 dest,
             )
 
     def render_props_template(self):
-        src = "nodes/shib/oxidp-ldap.properties"
+        src = "nodes/oxidp/oxidp-ldap.properties"
         dest = os.path.join("/opt/tomcat/conf/oxidp-ldap.properties")
         ldap_hosts = ",".join([
             "{}:{}".format(ldap.domain_name, ldap.ldaps_port)
@@ -125,7 +125,7 @@ class OxidpSetup(OxauthSetup):
             "oxidp_nodes": self.cluster.get_oxidp_objects(),
         }
         self.copy_rendered_jinja_template(
-            "nodes/shib/nutcracker.yml",
+            "nodes/oxidp/nutcracker.yml",
             "/etc/nutcracker.yml",
             ctx,
         )
@@ -187,7 +187,7 @@ command=/usr/sbin/apache2ctl -DFOREGROUND
         self.salt.subscribe_event(jid, self.node.id)
 
     def render_server_xml_template(self):
-        src = "nodes/shib/server.xml"
+        src = "nodes/oxidp/server.xml"
         dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
         ctx = {
             "shib_jks_pass": self.cluster.decrypted_admin_pw,
@@ -196,7 +196,7 @@ command=/usr/sbin/apache2ctl -DFOREGROUND
         self.copy_rendered_jinja_template(src, dest, ctx)
 
     def render_httpd_conf(self):
-        src = "nodes/shib/gluu_httpd.conf"
+        src = "nodes/oxidp/gluu_httpd.conf"
         file_basename = os.path.basename(src)
         dest = os.path.join("/etc/apache2/sites-available", file_basename)
 

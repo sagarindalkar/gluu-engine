@@ -262,9 +262,9 @@ class HttpdModelHelper(BaseModelHelper):
 class OxidpModelHelper(BaseModelHelper):
     setup_class = OxidpSetup
     node_class = OxidpNode
-    image = "gluushib"
+    image = "gluuoxidp"
     dockerfile = "https://raw.githubusercontent.com/GluuFederation" \
-                 "/gluu-docker/develop/ubuntu/14.04/gluushib/Dockerfile"
+                 "/gluu-docker/develop/ubuntu/14.04/gluuoxidp/Dockerfile"
 
 
 class NginxModelHelper(BaseModelHelper):

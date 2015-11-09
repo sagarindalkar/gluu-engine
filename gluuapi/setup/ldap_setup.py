@@ -596,7 +596,7 @@ command={}
         return self.render_jinja_template(src, ctx)
 
     def render_oxidp_config(self):
-        src = "nodes/shib/oxidp-config.json"
+        src = "nodes/oxidp/oxidp-config.json"
         ctx = {
             "ox_cluster_hostname": self.cluster.ox_cluster_hostname,
             "oxauth_client_id": self.cluster.oxauth_client_id,

@@ -6,6 +6,9 @@
     "applianceInum":"{{ inum_appliance }}",
 
     "baseDN":"o=gluu",
+
+    "baseEndpoint":"https://{{ ox_cluster_hostname }}/identity/seam/resource/restv1",
+
     "authMode":"",
 
     "idpUrl":"https://{{ ox_cluster_hostname }}",

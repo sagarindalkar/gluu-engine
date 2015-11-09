@@ -49,8 +49,7 @@ command=/usr/sbin/nginx -g "daemon off;"
     def restart_nginx(self):
         self.logger.info("restarting nginx")
         service_cmd = "supervisorctl restart nginx"
-        jid = self.salt.cmd_async(self.node.id, "cmd.run", [service_cmd])
-        self.salt.subscribe_event(jid, self.node.id)
+        self.salt.cmd(self.node.id, "cmd.run", [service_cmd])
 
     def setup(self):
         hostname = self.cluster.ox_cluster_hostname.split(":")[0]

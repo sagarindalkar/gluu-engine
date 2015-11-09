@@ -156,7 +156,6 @@ class OxtrustSetup(OxauthSetup):
         src = "nodes/oxtrust/server.xml"
         dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
         ctx = {
-            "weave_ip": self.node.weave_ip,
             "shib_jks_pass": self.cluster.decrypted_admin_pw,
             "shib_jks_fn": self.cluster.shib_jks_fn,
         }

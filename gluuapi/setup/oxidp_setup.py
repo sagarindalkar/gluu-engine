@@ -30,7 +30,7 @@ class OxidpSetup(OxauthSetup):
                 dest,
             )
 
-    def render_props_template(self):
+    def render_ldap_props_template(self):
         src = "nodes/oxidp/oxidp-ldap.properties"
         dest = os.path.join("/opt/tomcat/conf/oxidp-ldap.properties")
         ldap_hosts = ",".join([
@@ -51,7 +51,7 @@ class OxidpSetup(OxauthSetup):
         # render config templates
         self.render_server_xml_template()
         self.copy_static_conf()
-        self.render_props_template()
+        self.render_ldap_props_template()
         self.write_salt_file()
         self.render_httpd_conf()
         self.configure_vhost()
@@ -72,8 +72,8 @@ class OxidpSetup(OxauthSetup):
             "tomcat",
             hostname,
         )
-        for ldap in self.cluster.get_ldap_objects():
-            self.import_ldap_cert(ldap)
+
+        self.import_ldap_certs()
 
         # copy existing oxidp config only if peer exists
         if len(self.cluster.get_oxidp_objects()):
@@ -101,24 +101,23 @@ class OxidpSetup(OxauthSetup):
 
         self.notify_nginx()
 
-    def import_ldap_cert(self, ldap):
-        self.logger.info("importing ldap cert")
+    def import_ldap_certs(self):
+        for ldap in self.cluster.get_ldap_objects():
+            self.logger.info("importing ldap cert")
 
-        cert_cmd = "echo -n | openssl s_client -connect {0}:{1} | " \
-                   "sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' " \
-                   "> /tmp/{0}_opendj.crt".format(ldap.domain_name, ldap.ldaps_port)
-        jid = self.salt.cmd_async(self.node.id, "cmd.run", [cert_cmd])
-        self.salt.subscribe_event(jid, self.node.id)
+            cert_cmd = "echo -n | openssl s_client -connect {0}:{1} | " \
+                       "sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' " \
+                       "> /tmp/{0}_opendj.crt".format(ldap.domain_name, ldap.ldaps_port)
+            self.salt.cmd(self.node.id, "cmd.run", [cert_cmd])
 
-        import_cmd = " ".join([
-            "keytool -importcert -trustcacerts",
-            "-alias '{}_opendj'".format(ldap.weave_ip),
-            "-file /tmp/{}_opendj.crt".format(ldap.domain_name),
-            "-keystore {}".format(self.node.truststore_fn),
-            "-storepass changeit -noprompt",
-        ])
-        jid = self.salt.cmd_async(self.node.id, "cmd.run", [import_cmd])
-        self.salt.subscribe_event(jid, self.node.id)
+            import_cmd = " ".join([
+                "keytool -importcert -trustcacerts",
+                "-alias '{}_opendj'".format(ldap.weave_ip),
+                "-file /tmp/{}_opendj.crt".format(ldap.domain_name),
+                "-keystore {}".format(self.node.truststore_fn),
+                "-storepass changeit -noprompt",
+            ])
+            self.salt.cmd(self.node.id, "cmd.run", [import_cmd])
 
     def render_nutcracker_conf(self):
         ctx = {

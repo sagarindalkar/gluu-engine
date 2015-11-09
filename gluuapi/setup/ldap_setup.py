@@ -14,6 +14,7 @@ import ldap as ldaplib
 from .base import BaseSetup
 from .oxauth_setup import OxauthSetup
 from .oxtrust_setup import OxtrustSetup
+from .oxidp_setup import OxidpSetup
 from ..utils import generate_base64_contents
 
 
@@ -383,6 +384,12 @@ command={}
             setup_obj = OxtrustSetup(oxtrust, self.cluster,
                                      self.app, logger=self.logger)
             setup_obj.render_ldap_props_template()
+
+        for oxidp in self.cluster.get_oxidp_objects():
+            setup_obj = OxidpSetup(oxidp, self.cluster,
+                                   self.app, logger=self.logger)
+            setup_obj.render_ldap_props_template()
+            setup_obj.import_ldap_certs()
 
     def after_setup(self):
         """Runs post-setup.

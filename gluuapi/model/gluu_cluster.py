@@ -112,9 +112,13 @@ class GluuCluster(BaseModel):
         scim_rp_quads = '%s.%s' % tuple([get_quad() for i in xrange(2)])
         self.scim_rp_client_id = '%s!0008!%s' % (self.inum_org, scim_rp_quads)
 
-        # key store
+        # key store for oxIdp
         self.encoded_shib_jks_pw = self.admin_pw
         self.shib_jks_fn = "/etc/certs/shibIDP.jks"
+
+        # key store for oxAsimba
+        self.encoded_asimba_jks_pw = self.admin_pw
+        self.asimba_jks_fn = "/etc/certs/asimbaIDP.jks"
 
         # Weave IP network
         self.weave_ip_network = fields.get("weave_ip_network", "10.2.1.0/24")
@@ -152,6 +156,11 @@ class GluuCluster(BaseModel):
         """Get available nginx objects (models).
         """
         return self.get_node_objects(type_="nginx", state=state)
+
+    def get_oxasimba_objects(self, state=STATE_SUCCESS):
+        """Get available oxasimba objects (models).
+        """
+        return self.get_node_objects(type_="oxasimba", state=state)
 
     def get_node_objects(self, type_="", state=STATE_SUCCESS):
         condition = db.where("cluster_id") == self.id

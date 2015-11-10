@@ -21,6 +21,7 @@ from ..helper import OxauthModelHelper
 from ..helper import OxtrustModelHelper
 from ..helper import OxidpModelHelper
 from ..helper import NginxModelHelper
+from ..helper import OxasimbaModelHelper
 from ..helper import distribute_cluster_data
 from ..setup import LdapSetup
 from ..setup import HttpdSetup
@@ -28,6 +29,7 @@ from ..setup import OxauthSetup
 from ..setup import OxtrustSetup
 from ..setup import OxidpSetup
 from ..setup import NginxSetup
+from ..setup import OxasimbaSetup
 
 
 class NodeResource(Resource):
@@ -91,6 +93,7 @@ class NodeResource(Resource):
             "oxtrust": OxtrustSetup,
             "oxidp": OxidpSetup,
             "nginx": NginxSetup,
+            "oxasimba": OxasimbaSetup,
         }
         setup_cls = setup_classes.get(node.type)
         if setup_cls:
@@ -120,6 +123,7 @@ class NodeListResource(Resource):
         "oxtrust": OxtrustModelHelper,
         "oxidp": OxidpModelHelper,
         "nginx": NginxModelHelper,
+        "oxasimba": OxasimbaModelHelper,
     }
 
     def get(self):
@@ -142,22 +146,22 @@ class NodeListResource(Resource):
         provider = data["context"]["provider"]
         params = data["params"]
 
-        # TODO: perhaps it's better move the logic to reqparser/node.py
-        if node_type == "oxtrust":
-            # only allow 1 oxtrust per cluster
-            oxtrust_num = db.count_from_table(
+        # only allow 1 oxtrust/oxasimba per cluster and it should be in master
+        if node_type in ("oxtrust", "oxasimba",):
+            # TODO: perhaps move it to reqparser/node.py
+            node_num = db.count_from_table(
                 "nodes",
-                (db.where("type") == "oxtrust") & (db.where("state") == STATE_SUCCESS),
+                (db.where("type") == node_type) & (db.where("state") == STATE_SUCCESS),
             )
-            if oxtrust_num:
+            if node_num:
                 return {
                     "status": 403,
-                    "message": "cannot deploy additional oxtrust node to cluster",
+                    "message": "cannot deploy additional {} node to cluster".format(node_type),
                 }, 403
             if provider.type != "master":
                 return {
                     "status": 403,
-                    "message": "cannot deploy oxtrust node to non-master provider",
+                    "message": "cannot deploy {} node to non-master provider".format(node_type),
                 }, 403
 
         # TODO: perhaps it's better move the logic to reqparser/node.py

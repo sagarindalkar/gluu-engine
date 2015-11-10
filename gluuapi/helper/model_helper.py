@@ -19,6 +19,7 @@ from ..model import OxtrustNode
 from ..model import HttpdNode
 from ..model import OxidpNode
 from ..model import NginxNode
+from ..model import OxasimbaNode
 from ..model import STATE_SUCCESS
 from ..model import STATE_FAILED
 # from ..model import STATE_IN_PROGRESS
@@ -33,6 +34,7 @@ from ..setup import OxtrustSetup
 from ..setup import HttpdSetup
 from ..setup import OxidpSetup
 from ..setup import NginxSetup
+from ..setup import OxasimbaSetup
 from ..log import create_file_logger
 from ..utils import exc_traceback
 
@@ -272,3 +274,11 @@ class NginxModelHelper(BaseModelHelper):
     dockerfile = "https://raw.githubusercontent.com/GluuFederation" \
                  "/gluu-docker/master/ubuntu/14.04/gluunginx/Dockerfile"
     port_bindings = {80: ("0.0.0.0", 80), 443: ("0.0.0.0", 443)}
+
+
+class OxasimbaModelHelper(BaseModelHelper):
+    setup_class = OxasimbaSetup
+    node_class = OxasimbaNode
+    image = "gluuoxasimba"
+    dockerfile = "https://raw.githubusercontent.com/GluuFederation" \
+                 "/gluu-docker/develop/ubuntu/14.04/gluuoxasimba/Dockerfile"

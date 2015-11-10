@@ -134,6 +134,7 @@ class NodeList(Resource):
         provider = data["context"]["provider"]
         params = data["params"]
 
+        # TODO: perhaps it's better move the logic to reqparser/node.py
         if params["node_type"] == "oxtrust":
             # only allow 1 oxtrust per cluster
             oxtrust_num = db.count_from_table(
@@ -149,6 +150,16 @@ class NodeList(Resource):
                 return {
                     "status": 403,
                     "message": "cannot deploy oxtrust node to non-master provider",
+                }, 403
+
+        # TODO: perhaps it's better move the logic to reqparser/node.py
+        if params["node_type"] == "nginx":
+            nginx_num = len(provider.get_node_objects(type_="nginx"))
+            if nginx_num:
+                # only allow 1 nginx per provider
+                return {
+                    "status": 403,
+                    "message": "cannot deploy additional nginx node to specified provider",
                 }, 403
 
         addr, prefixlen = cluster.reserve_ip_addr()

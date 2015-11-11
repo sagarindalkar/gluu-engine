@@ -326,11 +326,10 @@ class LdapSetup(BaseSetup):
 
     def add_auto_startup_entry(self):
         # add supervisord entry
-        run_cmd = ' '.join([self.node.ldap_run_command, '--quiet'])
         payload = """
 [program:{}]
-command={}
-""".format(self.node.type, run_cmd)
+command=/opt/opendj/bin/start-ds --quiet -N
+""".format(self.node.type)
 
         self.logger.info("adding supervisord entry")
         jid = self.salt.cmd_async(
@@ -340,23 +339,14 @@ command={}
         )
         self.salt.subscribe_event(jid, self.node.id)
 
-    def start_opendj(self):
-        run_cmd = ' '.join([self.node.ldap_run_command, '--quiet'])
-        self.logger.info("running opendj server")
-        jid = self.salt.cmd_async(
-            self.node.id,
-            'cmd.run',
-            ["{}".format(run_cmd)],
-        )
-        self.salt.subscribe_event(jid, self.node.id)
-
     def setup(self):
         self.write_ldap_pw()
         self.add_ldap_schema()
         self.import_custom_schema()
         self.setup_opendj()
         self.add_auto_startup_entry()
-        self.start_opendj()
+        self.reload_supervisor()
+        time.sleep(10)
         self.configure_opendj()
         self.index_opendj("site")
         self.index_opendj("userRoot")
@@ -433,7 +423,7 @@ command={}
             time.sleep(5)
 
         # stop the server
-        stop_cmd = "{}/bin/stop-ds".format(self.node.ldap_base_folder)
+        stop_cmd = "supervisorctl stop ldap"
         self.salt.cmd(self.node.id, "cmd.run", [stop_cmd])
 
         # remove password file

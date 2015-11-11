@@ -98,7 +98,7 @@ command=/opt/tomcat/bin/catalina.sh run
 environment=CATALINA_PID="/var/run/tomcat.pid"
 
 [program:httpd]
-command=/usr/sbin/apache2ctl -DFOREGROUND
+command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c "source /etc/apache2/envvars && /usr/sbin/apache2ctl -DFOREGROUND"
 """.format(self.node.type)
 
         self.logger.info("adding supervisord entry")

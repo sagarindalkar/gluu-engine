@@ -174,7 +174,7 @@ command=/usr/bin/memcached -p 11211 -u memcache -m 64 -t 4 -l 127.0.0.1 -l {}
 command=nutcracker -c /etc/nutcracker.yml -p /var/run/nutcracker.pid -o /var/log/nutcracker.log -v 11
 
 [program:httpd]
-command=/usr/sbin/apache2ctl -DFOREGROUND
+command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c "source /etc/apache2/envvars && /usr/sbin/apache2ctl -DFOREGROUND"
 """.format(self.node.type, self.node.weave_ip)
 
         self.logger.info("adding supervisord entry")

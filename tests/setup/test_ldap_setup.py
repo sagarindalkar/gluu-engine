@@ -102,7 +102,3 @@ def test_notify_ox(ldap_setup, db, oxauth_node,
     oxtrust_node.state = STATE_SUCCESS
     db.persist(oxtrust_node, "nodes")
     ldap_setup.notify_ox()
-
-
-def test_start_opendj(ldap_setup, patched_salt, salt_event_ok):
-    ldap_setup.start_opendj()

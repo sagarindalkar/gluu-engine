@@ -3,7 +3,7 @@
 #
 # All rights reserved.
 
-# import time
+import time
 
 from .base import BaseSetup
 
@@ -61,3 +61,30 @@ command=/usr/sbin/nginx -g "daemon off;"
         self.add_auto_startup_entry()
         self.reload_supervisor()
         return True
+
+    def notify_oxtrust(self):
+        # a hack to avoid circular import
+        from .oxtrust_setup import OxtrustSetup
+
+        try:
+            oxtrust = self.provider.get_node_objects(type_="oxtrust")[0]
+            setup_obj = OxtrustSetup(oxtrust, self.cluster,
+                                     self.app, logger=self.logger)
+
+            setup_obj.delete_nginx_cert()
+            setup_obj.remove_host_entries(self.node)
+
+            # wait before telling oxtrust to find nginx node
+            time.sleep(2)
+            setup_obj.discover_nginx()
+        except IndexError:
+            pass
+
+    def after_setup(self):
+        if self.provider.type == "master":
+            self.notify_oxtrust()
+
+    def teardown(self):
+        if self.provider.type == "master":
+            self.notify_oxtrust()
+        self.after_teardown()

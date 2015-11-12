@@ -52,10 +52,6 @@ class GluuCluster(BaseModel):
         # Description of cluster
         self.description = fields.get("description")
 
-        self.ldap_nodes = []
-        self.oxauth_nodes = []
-        self.oxtrust_nodes = []
-        self.httpd_nodes = []
         self.ox_cluster_hostname = fields.get("ox_cluster_hostname")
         self.ldaps_port = "1636"
 
@@ -105,9 +101,15 @@ class GluuCluster(BaseModel):
 
         # ox-related attrs
         client_quads = '%s.%s' % tuple([get_quad() for i in xrange(2)])
-        self.oxauth_client_id = '%s!0008!%s' % (self.base_inum, client_quads)
+        self.oxauth_client_id = '%s!0008!%s' % (self.inum_org, client_quads)
         oxauth_client_pw = get_random_chars()
         self.oxauth_client_encoded_pw = encrypt_text(oxauth_client_pw, self.passkey)
+
+        # scim-related attrs
+        scim_rs_quads = '%s.%s' % tuple([get_quad() for i in xrange(2)])
+        self.scim_rs_client_id = '%s!0008!%s' % (self.inum_org, scim_rs_quads)
+        scim_rp_quads = '%s.%s' % tuple([get_quad() for i in xrange(2)])
+        self.scim_rp_client_id = '%s!0008!%s' % (self.inum_org, scim_rp_quads)
 
         # key store
         self.encoded_shib_jks_pw = self.admin_pw

@@ -16,6 +16,7 @@ from .oxauth_setup import OxauthSetup
 from .oxtrust_setup import OxtrustSetup
 from .oxidp_setup import OxidpSetup
 from ..utils import generate_base64_contents
+from ..model import STATE_SUCCESS
 
 
 class LdapSetup(BaseSetup):
@@ -189,6 +190,7 @@ class LdapSetup(BaseSetup):
             "inum_org": self.cluster.inum_org,
             "inum_org_fn": self.cluster.inum_org_fn,
             "org_name": self.cluster.org_name,
+            "scim_rp_client_id": self.cluster.scim_rp_client_id,
         }
 
         ldifFolder = '%s/ldif' % self.node.ldap_base_folder
@@ -359,6 +361,7 @@ command=/opt/opendj/bin/start-ds --quiet -N
             self.replicate_from(peer_node)
         except IndexError:
             self.import_ldif()
+            self.import_base64_scim_config()
 
         self.export_opendj_public_cert()
         self.delete_ldap_pw()
@@ -429,11 +432,13 @@ command=/opt/opendj/bin/start-ds --quiet -N
         # remove password file
         self.delete_ldap_pw()
 
-        try:
-            peer_node = self.cluster.get_ldap_objects()[0]
-            self.modify_oxtrust_config(peer_node)
-        except IndexError:
-            pass
+        # modify oxtrust config
+        if self.node.state == STATE_SUCCESS:
+            try:
+                peer_node = self.cluster.get_ldap_objects()[0]
+                self.modify_oxtrust_config(peer_node)
+            except IndexError:
+                pass
 
         self.notify_ox()
         self.after_teardown()
@@ -516,8 +521,6 @@ command=/opt/opendj/bin/start-ds --quiet -N
         self.salt.subscribe_event(jid, self.node.id)
 
     def gen_openid_key(self):
-        self.logger.info("generating OpenID key file")
-
         def extra_jar_abspath(jar):
             return "/opt/gluu/lib/{}".format(jar)
 
@@ -579,6 +582,7 @@ command=/opt/opendj/bin/start-ds --quiet -N
             "truststore_fn": self.node.truststore_fn,
             "ldap_hosts": ldap_hosts,
             "config_generation": "true",
+            "scim_rs_client_id": self.cluster.scim_rs_client_id,
         }
         return self.render_jinja_template(src, ctx)
 
@@ -684,3 +688,32 @@ command=/opt/opendj/bin/start-ds --quiet -N
             self.logger.error(exc.message)
             ret = ("", {})
         return ret
+
+    def import_base64_scim_config(self):
+        ctx = {
+            "inum_org": self.cluster.inum_org,
+            "ox_cluster_hostname": self.cluster.ox_cluster_hostname,
+            "scim_rs_client_id": self.cluster.scim_rs_client_id,
+            "scim_rp_client_id": self.cluster.scim_rp_client_id,
+            "scim_rs_client_base64_jwks": generate_base64_contents(self.gen_openid_key(), 1),
+            "scim_rp_client_base64_jwks": generate_base64_contents(self.gen_openid_key(), 1),
+        }
+        self.copy_rendered_jinja_template(
+            "nodes/opendj/ldif/scim.ldif",
+            "/opt/opendj/ldif/scim.ldif",
+            ctx,
+        )
+        import_cmd = " ".join([
+            self.node.import_ldif_command,
+            '--ldifFile', "/opt/opendj/ldif/scim.ldif",
+            '--backendID', "userRoot",
+            '--hostname', self.node.domain_name,
+            '--port', self.node.ldap_admin_port,
+            '--bindDN', '"%s"' % self.node.ldap_binddn,
+            '-j', self.node.ldap_pass_fn,
+            '--append', '--trustAll',
+            # "--rejectFile", "/tmp/rejected-scim.ldif",
+        ])
+        self.logger.info("importing scim.ldif")
+        jid = self.salt.cmd_async(self.node.id, 'cmd.run', [import_cmd])
+        self.salt.subscribe_event(jid, self.node.id)

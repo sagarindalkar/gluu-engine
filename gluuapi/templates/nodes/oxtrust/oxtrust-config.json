@@ -119,11 +119,11 @@
     "loginRedirectUrl":"https://{{ ox_cluster_hostname }}/identity/authentication/authcode",
     "logoutRedirectUrl":"https://{{ ox_cluster_hostname }}/identity/authentication/finishlogout",
 
-    "umaIssuer":"",
-    "umaClientId":"",
-    "umaClientPassword":"",
-    "umaResourceId":"",
-    "umaScope":"",
+    "umaIssuer":"https://{{ ox_cluster_hostname }}",
+    "umaClientId":"{{ scim_rs_client_id }}",
+    "umaClientKeyId":"",
+    "umaResourceId":"1447184268430",
+    "umaScope":"https://{{ ox_cluster_hostname }}/oxauth/seam/resource/restv1/uma/scopes/scim_access",
 
     "cssLocation":"",
     "jsLocation":""

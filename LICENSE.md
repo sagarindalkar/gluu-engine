@@ -1,6 +1,6 @@
 IMPORTANT - READ CAREFULLY: This License Agreement is a legal agreement between You and Gluu, Inc. Read it carefully before completing the installation process and using the Software. It provides a license to use the Software and contains warranty information and liability disclaimers. BY INSTALLING, COPYING OR OTHERWISE USING THE SOFTWARE, YOU ARE CONFIRMING YOUR ACCEPTANCE OF THE SOFTWARE AND AGREEING TO BECOME BOUND BY THE TERMS OF THIS AGREEMENT. IF YOU DO NOT AGREE, DO NOT INSTALL OR USE THE PRODUCT. The Software is owned by Gluu, Inc. and/or its licensors and is protected by copyright laws and international copyright treaties, as well as other intellectual property laws and treaties. 
 
-1. DEFINITIONS.
+1. DEFINITIONS.    
  a. "Vendor" means Gluu, Inc.    
  b. "You", "Your" means you and your company.     
  c. "Software" means the product provided to You, which includes computer software and may include associated media, printed materials, and "online" or electronic documentation.      

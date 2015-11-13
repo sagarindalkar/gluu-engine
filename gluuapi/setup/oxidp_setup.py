@@ -163,7 +163,7 @@ class OxidpSetup(OxauthSetup):
 
     def add_auto_startup_entry(self):
         payload = """
-[program:{}]
+[program:tomcat]
 command=/opt/tomcat/bin/catalina.sh run
 environment=CATALINA_PID="/var/run/tomcat.pid"
 
@@ -175,7 +175,7 @@ command=nutcracker -c /etc/nutcracker.yml -p /var/run/nutcracker.pid -o /var/log
 
 [program:httpd]
 command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c "source /etc/apache2/envvars && /usr/sbin/apache2ctl -DFOREGROUND"
-""".format(self.node.type, self.node.weave_ip)
+""".format(self.node.weave_ip)
 
         self.logger.info("adding supervisord entry")
         jid = self.salt.cmd_async(

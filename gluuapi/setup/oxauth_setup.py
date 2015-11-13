@@ -93,13 +93,13 @@ class OxauthSetup(BaseSetup):
 
     def add_auto_startup_entry(self):
         payload = """
-[program:{}]
+[program:tomcat]
 command=/opt/tomcat/bin/catalina.sh run
 environment=CATALINA_PID="/var/run/tomcat.pid"
 
 [program:httpd]
 command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c "source /etc/apache2/envvars && /usr/sbin/apache2ctl -DFOREGROUND"
-""".format(self.node.type)
+"""
 
         self.logger.info("adding supervisord entry")
         jid = self.salt.cmd_async(

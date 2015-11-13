@@ -29,7 +29,7 @@ def test_ldap_model_helper(monkeypatch, app, cluster, provider):
         assert helper.node_class == LdapNode
         assert helper.image == "gluuopendj"
         assert helper.dockerfile == "https://raw.githubusercontent.com" \
-                                    "/GluuFederation/gluu-docker/develop" \
+                                    "/GluuFederation/gluu-docker/master" \
                                     "/ubuntu/14.04/gluuopendj/Dockerfile"
 
 
@@ -52,7 +52,7 @@ def test_oxauth_model_helper(monkeypatch, app, cluster, provider):
         assert helper.node_class == OxauthNode
         assert helper.image == "gluuoxauth"
         assert helper.dockerfile == "https://raw.githubusercontent.com" \
-                                    "/GluuFederation/gluu-docker/develop" \
+                                    "/GluuFederation/gluu-docker/master" \
                                     "/ubuntu/14.04/gluuoxauth/Dockerfile"
 
 
@@ -75,5 +75,5 @@ def test_oxtrust_model_helper(monkeypatch, app, cluster, provider):
         assert helper.node_class == OxtrustNode
         assert helper.image == "gluuoxtrust"
         assert helper.dockerfile == "https://raw.githubusercontent.com" \
-                                    "/GluuFederation/gluu-docker/develop" \
+                                    "/GluuFederation/gluu-docker/master" \
                                     "/ubuntu/14.04/gluuoxtrust/Dockerfile"

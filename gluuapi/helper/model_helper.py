@@ -226,7 +226,7 @@ class LdapModelHelper(BaseModelHelper):
     node_class = LdapNode
     image = "gluuopendj"
     dockerfile = "https://raw.githubusercontent.com/GluuFederation" \
-                 "/gluu-docker/develop/ubuntu/14.04/gluuopendj/Dockerfile"
+                 "/gluu-docker/master/ubuntu/14.04/gluuopendj/Dockerfile"
 
 
 class OxauthModelHelper(BaseModelHelper):
@@ -234,7 +234,7 @@ class OxauthModelHelper(BaseModelHelper):
     node_class = OxauthNode
     image = "gluuoxauth"
     dockerfile = "https://raw.githubusercontent.com/GluuFederation" \
-                 "/gluu-docker/develop/ubuntu/14.04/gluuoxauth/Dockerfile"
+                 "/gluu-docker/master/ubuntu/14.04/gluuoxauth/Dockerfile"
 
 
 class OxtrustModelHelper(BaseModelHelper):
@@ -242,7 +242,7 @@ class OxtrustModelHelper(BaseModelHelper):
     node_class = OxtrustNode
     image = "gluuoxtrust"
     dockerfile = "https://raw.githubusercontent.com/GluuFederation" \
-                 "/gluu-docker/develop/ubuntu/14.04/gluuoxtrust/Dockerfile"
+                 "/gluu-docker/master/ubuntu/14.04/gluuoxtrust/Dockerfile"
     port_bindings = {8443: ("127.0.0.1", 8443)}
 
     def __init__(self, cluster, provider, app):
@@ -260,7 +260,7 @@ class HttpdModelHelper(BaseModelHelper):
     node_class = HttpdNode
     image = "gluuhttpd"
     dockerfile = "https://raw.githubusercontent.com/GluuFederation" \
-                 "/gluu-docker/develop/ubuntu/14.04/gluuhttpd/Dockerfile"
+                 "/gluu-docker/master/ubuntu/14.04/gluuhttpd/Dockerfile"
 
 
 class OxidpModelHelper(BaseModelHelper):
@@ -268,7 +268,7 @@ class OxidpModelHelper(BaseModelHelper):
     node_class = OxidpNode
     image = "gluuoxidp"
     dockerfile = "https://raw.githubusercontent.com/GluuFederation" \
-                 "/gluu-docker/develop/ubuntu/14.04/gluuoxidp/Dockerfile"
+                 "/gluu-docker/master/ubuntu/14.04/gluuoxidp/Dockerfile"
 
 
 class NginxModelHelper(BaseModelHelper):
@@ -276,5 +276,5 @@ class NginxModelHelper(BaseModelHelper):
     node_class = NginxNode
     image = "gluunginx"
     dockerfile = "https://raw.githubusercontent.com/GluuFederation" \
-                 "/gluu-docker/develop/ubuntu/14.04/gluunginx/Dockerfile"
+                 "/gluu-docker/master/ubuntu/14.04/gluunginx/Dockerfile"
     port_bindings = {80: ("0.0.0.0", 80), 443: ("0.0.0.0", 443)}

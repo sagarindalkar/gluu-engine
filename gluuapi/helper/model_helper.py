@@ -249,6 +249,7 @@ class OxtrustModelHelper(BaseModelHelper):
             "mode": "ro",
         }
     }
+    port_bindings = {8443: ("127.0.0.1", 8443)}
 
 
 class HttpdModelHelper(BaseModelHelper):

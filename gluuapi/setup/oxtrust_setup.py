@@ -123,13 +123,14 @@ class OxtrustSetup(OxauthSetup):
         self.write_salt_file()
         self.render_check_ssl_template()
         self.copy_import_person_properties()
-        self.render_httpd_conf()
-        self.configure_vhost()
+        self.copy_tomcat_index()
+        # self.render_httpd_conf()
+        # self.configure_vhost()
 
         self.gen_cert("shibIDP", self.cluster.decrypted_admin_pw,
                       "tomcat", "tomcat", hostname)
-        self.gen_cert("httpd", self.cluster.decrypted_admin_pw,
-                      "www-data", "www-data", hostname)
+        # self.gen_cert("httpd", self.cluster.decrypted_admin_pw,
+        #               "www-data", "www-data", hostname)
 
         # IDP keystore
         self.gen_keystore(
@@ -201,15 +202,36 @@ class OxtrustSetup(OxauthSetup):
             self.logger.info("copying {}".format(fn))
             self.salt.copy_file(self.node.id, src, dest)
 
-    def render_httpd_conf(self):
-        src = "nodes/oxtrust/gluu_httpd.conf"
-        file_basename = os.path.basename(src)
-        dest = os.path.join("/etc/apache2/sites-available", file_basename)
+    # def render_httpd_conf(self):
+    #     src = "nodes/oxtrust/gluu_httpd.conf"
+    #     file_basename = os.path.basename(src)
+    #     dest = os.path.join("/etc/apache2/sites-available", file_basename)
 
-        ctx = {
-            "hostname": self.node.domain_name,
-            "weave_ip": self.node.weave_ip,
-            "httpd_cert_fn": "/etc/certs/httpd.crt",
-            "httpd_key_fn": "/etc/certs/httpd.key",
-        }
-        self.copy_rendered_jinja_template(src, dest, ctx)
+    #     ctx = {
+    #         "hostname": self.node.domain_name,
+    #         "weave_ip": self.node.weave_ip,
+    #         "httpd_cert_fn": "/etc/certs/httpd.crt",
+    #         "httpd_key_fn": "/etc/certs/httpd.key",
+    #     }
+    #     self.copy_rendered_jinja_template(src, dest, ctx)
+
+    def add_auto_startup_entry(self):
+        payload = """
+[program:tomcat]
+command=/opt/tomcat/bin/catalina.sh run
+environment=CATALINA_PID="/var/run/tomcat.pid"
+"""
+
+        self.logger.info("adding supervisord entry")
+        jid = self.salt.cmd_async(
+            self.node.id,
+            'cmd.run',
+            ["echo '{}' >> /etc/supervisor/conf.d/supervisord.conf".format(payload)],
+        )
+        self.salt.subscribe_event(jid, self.node.id)
+
+    def copy_tomcat_index(self):
+        self.logger.info("copying index.html")
+        src = self.get_template_path("nodes/oxtrust/index.html")
+        dest = "/opt/tomcat/webapps/ROOT/index.html"
+        self.salt.copy_file(self.node.id, src, dest)

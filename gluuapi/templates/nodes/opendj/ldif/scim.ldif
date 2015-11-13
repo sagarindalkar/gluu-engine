@@ -50,6 +50,6 @@ owner: inum={{ inum_org }}!0000!A8F2.DE1E.D7FB,ou=people,o={{ inum_org }},o=gluu
 oxAuthUmaScope: inum={{ inum_org }}!0010!8CAD.B06D,ou=scopes,ou=uma,o={{ inum_org }},o=gluu
 oxFaviconImage: http://gluu.org/img/scim_logo.png
 oxId: 1447184268430
-oxResource: https://{{ ox_cluster_hostname }}/identity/seam/resource/restv1/scim/v1
-oxResource: https://{{ ox_cluster_hostname }}/identity/seam/resource/restv1/scim/v2
+oxResource: https://{{ oxtrust_hostname }}/identity/seam/resource/restv1/scim/v1
+oxResource: https://{{ oxtrust_hostname }}/identity/seam/resource/restv1/scim/v2
 oxRevision: 1

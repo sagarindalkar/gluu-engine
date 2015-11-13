@@ -6,13 +6,15 @@ Here you can see the full list of changes between each gluu-flask release.
 Version 0.4.0
 -------------
 
-(release date to be announced)
+Released on November 13th, 2015.
 
-* Added new `gluushib` docker image based on oxIDP v2.3.4.
-* Added new `saml` node (docker container for gluushib).
-* Added background task (`gluuapi.task.fswatcher.SAMLWatcherTask`) to monitor and distribute schema and metadata for `saml` node.
-* License expiration task is now monitoring `saml` node as well.
-* Recovery priority for httpd node is changed to 4. Previous recovery priority value is now taken by `saml` node.
+* Added new `gluuoxidp` docker image based on oxIDP v2.4.0.
+* Added new `oxidp` node (docker container for gluuoxidp).
+* Added background task (`gluuapi.task.fswatcher.OxidpWatcherTask`) to monitor and distribute schema and metadata for `oxidp` node.
+* Added new `gluunginx` docker image.
+* Added new `nginx` node (docker container for gluunginx).
+* `httpd` node is deprecated in favor of `nginx` node.
+* License expiration task is now monitoring `oxidp` node as well.
 * `weave` is upgraded to v1.1.0.
 * `prometheus` container is attached to the weave network due to changes in weave (since v0.11.0).
 * Introduced local DNS server using weaveDNS.

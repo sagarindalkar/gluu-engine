@@ -11,7 +11,7 @@ MPORTANT - READ CAREFULLY: This License Agreement is a legal agreement between Y
  a. You are granted a non-exclusive right to use and install the Software.     
  b. You may modify the configuration files (if applicable).     
 
-4. RESTRICTED USE.
+4. RESTRICTED USE.    
  a. You agree to use reasonable efforts to prevent unauthorized copying of the Software.     
  b. You may not disable any licensing or control features of the Software or allow the Software to be used with such features disabled.     
  c. You may not share, rent, or lease Your right to use the Software.     

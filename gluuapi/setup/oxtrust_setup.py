@@ -235,3 +235,8 @@ environment=CATALINA_PID="/var/run/tomcat.pid"
         src = self.get_template_path("nodes/oxtrust/index.html")
         dest = "/opt/tomcat/webapps/ROOT/index.html"
         self.salt.copy_file(self.node.id, src, dest)
+
+    def restart_tomcat(self):
+        self.logger.info("restarting tomcat")
+        restart_cmd = "supervisorctl restart tomcat"
+        self.salt.cmd(self.node.id, "cmd.run", [restart_cmd])

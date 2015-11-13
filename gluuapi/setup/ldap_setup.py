@@ -330,9 +330,9 @@ class LdapSetup(BaseSetup):
     def add_auto_startup_entry(self):
         # add supervisord entry
         payload = """
-[program:{}]
+[program:opendj]
 command=/opt/opendj/bin/start-ds --quiet -N
-""".format(self.node.type)
+"""
 
         self.logger.info("adding supervisord entry")
         jid = self.salt.cmd_async(
@@ -378,6 +378,8 @@ command=/opt/opendj/bin/start-ds --quiet -N
             setup_obj = OxtrustSetup(oxtrust, self.cluster,
                                      self.app, logger=self.logger)
             setup_obj.render_ldap_props_template()
+            # a hack to force oxTrust re-generate SAML metadata
+            setup_obj.restart_tomcat()
 
         for oxidp in self.cluster.get_oxidp_objects():
             setup_obj = OxidpSetup(oxidp, self.cluster,

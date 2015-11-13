@@ -2,7 +2,7 @@
 dn: inum={{ scim_rs_client_id }},ou=clients,o={{ inum_org }},o=gluu
 objectClass: oxAuthClient
 objectClass: top
-inum: inum={{ scim_rs_client_id }}
+inum: {{ scim_rs_client_id }}
 displayName: SCIM Resource Server Client
 oxAuthAppType: native
 oxAuthIdTokenSignedResponseAlg: HS256
@@ -17,7 +17,7 @@ oxAuthRequireAuthTime: false
 dn: inum={{ scim_rp_client_id }},ou=clients,o={{ inum_org }},o=gluu
 objectClass: oxAuthClient
 objectClass: top
-inum: inum={{ scim_rp_client_id }}
+inum: {{ scim_rp_client_id }}
 displayName: SCIM Requesting Party Client
 oxAuthAppType: native
 oxAuthIdTokenSignedResponseAlg: HS256

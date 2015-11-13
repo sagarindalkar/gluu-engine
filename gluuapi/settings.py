@@ -21,7 +21,8 @@ class Config(object):
     LOG_DIR = os.environ.get("LOG_DIR", "/var/log/gluu")
     INSTANCE_DIR = os.path.join(DATA_DIR, "instance")
     DOCKER_CERT_DIR = os.path.join(DATA_DIR, "docker_certs")
-    CUSTOM_LDAP_SCHEMA_DIR = "/opt/gluu/cluster/custom/opendj/schema"
+    CUSTOM_LDAP_SCHEMA_DIR = os.path.join(DATA_DIR, "custom", "opendj", "schema")
+    OXIDP_VOLUMES_DIR = os.path.join(DATA_DIR, "volumes", "oxidp")
 
 
 class ProdConfig(Config):

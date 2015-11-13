@@ -14,7 +14,8 @@ from ..helper import SaltHelper
 
 
 class OxidpWatcherTask(object):
-    def __init__(self):
+    def __init__(self, app):
+        self.app = app
         self.logger = logging.getLogger(
             __name__ + "." + self.__class__.__name__,
         )
@@ -23,7 +24,7 @@ class OxidpWatcherTask(object):
 
         # path to a directory where all filesystem
         # should be watched for
-        self.path = "/etc/gluu/oxidp"
+        self.path = self.app.config["OXIDP_VOLUMES_DIR"]
 
         # list of file extensions should be watched for
         self.allowed_extensions = (
@@ -94,16 +95,15 @@ class OxidpWatcherTask(object):
 
         # oxTrust will generate required files for Shib configuration
         # under ``/opt/idp`` inside the container; this directory
-        # is mapped as ``/etc/gluu/oxidp`` inside the host
+        # is mapped as ``/var/lib/gluu-cluster/volumes/oxidp`` inside the host
         #
         # for example, given a file ``/opt/idp/conf/attribute-resolver.xml``
         # created inside the container, it will be mapped to
-        # ``/etc/gluu/oxidp/conf/attribute-resolver.xml`` inside the host
+        # ``/var/lib/gluu-cluster/volumes/oxidp/conf/attribute-resolver.xml`` inside the host
         #
         # we need to distribute this file to
         # ``/opt/idp/conf/attribute-resolver.xml`` inside the oxidp node
-        # (gluushib)
-        dest = src.replace("/etc/gluu/oxidp", "/opt/idp")
+        dest = src.replace(self.path, "/opt/idp")
         oxidp_nodes = self.cluster.get_oxidp_objects()
 
         for node in oxidp_nodes:

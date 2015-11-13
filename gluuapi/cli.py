@@ -32,7 +32,7 @@ def run_app(app, use_reloader=True):
 
     if not app.debug:
         LicenseExpirationTask(app).start()
-    OxidpWatcherTask().perform_job()
+    OxidpWatcherTask(app).perform_job()
     app.run(port=app.config["PORT"], use_reloader=use_reloader)
 
 

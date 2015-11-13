@@ -147,7 +147,7 @@ class OxidpSetup(OxauthSetup):
     def pull_shib_config(self):
         allowed_extensions = (".xml", ".dtd", ".config", ".xsd",)
 
-        for root, dirs, files in os.walk("/etc/gluu/oxidp"):
+        for root, dirs, files in os.walk(self.app.config["OXIDP_VOLUMES_DIR"]):
             fn_list = [
                 file_ for file_ in files
                 if os.path.splitext(file_)[-1] in allowed_extensions
@@ -155,7 +155,8 @@ class OxidpSetup(OxauthSetup):
 
             for fn in fn_list:
                 src = os.path.join(root, fn)
-                dest = src.replace("/etc/gluu/oxidp", "/opt/idp")
+                dest = src.replace(self.app.config["OXIDP_VOLUMES_DIR"],
+                                   "/opt/idp")
                 self.logger.info("copying {} to {}:{}".format(
                     os.path.basename(src), self.node.name, dest,
                 ))

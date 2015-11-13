@@ -243,13 +243,16 @@ class OxtrustModelHelper(BaseModelHelper):
     image = "gluuoxtrust"
     dockerfile = "https://raw.githubusercontent.com/GluuFederation" \
                  "/gluu-docker/develop/ubuntu/14.04/gluuoxtrust/Dockerfile"
-    volumes = {
-        "/etc/gluu/oxidp": {
-            "bind": "/opt/idp",
-            "mode": "ro",
-        }
-    }
     port_bindings = {8443: ("127.0.0.1", 8443)}
+
+    def __init__(self, cluster, provider, app):
+        self.volumes = {
+            app.config["OXIDP_VOLUMES_DIR"]: {
+                "bind": "/opt/idp",
+                "mode": "ro",
+            },
+        }
+        super(OxtrustModelHelper, self).__init__(cluster, provider, app)
 
 
 class HttpdModelHelper(BaseModelHelper):

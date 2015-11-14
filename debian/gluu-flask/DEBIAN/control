@@ -1,9 +1,9 @@
 Package: gluu-flask
-Version: 0.4.0-1
+Version: 0.4.0-2
 Architecture: all
 Maintainer: Gluu Developers <noresponse@gluu.org>
 Installed-Size: 1167
-Depends: python, openssl, python-netaddr, python-crochet, python-flask, python-zmq, python-jsonpickle, python-docker-py, tinydb, python-flask-restful, python-flask-restful-swagger, libzmq3-dev, openjdk-7-jre-headless, oxd-license-validator, python-daemonocle, python-flask-marshmallow
+Depends: python, openssl, python-netaddr, python-crochet, python-flask, python-zmq, python-jsonpickle, python-docker-py, tinydb, python-flask-restful, python-flask-restful-swagger, libzmq3-dev, openjdk-7-jre-headless, oxd-license-validator, python-daemonocle, python-flask-marshmallow, python-ldap
 Section: python
 Priority: optional
 Homepage: http://www.gluu.org

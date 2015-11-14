@@ -17,10 +17,10 @@ Homepage: http://www.gluu.org
 
 Package: gluu-flask
 Architecture: all
-Depends: ${misc:Depends}, 
-		python, 
-		openssl, 
-		python-netaddr, 
+Depends: ${misc:Depends},
+		python,
+		openssl,
+		python-netaddr,
 		python-crochet,
 		python-flask,
 		python-zmq,

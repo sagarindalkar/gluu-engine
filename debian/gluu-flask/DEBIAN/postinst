@@ -1,8 +1,0 @@
-#!/bin/sh -e
-update-rc.d gluu-flask defaults > /dev/null
-service gluu-flask start
-#mkdir -p /var/lib/gluu-cluster
-#mkdir -p /var/log/gluu
-#chmod 644 /var/log/gluu/*
-install -d 755 /var/lib/gluu-cluster
-install -d 755 /var/log/gluu

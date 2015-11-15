@@ -23,7 +23,7 @@ def format_cluster_resp(cluster):
     return item
 
 
-class Cluster(Resource):
+class ClusterResource(Resource):
     def get(self, cluster_id):
         cluster = db.get(cluster_id, "clusters")
         if not cluster:
@@ -44,7 +44,7 @@ class Cluster(Resource):
         return {}, 204
 
 
-class ClusterList(Resource):
+class ClusterListResource(Resource):
     def get(self):
         clusters = db.all("clusters")
         return [format_cluster_resp(cluster) for cluster in clusters]
@@ -66,6 +66,6 @@ class ClusterList(Resource):
         db.persist(cluster, "clusters")
 
         headers = {
-            "Location": url_for("cluster", cluster_id=cluster.id),
+            "Location": url_for("clusterresource", cluster_id=cluster.id),
         }
         return format_cluster_resp(cluster), 201, headers

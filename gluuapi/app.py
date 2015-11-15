@@ -13,10 +13,10 @@ from gluuapi.settings import DevConfig
 from gluuapi.settings import TestConfig
 from gluuapi.extensions import restapi
 from gluuapi.extensions import ma
-from gluuapi.resource.node import Node
-from gluuapi.resource.node import NodeList
-from gluuapi.resource.cluster import Cluster
-from gluuapi.resource.cluster import ClusterList
+from gluuapi.resource import NodeResource
+from gluuapi.resource import NodeListResource
+from gluuapi.resource import ClusterResource
+from gluuapi.resource import ClusterListResource
 from gluuapi.resource import ProviderResource
 from gluuapi.resource import ProviderListResource
 from gluuapi.resource import LicenseKeyListResource
@@ -61,11 +61,11 @@ def register_extensions(app):
 
 
 def register_resources():
-    restapi.add_resource(NodeList, '/nodes')
-    restapi.add_resource(Node, '/nodes/<string:node_id>')
+    restapi.add_resource(NodeListResource, '/nodes')
+    restapi.add_resource(NodeResource, '/nodes/<string:node_id>')
 
-    restapi.add_resource(ClusterList, '/clusters')
-    restapi.add_resource(Cluster, '/clusters/<string:cluster_id>')
+    restapi.add_resource(ClusterListResource, '/clusters')
+    restapi.add_resource(ClusterResource, '/clusters/<string:cluster_id>')
 
     restapi.add_resource(ProviderResource, "/providers/<string:provider_id>",
                          endpoint="provider")

@@ -30,7 +30,7 @@ from ..setup import OxidpSetup
 from ..setup import NginxSetup
 
 
-class Node(Resource):
+class NodeResource(Resource):
     def get(self, node_id):
         try:
             node = db.search_from_table(
@@ -113,7 +113,7 @@ class Node(Resource):
         return {}, 204
 
 
-class NodeList(Resource):
+class NodeListResource(Resource):
     def get(self):
         obj_list = db.all("nodes")
         return [item.as_dict() for item in obj_list]
@@ -189,7 +189,7 @@ class NodeList(Resource):
 
         headers = {
             "X-Deploy-Log": helper.logpath,
-            "Location": url_for("node", node_id=helper.node.name),
+            "Location": url_for("noderesource", node_id=helper.node.name),
         }
         # for render purpose, we set the state as in-progress
         helper.node.state = STATE_IN_PROGRESS

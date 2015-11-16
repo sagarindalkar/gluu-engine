@@ -27,6 +27,8 @@ Released on November 13th, 2015.
 * Add validation rule to ensure provider's hostname is unique.
 * Fixed validation rule in Node API caused by missing `node_type` parameter.
 * Added support to import custom schema for LDAP. Related issue: [#38](https://github.com/GluuFederation/gluu-flask/issues/38).
+* Fixed issue in OxidpWatcherTask where cluster object is not refreshed.
+* Cluster data are distributed after enabling/disabling consumer provider (via LicenseExpirationTask)
 
 Version 0.3.3
 -------------

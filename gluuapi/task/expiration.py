@@ -4,12 +4,14 @@
 # All rights reserved.
 
 import logging
+import time
 
 from crochet import run_in_reactor
 from twisted.internet.task import LoopingCall
 
 from ..database import db
 from ..helper import WeaveHelper
+from ..helper import distribute_cluster_data
 from ..model import STATE_DISABLED
 from ..model import STATE_SUCCESS
 from ..utils import retrieve_signed_license
@@ -65,6 +67,11 @@ class LicenseExpirationTask(object):
                     for type_ in ["oxauth", "oxidp"]:
                         self.enable_nodes(provider, type_)
 
+            if providers:
+                # delay before distributing the data to consumers
+                time.sleep(5)
+                distribute_cluster_data(self.app.config["DATABASE_URI"])
+
     def update_license_key(self, license_key):
         resp = retrieve_signed_license(license_key.code)
         if not resp.ok:
@@ -97,7 +104,8 @@ class LicenseExpirationTask(object):
     def disable_nodes(self, provider, type_):
         weave = WeaveHelper(provider, self.app, self.logger)
 
-        for node in provider.get_node_objects(type_=type_):
+        nodes = provider.get_node_objects(type_=type_)
+        for node in nodes:
             node.state = STATE_DISABLED
             db.update(node.id, node, "nodes")
 

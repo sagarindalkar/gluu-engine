@@ -33,10 +33,7 @@ class OxidpWatcherTask(object):
 
         # cluster object may not be created yet
         # when the task is launched
-        try:
-            self.cluster = db.all("clusters")[0]
-        except IndexError:
-            self.cluster = None
+        self._cluster = None
 
     @run_in_reactor
     def perform_job(self):
@@ -113,3 +110,12 @@ class OxidpWatcherTask(object):
                 src, node.name, dest,
             ))
             self.salt.copy_file(node.id, src, dest)
+
+    @property
+    def cluster(self):
+        if self._cluster is None:
+            try:
+                self._cluster = db.all("clusters")[0]
+            except IndexError:
+                self._cluster = None
+        return self._cluster

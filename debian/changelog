@@ -1,4 +1,11 @@
-gluu-flask (0.4.0-3) unstable; urgency=medium
+gluu-flask (0.4.0-5) unstable; urgency=medium
+
+  * QA upload.
+  * New upstream release.
+
+ -- Adrian Alves <support@gluu.org>  Fri, 13 Nov 2015 15:33:51 +0000
+
+gluu-flask (0.4.0-4) unstable; urgency=medium
 
   * QA upload.
   * New upstream release.

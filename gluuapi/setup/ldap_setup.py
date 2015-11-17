@@ -390,7 +390,8 @@ command=/opt/opendj/bin/start-ds --quiet -N
     def after_setup(self):
         """Runs post-setup.
         """
-        self.notify_ox()
+        if self.node.state == STATE_SUCCESS:
+            self.notify_ox()
 
         # modify oxIDPAuthentication entry when we have more LDAP nodes
         self.write_ldap_pw()
@@ -442,8 +443,7 @@ command=/opt/opendj/bin/start-ds --quiet -N
                 self.modify_oxtrust_config(peer_node)
             except IndexError:
                 pass
-
-        self.notify_ox()
+            self.notify_ox()
         self.after_teardown()
 
     def modify_oxidp_auth(self):

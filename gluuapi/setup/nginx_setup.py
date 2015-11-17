@@ -6,6 +6,7 @@
 import time
 
 from .base import BaseSetup
+from ..model import STATE_SUCCESS
 
 
 class NginxSetup(BaseSetup):
@@ -81,10 +82,12 @@ command=/usr/sbin/nginx -g "daemon off;"
             pass
 
     def after_setup(self):
-        if self.provider.type == "master":
+        if (self.provider.type == "master"
+                and self.node.state == STATE_SUCCESS):
             self.notify_oxtrust()
 
     def teardown(self):
-        if self.provider.type == "master":
+        if (self.provider.type == "master"
+                and self.node.state == STATE_SUCCESS):
             self.notify_oxtrust()
         self.after_teardown()

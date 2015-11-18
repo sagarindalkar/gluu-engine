@@ -4,11 +4,8 @@
 # All rights reserved.
 
 import re
-from urllib import quote_plus
 
-from flask import current_app
 from marshmallow import validates
-from marshmallow import post_load
 from marshmallow import ValidationError
 from docker.utils import parse_host
 from docker.errors import DockerException
@@ -46,20 +43,6 @@ class BaseProviderReq(ma.Schema):
             raise ValidationError("hostname has been taken by "
                                   "existing provider")
 
-    @post_load
-    def finalize_data(self, data):
-        for field in ("ssl_cert", "ssl_key", "ca_cert"):
-            # split lines but preserve the new-line special character
-            lines = data[field].splitlines(True)
-            for idx, line in enumerate(lines):
-                # exclude first and last line
-                if (idx == 0) or (idx == len(lines) - 1):
-                    continue
-                lines[idx] = quote_plus(line, safe="/+=\n")
-            data[field] = "".join(lines)
-        data["docker_cert_dir"] = current_app.config["DOCKER_CERT_DIR"]
-        return data
-
     @validates("docker_base_url")
     def validate_docker_base_url(self, value):
         # enforce value to use `unix` or `https` prefix
@@ -71,27 +54,6 @@ class BaseProviderReq(ma.Schema):
             parse_host(value)
         except DockerException as exc:
             raise ValidationError(exc.message)
-
-    @validates("ssl_cert")
-    def validate_ssl_cert(self, value):
-        base_url = self.context.get("docker_base_url", "")
-        if base_url.startswith("https") and not value:
-            raise ValidationError("Field is required when "
-                                  "'docker_base_url' uses https")
-
-    @validates("ssl_key")
-    def validate_ssl_key(self, value):
-        base_url = self.context.get("docker_base_url", "")
-        if base_url.startswith("https") and not value:
-            raise ValidationError("Field is required when "
-                                  "'docker_base_url' uses https")
-
-    @validates("ca_cert")
-    def validate_ca_cert(self, value):
-        base_url = self.context.get("docker_base_url", "")
-        if base_url.startswith("https") and not value:
-            raise ValidationError("Field is required when "
-                                  "'docker_base_url' uses https")
 
 
 class ProviderReq(BaseProviderReq):

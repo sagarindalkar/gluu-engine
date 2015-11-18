@@ -3,9 +3,6 @@
 #
 # All rights reserved.
 
-import codecs
-import os
-import stat
 import uuid
 
 from ..database import db
@@ -22,9 +19,6 @@ class Provider(BaseModel):
         "id",
         "docker_base_url",
         "hostname",
-        "ssl_key",
-        "ssl_cert",
-        "ca_cert",
     ])
 
     def __init__(self, fields=None):
@@ -42,9 +36,6 @@ class Provider(BaseModel):
             condition = (condition) & (db.where("type") == type_)
         if state:
             if state == STATE_SUCCESS:
-                # backward-compat for node without state field
-                condition = (condition) & ((db.where("state") == STATE_SUCCESS) | (~db.where("state")))  # noqa
-            else:
                 condition = (condition) & (db.where("state") == state)
         return db.search_from_table("nodes", condition)
 
@@ -59,26 +50,6 @@ class Provider(BaseModel):
         self.docker_cert_dir = fields.get("docker_cert_dir",
                                           "/etc/gluu/docker_certs")
 
-        # TLS cert contents
-        self.ssl_cert = fields.get("ssl_cert", "")
-        if self.ssl_cert:
-            # chmod 444
-            self._write_cert_file(self.ssl_cert, self.ssl_cert_path,
-                                  stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
-
-        # TLS key contents
-        self.ssl_key = fields.get("ssl_key", "")
-        if self.ssl_key:
-            # chmod 400
-            self._write_cert_file(self.ssl_key, self.ssl_key_path, stat.S_IRUSR)
-
-        # CA cert contents
-        self.ca_cert = fields.get("ca_cert", "")
-        if self.ca_cert:
-            # chmod 444
-            self._write_cert_file(self.ca_cert, self.ca_cert_path,
-                                  stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
-
     @property
     def ssl_cert_path(self):  # pragma: no cover
         return "{}/{}__cert.pem".format(self.docker_cert_dir, self.id)
@@ -90,23 +61,3 @@ class Provider(BaseModel):
     @property
     def ca_cert_path(self):  # pragma: no cover
         return "{}/{}__ca.pem".format(self.docker_cert_dir, self.id)
-
-    def _write_cert_file(self, content, dest, filemode):
-        """Writes a file and change the file mode.
-        """
-        try:
-            os.makedirs(self.docker_cert_dir)
-        except OSError as exc:
-            # file exists
-            if exc.errno == 17:
-                pass
-            else:  # pragma: no cover
-                raise exc
-
-        # temporarily set file as writable only if file exists
-        if os.path.exists(dest):
-            os.chmod(dest, stat.S_IWUSR)  # pragma: no cover
-
-        with codecs.open(dest, mode="w", encoding="utf-8") as fp:
-            fp.write(content)
-            os.chmod(dest, filemode)

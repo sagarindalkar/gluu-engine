@@ -9,7 +9,6 @@ import time
 from crochet import run_in_reactor
 
 from .salt_helper import SaltHelper
-from .provider_helper import distribute_cluster_data
 from ..database import db
 
 
@@ -90,7 +89,6 @@ class WeaveHelper(object):
                      "--ipalloc-range {ipnet} " \
                      "--ipalloc-default-subnet {ipnet}".format(**ctx)
         self.salt.cmd(self.provider.hostname, "cmd.run", [launch_cmd])
-        distribute_cluster_data(self.app.config["DATABASE_URI"])
 
     def launch_consumer(self):
         self.logger.info("re-launching weave for consumer provider")
@@ -109,7 +107,6 @@ class WeaveHelper(object):
                      "--ipalloc-default-subnet {ipnet} " \
                      "{master_ipaddr}".format(**ctx)
         self.salt.cmd(self.provider.hostname, "cmd.run", [launch_cmd])
-        distribute_cluster_data(self.app.config["DATABASE_URI"])
 
     def attach(self, cidr, node_id):
         attach_cmd = "weave attach {} {}".format(cidr, node_id)

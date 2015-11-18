@@ -13,8 +13,8 @@ from ..reqparser import ProviderReq
 from ..reqparser import EditProviderReq
 from ..model import Provider
 from ..helper import SaltHelper
-from ..helper import WeaveHelper
 from ..helper import distribute_cluster_data
+from ..helper import ProviderHelper
 from ..utils import retrieve_signed_license
 from ..utils import decode_signed_license
 
@@ -67,11 +67,12 @@ class ProviderResource(Resource):
             }, 400
 
         data["type"] = provider.type
+        data["docker_cert_dir"] = current_app.config["DOCKER_CERT_DIR"]
         provider.populate(data)
         db.update(provider.id, provider, "providers")
 
-        weave = WeaveHelper(provider, current_app._get_current_object())
-        weave.launch_async()
+        prov_helper = ProviderHelper(provider, current_app._get_current_object())
+        prov_helper.configure()
         return format_provider_resp(provider)
 
 
@@ -98,6 +99,8 @@ class ProviderListResource(Resource):
                 "message": "Invalid data",
                 "params": errors,
             }, 400
+
+        data["docker_cert_dir"] = current_app.config["DOCKER_CERT_DIR"]
 
         master_num = db.count_from_table(
             "providers", db.where("type") == "master",
@@ -167,8 +170,8 @@ class ProviderListResource(Resource):
         provider = Provider(fields=data)
         db.persist(provider, "providers")
 
-        weave = WeaveHelper(provider, current_app._get_current_object())
-        weave.launch_async()
+        prov_helper = ProviderHelper(provider, current_app._get_current_object())
+        prov_helper.configure()
 
         headers = {
             "Location": url_for("provider", provider_id=provider.id),

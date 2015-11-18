@@ -46,57 +46,6 @@ def test_validate_docker_base_url(base_url):
         reqparser.validate_docker_base_url(base_url)
 
 
-def test_validate_ssl_cert():
-    from gluuapi.reqparser import ProviderReq
-    from marshmallow import ValidationError
-
-    reqparser = ProviderReq(context={"docker_base_url": "https://0.0.0.0:2375"})
-    with pytest.raises(ValidationError):
-        reqparser.validate_ssl_cert("")
-
-
-def test_validate_ssl_key():
-    from gluuapi.reqparser import ProviderReq
-    from marshmallow import ValidationError
-
-    reqparser = ProviderReq(context={"docker_base_url": "https://0.0.0.0:2375"})
-    with pytest.raises(ValidationError):
-        reqparser.validate_ssl_key("")
-
-
-def test_validate_ca_cert():
-    from gluuapi.reqparser import ProviderReq
-    from marshmallow import ValidationError
-
-    reqparser = ProviderReq(context={"docker_base_url": "https://0.0.0.0:2375"})
-    with pytest.raises(ValidationError):
-        reqparser.validate_ca_cert("")
-
-
-def test_finalize_data(app):
-    from gluuapi.reqparser import ProviderReq
-
-    reqparser = ProviderReq()
-    with app.test_request_context():
-        data = reqparser.finalize_data({
-            "docker_base_url": "https://localhost:2375",
-            "hostname": "local",
-            "ssl_cert": """-----BEGIN CERTIFICATE-----\n
-kye8qHB5Sm43E/PJL+oAPU0OSYe3H7f9pJMwvx0 T7Sa4T8FKl10W76Rn==\n
------END CERTIFICATE-----\n""",
-            "ssl_key": """-----BEGIN RSA PRIVATE KEY-----
-kye8qHB5Sm43E/PJL+oAPU0OSYe3H7f9pJMwvx0 T7Sa4T8FKl10W76Rn==
------END RSA PRIVATE KEY-----""",
-            "ca_cert": """-----BEGIN CERTIFICATE-----
-kye8qHB5Sm43E/PJL+oAPU0OSYe3H7f9pJMwvx0 T7Sa4T8FKl10W76Rn==
------END CERTIFICATE-----""",
-        })
-
-        assert data["ssl_cert"] == """-----BEGIN CERTIFICATE-----\n
-kye8qHB5Sm43E/PJL+oAPU0OSYe3H7f9pJMwvx0+T7Sa4T8FKl10W76Rn==\n
------END CERTIFICATE-----\n"""
-
-
 def test_validate_hostname_duplicated(db, provider):
     from gluuapi.reqparser import ProviderReq
     from marshmallow import ValidationError

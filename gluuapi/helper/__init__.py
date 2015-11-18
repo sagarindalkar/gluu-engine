@@ -15,3 +15,4 @@ from .model_helper import NginxModelHelper  # noqa
 from .prometheus_helper import PrometheusHelper  # noqa
 from .weave_helper import WeaveHelper  # noqa
 from .provider_helper import distribute_cluster_data  # noqa
+from .provider_helper import ProviderHelper  # noqa

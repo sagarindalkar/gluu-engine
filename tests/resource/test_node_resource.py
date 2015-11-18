@@ -145,20 +145,25 @@ def test_node_post_invalid_cluster(app, db):
     assert resp.status_code == 400
 
 
-def test_node_post_ip_unavailable(app, db, cluster):
+def test_node_post_ip_unavailable(monkeypatch, app, db, cluster, provider):
     # fills up reserved IP address using fake values
-    cluster.reserved_ip_addrs = [ip for ip in range(253)]
+    monkeypatch.setattr(
+        "gluuapi.model.GluuCluster.get_node_addrs",
+        lambda cls: ["10.20.10.{}".format(x) for x in xrange(256)]
+    )
+
     db.persist(cluster, "clusters")
+    db.persist(provider, "providers")
 
     resp = app.test_client().post(
         "/nodes",
         data={
             "cluster_id": cluster.id,
-            "provider_id": "123",
-            "node_type": "httpd",
+            "provider_id": provider.id,
+            "node_type": "oxauth",
         },
     )
-    assert resp.status_code == 400
+    assert resp.status_code == 403
 
 
 def test_node_post_invalid_provider(app, db, cluster):
@@ -177,7 +182,6 @@ def test_node_post_invalid_provider(app, db, cluster):
 @pytest.mark.parametrize("node_type, helper_class", [
     ("ldap", "LdapModelHelper"),
     ("oxauth", "OxauthModelHelper"),
-    # ("httpd", "HttpdModelHelper"),
 ])
 def test_node_post(monkeypatch, app, db, cluster, provider,
                    node_type, helper_class, oxauth_node):

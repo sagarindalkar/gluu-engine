@@ -21,7 +21,7 @@ from ..model import OxidpNode
 from ..model import NginxNode
 from ..model import STATE_SUCCESS
 from ..model import STATE_FAILED
-from ..model import STATE_IN_PROGRESS
+# from ..model import STATE_IN_PROGRESS
 from .docker_helper import DockerHelper
 from .salt_helper import SaltHelper
 from .provider_helper import distribute_cluster_data
@@ -109,9 +109,6 @@ class BaseModelHelper(object):
         """Runs the node setup.
         """
         try:
-            self.node.state = STATE_IN_PROGRESS
-            db.persist(self.node, "nodes")
-
             # get docker bridge IP as it's where weavedns runs
             bridge_ip = self.weave.docker_bridge_ip()
 
@@ -145,8 +142,6 @@ class BaseModelHelper(object):
                 return
 
             self.node.ip = self.docker.get_container_ip(self.node.id)
-            self.node.weave_ip = self.cluster.last_fetched_addr
-            self.node.weave_prefixlen = self.cluster.prefixlen
             self.node.domain_name = "{}.{}.gluu.local".format(
                 self.node.id, self.node.type,
             )

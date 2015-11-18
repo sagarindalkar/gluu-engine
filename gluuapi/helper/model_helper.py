@@ -249,7 +249,6 @@ class OxtrustModelHelper(BaseModelHelper):
         self.volumes = {
             app.config["OXIDP_VOLUMES_DIR"]: {
                 "bind": "/opt/idp",
-                "mode": "ro",
             },
         }
         super(OxtrustModelHelper, self).__init__(cluster, provider, app)

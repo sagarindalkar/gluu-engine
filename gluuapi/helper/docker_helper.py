@@ -13,7 +13,6 @@ import requests
 from docker import Client
 from docker.tls import TLSConfig
 from docker.errors import TLSParameterError
-from docker.utils import create_host_config
 
 from ..log import create_file_logger
 
@@ -116,7 +115,7 @@ class DockerHelper(object):
         #}
         container = self.docker.create_container(
             image=image, name=name, detach=True, environment=env,
-            host_config=create_host_config(
+            host_config=self.docker.create_host_config(
                 port_bindings=port_bindings,
                 binds=volumes,
                 dns=dns,

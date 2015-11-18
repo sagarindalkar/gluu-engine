@@ -37,7 +37,7 @@ setup(
         "Flask-RESTful",
         "Flask",
         "crochet",
-        "docker-py>=1.2.0,<1.3.0",
+        "docker-py>=1.5.0,<1.6.0",
         "salt<2015.2",
         "pyzmq",
         "tinydb<3.0.0",

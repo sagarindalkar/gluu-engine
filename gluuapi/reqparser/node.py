@@ -36,10 +36,6 @@ class NodeReq(ma.Schema):
         if not cluster:
             raise ValidationError("invalid cluster ID")
 
-        addr, _ = cluster.reserve_ip_addr()
-        if not addr:
-            raise ValidationError("cluster is running out of weave IP")
-
     @validates("provider_id")
     def validate_provider(self, value):
         provider = db.get(value, "providers")

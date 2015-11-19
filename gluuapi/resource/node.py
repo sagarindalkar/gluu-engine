@@ -114,6 +114,14 @@ class NodeResource(Resource):
 
 
 class NodeListResource(Resource):
+    helper_classes = {
+        "ldap": LdapModelHelper,
+        "oxauth": OxauthModelHelper,
+        "oxtrust": OxtrustModelHelper,
+        "oxidp": OxidpModelHelper,
+        "nginx": NginxModelHelper,
+    }
+
     def get(self):
         obj_list = db.all("nodes")
         return [item.as_dict() for item in obj_list]
@@ -172,25 +180,27 @@ class NodeListResource(Resource):
                 }, 403
 
         addr, prefixlen = cluster.reserve_ip_addr()
-        cluster.last_fetched_addr = addr
-        db.update(cluster.id, cluster, "clusters")
+        if not addr:
+            return {
+                "status": 403,
+                "message": "cluster is running out of weave IP",
+            }, 403
 
-        helper_classes = {
-            "ldap": LdapModelHelper,
-            "oxauth": OxauthModelHelper,
-            "oxtrust": OxtrustModelHelper,
-            "oxidp": OxidpModelHelper,
-            "nginx": NginxModelHelper,
-        }
-        helper_class = helper_classes[params["node_type"]]
+        helper_class = self.helper_classes[params["node_type"]]
+        helper = helper_class(cluster, provider,
+                              current_app._get_current_object())
 
-        helper = helper_class(cluster, provider, current_app._get_current_object())
+        # set the weave IP immediately to prevent race condition
+        # when nodes are requested concurrently
+        helper.node.weave_ip = addr
+        helper.node.weave_prefixlen = prefixlen
+        helper.node.state = STATE_IN_PROGRESS
+        db.persist(helper.node, "nodes")
+
         helper.setup(params["connect_delay"], params["exec_delay"])
 
         headers = {
             "X-Deploy-Log": helper.logpath,
             "Location": url_for("noderesource", node_id=helper.node.name),
         }
-        # for render purpose, we set the state as in-progress
-        helper.node.state = STATE_IN_PROGRESS
         return helper.node.as_dict(), 202, headers

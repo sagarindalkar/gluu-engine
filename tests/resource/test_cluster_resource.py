@@ -124,7 +124,7 @@ def test_cluster_post_invalid_country_code(app, db, patched_salt):
 
 @pytest.mark.parametrize("weave_ip_network", [
     "abc",
-    "10.2.1.0",
+    "10.20.10.0",
     "500.1.2.3/256",
 ])
 def test_cluster_post_invalid_weave_network(app, db, patched_salt, weave_ip_network):

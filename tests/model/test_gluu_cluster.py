@@ -69,10 +69,10 @@ def test_exposed_weave_ip():
     from gluuapi.model import GluuCluster
 
     cluster = GluuCluster()
-    cluster.weave_ip_network = "10.2.1.0/24"
+    cluster.weave_ip_network = "10.20.10.0/24"
 
     addr, prefixlen = cluster.exposed_weave_ip
-    assert addr == "10.2.1.254"
+    assert addr == "10.20.10.254"
     assert prefixlen == 24
 
 
@@ -87,8 +87,8 @@ def test_prometheus_weave_ip():
     from gluuapi.model import GluuCluster
 
     cluster = GluuCluster()
-    cluster.weave_ip_network = "10.2.1.0/24"
+    cluster.weave_ip_network = "10.20.10.0/24"
 
     addr, prefixlen = cluster.prometheus_weave_ip
-    assert addr == "10.2.1.253"
+    assert addr == "10.20.10.253"
     assert prefixlen == 24

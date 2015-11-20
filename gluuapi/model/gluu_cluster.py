@@ -4,9 +4,10 @@
 # All rights reserved.
 
 import uuid
+import itertools
 
 from netaddr import IPNetwork
-from netaddr import IPAddress
+from netaddr import IPSet
 
 from ..database import db
 from .base import BaseModel
@@ -118,9 +119,6 @@ class GluuCluster(BaseModel):
         # Weave IP network
         self.weave_ip_network = fields.get("weave_ip_network", "10.2.1.0/24")
 
-        # a pointer to last fetched address
-        self.last_fetched_addr = ""
-
     @property
     def decrypted_admin_pw(self):
         return decrypt_text(self.admin_pw, self.passkey)
@@ -168,7 +166,7 @@ class GluuCluster(BaseModel):
         pool = IPNetwork(self.weave_ip_network)
         # as the last element of pool is a broadcast address, we cannot use it;
         # hence we fetch the last 2nd element of the pool
-        addr = pool[-2]
+        addr = pool.broadcast - 1
         return str(addr), pool.prefixlen
 
     def reserve_ip_addr(self):
@@ -181,17 +179,20 @@ class GluuCluster(BaseModel):
         # represents a pool of IP addresses
         pool = IPNetwork(self.weave_ip_network)
 
-        if self.last_fetched_addr:
-            addr = str(IPAddress(self.last_fetched_addr) + 1)
-        else:
-            # skips ``pool.network`` address
-            addr = str(pool[1])
+        reserved_addrs = IPSet([
+            pool.network,
+            pool.broadcast,
+            self.exposed_weave_ip[0],
+            self.prometheus_weave_ip[0],
+        ] + self.get_node_addrs())
+        maybe_available = IPSet(pool)
+        ipset = reserved_addrs ^ maybe_available
 
-        if addr in (self.exposed_weave_ip[0], str(pool.network),
-                    str(pool.broadcast), self.prometheus_weave_ip[0]):
-            # there's no available IP address
-            return "", pool.prefixlen
-        return addr, pool.prefixlen
+        try:
+            addr = list(itertools.islice(ipset, 1))[0]
+        except IndexError:
+            addr = ""
+        return str(addr), pool.prefixlen
 
     @property
     def prefixlen(self):
@@ -207,5 +208,12 @@ class GluuCluster(BaseModel):
         pool = IPNetwork(self.weave_ip_network)
         # as the last element of pool is a broadcast address, we cannot use it;
         # hence we fetch the last 3rd element of the pool
-        addr = pool[-3]
+        addr = pool.broadcast - 2
         return str(addr), pool.prefixlen
+
+    def get_node_addrs(self):
+        nodes = db.search_from_table(
+            "nodes",
+            db.where("cluster_id") == self.id,
+        )
+        return filter(None, [node.weave_ip for node in nodes])

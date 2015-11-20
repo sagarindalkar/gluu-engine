@@ -7,6 +7,7 @@ import codecs
 import logging
 import os
 import stat
+import time
 
 from crochet import run_in_reactor
 
@@ -46,7 +47,8 @@ class ProviderHelper(object):
         )
 
     @run_in_reactor
-    def configure(self):
+    def configure(self, connect_delay=10, exec_delay=15):
+        self.prepare_minion(connect_delay, exec_delay)
         self.weave.launch()
         self.import_docker_certs()
         distribute_cluster_data(self.app.config["DATABASE_URI"])
@@ -59,6 +61,9 @@ class ProviderHelper(object):
         }
         for remote_cert_path, callback in cert_types.items():
             content = self.get_docker_cert(remote_cert_path)
+            self.logger.info(
+                "importing remote certificate {}".format(remote_cert_path)
+            )
             callback(content)
 
     def get_docker_cert(self, remote_cert_path):
@@ -106,3 +111,23 @@ class ProviderHelper(object):
         # chmod 444
         self._write_cert_file(content, self.provider.ca_cert_path,
                               stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
+
+    def prepare_minion(self, connect_delay=10, exec_delay=15):
+        """Waits for minion to connect before doing any remote execution.
+        """
+        # wait for 10 seconds to make sure minion connected
+        # and sent its key to master
+        # TODO: there must be a way around this
+        self.logger.info("Waiting for minion to connect; sleeping for "
+                         "{} seconds".format(connect_delay))
+        time.sleep(connect_delay)
+
+        # register the container as minion
+        self.salt.register_minion(self.provider.hostname)
+
+        # delay the remote execution
+        # see https://github.com/saltstack/salt/issues/13561
+        # TODO: there must be a way around this
+        self.logger.info("Preparing remote execution; sleeping for "
+                         "{} seconds".format(exec_delay))
+        time.sleep(exec_delay)

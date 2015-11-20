@@ -27,13 +27,10 @@ class WeaveHelper(object):
         )
 
     @run_in_reactor
-    def launch_async(self, register_minion=True):
-        self.launch(register_minion)
+    def launch_async(self):
+        self.launch()
 
-    def launch(self, register_minion=True):
-        if register_minion:
-            self.prepare_minion()
-
+    def launch(self):
         if self.provider.type == "master":
             self.launch_master()
         else:
@@ -42,26 +39,6 @@ class WeaveHelper(object):
         # wait for weave to run before exposing its network
         time.sleep(5)
         self.expose_network()
-
-    def prepare_minion(self, connect_delay=10, exec_delay=15):
-        """Waits for minion to connect before doing any remote execution.
-        """
-        # wait for 10 seconds to make sure minion connected
-        # and sent its key to master
-        # TODO: there must be a way around this
-        self.logger.info("Waiting for minion to connect; sleeping for "
-                         "{} seconds".format(connect_delay))
-        time.sleep(connect_delay)
-
-        # register the container as minion
-        self.salt.register_minion(self.provider.hostname)
-
-        # delay the remote execution
-        # see https://github.com/saltstack/salt/issues/13561
-        # TODO: there must be a way around this
-        self.logger.info("Preparing remote execution; sleeping for "
-                         "{} seconds".format(exec_delay))
-        time.sleep(exec_delay)
 
     def expose_network(self):
         addr, prefixlen = self.cluster.exposed_weave_ip

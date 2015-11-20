@@ -11,49 +11,12 @@ the design of the gluu-flask component.
 ### Ubuntu packages
 
 ```
-sudo apt-get install -y libssl-dev python-dev swig libzmq3-dev openjdk-7-jre-headless
-sudo apt-get build-dep openssl
+echo "deb http://repo.gluu.org/ubuntu/ trusty-devel main" | sudo tee /etc/apt/sources.list.d/gluu-repo.list
+curl http://repo.gluu.org/ubuntu/gluu-apt.key | sudo apt-key add -
+sudo apt-get install -y gluu-master
 ```
 
-### Install docker
-
-Follow these instructions to install the package for Ubuntu Trusty 14.04 managed by docker.com:
-[http://docs.docker.com/installation/ubuntulinux](http://docs.docker.com/installation/ubuntulinux/#docker-maintained-package-installation)
-
-For the impatient, just type:
-
-```
-curl -sSL https://get.docker.com/ubuntu/ | sudo sh
-```
-
-Note: gluu-flask only supports docker v1.6.2 at the moment.
-
-### Install salt-master and salt-minion
-
-```
-echo deb http://ppa.launchpad.net/saltstack/salt/ubuntu `lsb_release -sc` main | sudo tee /etc/apt/sources.list.d/saltstack.list
-wget -q -O- "http://keyserver.ubuntu.com:11371/pks/lookup?op=get&search=0x4759FA960E27C0A6" | sudo apt-key add -
-sudo apt-get update
-sudo apt-get install -y salt-master salt-minion
-```
-
-### License Validator
-
-Get the oxd license validator JAR file:
-
-```
-wget http://repo.gluu.org/ubuntu/pool/main/trusty-devel/oxd-license-validator_3.0.1-SNAPSHOT-1_all.deb
-sudo dpkg -i oxd-license-validator_3.0.1-SNAPSHOT-1_all.deb
-```
-
-### Install weave
-
-Currently `gluu-flask` only supports weave v1.1.0.
-
-```
-wget http://repo.gluu.org/ubuntu/pool/main/trusty-devel/weave-docker_1.1.0-1_all.deb
-sudo dpkg -i weave-docker_1.1.0-1_all.deb
-```
+Note: `gluu-master` is a meta package that installs all required packages.
 
 ## Deployment
 

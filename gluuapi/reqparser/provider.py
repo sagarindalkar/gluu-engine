@@ -22,9 +22,10 @@ PROVIDER_CHOICES = ("master", "consumer",)
 class BaseProviderReq(ma.Schema):
     hostname = ma.Str(required=True)
     docker_base_url = ma.Str(required=True)
-    ssl_cert = ma.Str(default="", missing="")
-    ssl_key = ma.Str(default="", missing="")
-    ca_cert = ma.Str(default="", missing="")
+    connect_delay = ma.Int(default=10, missing=10,
+                           error="must use numerical value")
+    exec_delay = ma.Int(default=15, missing=15,
+                        error="must use numerical value")
 
     @validates("hostname")
     def validate_hostname(self, value):

@@ -72,7 +72,7 @@ class ProviderResource(Resource):
         db.update(provider.id, provider, "providers")
 
         prov_helper = ProviderHelper(provider, current_app._get_current_object())
-        prov_helper.configure()
+        prov_helper.configure(data["connect_delay"], data["exec_delay"])
         return format_provider_resp(provider)
 
 
@@ -171,7 +171,7 @@ class ProviderListResource(Resource):
         db.persist(provider, "providers")
 
         prov_helper = ProviderHelper(provider, current_app._get_current_object())
-        prov_helper.configure()
+        prov_helper.configure(data["connect_delay"], data["exec_delay"])
 
         headers = {
             "Location": url_for("provider", provider_id=provider.id),

@@ -47,7 +47,7 @@ class ProviderHelper(object):
         )
 
     @run_in_reactor
-    def configure(self, connect_delay=10, exec_delay=15):
+    def setup(self, connect_delay=10, exec_delay=15):
         self.prepare_minion(connect_delay, exec_delay)
         self.weave.launch()
         self.import_docker_certs()

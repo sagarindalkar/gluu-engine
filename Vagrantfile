@@ -13,7 +13,7 @@ Vagrant.configure(2) do |config|
       wget -q http://repo.gluu.org/ubuntu/gluu-release-devel_1.0-1_all.deb -O /tmp/gluu-release-devel_1.0-1_all.deb
       dpkg -i /tmp/gluu-release-devel_1.0-1_all.deb
       apt-get update -q
-      apt-get install -y gluu-master python-pip python-dev swig libsasl2-dev libldap2-dev libssl-dev
+      apt-get install -y gluu-master python-pip python-dev swig libsasl2-dev libldap2-dev libssl-dev openjdk-7-jre-headless oxd-license-validator
       pip install tox
     SHELL
   end

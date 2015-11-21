@@ -13,7 +13,7 @@ the design of the gluu-flask component.
 ```
 echo "deb http://repo.gluu.org/ubuntu/ trusty-devel main" | sudo tee /etc/apt/sources.list.d/gluu-repo.list
 curl http://repo.gluu.org/ubuntu/gluu-apt.key | sudo apt-key add -
-sudo apt-get install -y gluu-master python-pip python-dev swig libsasl2-dev libldap2-dev libssl-dev
+sudo apt-get install -y gluu-master python-pip python-dev swig libsasl2-dev libldap2-dev libssl-dev openjdk-7-jre-headless oxd-license-validator
 ```
 
 Note: `gluu-master` is a meta package that installs all required packages.

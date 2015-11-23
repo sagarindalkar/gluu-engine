@@ -301,3 +301,43 @@ def test_node_delete_force(monkeypatch, app, db, ldap_node, cluster,
         "/nodes/{}?force_rm={}".format(ldap_node.id, force_delete),
     )
     assert resp.status_code == status_code
+
+
+def test_node_duplicated_nginx(app, db, cluster, provider, nginx_node):
+    db.persist(cluster, "clusters")
+    db.persist(provider, "providers")
+    nginx_node.state = "SUCCESS"
+    nginx_node.cluster_id = cluster.id
+    nginx_node.provider_id = provider.id
+    db.persist(nginx_node, "nodes")
+
+    resp = app.test_client().post(
+        "/nodes",
+        data={
+            "cluster_id": cluster.id,
+            "provider_id": provider.id,
+            "node_type": "nginx",
+        },
+    )
+    assert resp.status_code == 403
+
+
+def test_node_ldap_max_exceeded(app, db, cluster, provider, ldap_node):
+    db.persist(cluster, "clusters")
+    db.persist(provider, "providers")
+
+    for i in range(4):
+        ldap_node.state = "SUCCESS"
+        ldap_node.cluster_id = cluster.id
+        ldap_node.provider_id = provider.id
+        db.persist(ldap_node, "nodes")
+
+    resp = app.test_client().post(
+        "/nodes",
+        data={
+            "cluster_id": cluster.id,
+            "provider_id": provider.id,
+            "node_type": "ldap",
+        },
+    )
+    assert resp.status_code == 403

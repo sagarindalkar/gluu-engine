@@ -197,3 +197,26 @@ def test_get_remote_files(monkeypatch, docker_helper):
 
     # remove temporary dir
     shutil.rmtree(local_dir)
+
+
+def test_inspect_container(monkeypatch, docker_helper):
+    monkeypatch.setattr(
+        "docker.Client.inspect_container",
+        lambda cls, container: [
+            {
+                "State": {
+                    "Running": True,
+                    "Paused": False,
+                    "Restarting": False,
+                    "OOMKilled": False,
+                    "Dead": False,
+                    "Pid": 0,
+                    "ExitCode": 0,
+                    "Error": "",
+                    "StartedAt": "2015-11-21T04:44:28.74359245Z",
+                    "FinishedAt": "2015-11-21T06:24:04.369726493Z"
+                },
+            }
+        ]
+    )
+    assert len(docker_helper.inspect_container("weave"))

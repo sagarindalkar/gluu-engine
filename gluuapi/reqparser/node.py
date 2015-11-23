@@ -19,7 +19,7 @@ class NodeReq(ma.Schema):
 
     try:
         node_type = ma.Select(choices=NODE_CHOICES, required=True)
-    except AttributeError:
+    except AttributeError:  # pragma: no cover
         # marshmallow.Select is removed starting from 2.0.0
         from marshmallow.validate import OneOf
         node_type = ma.Str(validate=OneOf(NODE_CHOICES), required=True)

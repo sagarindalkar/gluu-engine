@@ -23,26 +23,22 @@ DEFAULT_DOCKER_URL = "unix:///var/run/docker.sock"
 class DockerHelper(object):
     def __init__(self, provider, logger=None):
         self.logger = logger or create_file_logger()
-        self.docker = None
         self.provider = provider
-        self.connect()
 
-    def connect(self):
-        if not self.docker:
-            tlsconfig = None
-            if self.provider.docker_base_url.startswith("https"):
-                try:
-                    # configure TLS configuration to connect to docker
-                    tlsconfig = TLSConfig(
-                        client_cert=(self.provider.ssl_cert_path,
-                                     self.provider.ssl_key_path),
-                        verify=self.provider.ca_cert_path,
-                    )
-                except TLSParameterError as exc:
-                    self.logger.warn(exc)
+        tlsconfig = None
+        if self.provider.docker_base_url.startswith("https"):
+            try:
+                # configure TLS configuration to connect to docker
+                tlsconfig = TLSConfig(
+                    client_cert=(self.provider.ssl_cert_path,
+                                 self.provider.ssl_key_path),
+                    verify=self.provider.ca_cert_path,
+                )
+            except TLSParameterError as exc:
+                self.logger.warn(exc)
 
-            self.docker = Client(base_url=self.provider.docker_base_url,
-                                 tls=tlsconfig)
+        self.docker = Client(base_url=self.provider.docker_base_url,
+                             tls=tlsconfig)
 
     def image_exists(self, name):
         """Checks whether a docker image exists.
@@ -226,6 +222,3 @@ class DockerHelper(object):
 
     def inspect_container(self, container_id):
         return self.docker.inspect_container(container_id)
-
-    def start_container(self, container_id):
-        return self.docker.start(container_id)

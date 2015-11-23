@@ -195,10 +195,6 @@ class GluuCluster(BaseModel):
         return str(addr), pool.prefixlen
 
     @property
-    def prefixlen(self):
-        return IPNetwork(self.weave_ip_network).prefixlen
-
-    @property
     def nodes_count(self):
         condition = db.where("cluster_id") == self.id
         return db.count_from_table("nodes", condition)

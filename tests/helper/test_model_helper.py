@@ -1,15 +1,3 @@
-import pytest
-
-
-def test_base_model_helper_init(app, cluster, provider):
-    from gluuapi.helper.model_helper import BaseModelHelper
-
-    # instantiating BaseModelHelper without overriding any
-    # required attrs (e.g. ``setup_class``) raises AssertionError
-    with pytest.raises(AssertionError):
-        BaseModelHelper(cluster, provider, app)
-
-
 def test_ldap_model_helper(monkeypatch, app, cluster, provider):
     from gluuapi.helper.model_helper import LdapModelHelper
     from gluuapi.setup import LdapSetup

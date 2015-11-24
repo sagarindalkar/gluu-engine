@@ -3,6 +3,7 @@
 #
 # All rights reserved.
 
+import abc
 import os.path
 import time
 import uuid
@@ -21,7 +22,6 @@ from ..model import OxidpNode
 from ..model import NginxNode
 from ..model import STATE_SUCCESS
 from ..model import STATE_FAILED
-# from ..model import STATE_IN_PROGRESS
 from .docker_helper import DockerHelper
 from .salt_helper import SaltHelper
 from .provider_helper import distribute_cluster_data
@@ -38,28 +38,33 @@ from ..utils import exc_traceback
 
 
 class BaseModelHelper(object):
-    #: Node setup class. Must be overriden in subclass.
-    setup_class = None
+    __metaclass__ = abc.ABCMeta
 
-    #: Node model class. Must be overriden in subclass.
-    node_class = None
+    @abc.abstractproperty
+    def setup_class(self):
+        """Node setup class. Must be overriden in subclass.
+        """
 
-    #: Docker image name. Must be overriden in subclass.
-    image = ""
+    @abc.abstractproperty
+    def node_class(self):
+        """Node model class. Must be overriden in subclass.
+        """
 
-    #: URL to image's Dockerfile. Must be overriden in subclass.
-    dockerfile = ""
+    @abc.abstractproperty
+    def image(self):
+        """Docker image name. Must be overriden in subclass.
+        """
+
+    @abc.abstractproperty
+    def dockerfile(self):
+        """URL to image's Dockerfile. Must be overriden in subclass.
+        """
 
     port_bindings = {}
 
     volumes = {}
 
     def __init__(self, cluster, provider, app):
-        assert self.setup_class, "setup_class must be set"
-        assert self.node_class, "node_class must be set"
-        assert self.image, "image attribute cannot be empty"
-        assert self.dockerfile, "dockerfile attribute cannot be empty"
-
         self.salt_master_ipaddr = app.config["SALT_MASTER_IPADDR"]
         self.log_dir = app.config["LOG_DIR"]
         self.cluster = cluster
@@ -69,9 +74,6 @@ class BaseModelHelper(object):
         self.node.cluster_id = cluster.id
         self.node.provider_id = provider.id
         self.node.name = "{}_{}".format(self.image, uuid.uuid4())
-
-        if not os.path.exists(self.log_dir):
-            os.makedirs(self.log_dir)
 
         self.logpath = os.path.join(self.log_dir, self.node.name + "-setup.log")
         self.node.setup_logpath = self.logpath

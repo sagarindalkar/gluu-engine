@@ -10,6 +10,7 @@ Release date to be announced later.
 
 * docker is upgraded to v1.8.3.
 * Automated import on docker certificates required for making request to docker Remote API. Related issue: [#50](https://github.com/GluuFederation/gluu-flask/issues/50).
+* tinydb is upgraded to v3.0.0.
 
 Version 0.4.0
 -------------

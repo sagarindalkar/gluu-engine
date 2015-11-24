@@ -220,3 +220,32 @@ def test_inspect_container(monkeypatch, docker_helper):
         ]
     )
     assert len(docker_helper.inspect_container("weave"))
+
+
+def test_init_tls_conn(monkeypatch, provider):
+    import tempfile
+    from gluuapi.helper import DockerHelper
+
+    _, ca_pem = tempfile.mkstemp(suffix=".pem")
+    _, cert_pem = tempfile.mkstemp(suffix=".pem")
+    _, key_pem = tempfile.mkstemp(suffix=".pem")
+
+    provider.docker_base_url = "https://127.0.0.1:2375"
+    monkeypatch.setattr(
+        "gluuapi.model.Provider.ssl_cert_path",
+        cert_pem,
+    )
+    monkeypatch.setattr(
+        "gluuapi.model.Provider.ssl_key_path",
+        key_pem,
+    )
+    monkeypatch.setattr(
+        "gluuapi.model.Provider.ca_cert_path",
+        ca_pem,
+    )
+
+    DockerHelper(provider)
+
+    os.unlink(ca_pem)
+    os.unlink(cert_pem)
+    os.unlink(key_pem)

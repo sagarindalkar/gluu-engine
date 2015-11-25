@@ -205,7 +205,13 @@ def validator_expired(monkeypatch):
 def salt_event_ok(monkeypatch):
     monkeypatch.setattr(
         "salt.utils.event.MasterEvent.get_event",
-        lambda cls, wait, tag, full: {"tag": "salt/job", "data": {"retcode": 0}},
+        lambda cls, wait, tag, full: {
+            "tag": "salt/job",
+            "data": {
+                "retcode": 0,
+                "return": "OK",
+            },
+        },
     )
 
 

@@ -299,8 +299,8 @@ class LdapSetup(BaseSetup):
                 base_dn, existing_node.weave_ip, self.node.weave_ip,
             ))
             resp = self.salt.cmd(self.node.id, "cmd.run", [enable_cmd])
-            if self.node.id in resp:
-                self.logger.info(resp[self.node.id])
+            self.logger.info(resp.get(self.node.id, "").strip())
+
             # wait before initializing the replication to ensure it
             # has been enabled
             time.sleep(10)
@@ -320,8 +320,7 @@ class LdapSetup(BaseSetup):
                 base_dn, existing_node.weave_ip, self.node.weave_ip,
             ))
             resp = self.salt.cmd(self.node.id, "cmd.run", [init_cmd])
-            if self.node.id in resp:
-                self.logger.info(resp[self.node.id])
+            self.logger.info(resp.get(self.node.id, "").strip())
             time.sleep(5)
 
         # cleanups temporary password file
@@ -405,11 +404,8 @@ command=/opt/opendj/bin/start-ds --quiet -N
         if len(self.cluster.get_ldap_objects()) == 1:
             self.import_base64_config()
         else:
-            try:
-                peer_node = self.cluster.get_ldap_objects()[0]
-                self.modify_oxtrust_config(peer_node)
-            except IndexError:
-                pass
+            peer_node = self.cluster.get_ldap_objects()[0]
+            self.modify_oxtrust_config(peer_node)
 
         # remove password file
         self.delete_ldap_pw()

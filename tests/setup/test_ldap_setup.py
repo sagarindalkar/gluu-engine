@@ -24,6 +24,7 @@ def test_after_setup(cluster, ldap_setup, patched_salt,
     from gluuapi.database import db
     from gluuapi.model import OxauthNode
     from gluuapi.model import OxtrustNode
+    from gluuapi.model import OxidpNode
     from gluuapi.model import STATE_SUCCESS
 
     db.persist(cluster, "clusters")
@@ -36,11 +37,19 @@ def test_after_setup(cluster, ldap_setup, patched_salt,
 
     oxtrust = OxtrustNode()
     oxtrust.id = "trust-123"
-    oxauth.cluster_id = cluster.id
+    oxtrust.cluster_id = cluster.id
     oxtrust.state = STATE_SUCCESS
     db.persist(oxtrust, "nodes")
 
+    oxidp = OxidpNode()
+    oxidp.id = "idp-123"
+    oxidp.cluster_id = cluster.id
+    oxidp.state = STATE_SUCCESS
+    db.persist(oxidp, "nodes")
+
     db.update(ldap_setup.cluster.id, ldap_setup.cluster, "clusters")
+    ldap_setup.node.state = STATE_SUCCESS
+    db.persist(ldap_setup.node, "nodes")
     ldap_setup.after_setup()
 
 
@@ -102,3 +111,29 @@ def test_notify_ox(ldap_setup, db, oxauth_node,
     oxtrust_node.state = STATE_SUCCESS
     db.persist(oxtrust_node, "nodes")
     ldap_setup.notify_ox()
+
+
+def test_after_setup_modify_config(cluster, ldap_setup, patched_salt,
+                                   salt_event_ok, patched_sleep,
+                                   monkeypatch):
+    from gluuapi.database import db
+    from gluuapi.model import LdapNode
+    from gluuapi.model import STATE_SUCCESS
+
+    monkeypatch.setattr(
+        "gluuapi.setup.LdapSetup.modify_oxtrust_config",
+        lambda cls, node: None,
+    )
+
+    db.persist(cluster, "clusters")
+
+    ldap = LdapNode()
+    ldap.id = "ldap-123"
+    ldap.cluster_id = cluster.id
+    ldap.state = STATE_SUCCESS
+    db.persist(ldap, "nodes")
+
+    db.update(ldap_setup.cluster.id, ldap_setup.cluster, "clusters")
+    ldap_setup.node.state = "SUCCESS"
+    db.persist(ldap_setup.node, "nodes")
+    ldap_setup.after_setup()

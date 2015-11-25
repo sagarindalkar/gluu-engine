@@ -51,13 +51,13 @@ class Provider(BaseModel):
                                           "/etc/gluu/docker_certs")
 
     @property
-    def ssl_cert_path(self):  # pragma: no cover
+    def ssl_cert_path(self):
         return "{}/{}__cert.pem".format(self.docker_cert_dir, self.id)
 
     @property
-    def ssl_key_path(self):  # pragma: no cover
+    def ssl_key_path(self):
         return "{}/{}__key.pem".format(self.docker_cert_dir, self.id)
 
     @property
-    def ca_cert_path(self):  # pragma: no cover
+    def ca_cert_path(self):
         return "{}/{}__ca.pem".format(self.docker_cert_dir, self.id)

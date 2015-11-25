@@ -315,3 +315,16 @@ def oxidp_setup(request, app, oxidp_node, cluster):
 
     request.addfinalizer(teardown)
     return setup_obj
+
+
+@pytest.fixture()
+def nginx_setup(request, app, nginx_node, cluster):
+    from gluuapi.setup import NginxSetup
+
+    setup_obj = NginxSetup(nginx_node, cluster, app)
+
+    def teardown():
+        setup_obj.remove_build_dir()
+
+    request.addfinalizer(teardown)
+    return setup_obj

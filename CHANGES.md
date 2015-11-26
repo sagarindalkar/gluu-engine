@@ -11,6 +11,10 @@ Release date to be announced later.
 * docker is upgraded to v1.8.3.
 * Automated import on docker certificates required for making request to docker Remote API. Related issue: [#50](https://github.com/GluuFederation/gluu-flask/issues/50).
 * tinydb is upgraded to v3.0.0.
+* `gluuoxauth` image is updated to use oxAuth v2.4.1.
+* `gluuoxidp` image is updated to use oxIdp v2.4.1.
+* `gluuoxtrust` image is updated to use oxTrust v2.4.1.
+* `gluuopendj` image is updated to use latest `oxauth-model` and `oxauth-server` JAR files.
 
 Version 0.4.0
 -------------

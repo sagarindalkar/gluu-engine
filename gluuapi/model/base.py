@@ -12,6 +12,10 @@ class BaseModel(object):
     resource_fields = {}
 
     def as_dict(self):
+        """Transforms into a ``dict`` of model's resource attributes.
+
+        :returns: A ``dict`` of model's resource attributes.
+        """
         fields = tuple(self.resource_fields.keys())
         return {
             k: v for k, v in self.__dict__.items()

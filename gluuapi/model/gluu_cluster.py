@@ -121,39 +121,72 @@ class GluuCluster(BaseModel):
 
     @property
     def decrypted_admin_pw(self):
+        """Gets decrypted admin password.
+        """
         return decrypt_text(self.admin_pw, self.passkey)
 
     def get_ldap_objects(self, state=STATE_SUCCESS):
         """Get available ldap objects (models).
+
+        :param state: State of the node (one of SUCCESS, DISABLED,
+                      FAILED, IN_PROGRESS).
+        :returns: A list of ldap objects.
         """
         return self.get_node_objects(type_="ldap", state=state)
 
     def get_oxauth_objects(self, state=STATE_SUCCESS):
         """Get available oxAuth objects (models).
+
+        :param state: State of the node (one of SUCCESS, DISABLED,
+                      FAILED, IN_PROGRESS).
+        :returns: A list of oxauth objects.
         """
         return self.get_node_objects(type_="oxauth", state=state)
 
     def get_oxtrust_objects(self, state=STATE_SUCCESS):
         """Get available oxTrust objects (models).
+
+        :param state: State of the node (one of SUCCESS, DISABLED,
+                      FAILED, IN_PROGRESS).
+        :returns: A list of oxtrust objects.
         """
         return self.get_node_objects(type_="oxtrust", state=state)
 
     def get_httpd_objects(self, state=STATE_SUCCESS):
         """Get available httpd objects (models).
+
+        :param state: State of the node (one of SUCCESS, DISABLED,
+                      FAILED, IN_PROGRESS).
+        :returns: A list of httpd objects.
         """
         return self.get_node_objects(type_="httpd", state=state)
 
     def get_oxidp_objects(self, state=STATE_SUCCESS):
         """Get available oxidp objects (models).
+
+        :param state: State of the node (one of SUCCESS, DISABLED,
+                      FAILED, IN_PROGRESS).
+        :returns: A list of oxidp objects.
         """
         return self.get_node_objects(type_="oxidp", state=state)
 
     def get_nginx_objects(self, state=STATE_SUCCESS):
         """Get available nginx objects (models).
+
+        :param state: State of the node (one of SUCCESS, DISABLED,
+                      FAILED, IN_PROGRESS).
+        :returns: A list of nginx objects.
         """
         return self.get_node_objects(type_="nginx", state=state)
 
     def get_node_objects(self, type_="", state=STATE_SUCCESS):
+        """Gets available node objects (models).
+
+        :param state: State of the node (one of SUCCESS, DISABLED,
+                      FAILED, IN_PROGRESS).
+        :param type_: Type of the node.
+        :returns: A list of node objects.
+        """
         condition = db.where("cluster_id") == self.id
         if state:
             condition = (condition) & (db.where("state") == state)
@@ -163,6 +196,19 @@ class GluuCluster(BaseModel):
 
     @property
     def exposed_weave_ip(self):
+        """Gets weave IP for forwarding request from outside.
+
+        For convenience, the IP address is always set to the last 2nd IP of
+        possible addresses from the network. For example, given an IP network
+        10.10.10.0/24, two last addresses would be:
+
+        1. 10.10.10.255 (broadcast address; we cannot use it)
+        2. 10.10.10.254 (used by weave network to forward request from outside)
+
+        :returns: A 2-elements tuple consists of IP address and prefix length,
+                  e.g. ``("10.10.10.253", 24)``.
+        """
+
         pool = IPNetwork(self.weave_ip_network)
         # as the last element of pool is a broadcast address, we cannot use it;
         # hence we fetch the last 2nd element of the pool
@@ -196,11 +242,28 @@ class GluuCluster(BaseModel):
 
     @property
     def nodes_count(self):
+        """Gets total number of nodes belong to cluster.
+
+        :returns: Total number of nodes.
+        """
         condition = db.where("cluster_id") == self.id
         return db.count_from_table("nodes", condition)
 
     @property
     def prometheus_weave_ip(self):
+        """Gets weave IP of prometheus container.
+
+        For convenience, the IP address is always set to the last 3rd IP of
+        possible addresses from the network. For example, given an IP network
+        10.10.10.0/24, three last addresses would be:
+
+        1. 10.10.10.255 (broadcast address; we cannot use it)
+        2. 10.10.10.254 (used by weave network to forward request from outside)
+        2. 10.10.10.253 (prometheus weave IP)
+
+        :returns: A 2-elements tuple consists of IP address and prefix length,
+                  e.g. ``("10.10.10.253", 24)``.
+        """
         pool = IPNetwork(self.weave_ip_network)
         # as the last element of pool is a broadcast address, we cannot use it;
         # hence we fetch the last 3rd element of the pool
@@ -208,6 +271,10 @@ class GluuCluster(BaseModel):
         return str(addr), pool.prefixlen
 
     def get_node_addrs(self):
+        """Collects all weave IP addresses from all nodes belong to the cluster.
+
+        :returns: A list of weave IP addresses.
+        """
         nodes = db.search_from_table(
             "nodes",
             db.where("cluster_id") == self.id,

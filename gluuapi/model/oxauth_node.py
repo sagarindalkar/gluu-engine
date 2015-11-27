@@ -44,4 +44,6 @@ class OxauthNode(BaseModel):
 
     @property
     def recovery_priority(self):
+        """Gets recovery priority number used by recovery script.
+        """
         return 2

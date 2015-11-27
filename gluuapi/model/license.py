@@ -53,18 +53,26 @@ class LicenseKey(BaseModel):
 
     @property
     def decrypted_public_key(self):
+        """Gets decrypted admin password of the license.
+        """
         return decrypt_text(self.public_key, self.passkey)
 
     @property
     def decrypted_public_password(self):
+        """Gets decrypted public password of the license.
+        """
         return decrypt_text(self.public_password, self.passkey)
 
     @property
     def decrypted_license_password(self):
+        """Gets decrypted license password of the license.
+        """
         return decrypt_text(self.license_password, self.passkey)
 
     @property
     def expired(self):
+        """Gets expiration status.
+        """
         if not self.valid or not self.metadata:
             return True
 
@@ -77,6 +85,10 @@ class LicenseKey(BaseModel):
         return now > self.metadata["expiration_date"]
 
     def get_provider_objects(self):
+        """Gets consumer providers.
+
+        :returns: A list of consumer provider objects (if any).
+        """
         providers = db.search_from_table(
             "providers", db.where("type") == "consumer",
         )

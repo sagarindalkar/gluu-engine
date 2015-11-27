@@ -37,6 +37,8 @@ class OxidpWatcherTask(object):
 
     @run_in_reactor
     def perform_job(self):
+        """An entrypoint of this task class.
+        """
         self.logger.info("Listening for filesystem events "
                          "in {}".format(self.path))
 
@@ -59,6 +61,11 @@ class OxidpWatcherTask(object):
 
     def process_event(self, watch, path, mask):
         """Intercepts filesystem event.
+
+        The following filesystem events are watched:
+
+        1. file modification
+        2. file creation
         """
         callbacks = {
             inotify.IN_MODIFY: self.on_modified,
@@ -113,6 +120,8 @@ class OxidpWatcherTask(object):
 
     @property
     def cluster(self):
+        """Gets a Cluster object.
+        """
         if self._cluster is None:
             try:
                 self._cluster = db.all("clusters")[0]

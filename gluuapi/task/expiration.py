@@ -29,16 +29,20 @@ class LicenseExpirationTask(object):
         self.app = app
 
     @run_in_reactor
-    def start(self, interval=_DEFAULT_INTERVAL):
+    def perform_job(self):
+        """An entrypoint of this task class.
+        """
         # callback to handle error
         def on_error(failure):
             self.logger.error(failure.getTraceback())
 
-        lc = LoopingCall(self.perform_job)
-        deferred = lc.start(interval, now=True)
+        lc = LoopingCall(self.monitor_license)
+        deferred = lc.start(_DEFAULT_INTERVAL, now=True)
         deferred.addErrback(on_error)
 
-    def perform_job(self):
+    def monitor_license(self):
+        """Monitors the license for its expiration status.
+        """
         self.logger.info("checking license keys")
         license_keys = db.all("license_keys")
 
@@ -73,6 +77,11 @@ class LicenseExpirationTask(object):
                 distribute_cluster_data(self.app.config["DATABASE_URI"])
 
     def update_license_key(self, license_key):
+        """Retrieves new license and update the database.
+
+        :param license_key: LicenseKey object.
+        :returns: LicenseKey object with updated values.
+        """
         resp = retrieve_signed_license(license_key.code)
         if not resp.ok:
             self.logger.warn("unable to retrieve new license; "
@@ -102,6 +111,13 @@ class LicenseExpirationTask(object):
         return license_key
 
     def disable_nodes(self, provider, type_):
+        """Disables nodes with certain type.
+
+        Disabled node will be excluded from weave network.
+
+        :param provider: Provider object.
+        :param type_: Type of the node.
+        """
         weave = WeaveHelper(provider, self.app, self.logger)
 
         nodes = provider.get_node_objects(type_=type_)
@@ -115,6 +131,13 @@ class LicenseExpirationTask(object):
                              "disabled".format(type_, node.id))
 
     def enable_nodes(self, provider, type_):
+        """Enables nodes with certain type.
+
+        Enabled node will be included into weave network.
+
+        :param provider: Provider object.
+        :param type_: Type of the node.
+        """
         weave = WeaveHelper(provider, self.app, self.logger)
 
         nodes = provider.get_node_objects(type_=type_, state=STATE_DISABLED)

@@ -43,6 +43,8 @@ class BaseSetup(object):
         """
 
     def remove_build_dir(self):
+        """Deletes temporary build directory.
+        """
         self.logger.info("removing temporary build "
                          "directory {}".format(self.build_dir))
         try:
@@ -51,6 +53,12 @@ class BaseSetup(object):
             pass
 
     def render_template(self, src, dest, ctx=None):
+        """Renders non-jinja template.
+
+        :param src: Relative path to template.
+        :param ctx: Context that will be populated into template.
+        :returns: String of rendered template.
+        """
         ctx = ctx or {}
         file_basename = os.path.basename(src)
         local = os.path.join(self.build_dir, file_basename)
@@ -65,6 +73,14 @@ class BaseSetup(object):
         self.salt.copy_file(self.node.id, local, dest)
 
     def gen_cert(self, suffix, password, user, group, hostname):
+        """Generates certificates.
+
+        :param suffix: Basename of certificate name (minus the file extension).
+        :param password: Password used for signing the certificate.
+        :param user: User who owns the certificate.
+        :param group: Group who owns the certificate.
+        :param hostname: Hostname used for CN (Common Name) value.
+        """
         key_with_password = "{}/{}.key.orig".format(self.node.cert_folder, suffix)
         key = "{}/{}.key".format(self.node.cert_folder, suffix)
         csr = "{}/{}.csr".format(self.node.cert_folder, suffix)
@@ -129,11 +145,12 @@ class BaseSetup(object):
             ],
         )
 
-    def create_cert_dir(self):
-        mkdir_cmd = "mkdir -p {}".format(self.node.cert_folder)
-        self.salt.cmd(self.node.id, "cmd.run", [mkdir_cmd])
-
     def change_cert_access(self, user, group):
+        """Modifies ownership of certificates located under predefined path.
+
+        :param user: User who owns the certificates.
+        :param group: Group who owns the certificates.
+        """
         self.logger.info("changing access to {}".format(self.node.cert_folder))
         self.salt.cmd(
             self.node.id,
@@ -143,6 +160,11 @@ class BaseSetup(object):
         )
 
     def get_template_path(self, path):
+        """Gets absolute path to non-jinja template.
+
+        :param path: Relative path to non-jinja template.
+        :returns: Absolute path of non-jinja template.
+        """
         template_path = os.path.join(self.template_dir, path)
         return template_path
 
@@ -158,11 +180,23 @@ class BaseSetup(object):
         self.remove_build_dir()
 
     def render_jinja_template(self, src, ctx=None):
+        """Renders jinja template.
+
+        :param src: Relative path to template.
+        :param ctx: Context that will be populated into template.
+        :returns: String of rendered template.
+        """
         ctx = ctx or {}
         template = self.jinja_env.get_template(src)
         return template.render(**ctx)
 
     def copy_rendered_jinja_template(self, src, dest, ctx=None):
+        """Copies rendered template to minion.
+
+        :param src: Relative path to template.
+        :param dest: Destination path in minion.
+        :param ctx: Context that will be populated into template.
+        """
         rendered_content = self.render_jinja_template(src, ctx)
         file_basename = os.path.basename(src)
         local = os.path.join(self.build_dir, file_basename)
@@ -174,6 +208,8 @@ class BaseSetup(object):
         self.salt.copy_file(self.node.id, local, dest)
 
     def reload_supervisor(self):
+        """Reloads supervisor.
+        """
         reload_cmd = "kill -HUP `cat /var/run/supervisord.pid`"
         jid = self.salt.cmd_async(self.node.id, "cmd.run", [reload_cmd])
         self.salt.subscribe_event(jid, self.node.id)

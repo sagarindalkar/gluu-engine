@@ -22,7 +22,8 @@ from ..model import STATE_SUCCESS
 class LdapSetup(BaseSetup):
     @property
     def ldif_files(self):  # pragma: no cover
-        # List of initial ldif files
+        """List of initial ldif files.
+        """
         templates = [
             'nodes/opendj/ldif/base.ldif',
             'nodes/opendj/ldif/appliance.ldif',
@@ -37,15 +38,9 @@ class LdapSetup(BaseSetup):
         return map(self.get_template_path, templates)
 
     @property
-    def index_json(self):  # pragma: no cover
-        return self.get_template_path("nodes/opendj/opendj_index.json")
-
-    @property
-    def ldap_setup_properties(self):  # pragma: no cover
-        return self.get_template_path("nodes/opendj/opendj-setup.properties")
-
-    @property
     def schema_files(self):  # pragma: no cover
+        """List of predefined LDAP schema files.
+        """
         templates = [
             "nodes/opendj/schema/77-customAttributes.ldif",
             "nodes/opendj/schema/101-ox.ldif",
@@ -55,6 +50,12 @@ class LdapSetup(BaseSetup):
         return map(self.get_template_path, templates)
 
     def write_ldap_pw(self):
+        """Writes temporary LDAP password into a file.
+
+        It is recommended to remove the file after finishing
+        any operation that requires password. Calling ``delete_ldap_pw``
+        method will remove this password file.
+        """
         self.logger.info("writing temporary LDAP password")
 
         local_dest = os.path.join(self.build_dir, ".pw")
@@ -68,6 +69,8 @@ class LdapSetup(BaseSetup):
         self.salt.copy_file(self.node.id, local_dest, self.node.ldap_pass_fn)
 
     def delete_ldap_pw(self):
+        """Removes temporary LDAP password.
+        """
         self.logger.info("deleting temporary LDAP password")
         self.salt.cmd(
             self.node.id,
@@ -76,11 +79,11 @@ class LdapSetup(BaseSetup):
         )
 
     def add_ldap_schema(self):
+        """Renders and copies predefined LDAP schema files into minion.
+        """
         ctx = {
             "inum_org_fn": self.cluster.inum_org_fn,
         }
-
-        # render schema templates
         for schema_file in self.schema_files:
             src = schema_file
             basename = os.path.basename(src)
@@ -88,7 +91,10 @@ class LdapSetup(BaseSetup):
             self.render_template(src, dest, ctx)
 
     def setup_opendj(self):
-        src = self.ldap_setup_properties
+        """Setups OpenDJ server without actually running the server
+        in post-installation step.
+        """
+        src = self.get_template_path("nodes/opendj/opendj-setup.properties")
         dest = os.path.join(self.node.ldap_base_folder, os.path.basename(src))
         ctx = {
             "ldap_hostname": self.node.domain_name,
@@ -112,6 +118,7 @@ class LdapSetup(BaseSetup):
                                   ["{}".format(setupCmd)])
         self.salt.subscribe_event(jid, self.node.id)
 
+        # Use predefined dsjavaproperties
         self.logger.info("running dsjavaproperties")
         jid = self.salt.cmd_async(
             self.node.id,
@@ -121,6 +128,8 @@ class LdapSetup(BaseSetup):
         self.salt.subscribe_event(jid, self.node.id)
 
     def configure_opendj(self):
+        """Configures OpenDJ.
+        """
         config_changes = [
             ['set-global-configuration-prop', '--set', 'single-structural-objectclass-behavior:accept'],
             ['set-attribute-syntax-prop', '--syntax-name', '"Directory String"', '--set', 'allow-zero-length-values:true'],
@@ -142,7 +151,10 @@ class LdapSetup(BaseSetup):
             self.salt.subscribe_event(jid, self.node.id)
 
     def index_opendj(self, backend):
-        with open(self.index_json, 'r') as fp:
+        """Creates required index in OpenDJ server.
+        """
+        json_tmpl = self.get_template_path("nodes/opendj/opendj_index.json")
+        with open(json_tmpl, 'r') as fp:
             index_json = json.load(fp)
 
         for attr_map in index_json:
@@ -176,6 +188,8 @@ class LdapSetup(BaseSetup):
                     self.salt.subscribe_event(jid, self.node.id)
 
     def import_ldif(self):
+        """Renders and imports predefined ldif files.
+        """
         # template's context
         ctx = {
             "oxauth_client_id": self.cluster.oxauth_client_id,
@@ -229,6 +243,8 @@ class LdapSetup(BaseSetup):
             self.salt.subscribe_event(jid, self.node.id)
 
     def export_opendj_public_cert(self):
+        """Exports OpenDJ public certificate.
+        """
         # Load password to acces OpenDJ truststore
         openDjPinFn = '%s/config/keystore.pin' % self.node.ldap_base_folder
         openDjTruststoreFn = '%s/config/truststore' % self.node.ldap_base_folder
@@ -269,6 +285,13 @@ class LdapSetup(BaseSetup):
         self.salt.subscribe_event(jid, self.node.id)
 
     def replicate_from(self, existing_node):
+        """Setups a replication between two OpenDJ servers.
+
+        The data will be replicated from existing OpenDJ server.
+
+        :param existing_node: OpenDJ server where the initial data
+                              will be replicated from.
+        """
         setup_obj = LdapSetup(existing_node, self.cluster,
                               self.app, logger=self.logger)
 
@@ -327,6 +350,8 @@ class LdapSetup(BaseSetup):
         setup_obj.delete_ldap_pw()
 
     def add_auto_startup_entry(self):
+        """Adds supervisor program for auto-startup.
+        """
         # add supervisord entry
         payload = """
 [program:opendj]
@@ -342,6 +367,8 @@ command=/opt/opendj/bin/start-ds --quiet -N
         self.salt.subscribe_event(jid, self.node.id)
 
     def setup(self):
+        """Runs the actual setup.
+        """
         self.write_ldap_pw()
         self.add_ldap_schema()
         self.import_custom_schema()
@@ -368,11 +395,18 @@ command=/opt/opendj/bin/start-ds --quiet -N
         return True
 
     def notify_ox(self):
+        """Notify all ox* apps.
+
+        Typically this method should be called after adding/removing
+        any OpenDJ server.
+        """
+        # notify oxAuth to re-render ``oxauth-ldap.propertia
         for oxauth in self.cluster.get_oxauth_objects():
             setup_obj = OxauthSetup(oxauth, self.cluster,
                                     self.app, logger=self.logger)
             setup_obj.render_ldap_props_template()
 
+        # notify oxTrust to re-render ``oxtrust-ldap.properties``
         for oxtrust in self.cluster.get_oxtrust_objects():
             setup_obj = OxtrustSetup(oxtrust, self.cluster,
                                      self.app, logger=self.logger)
@@ -380,6 +414,8 @@ command=/opt/opendj/bin/start-ds --quiet -N
             # a hack to force oxTrust re-generate SAML metadata
             setup_obj.restart_tomcat()
 
+        # notify oxIdp to re-render ``oxidp-ldap.properties``
+        # and import OpenDJ certficate
         for oxidp in self.cluster.get_oxidp_objects():
             setup_obj = OxidpSetup(oxidp, self.cluster,
                                    self.app, logger=self.logger)
@@ -394,10 +430,7 @@ command=/opt/opendj/bin/start-ds --quiet -N
 
         # modify oxIDPAuthentication entry when we have more LDAP nodes
         self.write_ldap_pw()
-        # wait for password file creation
         time.sleep(5)
-
-        # update appliance
         self.modify_oxidp_auth()
 
         # if this is the first ldap, import configuration.ldif
@@ -411,11 +444,10 @@ command=/opt/opendj/bin/start-ds --quiet -N
         self.delete_ldap_pw()
 
     def teardown(self):
+        """Teardowns the node.
+        """
         self.write_ldap_pw()
-        # wait for password file creation
         time.sleep(5)
-
-        # update appliance
         self.modify_oxidp_auth()
 
         # stop the replication agreement
@@ -443,6 +475,8 @@ command=/opt/opendj/bin/start-ds --quiet -N
         self.after_teardown()
 
     def modify_oxidp_auth(self):
+        """Updates oxIDPAuthentication entry in LDAP.
+        """
         nodes = self.cluster.get_ldap_objects()
         self.copy_rendered_jinja_template(
             "nodes/opendj/ldif/appliance-mod.ldif",
@@ -466,6 +500,8 @@ command=/opt/opendj/bin/start-ds --quiet -N
         self.salt.cmd(self.node.id, "cmd.run", [ldapmod_cmd])
 
     def import_custom_schema(self):
+        """Copies user-defined LDAP schema into the node.
+        """
         files = iglob("{}/*.ldif".format(self.app.config["CUSTOM_LDAP_SCHEMA_DIR"]))
         for file_ in files:
             if not os.path.isfile(file_):
@@ -476,6 +512,8 @@ command=/opt/opendj/bin/start-ds --quiet -N
             self.salt.copy_file(self.node.id, file_, dest)
 
     def disable_replication(self):
+        """Disable replication setup for current node.
+        """
         self.logger.info("disabling replication for {}".format(self.node.weave_ip))
         disable_repl_cmd = " ".join([
             "{}/bin/dsreplication".format(self.node.ldap_base_folder),
@@ -489,6 +527,8 @@ command=/opt/opendj/bin/start-ds --quiet -N
         self.salt.cmd(self.node.id, "cmd.run", [disable_repl_cmd])
 
     def import_base64_config(self):
+        """Copies rendered configuration.ldif and imports into LDAP.
+        """
         ctx = {
             "inum_appliance": self.cluster.inum_appliance,
             "oxauth_config_base64": generate_base64_contents(self.render_oxauth_config(), 1),
@@ -520,6 +560,8 @@ command=/opt/opendj/bin/start-ds --quiet -N
         self.salt.subscribe_event(jid, self.node.id)
 
     def gen_openid_key(self):
+        """Generates OpenID Connect key.
+        """
         def extra_jar_abspath(jar):
             return "/opt/gluu/lib/{}".format(jar)
 
@@ -541,6 +583,8 @@ command=/opt/opendj/bin/start-ds --quiet -N
         return resp.get(self.node.id, "")
 
     def render_oxauth_config(self):
+        """Renders oxAuth configuration.
+        """
         src = "nodes/oxauth/oxauth-config.json"
         ctx = {
             "ox_cluster_hostname": self.cluster.ox_cluster_hostname,
@@ -550,6 +594,8 @@ command=/opt/opendj/bin/start-ds --quiet -N
         return self.render_jinja_template(src, ctx)
 
     def render_oxauth_static_config(self):
+        """Renders oxAuth static configuration.
+        """
         src = "nodes/oxauth/oxauth-static-conf.json"
         ctx = {
             "inum_org": self.cluster.inum_org,
@@ -557,10 +603,14 @@ command=/opt/opendj/bin/start-ds --quiet -N
         return self.render_jinja_template(src, ctx)
 
     def render_oxauth_error_config(self):
+        """Renders oxAuth error configuration.
+        """
         src = "nodes/oxauth/oxauth-errors.json"
         return self.render_jinja_template(src)
 
     def render_oxtrust_config(self):
+        """Renders oxTrust configuration.
+        """
         src = "nodes/oxtrust/oxtrust-config.json"
         ldap_hosts = ",".join([
             "{}:{}".format(ldap.domain_name, ldap.ldaps_port)
@@ -587,6 +637,8 @@ command=/opt/opendj/bin/start-ds --quiet -N
         return self.render_jinja_template(src, ctx)
 
     def render_oxtrust_cache_refresh(self):
+        """Renders oxTrust CR configuration.
+        """
         src = "nodes/oxtrust/oxtrust-cache-refresh.json"
         ldap_hosts = self.cluster.get_ldap_objects()
         ctx = {
@@ -597,6 +649,8 @@ command=/opt/opendj/bin/start-ds --quiet -N
         return self.render_jinja_template(src, ctx)
 
     def render_oxidp_config(self):
+        """Renders oxIdp configuration.
+        """
         src = "nodes/oxidp/oxidp-config.json"
         ctx = {
             "ox_cluster_hostname": self.cluster.ox_cluster_hostname,
@@ -607,6 +661,8 @@ command=/opt/opendj/bin/start-ds --quiet -N
         return self.render_jinja_template(src, ctx)
 
     def modify_oxtrust_config(self, node):
+        """Updates oxTrust configuration in LDAP.
+        """
         self.logger.info("modifying oxTrust configuration")
 
         # we're using weave IP instead since domain_name is available
@@ -664,6 +720,8 @@ command=/opt/opendj/bin/start-ds --quiet -N
             conn.unbind_s()
 
     def get_ldap_conn(self, uri, user, passwd):
+        """Establishes LDAP connection.
+        """
         ldaplib.set_option(ldaplib.OPT_X_TLS_REQUIRE_CERT,
                            ldaplib.OPT_X_TLS_NEVER)
 
@@ -682,6 +740,8 @@ command=/opt/opendj/bin/start-ds --quiet -N
     def search_from_ldap(self, conn, base, scope,
                          filterstr="(objectClass=*)",
                          attrlist=None, attrsonly=0):
+        """Searches for entries in LDAP.
+        """
         try:
             result = conn.search_s(base, scope)
             ret = result[0]
@@ -691,6 +751,9 @@ command=/opt/opendj/bin/start-ds --quiet -N
         return ret
 
     def import_base64_scim_config(self):
+        """Copies SCIM configuration (scim.ldif) into the node
+        and imports into LDAP.
+        """
         ctx = {
             "inum_org": self.cluster.inum_org,
             "ox_cluster_hostname": self.cluster.ox_cluster_hostname,

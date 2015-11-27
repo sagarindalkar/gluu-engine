@@ -10,6 +10,8 @@ from .oxauth_setup import OxauthSetup
 
 class OxidpSetup(OxauthSetup):
     def copy_static_conf(self):
+        """Copies oxIdp static configuration into the node.
+        """
         static_conf = {
             "idp.xml": "/opt/tomcat/conf/Catalina/localhost/idp.xml",
             "idp-metadata.xml": "/opt/idp/metadata/idp-metadata.xml",
@@ -31,6 +33,8 @@ class OxidpSetup(OxauthSetup):
             )
 
     def render_ldap_props_template(self):
+        """Copies rendered jinja template for LDAP connection.
+        """
         src = "nodes/oxidp/oxidp-ldap.properties"
         dest = os.path.join("/opt/tomcat/conf/oxidp-ldap.properties")
         ldap_hosts = ",".join([
@@ -46,6 +50,8 @@ class OxidpSetup(OxauthSetup):
         self.copy_rendered_jinja_template(src, dest, ctx)
 
     def setup(self):
+        """Runs the actual setup.
+        """
         hostname = self.node.domain_name
 
         # render config templates
@@ -86,6 +92,8 @@ class OxidpSetup(OxauthSetup):
         return True
 
     def after_setup(self):
+        """Post-setup callback.
+        """
         self.render_nutcracker_conf()
 
         # notify oxidp peers to re-render their nutcracker.yml
@@ -102,6 +110,8 @@ class OxidpSetup(OxauthSetup):
         self.notify_nginx()
 
     def import_ldap_certs(self):
+        """Imports all LDAP certificates.
+        """
         for ldap in self.cluster.get_ldap_objects():
             self.logger.info("importing ldap cert")
 
@@ -120,6 +130,8 @@ class OxidpSetup(OxauthSetup):
             self.salt.cmd(self.node.id, "cmd.run", [import_cmd])
 
     def render_nutcracker_conf(self):
+        """Copies twemproxy configuration into the node.
+        """
         ctx = {
             "oxidp_nodes": self.cluster.get_oxidp_objects(),
         }
@@ -130,11 +142,15 @@ class OxidpSetup(OxauthSetup):
         )
 
     def restart_nutcracker(self):
+        """Restarts twemproxy via supervisorctl.
+        """
         self.logger.info("restarting twemproxy in {}".format(self.node.name))
         restart_cmd = "supervisorctl restart nutcracker"
         self.salt.cmd(self.node.id, "cmd.run", [restart_cmd])
 
     def teardown(self):
+        """Teardowns the node.
+        """
         for node in self.cluster.get_oxidp_objects():
             setup_obj = OxidpSetup(node, self.cluster,
                                    self.app, logger=self.logger)
@@ -145,6 +161,8 @@ class OxidpSetup(OxauthSetup):
         self.after_teardown()
 
     def pull_shib_config(self):
+        """Copies all existing oxIdp config and metadata files.
+        """
         allowed_extensions = (".xml", ".dtd", ".config", ".xsd",)
 
         for root, dirs, files in os.walk(self.app.config["OXIDP_VOLUMES_DIR"]):
@@ -163,6 +181,8 @@ class OxidpSetup(OxauthSetup):
                 self.salt.copy_file(self.node.id, src, dest)
 
     def add_auto_startup_entry(self):
+        """Adds supervisor program for auto-startup.
+        """
         payload = """
 [program:tomcat]
 command=/opt/tomcat/bin/catalina.sh run
@@ -187,6 +207,8 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c "source /etc
         self.salt.subscribe_event(jid, self.node.id)
 
     def render_server_xml_template(self):
+        """Copies rendered Tomcat's server.xml into the node.
+        """
         src = "nodes/oxidp/server.xml"
         dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
         ctx = {
@@ -196,6 +218,8 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c "source /etc
         self.copy_rendered_jinja_template(src, dest, ctx)
 
     def render_httpd_conf(self):
+        """Copies rendered Apache2's virtual host into the node.
+        """
         src = "nodes/oxidp/gluu_httpd.conf"
         file_basename = os.path.basename(src)
         dest = os.path.join("/etc/apache2/sites-available", file_basename)

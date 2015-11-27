@@ -31,7 +31,7 @@ def run_app(app, use_reloader=True):
     crochet_setup()
 
     if not app.debug:
-        LicenseExpirationTask(app).start()
+        LicenseExpirationTask(app).perform_job()
     OxidpWatcherTask(app).perform_job()
     app.run(
         host=app.config["HOST"],

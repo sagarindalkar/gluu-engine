@@ -10,6 +10,7 @@ from marshmallow import ValidationError
 from ..database import db
 from ..extensions import ma
 
+#: A list of supported node types.
 NODE_CHOICES = ["ldap", "oxauth", "oxtrust", "oxidp", "nginx"]
 
 
@@ -31,6 +32,10 @@ class NodeReq(ma.Schema):
 
     @validates("cluster_id")
     def validate_cluster(self, value):
+        """Validates cluster's ID.
+
+        :param value: ID of the cluster.
+        """
         cluster = db.get(value, "clusters")
         self.context["cluster"] = cluster
         if not cluster:
@@ -38,6 +43,10 @@ class NodeReq(ma.Schema):
 
     @validates("provider_id")
     def validate_provider(self, value):
+        """Validates provider's ID.
+
+        :param value: ID of the provider.
+        """
         provider = db.get(value, "providers")
         self.context["provider"] = provider
 
@@ -51,6 +60,8 @@ class NodeReq(ma.Schema):
 
     @post_load
     def finalize_data(self, data):
+        """Build finalized data.
+        """
         out = {"params": data}
         out.update({"context": self.context})
         return out

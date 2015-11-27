@@ -29,6 +29,10 @@ class BaseProviderReq(ma.Schema):
 
     @validates("hostname")
     def validate_hostname(self, value):
+        """Validates provider's hostname.
+
+        :param value: Provider's hostname.
+        """
         # some provider like AWS uses dotted hostname,
         # e.g. ip-172-31-24-54.ec2.internal
         valid = all(HOSTNAME_RE.match(v) for v in value.split("."))
@@ -46,6 +50,10 @@ class BaseProviderReq(ma.Schema):
 
     @validates("docker_base_url")
     def validate_docker_base_url(self, value):
+        """Validates provider's docker URL.
+
+        :param value: URL to docker Remote API.
+        """
         # enforce value to use `unix` or `https` prefix
         if not any([value.startswith("unix"), value.startswith("https")]):
             raise ValidationError("Must use unix or https prefix")
@@ -69,6 +77,10 @@ class ProviderReq(BaseProviderReq):
 class EditProviderReq(BaseProviderReq):
     @validates("hostname")
     def validate_hostname(self, value):
+        """Validates provider's hostname.
+
+        :param value: Provider's hostname.
+        """
         provider = self.context.get("provider")
 
         # some provider like AWS uses dotted hostname,

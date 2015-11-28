@@ -11,6 +11,8 @@ from .oxauth_setup import OxauthSetup
 
 class OxtrustSetup(OxauthSetup):
     def import_nginx_cert(self):
+        """Imports SSL certificate from nginx node.
+        """
         self.logger.info("importing nginx cert")
 
         # imports nginx cert into oxtrust cacerts to avoid
@@ -32,6 +34,8 @@ class OxtrustSetup(OxauthSetup):
         self.salt.subscribe_event(jid, self.node.id)
 
     def delete_nginx_cert(self):
+        """Removes SSL cerficate of nginx node.
+        """
         delete_cmd = " ".join([
             "keytool -delete",
             "-alias {}".format(self.cluster.ox_cluster_hostname),
@@ -42,6 +46,8 @@ class OxtrustSetup(OxauthSetup):
         self.salt.cmd(self.node.id, "cmd.run", [delete_cmd])
 
     def add_host_entries(self, nginx):
+        """Adds entry into /etc/hosts file.
+        """
         # currently we need to add nginx container hostname
         # to prevent "peer not authenticated" raised by oxTrust;
         # TODO: use a real DNS
@@ -55,6 +61,8 @@ class OxtrustSetup(OxauthSetup):
         self.salt.subscribe_event(jid, self.node.id)
 
     def remove_host_entries(self, nginx):
+        """Removes entry from /etc/hosts file.
+        """
         # TODO: use a real DNS
         #
         # currently we need to remove nginx container hostname
@@ -77,6 +85,8 @@ class OxtrustSetup(OxauthSetup):
         )
 
     def render_log_config_template(self):
+        """Copies rendered oxTrust log config file.
+        """
         src = "nodes/oxtrust/oxTrustLogRotationConfiguration.xml"
         dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
         ctx = {
@@ -85,6 +95,8 @@ class OxtrustSetup(OxauthSetup):
         self.copy_rendered_jinja_template(src, dest, ctx)
 
     def render_ldap_props_template(self):
+        """Copies rendered jinja template for LDAP connection.
+        """
         src = "nodes/oxtrust/oxtrust-ldap.properties"
         dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
 
@@ -101,6 +113,8 @@ class OxtrustSetup(OxauthSetup):
         self.copy_rendered_jinja_template(src, dest, ctx)
 
     def render_check_ssl_template(self):
+        """Renders check_ssl script into the node.
+        """
         src = self.get_template_path("nodes/oxtrust/check_ssl")
         dest = "/usr/bin/{}".format(os.path.basename(src))
         ctx = {"ox_cluster_hostname": self.cluster.ox_cluster_hostname}
@@ -108,6 +122,8 @@ class OxtrustSetup(OxauthSetup):
         self.salt.cmd(self.node.id, "cmd.run", ["chmod +x {}".format(dest)])
 
     def setup(self):
+        """Runs the actual setup.
+        """
         hostname = self.node.domain_name
 
         # render config templates
@@ -150,10 +166,14 @@ class OxtrustSetup(OxauthSetup):
         return True
 
     def teardown(self):
+        """Teardowns the node.
+        """
         self.notify_nginx()
         self.after_teardown()
 
     def render_server_xml_template(self):
+        """Copies rendered Tomcat's server.xml into the node.
+        """
         src = "nodes/oxtrust/server.xml"
         dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
         ctx = {
@@ -163,6 +183,8 @@ class OxtrustSetup(OxauthSetup):
         self.copy_rendered_jinja_template(src, dest, ctx)
 
     def discover_nginx(self):
+        """Discovers nginx node.
+        """
         self.logger.info("discovering available nginx node")
         try:
             # if we already have nginx node in the the cluster,
@@ -174,10 +196,14 @@ class OxtrustSetup(OxauthSetup):
             pass
 
     def after_setup(self):
+        """Post-setup callback.
+        """
         self.discover_nginx()
         self.notify_nginx()
 
     def copy_import_person_properties(self):
+        """Copies importPerson.properties template into the node.
+        """
         src = self.get_template_path("nodes/oxtrust/gluuImportPerson.properties")
         dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
         self.salt.copy_file(self.node.id, src, dest)
@@ -202,20 +228,9 @@ class OxtrustSetup(OxauthSetup):
             self.logger.info("copying {}".format(fn))
             self.salt.copy_file(self.node.id, src, dest)
 
-    # def render_httpd_conf(self):
-    #     src = "nodes/oxtrust/gluu_httpd.conf"
-    #     file_basename = os.path.basename(src)
-    #     dest = os.path.join("/etc/apache2/sites-available", file_basename)
-
-    #     ctx = {
-    #         "hostname": self.node.domain_name,
-    #         "weave_ip": self.node.weave_ip,
-    #         "httpd_cert_fn": "/etc/certs/httpd.crt",
-    #         "httpd_key_fn": "/etc/certs/httpd.key",
-    #     }
-    #     self.copy_rendered_jinja_template(src, dest, ctx)
-
     def add_auto_startup_entry(self):
+        """Adds supervisor program for auto-startup.
+        """
         payload = """
 [program:tomcat]
 command=/opt/tomcat/bin/catalina.sh run
@@ -231,12 +246,16 @@ environment=CATALINA_PID="/var/run/tomcat.pid"
         self.salt.subscribe_event(jid, self.node.id)
 
     def copy_tomcat_index(self):
+        """Copies Tomcat's index.html into the node.
+        """
         self.logger.info("copying index.html")
         src = self.get_template_path("nodes/oxtrust/index.html")
         dest = "/opt/tomcat/webapps/ROOT/index.html"
         self.salt.copy_file(self.node.id, src, dest)
 
     def restart_tomcat(self):
+        """Restarts Tomcat via supervisorctl.
+        """
         self.logger.info("restarting tomcat")
         restart_cmd = "supervisorctl restart tomcat"
         self.salt.cmd(self.node.id, "cmd.run", [restart_cmd])

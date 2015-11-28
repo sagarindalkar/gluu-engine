@@ -12,6 +12,8 @@ from .nginx_setup import NginxSetup
 
 class OxauthSetup(BaseSetup):
     def write_salt_file(self):
+        """Copies salt file.
+        """
         self.logger.info("writing salt file")
 
         local_dest = os.path.join(self.build_dir, "salt")
@@ -23,6 +25,17 @@ class OxauthSetup(BaseSetup):
 
     def gen_keystore(self, suffix, keystore_fn, keystore_pw, in_key,
                      in_cert, user, group, hostname):
+        """Generates certificates and keystore.
+
+        :param suffix: Basename of certificate name (minus the file extension).
+        :param keystore_fn: Absolute path to keystore.
+        :param keystore_pw: Password for keystore.
+        :param in_key: Key file as input.
+        :param in_cert: Certificate file as input.
+        :param user: User who owns the certificate.
+        :param group: Group who owns the certificate.
+        :param hostname: Name of the certificate.
+        """
         self.logger.info("Creating keystore %s" % suffix)
 
         # Convert key to pkcs12
@@ -66,6 +79,8 @@ class OxauthSetup(BaseSetup):
         )
 
     def render_ldap_props_template(self):
+        """Copies rendered jinja template for LDAP connection.
+        """
         src = "nodes/oxauth/oxauth-ldap.properties"
         dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
 
@@ -83,6 +98,8 @@ class OxauthSetup(BaseSetup):
         self.copy_rendered_jinja_template(src, dest, ctx)
 
     def render_server_xml_template(self):
+        """Copies rendered Tomcat's server.xml into the node.
+        """
         src = "nodes/oxauth/server.xml"
         dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
         ctx = {
@@ -92,6 +109,8 @@ class OxauthSetup(BaseSetup):
         self.copy_rendered_jinja_template(src, dest, ctx)
 
     def add_auto_startup_entry(self):
+        """Adds supervisor program for auto-startup.
+        """
         payload = """
 [program:tomcat]
 command=/opt/tomcat/bin/catalina.sh run
@@ -145,31 +164,43 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c "source /etc
         return True
 
     def teardown(self):
+        """Teardowns the node.
+        """
         self.notify_nginx()
         self.after_teardown()
 
     def after_setup(self):
+        """Post-setup callback.
+        """
         self.notify_nginx()
 
     def copy_duo_creds(self):
+        """Copies Duo's credential file into the node.
+        """
         src = self.get_template_path("nodes/oxauth/duo_creds.json")
         dest = "/etc/certs/duo_creds.json"
         self.logger.info("copying duo_creds.json")
         self.salt.copy_file(self.node.id, src, dest)
 
     def copy_duo_web(self):
+        """Copies Duo's web script file into the node.
+        """
         src = self.get_template_path("nodes/oxauth/duo_web.py")
         dest = "/opt/tomcat/conf/python/duo_web.py"
         self.logger.info("copying duo_web.py")
         self.salt.copy_file(self.node.id, src, dest)
 
     def copy_gplus_secrets(self):
+        """Copies Google Plus' credential file into the node.
+        """
         src = self.get_template_path("nodes/oxauth/gplus_client_secrets.json")
         dest = "/etc/certs/gplus_client_secrets.json"
         self.logger.info("copying gplus_client_secrets.json")
         self.salt.copy_file(self.node.id, src, dest)
 
     def configure_vhost(self):
+        """Configures Apache2 virtual host.
+        """
         a2enmod_cmd = "a2enmod ssl headers proxy proxy_http proxy_ajp"
         jid = self.salt.cmd_async(self.node.id, "cmd.run", [a2enmod_cmd])
         self.salt.subscribe_event(jid, self.node.id)
@@ -183,6 +214,8 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c "source /etc
         self.salt.subscribe_event(jid, self.node.id)
 
     def render_httpd_conf(self):
+        """Copies rendered Apache2's virtual host into the node.
+        """
         src = "nodes/oxauth/gluu_httpd.conf"
         file_basename = os.path.basename(src)
         dest = os.path.join("/etc/apache2/sites-available", file_basename)
@@ -196,6 +229,8 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c "source /etc
         self.copy_rendered_jinja_template(src, dest, ctx)
 
     def notify_nginx(self):
+        """Notifies nginx to re-render virtual host and restart the process.
+        """
         for nginx in self.cluster.get_nginx_objects():
             setup_obj = NginxSetup(nginx, self.cluster,
                                    self.app, logger=self.logger)

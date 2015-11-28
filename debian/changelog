@@ -1,3 +1,31 @@
+gluu-flask (0.4.1-8) unstable; urgency=medium
+
+  * QA upload.
+  * New upstream release.
+
+ -- Adrian Alves <tomcat@repo.gluu.org>  Thu, 26 Nov 2015 19:47:00 +0000
+
+gluu-flask (0.4.1-7) unstable; urgency=medium
+
+  * QA upload.
+  * New upstream release.
+
+ -- Adrian Alves <tomcat@repo.gluu.org>  Thu, 26 Nov 2015 08:16:08 +0000
+
+gluu-flask (0.4.1-6) unstable; urgency=medium
+
+  * QA upload.
+  * New upstream release.
+
+ -- Adrian Alves <tomcat@repo.gluu.org>  Thu, 26 Nov 2015 08:02:08 +0000
+
+gluu-flask (0.4.1-5) unstable; urgency=medium
+
+  * QA upload.
+  * New upstream release.
+
+ -- Adrian Alves <tomcat@repo.gluu.org>  Tue, 24 Nov 2015 17:06:29 +0000
+
 gluu-flask (0.4.1-4) unstable; urgency=medium
 
   * QA upload.

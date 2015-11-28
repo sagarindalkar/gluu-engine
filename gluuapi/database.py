@@ -8,55 +8,7 @@ import os
 
 import jsonpickle
 import tinydb
-import tinydb.storages
-import tinydb.middlewares
 from werkzeug.utils import import_string
-
-
-class _PatchedTinyDB(tinydb.TinyDB):
-    def _read(self):
-        return self._storage.read() or {}
-
-
-class _PatchedJSONStorage(tinydb.storages.JSONStorage):
-    def read(self):
-        # Get the file size
-        self._handle.seek(0, 2)
-        size = self._handle.tell()
-
-        if not size:
-            # File is empty
-            return None
-        else:
-            self._handle.seek(0)
-            return json.load(self._handle)
-
-
-class _PatchedSerializationMiddleware(tinydb.middlewares.SerializationMiddleware):
-    def read(self):
-        data = self.storage.read()
-
-        if data is None:
-            return None
-
-        for serializer_name in self._serializers:
-            serializer = self._serializers[serializer_name]
-            tag = '{{{0}}}:'.format(serializer_name)  # E.g: '{TinyDate}:'
-
-            for table_name in data:
-                table = data[table_name]
-
-                for eid in table:
-                    item = data[table_name][eid]
-
-                    for field in item:
-                        try:
-                            if item[field].startswith(tag):
-                                encoded = item[field][len(tag):]
-                                item[field] = serializer.decode(encoded)
-                        except AttributeError:
-                            pass  # Not a string
-        return data
 
 
 class Database(object):
@@ -89,16 +41,7 @@ class Database(object):
                     )
                 except OSError:
                     pass
-            # self._db = tinydb.TinyDB(self.app.config["DATABASE_URI"])
-
-            # use patched database, middleware, and storage to prevent
-            # database being written out when JSON is invalid
-            # see: https://github.com/msiemens/tinydb/issues/67
-            # TODO: remove patches when tinydb v3 is released
-            self._db = _PatchedTinyDB(
-                self.app.config["DATABASE_URI"],
-                storage=_PatchedSerializationMiddleware(_PatchedJSONStorage),
-            )
+            self._db = tinydb.TinyDB(self.app.config["DATABASE_URI"])
         return self._db
 
     def _load_pyobject(self, data):

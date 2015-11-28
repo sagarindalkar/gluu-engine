@@ -40,7 +40,7 @@ setup(
         "docker-py>=1.5.0,<1.6.0",
         "salt<2015.2",
         "pyzmq",
-        "tinydb<3.0.0",
+        "tinydb",
         "jsonpickle",
         "netaddr",
         "m2crypto",

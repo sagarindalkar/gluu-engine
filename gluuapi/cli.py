@@ -31,9 +31,13 @@ def run_app(app, use_reloader=True):
     crochet_setup()
 
     if not app.debug:
-        LicenseExpirationTask(app).start()
+        LicenseExpirationTask(app).perform_job()
     OxidpWatcherTask(app).perform_job()
-    app.run(port=app.config["PORT"], use_reloader=use_reloader)
+    app.run(
+        host=app.config["HOST"],
+        port=int(app.config["PORT"]),
+        use_reloader=use_reloader,
+    )
 
 
 class GluuDaemonCLI(click.MultiCommand):

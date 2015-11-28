@@ -19,6 +19,11 @@ def create_file_logger(filepath="", log_level=logging.DEBUG, name=""):
     :param name: Logger name (by default will use current module name)
     """
     filepath = filepath or tempfile.mkstemp()[1]
+    fp_dir = os.path.dirname(filepath)
+
+    if not os.path.exists(fp_dir):
+        os.makedirs(fp_dir)
+
     logger = logging.getLogger(name or __name__)
     logger.setLevel(log_level)
     ch = logging.FileHandler(filepath)
@@ -29,23 +34,9 @@ def create_file_logger(filepath="", log_level=logging.DEBUG, name=""):
     logger.addHandler(ch)
 
     # set proper permission 644
-    os.chmod(filepath, stat.S_IWUSR | stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)  # noqa
+    os.chmod(filepath,
+             stat.S_IWUSR | stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
     return logger
-
-
-def create_tempfile(suffix="", prefix="tmp", dir_="/tmp"):
-    """Creates temporary file.
-
-    :param suffix: Filename suffix
-    :param prefix: Filename prefix
-    :param dir_: Parent directory where to create temporary file.
-                 If directory is not exist, it will be created first.
-    """
-    if not os.path.exists(dir_):
-        os.makedirs(dir_)
-
-    _, fp = tempfile.mkstemp(suffix=suffix, prefix=prefix, dir=dir_)
-    return fp
 
 
 def configure_global_logging(logfile=None):  # pragma: no cover

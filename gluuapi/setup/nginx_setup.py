@@ -11,6 +11,8 @@ from ..model import STATE_SUCCESS
 
 class NginxSetup(BaseSetup):
     def render_https_conf(self):
+        """Copies rendered nginx virtual host config.
+        """
         ctx = {
             "ox_cluster_hostname": self.cluster.ox_cluster_hostname,
             "cert_file": "/etc/certs/nginx.crt",
@@ -26,6 +28,8 @@ class NginxSetup(BaseSetup):
         self.copy_rendered_jinja_template(src, dest, ctx)
 
     def configure_vhost(self):
+        """Enables virtual host.
+        """
         rm_cmd = "rm /etc/nginx/sites-enabled/default"
         jid = self.salt.cmd_async(self.node.id, "cmd.run", [rm_cmd])
         self.salt.subscribe_event(jid, self.node.id)
@@ -36,6 +40,8 @@ class NginxSetup(BaseSetup):
         self.salt.subscribe_event(jid, self.node.id)
 
     def add_auto_startup_entry(self):
+        """Adds supervisor program for auto-startup.
+        """
         payload = """
 [program:{}]
 command=/usr/sbin/nginx -g "daemon off;"
@@ -49,22 +55,30 @@ command=/usr/sbin/nginx -g "daemon off;"
         self.salt.subscribe_event(jid, self.node.id)
 
     def restart_nginx(self):
+        """Restarts nginx via supervisorctl.
+        """
         self.logger.info("restarting nginx")
         service_cmd = "supervisorctl restart nginx"
         self.salt.cmd(self.node.id, "cmd.run", [service_cmd])
 
     def setup(self):
+        """Runs the actual setup.
+        """
         hostname = self.cluster.ox_cluster_hostname.split(":")[0]
         self.gen_cert("nginx", self.cluster.decrypted_admin_pw,
                       "www-data", "www-data", hostname)
         self.change_cert_access("www-data", "www-data")
         self.render_https_conf()
         self.configure_vhost()
+        self.copy_index_html()
         self.add_auto_startup_entry()
         self.reload_supervisor()
         return True
 
     def notify_oxtrust(self):
+        """Notifies oxTrust to run required operations (if any)
+        after this node has been added/removed.
+        """
         # a hack to avoid circular import
         from .oxtrust_setup import OxtrustSetup
 
@@ -83,12 +97,24 @@ command=/usr/sbin/nginx -g "daemon off;"
             pass
 
     def after_setup(self):
+        """Post-setup callback.
+        """
         if (self.provider.type == "master"
                 and self.node.state == STATE_SUCCESS):
             self.notify_oxtrust()
 
     def teardown(self):
+        """Teardowns the node.
+        """
         if (self.provider.type == "master"
                 and self.node.state == STATE_SUCCESS):
             self.notify_oxtrust()
         self.after_teardown()
+
+    def copy_index_html(self):
+        """Copies custom index.html for nginx.
+        """
+        self.logger.info("copying index.html")
+        src = self.get_template_path("nodes/nginx/index.html")
+        dest = "/usr/share/nginx/html/index.html"
+        self.salt.copy_file(self.node.id, src, dest)

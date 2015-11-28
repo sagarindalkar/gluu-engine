@@ -22,6 +22,10 @@ class LicenseKeyReq(ma.Schema):
 
     @post_load
     def urlsafe_public_key(self, data):
+        """Transform public key value into URL-safe string
+
+        :param data: A ``dict`` contains public key value.
+        """
         # public key from license server is not URL-safe
         # client like ``curl`` will interpret ``+`` as whitespace
         # hence we're converting whitespace to ``+``

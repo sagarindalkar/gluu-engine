@@ -68,10 +68,6 @@ class SaltHelper(object):
     def cmd(self, tgt, fun, arg=()):
         return self.client.cmd(tgt, fun, arg)
 
-    def get_fqhostname(self):
-        import salt.utils.network
-        return salt.utils.network.get_fqhostname()
-
     def reject_minion(self, key):
         return self.key_store.reject(key, include_accepted=True)
 

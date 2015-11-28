@@ -76,3 +76,33 @@ def test_reject_minion(monkeypatch, salt_helper):
     # make sure minion key is rejected by checking whether
     # return value is not an empty ``dict``
     assert salt_helper.reject_minion("abc") != {}
+
+
+def test_subscribe_event_no_response(salt_helper, provider, monkeypatch):
+    import gluuapi.errors
+
+    monkeypatch.setattr(
+        "salt.utils.event.MasterEvent.get_event",
+        lambda cls, wait, tag, full: None,
+    )
+    jid = salt_helper.cmd_async(provider.hostname, "cmd.run", ["echo test"])
+    with pytest.raises(gluuapi.errors.SaltEventError):
+        salt_helper.subscribe_event(jid, provider.hostname)
+
+
+def test_subscribe_event_no_skip_retcode(salt_helper, provider, monkeypatch):
+    import gluuapi.errors
+
+    monkeypatch.setattr(
+        "salt.utils.event.MasterEvent.get_event",
+        lambda cls, wait, tag, full: {
+            "tag": "salt/job",
+            "data": {
+                "retcode": 100,
+                "return": "OK",
+            },
+        },
+    )
+    jid = salt_helper.cmd_async(provider.hostname, "cmd.run", ["echo test"])
+    with pytest.raises(gluuapi.errors.SaltEventError):
+        salt_helper.subscribe_event(jid, provider.hostname)

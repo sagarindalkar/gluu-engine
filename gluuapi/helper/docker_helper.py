@@ -12,7 +12,6 @@ import docker.errors
 import requests
 from docker import Client
 from docker.tls import TLSConfig
-from docker.errors import TLSParameterError
 
 from ..log import create_file_logger
 
@@ -27,16 +26,12 @@ class DockerHelper(object):
 
         tlsconfig = None
         if self.provider.docker_base_url.startswith("https"):
-            try:
-                # configure TLS configuration to connect to docker
-                tlsconfig = TLSConfig(
-                    client_cert=(self.provider.ssl_cert_path,
-                                 self.provider.ssl_key_path),
-                    verify=self.provider.ca_cert_path,
-                )
-            except TLSParameterError as exc:
-                self.logger.warn(exc)
-
+            # configure TLS configuration to connect to docker
+            tlsconfig = TLSConfig(
+                client_cert=(self.provider.ssl_cert_path,
+                             self.provider.ssl_key_path),
+                verify=self.provider.ca_cert_path,
+            )
         self.docker = Client(base_url=self.provider.docker_base_url,
                              tls=tlsconfig)
 

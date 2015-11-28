@@ -205,7 +205,13 @@ def validator_expired(monkeypatch):
 def salt_event_ok(monkeypatch):
     monkeypatch.setattr(
         "salt.utils.event.MasterEvent.get_event",
-        lambda cls, wait, tag, full: {"tag": "salt/job", "data": {"retcode": 0}},
+        lambda cls, wait, tag, full: {
+            "tag": "salt/job",
+            "data": {
+                "retcode": 0,
+                "return": "OK",
+            },
+        },
     )
 
 
@@ -309,6 +315,19 @@ def oxidp_setup(request, app, oxidp_node, cluster):
     from gluuapi.setup import OxidpSetup
 
     setup_obj = OxidpSetup(oxidp_node, cluster, app)
+
+    def teardown():
+        setup_obj.remove_build_dir()
+
+    request.addfinalizer(teardown)
+    return setup_obj
+
+
+@pytest.fixture()
+def nginx_setup(request, app, nginx_node, cluster):
+    from gluuapi.setup import NginxSetup
+
+    setup_obj = NginxSetup(nginx_node, cluster, app)
 
     def teardown():
         setup_obj.remove_build_dir()

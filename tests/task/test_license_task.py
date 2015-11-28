@@ -1,4 +1,4 @@
-def test_perform_job_license_not_expired(
+def test_license_not_expired(
         db, license_key, provider, app,
         oxd_resp_ok, validator_ok):
     from gluuapi.task import LicenseExpirationTask
@@ -9,13 +9,13 @@ def test_perform_job_license_not_expired(
 
     with app.test_request_context():
         let = LicenseExpirationTask(app)
-        let.perform_job()
+        let.monitor_license()
 
 
-def test_perform_job_disable_nodes(db, license_key, provider,
-                                   oxauth_node, oxidp_node, app,
-                                   oxd_resp_err, patched_salt,
-                                   salt_event_ok, patched_sleep):
+def test_disable_nodes(db, license_key, provider,
+                       oxauth_node, oxidp_node, app,
+                       oxd_resp_err, patched_salt,
+                       salt_event_ok, patched_sleep):
     from gluuapi.task import LicenseExpirationTask
 
     # license with expired timestamp
@@ -39,15 +39,15 @@ def test_perform_job_disable_nodes(db, license_key, provider,
 
     with app.test_request_context():
         let = LicenseExpirationTask(app)
-        let.perform_job()
+        let.monitor_license()
         assert db.get(oxauth_node.id, "nodes").state == "DISABLED"
 
 
-def test_perform_job_enable_nodes(db, license_key, provider, app,
-                                  oxauth_node, oxidp_node,
-                                  oxd_resp_ok, validator_ok,
-                                  patched_salt, salt_event_ok,
-                                  patched_sleep):
+def test_enable_nodes(db, license_key, provider, app,
+                      oxauth_node, oxidp_node,
+                      oxd_resp_ok, validator_ok,
+                      patched_salt, salt_event_ok,
+                      patched_sleep):
     from gluuapi.task import LicenseExpirationTask
 
     # license with expired timestamp
@@ -71,5 +71,5 @@ def test_perform_job_enable_nodes(db, license_key, provider, app,
 
     with app.test_request_context():
         let = LicenseExpirationTask(app)
-        let.perform_job()
+        let.monitor_license()
         assert db.get(oxauth_node.id, "nodes").state == "SUCCESS"

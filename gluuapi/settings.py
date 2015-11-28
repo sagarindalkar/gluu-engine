@@ -12,7 +12,9 @@ class Config(object):
 
     # This directory
     APP_DIR = os.path.abspath(os.path.dirname(__file__))
-    PORT = 8080
+
+    HOST = os.environ.get("HOST", "127.0.0.1")
+    PORT = os.environ.get("PORT", 8080)
 
     DATA_DIR = os.environ.get("DATA_DIR", "/var/lib/gluu-cluster")
     DATABASE_URI = os.path.join(DATA_DIR, "db", "db.json")

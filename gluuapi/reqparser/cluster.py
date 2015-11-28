@@ -39,11 +39,19 @@ class ClusterReq(ma.Schema):
 
     @validates("country_code")
     def validate_country_code(self, value):
+        """Validates cluster's country code.
+
+        :param value: Cluster's country code.
+        """
         if len(value) != 2:
             raise ValidationError("requires 2 characters")
 
     @validates("weave_ip_network")
     def validate_weave_ip_network(self, value):
+        """Validates cluster's weave IP network.
+
+        :param value: Cluster's weave IP network.
+        """
         # allow only IPv4 for now
         if not WEAVE_NETWORK_RE.match(value):
             raise ValidationError("invalid IP network address format")
@@ -56,10 +64,18 @@ class ClusterReq(ma.Schema):
 
     @validates("admin_pw")
     def validate_admin_pw(self, value):
+        """Validates cluster's admin password.
+
+        :param value: Cluster's admin password.
+        """
         if len(value) < 6:
             raise ValidationError("Must use at least 6 characters")
 
     @validates("name")
     def validate_name(self, value):
+        """Validates cluster's name.
+
+        :param value: Cluster's name.
+        """
         if not CLUSTER_NAME_RE.match(value):
             raise ValidationError("Unaccepted cluster name format")

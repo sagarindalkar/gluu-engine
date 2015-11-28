@@ -3,4 +3,4 @@
 #
 # All rights reserved.
 
-__version__ = "0.4.1-dev"
+__version__ = "0.4.1"

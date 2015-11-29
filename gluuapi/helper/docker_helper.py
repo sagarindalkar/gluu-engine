@@ -81,10 +81,14 @@ class DockerHelper(object):
         1. Creates container
         2. Starts container
 
-        :param name: Desired container name.
-        :param image: Existing image name.
+        :param name: A name for the container.
+        :param image: The image to run.
+        :param port_bindings: Port bindings.
+        :param volumes: Mapped volumes.
+        :param dns: DNS name servers.
+        :param dns_search: DNS search domains.
         :returns: A string of container ID in long format if container
-                is running successfully, otherwise an empty string.
+                  is running successfully, otherwise an empty string.
         """
         port_bindings = port_bindings or {}
         volumes = volumes or {}
@@ -96,14 +100,7 @@ class DockerHelper(object):
         env = {
             "SALT_MASTER_IPADDR": os.environ.get("SALT_MASTER_IPADDR"),
         }
-        # to impliment restart policy
-        # need docker-py v1.2.0 =<
-        # i guess need to pass restart_policy in create_host_config function
-        # restart_policy dict is
-        #{
-        #    "MaximumRetryCount": 0,
-        #    "Name": "always"
-        #}
+
         container = self.docker.create_container(
             image=image, name=name, detach=True, environment=env,
             host_config=self.docker.create_host_config(
@@ -170,10 +167,15 @@ class DockerHelper(object):
                         dns=None, dns_search=None):
         """Builds and runs a container.
 
-        :param name: Container name.
-        :param image: Image name.
+        :param name: A name for the container.
+        :param image: The image to run.
         :param dockerfile: Path to remote Dockerfile. Used to build the image
-                        if image is not exist.
+                           if image is not exist.
+        :param port_bindings: Port bindings.
+        :param volumes: Mapped volumes.
+        :param dns: DNS name servers.
+        :param dns_search: DNS search domains.
+
         :returns: Container ID in long format if container running successfully,
                 otherwise an empty string.
         """
@@ -198,7 +200,7 @@ class DockerHelper(object):
     def get_container_ip(self, container_id):
         """Gets container IP.
 
-        :param container_id: Container ID; ideally the short format.
+        :param container_id: ID or name of the container.
         :returns: Container's IP address.
         """
         info = self.docker.inspect_container(container_id)
@@ -206,6 +208,8 @@ class DockerHelper(object):
 
     def remove_container(self, container_id):
         """Removes container.
+
+        :param container_id: ID or name of the container.
         """
         try:
             return self.docker.remove_container(container_id, force=True)
@@ -216,4 +220,8 @@ class DockerHelper(object):
                     "container {!r} does not exist".format(container_id))
 
     def inspect_container(self, container_id):
+        """Inspects given container.
+
+        :param container_id: ID or name of the container.
+        """
         return self.docker.inspect_container(container_id)

@@ -35,12 +35,16 @@ class PrometheusHelper(object):
         self.weave = WeaveHelper(self.provider, self.app)
 
     def __render(self):
+        """Copies rendered jinja template.
+        """
         template = self.jinja_env.get_template("prometheus/prometheus.yml")
         rtxt = template.render(cluster=self.cluster)
         with open(self.target_path, 'w') as fp:
             fp.write(rtxt)
 
     def __restart(self):
+        """Restarts the container.
+        """
         self.docker.restart(container="prometheus")
 
     def update(self):

@@ -28,9 +28,14 @@ class WeaveHelper(object):
 
     @run_in_reactor
     def launch_async(self):
+        """Launches weave container for master or consumer provider
+        asynchronously.
+        """
         self.launch()
 
     def launch(self):
+        """Launches weave container for master or consumer provider.
+        """
         if self.provider.type == "master":
             self.launch_master()
         else:
@@ -41,6 +46,8 @@ class WeaveHelper(object):
         self.expose_network()
 
     def expose_network(self):
+        """Exposes gateway IP.
+        """
         addr, prefixlen = self.cluster.exposed_weave_ip
         self.logger.info("exposing weave network at {}/{}".format(
             addr, prefixlen
@@ -52,6 +59,8 @@ class WeaveHelper(object):
         )
 
     def launch_master(self):
+        """Launches weave router for master provider.
+        """
         self.logger.info("re-launching weave for master provider")
         stop_cmd = "weave stop"
         self.salt.cmd(self.provider.hostname, "cmd.run", [stop_cmd])
@@ -68,6 +77,8 @@ class WeaveHelper(object):
         self.salt.cmd(self.provider.hostname, "cmd.run", [launch_cmd])
 
     def launch_consumer(self):
+        """Launches weave router for consumer provider.
+        """
         self.logger.info("re-launching weave for consumer provider")
         stop_cmd = "weave stop"
         self.salt.cmd(self.provider.hostname, "cmd.run", [stop_cmd])
@@ -86,6 +97,11 @@ class WeaveHelper(object):
         self.salt.cmd(self.provider.hostname, "cmd.run", [launch_cmd])
 
     def attach(self, cidr, node_id):
+        """Adds container into weave network.
+
+        :param cidr: CIDR, e.g. ``10.2.1.1/24``.
+        :param node_id: ID of the node/container.
+        """
         attach_cmd = "weave attach {} {}".format(cidr, node_id)
         self.logger.info("attaching weave IP address {}".format(cidr))
         jid = self.salt.cmd_async(
@@ -94,6 +110,11 @@ class WeaveHelper(object):
         self.salt.subscribe_event(jid, self.provider.hostname)
 
     def detach(self, cidr, node_id):
+        """Removes container from weave network.
+
+        :param cidr: CIDR, e.g. ``10.2.1.1/24``.
+        :param node_id: ID of the node/container.
+        """
         attach_cmd = "weave detach {} {}".format(cidr, node_id)
         self.logger.info("detaching weave IP address {}".format(cidr))
         jid = self.salt.cmd_async(
@@ -102,12 +123,19 @@ class WeaveHelper(object):
         self.salt.subscribe_event(jid, self.provider.hostname)
 
     def dns_add(self, node_id, domain_name):
+        """Adds entry to weave DNS.
+
+        :param node_id: ID of the container/node.
+        :param domain_name: Local domain name.
+        """
         dns_cmd = "weave dns-add {} -h {}".format(node_id, domain_name)
         self.logger.info("adding {} to local DNS server".format(domain_name))
         jid = self.salt.cmd_async(self.provider.hostname, "cmd.run", [dns_cmd])
         self.salt.subscribe_event(jid, self.provider.hostname)
 
     def docker_bridge_ip(self):
+        """Gets IP of docker bridge (docker0) interface.
+        """
         jid = self.salt.cmd_async(
             self.provider.hostname, "cmd.run", ["weave docker-bridge-ip"]
         )

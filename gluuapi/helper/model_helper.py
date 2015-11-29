@@ -90,6 +90,9 @@ class BaseModelHelper(object):
 
     def prepare_minion(self, connect_delay=10, exec_delay=15):
         """Waits for minion to connect before doing any remote execution.
+
+        :param connect_delay: Time to wait before start connecting to minion.
+        :param exec_delay: Time to wait before start executing remote command.
         """
         # wait for 10 seconds to make sure minion connected
         # and sent its key to master
@@ -111,6 +114,9 @@ class BaseModelHelper(object):
     @run_in_reactor
     def setup(self, connect_delay=10, exec_delay=15):
         """Runs the node setup.
+
+        :param connect_delay: Time to wait before start connecting to minion.
+        :param exec_delay: Time to wait before start executing remote command.
         """
         try:
             # get docker bridge IP as it's where weavedns runs
@@ -198,6 +204,9 @@ class BaseModelHelper(object):
             distribute_cluster_data(self.database_uri)
 
     def on_setup_error(self):
+        """Callback that supposed to be called when error occurs in setup
+        process.
+        """
         self.logger.info("destroying minion {}".format(self.node.name))
 
         try:

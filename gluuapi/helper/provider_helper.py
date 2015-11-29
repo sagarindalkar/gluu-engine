@@ -18,6 +18,10 @@ from ..database import db
 
 @run_in_reactor
 def distribute_cluster_data(src):
+    """Distributes cluster data to all consumer providers.
+
+    :param src: Path to cluster database file.
+    """
     dest = src
     salt = SaltHelper()
     consumer_providers = db.search_from_table(
@@ -48,12 +52,20 @@ class ProviderHelper(object):
 
     @run_in_reactor
     def setup(self, connect_delay=10, exec_delay=15):
+        """Runs the actual setup.
+
+        :param connect_delay: Time to wait before start connecting to minion.
+        :param exec_delay: Time to wait before start executing remote command.
+        """
         self.prepare_minion(connect_delay, exec_delay)
         self.weave.launch()
         self.import_docker_certs()
         distribute_cluster_data(self.app.config["DATABASE_URI"])
 
     def import_docker_certs(self):
+        """Imports certificates and keys required for accessing
+        docker Remote API.
+        """
         cert_types = {
             "/etc/docker/cert.pem": self.write_ssl_cert,
             "/etc/docker/key.pem": self.write_ssl_key,
@@ -67,6 +79,10 @@ class ProviderHelper(object):
             callback(content)
 
     def get_docker_cert(self, remote_cert_path):
+        """Gets the content of certificate from remote server.
+
+        :param remote_cert_path: Remote path of the certificate.
+        """
         cat_cmd = "test -f {0} && cat {0}".format(remote_cert_path)
         resp = self.salt.cmd(self.provider.hostname, "cmd.run", [cat_cmd])
 
@@ -99,21 +115,36 @@ class ProviderHelper(object):
             os.chmod(dest, filemode)
 
     def write_ssl_cert(self, content):
+        """Writes SSL certificate into a file and change the access.
+
+        :param content: Content of the file.
+        """
         # chmod 444
         self._write_cert_file(content, self.provider.ssl_cert_path,
                               stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
 
     def write_ssl_key(self, content):
+        """Writes SSL key into a file and change the access.
+
+        :param content: Content of the file.
+        """
         # chmod 400
         self._write_cert_file(content, self.provider.ssl_key_path, stat.S_IRUSR)
 
     def write_ca_cert(self, content):
+        """Writes CA certificate into a file and change the access.
+
+        :param content: Content of the file.
+        """
         # chmod 444
         self._write_cert_file(content, self.provider.ca_cert_path,
                               stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
 
     def prepare_minion(self, connect_delay=10, exec_delay=15):
         """Waits for minion to connect before doing any remote execution.
+
+        :param connect_delay: Time to wait before start connecting to minion.
+        :param exec_delay: Time to wait before start executing remote command.
         """
         # wait for 10 seconds to make sure minion connected
         # and sent its key to master

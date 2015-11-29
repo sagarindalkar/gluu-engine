@@ -63,20 +63,30 @@ class SaltHelper(object):
         return files
 
     def copy_file(self, tgt, src, dest):
+        """Copies file to minion.
+        """
         return self.client.cmd(tgt, "cp.recv", [self._load_files([src]), dest])
 
     def cmd(self, tgt, fun, arg=()):
+        """Runs synchronous command in minion.
+        """
         return self.client.cmd(tgt, fun, arg)
 
     def reject_minion(self, key):
+        """Rejects minion from keystore.
+        """
         return self.key_store.reject(key, include_accepted=True)
 
     def cmd_async(self, tgt, fun, arg=()):
+        """Runs asynchronous command in minion.
+        """
         return self.client.cmd_async(tgt, fun, arg)
 
     @classmethod
     def subscribe_event(cls, jid, key, wait=60, skip_retcodes=None,
                         silent=False, err_msg=""):
+        """Subscribes to salt event and respond necessarily.
+        """
         skip_retcodes = skip_retcodes or []
         skip_retcodes = set(skip_retcodes + [0])
         err_msg = err_msg or "failed to execute command"

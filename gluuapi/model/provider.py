@@ -46,8 +46,7 @@ class Provider(BaseModel):
         if type_:
             condition = (condition) & (db.where("type") == type_)
         if state:
-            if state == STATE_SUCCESS:
-                condition = (condition) & (db.where("state") == state)
+            condition = (condition) & (db.where("state") == state)
         return db.search_from_table("nodes", condition)
 
     def populate(self, fields=None):

@@ -52,9 +52,11 @@ def configure_global_logging(logfile=None):  # pragma: no cover
     if logfile:
         handlers["file"] = {
             "level": "INFO",
-            "class": "logging.FileHandler",
+            "class": "logging.handlers.TimedRotatingFileHandler",
             "filename": logfile,
-            "mode": "a",
+            "when": "d",
+            "interval": 1,
+            "backupCount": 1,
             "formatter": "simple",
         }
 

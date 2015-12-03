@@ -66,35 +66,38 @@ class OxidpWatcherTask(object):
 
         1. file modification
         2. file creation
+        3. moved file
+        4. metadata modification (e.g. ``touch`` command)
         """
+        self.logger.info("got {} event for {}".format(
+            inotify.humanReadableMask(mask),
+            path.realpath().path,
+        ))
+
         callbacks = {
-            inotify.IN_MODIFY: self.on_modified,
-            inotify.IN_CREATE: self.on_created,
+            inotify.IN_MODIFY: self.copy_file,
+            inotify.IN_CREATE: self.copy_file,
+            inotify.IN_MOVED_TO: self.copy_file,
+            inotify.IN_ATTRIB: self.copy_file,
         }
         callback = callbacks.get(mask, None)
         if callback is not None:
             callback(path.realpath())
 
-    def on_modified(self, fp):
-        """A callback when _modify_ event occurs.
-        """
-        if fp.splitext()[-1] not in self.allowed_extensions:
-            return
-        self.distribute_file(fp.path)
-
-    def on_created(self, fp):
-        """A callback when _create_ event occurs.
-        """
-        if fp.splitext()[-1] not in self.allowed_extensions:
-            return
-        self.distribute_file(fp.path)
-
-    def distribute_file(self, src):
+    def copy_file(self, fp):
         """Copy the files from mapped volume to all oxidp nodes.
+
+        :param fp: FilePath instance.
         """
+        # string of absolute path to file
+        src = fp.realpath().path
+
         if not self.cluster:
             self.logger.warn("Unable to find existing cluster; "
                              "skipping {} distribution".format(src))
+            return
+
+        if fp.splitext()[-1] not in self.allowed_extensions:
             return
 
         # oxTrust will generate required files for Shib configuration
@@ -103,7 +106,8 @@ class OxidpWatcherTask(object):
         #
         # for example, given a file ``/opt/idp/conf/attribute-resolver.xml``
         # created inside the container, it will be mapped to
-        # ``/var/lib/gluu-cluster/volumes/oxidp/conf/attribute-resolver.xml`` inside the host
+        # ``/var/lib/gluu-cluster/volumes/oxidp/conf/attribute-resolver.xml``
+        # inside the host
         #
         # we need to distribute this file to
         # ``/opt/idp/conf/attribute-resolver.xml`` inside the oxidp node

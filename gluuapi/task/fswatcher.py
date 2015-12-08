@@ -79,6 +79,7 @@ class OxidpWatcherTask(object):
             inotify.IN_CREATE: self.copy_file,
             inotify.IN_MOVED_TO: self.copy_file,
             inotify.IN_ATTRIB: self.copy_file,
+            inotify.IN_CLOSE_WRITE | inotify.IN_CREATE: self.copy_file,
         }
         callback = callbacks.get(mask, None)
         if callback is not None:

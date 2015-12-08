@@ -4,6 +4,7 @@
 # All rights reserved.
 
 import os.path
+import time
 
 from .oxauth_setup import OxauthSetup
 
@@ -52,7 +53,7 @@ class OxidpSetup(OxauthSetup):
     def setup(self):
         """Runs the actual setup.
         """
-        hostname = self.node.domain_name
+        hostname = self.cluster.ox_cluster_hostname.split(":")[0]
 
         # render config templates
         self.render_server_xml_template()
@@ -107,7 +108,9 @@ class OxidpSetup(OxauthSetup):
             setup_obj.render_nutcracker_conf()
             setup_obj.restart_nutcracker()
 
+        self.pull_shib_certkey()
         self.notify_nginx()
+        self.discover_nginx()
 
     def import_ldap_certs(self):
         """Imports all LDAP certificates.
@@ -117,13 +120,13 @@ class OxidpSetup(OxauthSetup):
 
             cert_cmd = "echo -n | openssl s_client -connect {0}:{1} | " \
                        "sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' " \
-                       "> /tmp/{0}_opendj.crt".format(ldap.domain_name, ldap.ldaps_port)
+                       "> /tmp/{0}.crt".format(ldap.domain_name, ldap.ldaps_port)
             self.salt.cmd(self.node.id, "cmd.run", [cert_cmd])
 
             import_cmd = " ".join([
                 "keytool -importcert -trustcacerts",
-                "-alias '{}_opendj'".format(ldap.weave_ip),
-                "-file /tmp/{}_opendj.crt".format(ldap.domain_name),
+                "-alias '{}'".format(ldap.domain_name),
+                "-file /tmp/{}.crt".format(ldap.domain_name),
                 "-keystore {}".format(self.node.truststore_fn),
                 "-storepass changeit -noprompt",
             ])
@@ -231,3 +234,75 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c "source /etc
             "httpd_key_fn": "/etc/certs/httpd.key",
         }
         self.copy_rendered_jinja_template(src, dest, ctx)
+
+    def pull_shib_certkey(self):
+        try:
+            oxtrust = self.cluster.get_oxtrust_objects()[0]
+        except IndexError:
+            return
+
+        for fn in ["shibIDP.crt", "shibIDP.key"]:
+            path = "/etc/certs/{}".format(fn)
+            cat_cmd = "cat {}".format(path)
+            resp = self.salt.cmd(oxtrust.id, "cmd.run", [cat_cmd])
+
+            txt = resp.get(oxtrust.id, "")
+            if txt:
+                time.sleep(5)
+                self.logger.info(
+                    "copying {0}:{1} to {2}:{1}".format(oxtrust.name, path,
+                                                        self.node.name)
+                )
+                echo_cmd = "echo '{}' > {}".format(txt, path)
+                self.salt.cmd(self.node.id, "cmd.run", [echo_cmd])
+
+    def add_host_entries(self, nginx):
+        """Adds entry into /etc/hosts file.
+        """
+        # currently we need to add nginx container hostname
+        # to prevent "peer not authenticated" raised by oxTrust;
+        # TODO: use a real DNS
+        self.logger.info("adding nginx entry in oxIdp /etc/hosts file")
+        # add the entry only if line is not exist in /etc/hosts
+        grep_cmd = "grep -q '^{0} {1}$' /etc/hosts " \
+                   "|| echo '{0} {1}' >> /etc/hosts" \
+                   .format(nginx.weave_ip,
+                           self.cluster.ox_cluster_hostname)
+        jid = self.salt.cmd_async(self.node.id, "cmd.run", [grep_cmd])
+        self.salt.subscribe_event(jid, self.node.id)
+
+    def import_nginx_cert(self):
+        """Imports SSL certificate from nginx node.
+        """
+        self.logger.info("importing nginx cert")
+
+        # imports nginx cert into oxtrust cacerts to avoid
+        # "peer not authenticated" error
+        cert_cmd = "echo -n | openssl s_client -connect {}:443 | " \
+                   "sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' " \
+                   "> /tmp/ox.cert".format(self.cluster.ox_cluster_hostname)
+        jid = self.salt.cmd_async(self.node.id, "cmd.run", [cert_cmd])
+        self.salt.subscribe_event(jid, self.node.id)
+
+        import_cmd = " ".join([
+            "keytool -importcert -trustcacerts",
+            "-alias '{}'".format(self.cluster.ox_cluster_hostname),
+            "-file /tmp/ox.cert",
+            "-keystore {}".format(self.node.truststore_fn),
+            "-storepass changeit -noprompt",
+        ])
+        jid = self.salt.cmd_async(self.node.id, "cmd.run", [import_cmd])
+        self.salt.subscribe_event(jid, self.node.id)
+
+    def discover_nginx(self):
+        """Discovers nginx node.
+        """
+        self.logger.info("discovering available nginx node")
+        try:
+            # if we already have nginx node in the the cluster,
+            # add entry to /etc/hosts and import the cert
+            nginx = self.cluster.get_nginx_objects()[0]
+            self.add_host_entries(nginx)
+            self.import_nginx_cert()
+        except IndexError:
+            pass

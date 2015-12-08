@@ -44,4 +44,4 @@ class OxidpNode(BaseModel):
     def recovery_priority(self):
         """Gets recovery priority number used by recovery script.
         """
-        return 3
+        return 4

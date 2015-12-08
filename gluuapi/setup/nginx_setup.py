@@ -101,6 +101,7 @@ command=/usr/sbin/nginx -g "daemon off;"
         if (self.provider.type == "master"
                 and self.node.state == STATE_SUCCESS):
             self.notify_oxtrust()
+        self.notify_oxidp()
 
     def teardown(self):
         """Teardowns the node.
@@ -108,6 +109,8 @@ command=/usr/sbin/nginx -g "daemon off;"
         if (self.provider.type == "master"
                 and self.node.state == STATE_SUCCESS):
             self.notify_oxtrust()
+
+        self.notify_oxidp()
         self.after_teardown()
 
     def copy_index_html(self):
@@ -117,3 +120,21 @@ command=/usr/sbin/nginx -g "daemon off;"
         src = self.get_template_path("nodes/nginx/index.html")
         dest = "/usr/share/nginx/html/index.html"
         self.salt.copy_file(self.node.id, src, dest)
+
+    def notify_oxidp(self):
+        """Notifies oxTrust to run required operations (if any)
+        after this node has been added/removed.
+        """
+        # a hack to avoid circular import
+        from .oxidp_setup import OxidpSetup
+
+        for oxidp in self.cluster.get_oxidp_objects():
+            setup_obj = OxidpSetup(oxidp, self.cluster,
+                                   self.app, logger=self.logger)
+
+            setup_obj.delete_nginx_cert()
+            setup_obj.remove_host_entries(self.node)
+
+            # wait before telling oxidp to find nginx node
+            time.sleep(2)
+            setup_obj.discover_nginx()

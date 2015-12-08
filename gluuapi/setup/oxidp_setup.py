@@ -260,7 +260,7 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c "source /etc
         """Adds entry into /etc/hosts file.
         """
         # currently we need to add nginx container hostname
-        # to prevent "peer not authenticated" raised by oxTrust;
+        # to prevent "peer not authenticated" raised by oxIdp;
         # TODO: use a real DNS
         self.logger.info("adding nginx entry in oxIdp /etc/hosts file")
         # add the entry only if line is not exist in /etc/hosts
@@ -276,7 +276,7 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c "source /etc
         """
         self.logger.info("importing nginx cert")
 
-        # imports nginx cert into oxtrust cacerts to avoid
+        # imports nginx cert into oxIdp cacerts to avoid
         # "peer not authenticated" error
         cert_cmd = "echo -n | openssl s_client -connect {}:443 | " \
                    "sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' " \
@@ -306,3 +306,39 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c "source /etc
             self.import_nginx_cert()
         except IndexError:
             pass
+
+    def delete_nginx_cert(self):
+        """Removes SSL cerficate of nginx node.
+        """
+        delete_cmd = " ".join([
+            "keytool -delete",
+            "-alias {}".format(self.cluster.ox_cluster_hostname),
+            "-keystore {}".format(self.node.truststore_fn),
+            "-storepass changeit -noprompt",
+        ])
+        self.logger.info("deleting nginx cert")
+        self.salt.cmd(self.node.id, "cmd.run", [delete_cmd])
+
+    def remove_host_entries(self, nginx):
+        """Removes entry from /etc/hosts file.
+        """
+        # TODO: use a real DNS
+        #
+        # currently we need to remove nginx container hostname
+        # updating ``/etc/hosts`` in-place will raise "resource or device is busy"
+        # error, hence we use the following steps instead:
+        #
+        # 1. copy the original ``/etc/hosts``
+        # 2. find-and-replace entries in copied file
+        # 3. overwrite the original ``/etc/hosts``
+        self.logger.info("removing nginx entry in oxIdp /etc/hosts file")
+        backup_cmd = "cp /etc/hosts /tmp/hosts"
+        sed_cmd = "sed -i 's/{} {}//g' /tmp/hosts && sed -i '/^$/d' /tmp/hosts".format(
+            nginx.weave_ip, self.cluster.ox_cluster_hostname
+        )
+        overwrite_cmd = "cp /tmp/hosts /etc/hosts"
+        self.salt.cmd(
+            self.node.id,
+            ["cmd.run", "cmd.run", "cmd.run"],
+            [[backup_cmd], [sed_cmd], [overwrite_cmd]],
+        )

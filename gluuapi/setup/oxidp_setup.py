@@ -86,6 +86,8 @@ class OxidpSetup(OxauthSetup):
         if len(self.cluster.get_oxidp_objects()):
             self.pull_shib_config()
 
+        self.pull_shib_certkey()
+
         # add auto startup entry
         self.add_auto_startup_entry()
         self.change_cert_access("tomcat", "tomcat")
@@ -108,7 +110,6 @@ class OxidpSetup(OxauthSetup):
             setup_obj.render_nutcracker_conf()
             setup_obj.restart_nutcracker()
 
-        self.pull_shib_certkey()
         self.notify_nginx()
         self.discover_nginx()
 

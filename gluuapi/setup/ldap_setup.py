@@ -136,6 +136,7 @@ class LdapSetup(BaseSetup):
             ['set-password-policy-prop', '--policy-name', '"Default Password Policy"', '--set', 'allow-pre-encoded-passwords:true'],
             ['set-log-publisher-prop', '--publisher-name', '"File-Based Audit Logger"', '--set', 'enabled:true'],
             ['create-backend', '--backend-name', 'site', '--set', 'base-dn:o=site', '--type local-db', '--set', 'enabled:true'],
+            ['set-global-configuration-prop', '--set', 'reject-unauthenticated-requests:true'],
         ]
 
         for changes in config_changes:

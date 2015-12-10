@@ -10,6 +10,14 @@ from ..model import STATE_SUCCESS
 
 
 class NginxSetup(BaseSetup):
+    def get_session_affinity(self):
+        ngx_cmd = "nginx -V"
+        resp = self.salt.cmd(self.node.id, "cmd.run", [ngx_cmd])
+        if resp.get(self.node.id, ""):
+            if "nginx-sticky-module-ng" in resp[self.node.id]:
+                return "sticky secure httponly hash=sha1"
+        return "ip_hash"
+
     def render_https_conf(self):
         """Copies rendered nginx virtual host config.
         """
@@ -20,6 +28,7 @@ class NginxSetup(BaseSetup):
             "oxauth_nodes": self.cluster.get_oxauth_objects(),
             "oxidp_nodes": self.cluster.get_oxidp_objects(),
             "oxtrust_nodes": self.cluster.get_oxtrust_objects(),
+            "session_affinity": self.get_session_affinity(),
         }
 
         src = "nodes/nginx/gluu_https.conf"

@@ -193,7 +193,9 @@ command=/opt/tomcat/bin/catalina.sh run
 environment=CATALINA_PID="/var/run/tomcat.pid"
 
 [program:memcached]
-command=/usr/bin/memcached -p 11211 -u memcache -m 64 -t 4 -l 127.0.0.1 -l {}
+command=/usr/bin/memcached -p 11211 -u memcache -m 64 -t 4 -l 127.0.0.1 -l {} -vv
+stdout_logfile=/var/log/memcached.log
+stderr_logfile=/var/log/memcached.log
 
 [program:nutcracker]
 command=nutcracker -c /etc/nutcracker.yml -p /var/run/nutcracker.pid -o /var/log/nutcracker.log -v 11

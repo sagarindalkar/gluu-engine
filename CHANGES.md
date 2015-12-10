@@ -3,6 +3,19 @@ Changelog
 
 Here you can see the full list of changes between each gluu-flask release.
 
+Version 0.4.2
+-------------
+
+Release date to be announced later.
+
+* Added callbacks to handle inotify ``MOVED_TO``, ``ATTRIB``, and ``IN_CLOSE_WRITE`` events in OxidpWatcherTask.
+* Use timed rotating log file instead of plain log file.
+* Fixed bug in Provider model where state is bypassed.
+* Added LDAP config to reject unauthenticated requests.
+* Added log file for memcached process inside oxIdp node.
+* Use ``sticky`` directive (if available) when load balancing oxIdp nodes.
+* Fixed oxIdp cluster setup. Related issue: [#53](https://github.com/GluuFederation/gluu-flask/issues/53).
+
 Version 0.4.1
 -------------
 

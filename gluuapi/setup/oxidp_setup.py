@@ -110,8 +110,8 @@ class OxidpSetup(OxauthSetup):
             setup_obj.render_nutcracker_conf()
             setup_obj.restart_nutcracker()
 
-        self.notify_nginx()
         self.discover_nginx()
+        self.notify_nginx()
 
     def import_ldap_certs(self):
         """Imports all LDAP certificates.

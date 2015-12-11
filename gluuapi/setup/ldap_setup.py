@@ -150,6 +150,7 @@ class LdapSetup(BaseSetup):
             self.logger.info("configuring opendj config changes: {}".format(dsconfigCmd))
             jid = self.salt.cmd_async(self.node.id, 'cmd.run', [dsconfigCmd])
             self.salt.subscribe_event(jid, self.node.id)
+            time.sleep(1)
 
     def index_opendj(self, backend):
         """Creates required index in OpenDJ server.
@@ -187,6 +188,7 @@ class LdapSetup(BaseSetup):
                     ])
                     jid = self.salt.cmd_async(self.node.id, 'cmd.run', [index_cmd])
                     self.salt.subscribe_event(jid, self.node.id)
+                    time.sleep(1)
 
     def import_ldif(self):
         """Renders and imports predefined ldif files.
@@ -376,7 +378,7 @@ command=/opt/opendj/bin/start-ds --quiet -N
         self.setup_opendj()
         self.add_auto_startup_entry()
         self.reload_supervisor()
-        time.sleep(10)
+        time.sleep(15)
         self.configure_opendj()
         self.index_opendj("site")
         self.index_opendj("userRoot")

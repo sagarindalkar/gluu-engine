@@ -240,6 +240,8 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c "source /etc
             setup_obj.restart_nginx()
 
     def render_oxauth_context(self):
+        """Renders oxAuth context file for Tomcat.
+        """
         src = "nodes/oxauth/oxauth.xml"
         dest = "/opt/tomcat/conf/Catalina/localhost/oxauth.xml"
         ctx = {

@@ -134,13 +134,7 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c "source /etc
         # render config templates
         self.render_ldap_props_template()
         self.render_server_xml_template()
-
-        try:
-            peer = self.cluster.get_oxauth_objects()[0]
-        except IndexError:
-            self.render_oxauth_context()
-        else:
-            self.pull_oxauth_context(peer)
+        self.render_oxauth_context()
 
         self.write_salt_file()
         self.copy_duo_creds()
@@ -252,15 +246,3 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c "source /etc
             "oxauth_jsf_salt": os.urandom(16).encode("hex"),
         }
         self.copy_rendered_jinja_template(src, dest, ctx)
-
-    def pull_oxauth_context(self, peer):
-        path = "/opt/tomcat/conf/Catalina/localhost/oxauth.xml"
-
-        cat_cmd = "cat {}".format(path)
-        resp = self.salt.cmd(peer.id, "cmd.run", [cat_cmd])
-        txt = resp.get(peer.id, "")
-
-        if txt:
-            self.logger.info("copying oxAuth context from peer node")
-            echo_cmd = "echo '{}' > {}".format(txt, path)
-            self.salt.cmd(self.node.id, "cmd.run", [echo_cmd])

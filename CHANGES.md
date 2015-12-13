@@ -15,6 +15,8 @@ Release date to be announced later.
 * Added log file for memcached process inside oxIdp node.
 * Use ``sticky`` directive (if available) when load balancing oxIdp nodes.
 * Fixed oxIdp cluster setup. Related issue: [#53](https://github.com/GluuFederation/gluu-flask/issues/53).
+* Added 2048-bit Diffie Helmann Group in nginx node to prevent LogJam attack.
+* Added JSF salt for oxauth node.
 
 Version 0.4.1
 -------------

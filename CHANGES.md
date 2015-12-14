@@ -17,6 +17,7 @@ Release date to be announced later.
 * Fixed oxIdp cluster setup. Related issue: [#53](https://github.com/GluuFederation/gluu-flask/issues/53).
 * Added 2048-bit Diffie Helmann Group in nginx node to prevent LogJam attack.
 * Added JSF salt for oxauth node.
+* Use ``sticky`` directive when load balancing oxAuth nodes.
 
 Version 0.4.1
 -------------

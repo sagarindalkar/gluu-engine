@@ -52,13 +52,11 @@ class LicenseExpirationTask(object):
 
             self.logger.info("found expired license "
                              "key {}".format(license_key.id))
+            self.logger.info("trying to retrieve license update")
+            new_license_key = self.update_license_key(license_key)
 
-            providers = license_key.get_provider_objects()
+            providers = new_license_key.get_provider_objects()
             for provider in providers:
-                self.logger.info("trying to retrieve new license for "
-                                 "provider {}".format(provider.id))
-
-                new_license_key = self.update_license_key(license_key)
                 if new_license_key.expired:
                     # unable to do license_key renewal, hence we're going to
                     # disable oxauth and oxidp nodes

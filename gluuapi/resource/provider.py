@@ -100,7 +100,8 @@ class ProviderListResource(Resource):
                 "params": errors,
             }, 400
 
-        data["docker_cert_dir"] = current_app.config["DOCKER_CERT_DIR"]
+        app = current_app._get_current_object()
+        data["docker_cert_dir"] = app.config["DOCKER_CERT_DIR"]
 
         master_num = db.count_from_table(
             "providers", db.where("type") == "master",
@@ -134,43 +135,51 @@ class ProviderListResource(Resource):
                     "message": "requires a valid license key",
                 }, 403
 
-            # download signed license from license server
-            sl_resp = retrieve_signed_license(license_key.code)
-            if not sl_resp.ok:
-                err_msg = "unable to retrieve license from " \
-                          "https://license.gluu.org; code={} reason={}"
-                current_app.logger.warn(err_msg.format(
-                    sl_resp.status_code,
-                    sl_resp.text,
-                ))
-                return {
-                    "status": 422,
-                    "message": "unable to retrieve license",
-                }, 422
+            # check if metadata is already populated; if it's not,
+            # download signed license and populate the metadata;
+            # subsequent request will not be needed as we are
+            # removing the license count limitation
+            if not license_key.metadata:
+                # download signed license from license server
+                app.logger.info("downloading signed license")
 
-            signed_license = sl_resp.json()["license"]
-            try:
-                # generate metadata
-                decoded_license = decode_signed_license(
-                    signed_license,
-                    license_key.decrypted_public_key,
-                    license_key.decrypted_public_password,
-                    license_key.decrypted_license_password,
-                )
-            except ValueError as exc:
-                current_app.logger.warn("unable to generate metadata; "
-                                        "reason={}".format(exc))
-                decoded_license = {"valid": False, "metadata": {}}
-            finally:
-                license_key.valid = decoded_license["valid"]
-                license_key.metadata = decoded_license["metadata"]
-                license_key.signed_license = signed_license
-                db.update(license_key.id, license_key, "license_keys")
+                sl_resp = retrieve_signed_license(license_key.code)
+                if not sl_resp.ok:
+                    err_msg = "unable to retrieve license from " \
+                              "https://license.gluu.org; code={} reason={}"
+                    app.logger.warn(err_msg.format(
+                        sl_resp.status_code,
+                        sl_resp.text,
+                    ))
+                    return {
+                        "status": 422,
+                        "message": "unable to retrieve license; "
+                                   "reason={}".format(sl_resp.text),
+                    }, 422
+
+                signed_license = sl_resp.json()["license"]
+                try:
+                    # generate metadata
+                    decoded_license = decode_signed_license(
+                        signed_license,
+                        license_key.decrypted_public_key,
+                        license_key.decrypted_public_password,
+                        license_key.decrypted_license_password,
+                    )
+                except ValueError as exc:
+                    app.logger.warn("unable to generate metadata; "
+                                    "reason={}".format(exc))
+                    decoded_license = {"valid": False, "metadata": {}}
+                finally:
+                    license_key.valid = decoded_license["valid"]
+                    license_key.metadata = decoded_license["metadata"]
+                    license_key.signed_license = signed_license
+                    db.update(license_key.id, license_key, "license_keys")
 
         provider = Provider(fields=data)
         db.persist(provider, "providers")
 
-        prov_helper = ProviderHelper(provider, current_app._get_current_object())
+        prov_helper = ProviderHelper(provider, app)
         prov_helper.setup(data["connect_delay"], data["exec_delay"])
 
         headers = {

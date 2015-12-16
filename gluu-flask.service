@@ -2,7 +2,7 @@
 Description=Gluu FLask Daemon
 
 [Service]
-Type=simple
+Type=forking
 ExecStart=/usr/bin/gluuapi
 
 [Install]

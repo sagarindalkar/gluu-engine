@@ -139,7 +139,6 @@ class OxtrustSetup(OxauthSetup):
         self.render_server_xml_template()
         self.write_salt_file()
         self.render_check_ssl_template()
-        self.copy_import_person_properties()
         self.copy_tomcat_index()
         # self.render_httpd_conf()
         # self.configure_vhost()
@@ -202,13 +201,6 @@ class OxtrustSetup(OxauthSetup):
         self.push_shib_certkey()
         self.discover_nginx()
         self.notify_nginx()
-
-    def copy_import_person_properties(self):
-        """Copies importPerson.properties template into the node.
-        """
-        src = self.get_template_path("nodes/oxtrust/gluuImportPerson.properties")
-        dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
-        self.salt.copy_file(self.node.id, src, dest)
 
     def copy_shib_config(self, parent_dir):
         """Copy config files located under shibboleth2 directory.

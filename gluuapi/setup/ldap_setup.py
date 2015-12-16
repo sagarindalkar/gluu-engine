@@ -540,6 +540,7 @@ command=/opt/opendj/bin/start-ds --quiet -N
             "oxauth_openid_key_base64": generate_base64_contents(self.gen_openid_key(), 1),
             "oxtrust_config_base64": generate_base64_contents(self.render_oxtrust_config(), 1),
             "oxtrust_cache_refresh_base64": generate_base64_contents(self.render_oxtrust_cache_refresh(), 1),
+            "oxtrust_import_person_base64": generate_base64_contents(self.render_oxtrust_import_person(), 1),
             "oxidp_config_base64": generate_base64_contents(self.render_oxidp_config(), 1),
         }
         self.copy_rendered_jinja_template(
@@ -785,3 +786,10 @@ command=/opt/opendj/bin/start-ds --quiet -N
         self.logger.info("importing scim.ldif")
         jid = self.salt.cmd_async(self.node.id, 'cmd.run', [import_cmd])
         self.salt.subscribe_event(jid, self.node.id)
+
+    def render_oxtrust_import_person(self):
+        """Renders oxTrust import person configuration.
+        """
+        src = "nodes/oxtrust/oxtrust-import-person.json"
+        ctx = {}
+        return self.render_jinja_template(src, ctx)

@@ -18,6 +18,7 @@ Release date to be announced later.
 * Added 2048-bit Diffie Helmann Group in nginx node to prevent LogJam attack.
 * Added JSF salt for oxauth node.
 * Use ``sticky`` directive when load balancing oxAuth nodes.
+* Removed `license_count_limit` policy.
 
 Version 0.4.1
 -------------

@@ -81,11 +81,7 @@ class OxidpSetup(OxauthSetup):
         )
 
         self.import_ldap_certs()
-
-        # copy existing oxidp config only if peer exists
-        if len(self.cluster.get_oxidp_objects()):
-            self.pull_shib_config()
-
+        self.pull_shib_config()
         self.pull_shib_certkey()
 
         # add auto startup entry
@@ -180,7 +176,7 @@ class OxidpSetup(OxauthSetup):
                 dest = src.replace(self.app.config["OXIDP_VOLUMES_DIR"],
                                    "/opt/idp")
                 self.logger.info("copying {} to {}:{}".format(
-                    os.path.basename(src), self.node.name, dest,
+                    src, self.node.name, dest,
                 ))
                 self.salt.copy_file(self.node.id, src, dest)
 

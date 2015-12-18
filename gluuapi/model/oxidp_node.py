@@ -24,6 +24,7 @@ class OxidpNode(BaseModel):
         self.id = ""
         self.cluster_id = ""
         self.provider_id = ""
+        self.name = ""
         self.ip = ""
         self.weave_ip = ""
         self.weave_prefixlen = ""

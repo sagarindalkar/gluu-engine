@@ -208,7 +208,7 @@ class BaseModelHelper(object):
         self.logger.info("destroying minion {}".format(self.node.name))
 
         try:
-            self.docker.remove_container(self.node.name)
+            self.docker.stop(self.node.name)
         except SSLError:
             self.logger.warn("unable to connect to docker API "
                              "due to SSL connection errors")

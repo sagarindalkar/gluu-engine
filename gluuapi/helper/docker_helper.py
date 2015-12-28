@@ -225,3 +225,8 @@ class DockerHelper(object):
         :param container_id: ID or name of the container.
         """
         return self.docker.inspect_container(container_id)
+
+    def stop(self, container_id):
+        """Stops given container.
+        """
+        return self.docker.stop(container_id)

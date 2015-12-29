@@ -334,3 +334,11 @@ def nginx_setup(request, app, nginx_node, cluster):
 
     request.addfinalizer(teardown)
     return setup_obj
+
+
+@pytest.fixture()
+def patched_run(monkeypatch):
+    monkeypatch.setattr(
+        "subprocess.check_output",
+        lambda cmd, stderr, shell, cwd: "",
+    )

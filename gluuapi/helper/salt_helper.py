@@ -12,6 +12,7 @@ import salt.client
 import salt.utils.event
 
 from ..errors import SaltEventError
+from ..utils import run
 
 
 class SaltHelper(object):
@@ -65,7 +66,8 @@ class SaltHelper(object):
     def copy_file(self, tgt, src, dest):
         """Copies file to minion.
         """
-        return self.client.cmd(tgt, "cp.recv", [self._load_files([src]), dest])
+        # return self.client.cmd(tgt, "cp.recv", [self._load_files([src]), dest])
+        return run("salt-cp {} {} {}".format(tgt, src, dest))
 
     def cmd(self, tgt, fun, arg=()):
         """Runs synchronous command in minion.

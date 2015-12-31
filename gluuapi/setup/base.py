@@ -210,6 +210,7 @@ class BaseSetup(object):
     def reload_supervisor(self):
         """Reloads supervisor.
         """
+        self.logger.info("reloading supervisord")
         reload_cmd = "kill -HUP `cat /var/run/supervisord.pid`"
         jid = self.salt.cmd_async(self.node.id, "cmd.run", [reload_cmd])
         self.salt.subscribe_event(jid, self.node.id)

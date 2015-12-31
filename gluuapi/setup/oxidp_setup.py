@@ -84,7 +84,7 @@ class OxidpSetup(OxauthSetup):
         self.pull_shib_config()
         self.pull_shib_certkey()
 
-        # add auto startup entry
+        self.reconfigure_minion()
         self.add_auto_startup_entry()
         self.change_cert_access("tomcat", "tomcat")
         self.reload_supervisor()

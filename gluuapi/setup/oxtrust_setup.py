@@ -160,6 +160,7 @@ class OxtrustSetup(OxauthSetup):
             hostname,
         )
 
+        self.reconfigure_minion()
         self.add_auto_startup_entry()
         self.change_cert_access("tomcat", "tomcat")
         self.reload_supervisor()

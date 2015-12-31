@@ -160,6 +160,7 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c "source /etc
             hostname,
         )
 
+        self.reconfigure_minion()
         self.add_auto_startup_entry()
         self.change_cert_access("tomcat", "tomcat")
         self.reload_supervisor()

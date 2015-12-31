@@ -79,6 +79,7 @@ command=/usr/sbin/nginx -g "daemon off;"
         self.render_https_conf()
         self.configure_vhost()
         self.copy_index_html()
+        self.reconfigure_minion()
         self.add_auto_startup_entry()
         self.reload_supervisor()
         return True

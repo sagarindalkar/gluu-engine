@@ -205,7 +205,7 @@ class BaseModelHelper(object):
         """Callback that supposed to be called when error occurs in setup
         process.
         """
-        self.logger.info("destroying minion {}".format(self.node.name))
+        self.logger.info("stopping node {}".format(self.node.name))
 
         try:
             self.docker.stop(self.node.name)

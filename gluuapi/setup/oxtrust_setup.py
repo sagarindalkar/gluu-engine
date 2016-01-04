@@ -24,10 +24,14 @@ class OxtrustSetup(OxauthSetup):
         jid = self.salt.cmd_async(self.node.id, "cmd.run", [cert_cmd])
         self.salt.subscribe_event(jid, self.node.id)
 
+        der_cmd = "openssl x509 -outform der -in /tmp/ox.cert -out /tmp/ox.der"
+        jid = self.salt.cmd_async(self.node.id, "cmd.run", [der_cmd])
+        self.salt.subscribe_event(jid, self.node.id)
+
         import_cmd = " ".join([
             "keytool -importcert -trustcacerts",
             "-alias '{}'".format(self.cluster.ox_cluster_hostname),
-            "-file /tmp/ox.cert",
+            "-file /tmp/ox.der",
             "-keystore {}".format(self.node.truststore_fn),
             "-storepass changeit -noprompt",
         ])

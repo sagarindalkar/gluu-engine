@@ -25,6 +25,7 @@ class Config(object):
     DOCKER_CERT_DIR = os.path.join(DATA_DIR, "docker_certs")
     CUSTOM_LDAP_SCHEMA_DIR = os.path.join(DATA_DIR, "custom", "opendj", "schema")
     OXIDP_VOLUMES_DIR = os.path.join(DATA_DIR, "volumes", "oxidp")
+    SSL_CERT_DIR = os.path.join(DATA_DIR, "ssl_certs")
 
 
 class ProdConfig(Config):

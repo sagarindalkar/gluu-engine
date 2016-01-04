@@ -3,6 +3,7 @@
 #
 # All rights reserved.
 
+import os.path
 import time
 
 from .base import BaseSetup
@@ -73,8 +74,20 @@ command=/usr/sbin/nginx -g "daemon off;"
         """Runs the actual setup.
         """
         hostname = self.cluster.ox_cluster_hostname.split(":")[0]
-        self.gen_cert("nginx", self.cluster.decrypted_admin_pw,
-                      "www-data", "www-data", hostname)
+
+        ssl_cert = os.path.join(self.app.config["SSL_CERT_DIR"], "nginx.crt")
+        ssl_key = os.path.join(self.app.config["SSL_CERT_DIR"], "nginx.key")
+
+        if os.path.exists(ssl_cert) and os.path.exists(ssl_key):
+            # copy cert and key
+            self.logger.info("copying existing SSL cert")
+            self.salt.copy_file(self.node.id, ssl_cert, "/etc/certs/nginx.crt")
+            self.logger.info("copying existing SSL key")
+            self.salt.copy_file(self.node.id, ssl_key, "/etc/certs/nginx.key")
+        else:
+            self.gen_cert("nginx", self.cluster.decrypted_admin_pw,
+                          "www-data", "www-data", hostname)
+
         self.change_cert_access("www-data", "www-data")
         self.render_https_conf()
         self.configure_vhost()

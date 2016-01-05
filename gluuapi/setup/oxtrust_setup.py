@@ -20,18 +20,18 @@ class OxtrustSetup(OxauthSetup):
         # "peer not authenticated" error
         cert_cmd = "echo -n | openssl s_client -connect {}:443 | " \
                    "sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' " \
-                   "> /tmp/ox.cert".format(self.cluster.ox_cluster_hostname)
+                   "> /etc/certs/nginx.cert".format(self.cluster.ox_cluster_hostname)
         jid = self.salt.cmd_async(self.node.id, "cmd.run", [cert_cmd])
         self.salt.subscribe_event(jid, self.node.id)
 
-        der_cmd = "openssl x509 -outform der -in /tmp/ox.cert -out /tmp/ox.der"
+        der_cmd = "openssl x509 -outform der -in /etc/certs/nginx.cert -out /etc/certs/nginx.der"
         jid = self.salt.cmd_async(self.node.id, "cmd.run", [der_cmd])
         self.salt.subscribe_event(jid, self.node.id)
 
         import_cmd = " ".join([
             "keytool -importcert -trustcacerts",
             "-alias '{}'".format(self.cluster.ox_cluster_hostname),
-            "-file /tmp/ox.der",
+            "-file /etc/certs/nginx.der",
             "-keystore {}".format(self.node.truststore_fn),
             "-storepass changeit -noprompt",
         ])

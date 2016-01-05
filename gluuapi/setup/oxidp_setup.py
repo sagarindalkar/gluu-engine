@@ -113,17 +113,17 @@ class OxidpSetup(OxauthSetup):
         """Imports all LDAP certificates.
         """
         for ldap in self.cluster.get_ldap_objects():
-            self.logger.info("importing ldap cert")
+            self.logger.info("importing ldap cert from {}".format(ldap.domain_name))
 
             cert_cmd = "echo -n | openssl s_client -connect {0}:{1} | " \
                        "sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' " \
-                       "> /tmp/{0}.crt".format(ldap.domain_name, ldap.ldaps_port)
+                       "> /etc/certs/{0}.crt".format(ldap.domain_name, ldap.ldaps_port)
             self.salt.cmd(self.node.id, "cmd.run", [cert_cmd])
 
             import_cmd = " ".join([
                 "keytool -importcert -trustcacerts",
                 "-alias '{}'".format(ldap.domain_name),
-                "-file /tmp/{}.crt".format(ldap.domain_name),
+                "-file /etc/certs/{}.crt".format(ldap.domain_name),
                 "-keystore {}".format(self.node.truststore_fn),
                 "-storepass changeit -noprompt",
             ])
@@ -279,18 +279,18 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c "source /etc
         # "peer not authenticated" error
         cert_cmd = "echo -n | openssl s_client -connect {}:443 | " \
                    "sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' " \
-                   "> /tmp/ox.cert".format(self.cluster.ox_cluster_hostname)
+                   "> /etc/certs/nginx.cert".format(self.cluster.ox_cluster_hostname)
         jid = self.salt.cmd_async(self.node.id, "cmd.run", [cert_cmd])
         self.salt.subscribe_event(jid, self.node.id)
 
-        der_cmd = "openssl x509 -outform der -in /tmp/ox.cert -out /tmp/ox.der"
+        der_cmd = "openssl x509 -outform der -in /etc/certs/nginx.cert -out /etc/certs/nginx.der"
         jid = self.salt.cmd_async(self.node.id, "cmd.run", [der_cmd])
         self.salt.subscribe_event(jid, self.node.id)
 
         import_cmd = " ".join([
             "keytool -importcert -trustcacerts",
             "-alias '{}'".format(self.cluster.ox_cluster_hostname),
-            "-file /tmp/ox.der",
+            "-file /etc/certs/nginx.der",
             "-keystore {}".format(self.node.truststore_fn),
             "-storepass changeit -noprompt",
         ])

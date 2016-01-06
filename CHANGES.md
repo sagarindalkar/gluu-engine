@@ -19,6 +19,9 @@ Release date to be announced later.
 * Added JSF salt for oxauth node.
 * Use ``sticky`` directive when load balancing oxAuth nodes.
 * Removed `license_count_limit` policy.
+* On failed deployment, node/container is stopped instead of removed from cluster.
+* Added feature to use non self-signed SSL certificates. Related issue: [#56](https://github.com/GluuFederation/gluu-flask/issues/56).
+* Added feature to convert SSL pem-based to der-based format certificate. Related issue: [#56](https://github.com/GluuFederation/gluu-flask/issues/56).
 
 Version 0.4.1
 -------------

@@ -5,6 +5,7 @@
 
 import codecs
 import os
+import time
 
 import salt.config
 import salt.key
@@ -12,7 +13,6 @@ import salt.client
 import salt.utils.event
 
 from ..errors import SaltEventError
-from ..utils import run
 
 
 class SaltHelper(object):
@@ -66,8 +66,20 @@ class SaltHelper(object):
     def copy_file(self, tgt, src, dest):
         """Copies file to minion.
         """
-        # return self.client.cmd(tgt, "cp.recv", [self._load_files([src]), dest])
-        return run("salt-cp {} {} {}".format(tgt, src, dest))
+        ret = self.cmd(tgt, "cp.recv", [self._load_files([src]), dest])
+
+        # double check if file copied to node
+        time.sleep(1)
+        resp = self.cmd(tgt, "file.file_exists", [dest])
+        if not resp.get(tgt):
+            time.sleep(5)
+
+        resp = self.cmd(tgt, "file.file_exists", [dest])
+        if not resp.get(tgt):
+            # if file is not exist, re-copy the file for the last time
+            ret = self.cmd(tgt, "cp.recv", [self._load_files([src]), dest])
+            time.sleep(1)
+        return ret
 
     def cmd(self, tgt, fun, arg=()):
         """Runs synchronous command in minion.

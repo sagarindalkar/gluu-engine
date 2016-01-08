@@ -67,18 +67,26 @@ class SaltHelper(object):
         """Copies file to minion.
         """
         ret = self.cmd(tgt, "cp.recv", [self._load_files([src]), dest])
-
-        # double check if file copied to node
         time.sleep(1)
-        resp = self.cmd(tgt, "file.file_exists", [dest])
-        if not resp.get(tgt):
+
+        max_retry = 5
+        retry_attempt = 0
+
+        while retry_attempt < max_retry:
+            # response from minion will be ``{'minion_id': True}``
+            # if file exists, otherwise ``{'minion_id': ''}`` if file
+            # not exist
+            resp = self.cmd(tgt, "file.file_exists", [dest])
+            if resp.get(tgt):
+                break
+
+            # re-copy the file, but this time we will wait for 5 seconds
+            # before doing subsequent checks
+            ret = self.cmd(tgt, "cp.recv", [self._load_files([src]), dest])
             time.sleep(5)
 
-        resp = self.cmd(tgt, "file.file_exists", [dest])
-        if not resp.get(tgt):
-            # if file is not exist, re-copy the file for the last time
-            ret = self.cmd(tgt, "cp.recv", [self._load_files([src]), dest])
-            time.sleep(1)
+            # mark as N-time retry attempt
+            retry_attempt += 1
         return ret
 
     def cmd(self, tgt, fun, arg=()):

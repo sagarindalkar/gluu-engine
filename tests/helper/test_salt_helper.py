@@ -56,7 +56,7 @@ def test_load_files_error(salt_helper):
         salt_helper._load_files([fn])
 
 
-def test_copy_file(monkeypatch, salt_helper):
+def test_copy_file(monkeypatch, salt_helper, patched_sleep):
     monkeypatch.setattr(
         "salt.client.LocalClient.cmd",
         lambda cls, tgt, fun, arg: {"123": {"/tmp/sample.txt": True}},

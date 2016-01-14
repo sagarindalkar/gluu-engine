@@ -3,7 +3,7 @@
 #
 # All rights reserved.
 
-import os.path
+import os
 import time
 
 from .base import BaseSetup
@@ -75,6 +75,9 @@ command=/usr/sbin/nginx -g "daemon off;"
         """
         hostname = self.cluster.ox_cluster_hostname.split(":")[0]
 
+        if not os.path.exists(self.app.config["SSL_CERT_DIR"]):
+            os.makedirs(self.app.config["SSL_CERT_DIR"])
+
         ssl_cert = os.path.join(self.app.config["SSL_CERT_DIR"], "nginx.crt")
         ssl_key = os.path.join(self.app.config["SSL_CERT_DIR"], "nginx.key")
 
@@ -87,6 +90,18 @@ command=/usr/sbin/nginx -g "daemon off;"
         else:
             self.gen_cert("nginx", self.cluster.decrypted_admin_pw,
                           "www-data", "www-data", hostname)
+
+            resp = self.salt.cmd(self.node.id, "cmd.run",
+                                 ["cat /etc/certs/nginx.crt"])
+            if resp.get(self.node.id):
+                with open(ssl_cert, "w") as fp:
+                    fp.write(resp[self.node.id])
+
+            resp = self.salt.cmd(self.node.id, "cmd.run",
+                                 ["cat /etc/certs/nginx.key"])
+            if resp.get(self.node.id):
+                with open(ssl_key, "w") as fp:
+                    fp.write(resp[self.node.id])
 
         self.change_cert_access("www-data", "www-data")
         self.render_https_conf()

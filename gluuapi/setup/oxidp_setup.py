@@ -4,6 +4,7 @@
 # All rights reserved.
 
 import os.path
+import time
 
 from .oxauth_setup import OxauthSetup
 
@@ -52,7 +53,7 @@ class OxidpSetup(OxauthSetup):
     def setup(self):
         """Runs the actual setup.
         """
-        hostname = self.node.domain_name
+        hostname = self.cluster.ox_cluster_hostname.split(":")[0]
 
         # render config templates
         self.render_server_xml_template()
@@ -80,12 +81,10 @@ class OxidpSetup(OxauthSetup):
         )
 
         self.import_ldap_certs()
+        self.pull_shib_config()
+        self.pull_shib_certkey()
 
-        # copy existing oxidp config only if peer exists
-        if len(self.cluster.get_oxidp_objects()):
-            self.pull_shib_config()
-
-        # add auto startup entry
+        self.reconfigure_minion()
         self.add_auto_startup_entry()
         self.change_cert_access("tomcat", "tomcat")
         self.reload_supervisor()
@@ -107,23 +106,24 @@ class OxidpSetup(OxauthSetup):
             setup_obj.render_nutcracker_conf()
             setup_obj.restart_nutcracker()
 
+        self.discover_nginx()
         self.notify_nginx()
 
     def import_ldap_certs(self):
         """Imports all LDAP certificates.
         """
         for ldap in self.cluster.get_ldap_objects():
-            self.logger.info("importing ldap cert")
+            self.logger.info("importing ldap cert from {}".format(ldap.domain_name))
 
             cert_cmd = "echo -n | openssl s_client -connect {0}:{1} | " \
                        "sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' " \
-                       "> /tmp/{0}_opendj.crt".format(ldap.domain_name, ldap.ldaps_port)
+                       "> /etc/certs/{0}.crt".format(ldap.domain_name, ldap.ldaps_port)
             self.salt.cmd(self.node.id, "cmd.run", [cert_cmd])
 
             import_cmd = " ".join([
                 "keytool -importcert -trustcacerts",
-                "-alias '{}_opendj'".format(ldap.weave_ip),
-                "-file /tmp/{}_opendj.crt".format(ldap.domain_name),
+                "-alias '{}'".format(ldap.domain_name),
+                "-file /etc/certs/{}.crt".format(ldap.domain_name),
                 "-keystore {}".format(self.node.truststore_fn),
                 "-storepass changeit -noprompt",
             ])
@@ -176,7 +176,7 @@ class OxidpSetup(OxauthSetup):
                 dest = src.replace(self.app.config["OXIDP_VOLUMES_DIR"],
                                    "/opt/idp")
                 self.logger.info("copying {} to {}:{}".format(
-                    os.path.basename(src), self.node.name, dest,
+                    src, self.node.name, dest,
                 ))
                 self.salt.copy_file(self.node.id, src, dest)
 
@@ -189,7 +189,9 @@ command=/opt/tomcat/bin/catalina.sh run
 environment=CATALINA_PID="/var/run/tomcat.pid"
 
 [program:memcached]
-command=/usr/bin/memcached -p 11211 -u memcache -m 64 -t 4 -l 127.0.0.1 -l {}
+command=/usr/bin/memcached -p 11211 -u memcache -m 64 -t 4 -l 127.0.0.1 -l {} -vv
+stdout_logfile=/var/log/memcached.log
+stderr_logfile=/var/log/memcached.log
 
 [program:nutcracker]
 command=nutcracker -c /etc/nutcracker.yml -p /var/run/nutcracker.pid -o /var/log/nutcracker.log -v 11
@@ -231,3 +233,115 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c "source /etc
             "httpd_key_fn": "/etc/certs/httpd.key",
         }
         self.copy_rendered_jinja_template(src, dest, ctx)
+
+    def pull_shib_certkey(self):
+        try:
+            oxtrust = self.cluster.get_oxtrust_objects()[0]
+        except IndexError:
+            return
+
+        for fn in ["shibIDP.crt", "shibIDP.key"]:
+            path = "/etc/certs/{}".format(fn)
+            cat_cmd = "cat {}".format(path)
+            resp = self.salt.cmd(oxtrust.id, "cmd.run", [cat_cmd])
+
+            txt = resp.get(oxtrust.id, "")
+            if txt:
+                time.sleep(5)
+                self.logger.info(
+                    "copying {0}:{1} to {2}:{1}".format(oxtrust.name, path,
+                                                        self.node.name)
+                )
+                echo_cmd = "echo '{}' > {}".format(txt, path)
+                self.salt.cmd(self.node.id, "cmd.run", [echo_cmd])
+
+    def add_host_entries(self, nginx):
+        """Adds entry into /etc/hosts file.
+        """
+        # currently we need to add nginx container hostname
+        # to prevent "peer not authenticated" raised by oxIdp;
+        # TODO: use a real DNS
+        self.logger.info("adding nginx entry in oxIdp /etc/hosts file")
+        # add the entry only if line is not exist in /etc/hosts
+        grep_cmd = "grep -q '^{0} {1}$' /etc/hosts " \
+                   "|| echo '{0} {1}' >> /etc/hosts" \
+                   .format(nginx.weave_ip,
+                           self.cluster.ox_cluster_hostname)
+        jid = self.salt.cmd_async(self.node.id, "cmd.run", [grep_cmd])
+        self.salt.subscribe_event(jid, self.node.id)
+
+    def import_nginx_cert(self):
+        """Imports SSL certificate from nginx node.
+        """
+        self.logger.info("importing nginx cert")
+
+        # imports nginx cert into oxIdp cacerts to avoid
+        # "peer not authenticated" error
+        cert_cmd = "echo -n | openssl s_client -connect {}:443 | " \
+                   "sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' " \
+                   "> /etc/certs/nginx.cert".format(self.cluster.ox_cluster_hostname)
+        jid = self.salt.cmd_async(self.node.id, "cmd.run", [cert_cmd])
+        self.salt.subscribe_event(jid, self.node.id)
+
+        der_cmd = "openssl x509 -outform der -in /etc/certs/nginx.cert -out /etc/certs/nginx.der"
+        jid = self.salt.cmd_async(self.node.id, "cmd.run", [der_cmd])
+        self.salt.subscribe_event(jid, self.node.id)
+
+        import_cmd = " ".join([
+            "keytool -importcert -trustcacerts",
+            "-alias '{}'".format(self.cluster.ox_cluster_hostname),
+            "-file /etc/certs/nginx.der",
+            "-keystore {}".format(self.node.truststore_fn),
+            "-storepass changeit -noprompt",
+        ])
+        jid = self.salt.cmd_async(self.node.id, "cmd.run", [import_cmd])
+        self.salt.subscribe_event(jid, self.node.id)
+
+    def discover_nginx(self):
+        """Discovers nginx node.
+        """
+        self.logger.info("discovering available nginx node")
+        try:
+            # if we already have nginx node in the the cluster,
+            # add entry to /etc/hosts and import the cert
+            nginx = self.cluster.get_nginx_objects()[0]
+            self.add_host_entries(nginx)
+            self.import_nginx_cert()
+        except IndexError:
+            pass
+
+    def delete_nginx_cert(self):
+        """Removes SSL cerficate of nginx node.
+        """
+        delete_cmd = " ".join([
+            "keytool -delete",
+            "-alias {}".format(self.cluster.ox_cluster_hostname),
+            "-keystore {}".format(self.node.truststore_fn),
+            "-storepass changeit -noprompt",
+        ])
+        self.logger.info("deleting nginx cert")
+        self.salt.cmd(self.node.id, "cmd.run", [delete_cmd])
+
+    def remove_host_entries(self, nginx):
+        """Removes entry from /etc/hosts file.
+        """
+        # TODO: use a real DNS
+        #
+        # currently we need to remove nginx container hostname
+        # updating ``/etc/hosts`` in-place will raise "resource or device is busy"
+        # error, hence we use the following steps instead:
+        #
+        # 1. copy the original ``/etc/hosts``
+        # 2. find-and-replace entries in copied file
+        # 3. overwrite the original ``/etc/hosts``
+        self.logger.info("removing nginx entry in oxIdp /etc/hosts file")
+        backup_cmd = "cp /etc/hosts /tmp/hosts"
+        sed_cmd = "sed -i 's/{} {}//g' /tmp/hosts && sed -i '/^$/d' /tmp/hosts".format(
+            nginx.weave_ip, self.cluster.ox_cluster_hostname
+        )
+        overwrite_cmd = "cp /tmp/hosts /etc/hosts"
+        self.salt.cmd(
+            self.node.id,
+            ["cmd.run", "cmd.run", "cmd.run"],
+            [[backup_cmd], [sed_cmd], [overwrite_cmd]],
+        )

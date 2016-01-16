@@ -136,6 +136,7 @@ class LdapSetup(BaseSetup):
             ['set-password-policy-prop', '--policy-name', '"Default Password Policy"', '--set', 'allow-pre-encoded-passwords:true'],
             ['set-log-publisher-prop', '--publisher-name', '"File-Based Audit Logger"', '--set', 'enabled:true'],
             ['create-backend', '--backend-name', 'site', '--set', 'base-dn:o=site', '--type local-db', '--set', 'enabled:true'],
+            ['set-global-configuration-prop', '--set', 'reject-unauthenticated-requests:true'],
         ]
 
         for changes in config_changes:
@@ -149,6 +150,7 @@ class LdapSetup(BaseSetup):
             self.logger.info("configuring opendj config changes: {}".format(dsconfigCmd))
             jid = self.salt.cmd_async(self.node.id, 'cmd.run', [dsconfigCmd])
             self.salt.subscribe_event(jid, self.node.id)
+            time.sleep(1)
 
     def index_opendj(self, backend):
         """Creates required index in OpenDJ server.
@@ -186,6 +188,7 @@ class LdapSetup(BaseSetup):
                     ])
                     jid = self.salt.cmd_async(self.node.id, 'cmd.run', [index_cmd])
                     self.salt.subscribe_event(jid, self.node.id)
+                    time.sleep(1)
 
     def import_ldif(self):
         """Renders and imports predefined ldif files.
@@ -373,9 +376,9 @@ command=/opt/opendj/bin/start-ds --quiet -N
         self.add_ldap_schema()
         self.import_custom_schema()
         self.setup_opendj()
+        self.reconfigure_minion()
         self.add_auto_startup_entry()
         self.reload_supervisor()
-        time.sleep(10)
         self.configure_opendj()
         self.index_opendj("site")
         self.index_opendj("userRoot")
@@ -537,6 +540,7 @@ command=/opt/opendj/bin/start-ds --quiet -N
             "oxauth_openid_key_base64": generate_base64_contents(self.gen_openid_key(), 1),
             "oxtrust_config_base64": generate_base64_contents(self.render_oxtrust_config(), 1),
             "oxtrust_cache_refresh_base64": generate_base64_contents(self.render_oxtrust_cache_refresh(), 1),
+            "oxtrust_import_person_base64": generate_base64_contents(self.render_oxtrust_import_person(), 1),
             "oxidp_config_base64": generate_base64_contents(self.render_oxidp_config(), 1),
         }
         self.copy_rendered_jinja_template(
@@ -782,3 +786,10 @@ command=/opt/opendj/bin/start-ds --quiet -N
         self.logger.info("importing scim.ldif")
         jid = self.salt.cmd_async(self.node.id, 'cmd.run', [import_cmd])
         self.salt.subscribe_event(jid, self.node.id)
+
+    def render_oxtrust_import_person(self):
+        """Renders oxTrust import person configuration.
+        """
+        src = "nodes/oxtrust/oxtrust-import-person.json"
+        ctx = {}
+        return self.render_jinja_template(src, ctx)

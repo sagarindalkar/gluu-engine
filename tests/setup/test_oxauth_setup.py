@@ -1,5 +1,5 @@
 def test_setup(oxauth_setup, patched_salt, patched_sleep,
-               ldap_node, cluster, db, salt_event_ok):
+               ldap_node, cluster, db, salt_event_ok, patched_run):
     db.persist(cluster, "clusters")
     ldap_node.state = "SUCCESS"
     db.persist(ldap_node, "nodes")
@@ -7,5 +7,5 @@ def test_setup(oxauth_setup, patched_salt, patched_sleep,
     oxauth_setup.setup()
 
 
-def test_teardown(oxauth_setup):
+def test_teardown(oxauth_setup, patched_run):
     oxauth_setup.teardown()

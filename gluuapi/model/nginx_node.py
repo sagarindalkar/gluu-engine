@@ -39,4 +39,4 @@ class NginxNode(BaseModel):
     def recovery_priority(self):
         """Gets recovery priority number used by recovery script.
         """
-        return 5
+        return 3

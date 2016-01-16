@@ -3,6 +3,27 @@ Changelog
 
 Here you can see the full list of changes between each gluu-flask release.
 
+Version 0.4.2
+-------------
+
+Released on January 12th, 2016.
+
+* Added callbacks to handle inotify ``MOVED_TO``, ``ATTRIB``, and ``IN_CLOSE_WRITE`` events in OxidpWatcherTask.
+* Use timed rotating log file instead of plain log file.
+* Fixed bug in Provider model where state is bypassed.
+* Added LDAP config to reject unauthenticated requests.
+* Added log file for memcached process inside oxIdp node.
+* Use ``sticky`` directive (if available) when load balancing oxIdp nodes.
+* Fixed oxIdp cluster setup. Related issue: [#53](https://github.com/GluuFederation/gluu-flask/issues/53).
+* Added 2048-bit Diffie Helmann Group in nginx node to prevent LogJam attack.
+* Added JSF salt for oxauth node.
+* Use ``sticky`` directive when load balancing oxAuth nodes.
+* Removed `license_count_limit` policy.
+* On failed deployment, node/container is stopped instead of removed from cluster.
+* Added feature to use non self-signed SSL certificates. Related issue: [#56](https://github.com/GluuFederation/gluu-flask/issues/56).
+* Added feature to convert SSL pem-based to der-based format certificate. Related issue: [#56](https://github.com/GluuFederation/gluu-flask/issues/56).
+* Fixed I/O error in VM with low-resource. Related issue: [#58](https://github.com/GluuFederation/gluu-flask/issues/58).
+
 Version 0.4.1
 -------------
 

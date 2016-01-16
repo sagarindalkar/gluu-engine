@@ -1,0 +1,9 @@
+[Unit]
+Description=Gluu FLask Daemon
+
+[Service]
+Type=forking
+ExecStart=/usr/bin/gluuapi
+
+[Install]
+WantedBy=multi-user.target

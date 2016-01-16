@@ -5,6 +5,7 @@
 
 import codecs
 import os
+import time
 
 import salt.config
 import salt.key
@@ -65,7 +66,28 @@ class SaltHelper(object):
     def copy_file(self, tgt, src, dest):
         """Copies file to minion.
         """
-        return self.client.cmd(tgt, "cp.recv", [self._load_files([src]), dest])
+        ret = self.cmd(tgt, "cp.recv", [self._load_files([src]), dest])
+        time.sleep(1)
+
+        max_retry = 5
+        retry_attempt = 0
+
+        while retry_attempt < max_retry:
+            # response from minion will be ``{'minion_id': True}``
+            # if file exists, otherwise ``{'minion_id': ''}`` if file
+            # not exist
+            resp = self.cmd(tgt, "file.file_exists", [dest])
+            if resp.get(tgt):
+                break
+
+            # re-copy the file, but this time we will wait for 5 seconds
+            # before doing subsequent checks
+            ret = self.cmd(tgt, "cp.recv", [self._load_files([src]), dest])
+            time.sleep(5)
+
+            # mark as N-time retry attempt
+            retry_attempt += 1
+        return ret
 
     def cmd(self, tgt, fun, arg=()):
         """Runs synchronous command in minion.

@@ -8,6 +8,7 @@ import codecs
 import os.path
 import shutil
 import tempfile
+import time
 
 from jinja2 import Environment
 from jinja2 import PackageLoader
@@ -210,6 +211,23 @@ class BaseSetup(object):
     def reload_supervisor(self):
         """Reloads supervisor.
         """
+        self.logger.info("reloading supervisord; "
+                         "this may take 30 seconds or more")
         reload_cmd = "kill -HUP `cat /var/run/supervisord.pid`"
         jid = self.salt.cmd_async(self.node.id, "cmd.run", [reload_cmd])
+        self.salt.subscribe_event(jid, self.node.id)
+        time.sleep(30)
+
+    def reconfigure_minion(self):
+        # downsizing keysize to 2048
+        payload = """
+keysize: 2048
+"""
+
+        self.logger.info("reconfiguring minion")
+        jid = self.salt.cmd_async(
+            self.node.id,
+            'cmd.run',
+            ["echo '{}' >> /etc/salt/minion".format(payload)],
+        )
         self.salt.subscribe_event(jid, self.node.id)

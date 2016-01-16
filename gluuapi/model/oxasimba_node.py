@@ -41,4 +41,4 @@ class OxasimbaNode(BaseModel):
 
     @property
     def recovery_priority(self):
-        return 4
+        return 5

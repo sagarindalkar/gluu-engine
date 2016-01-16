@@ -24,6 +24,7 @@ class OxidpNode(BaseModel):
         self.id = ""
         self.cluster_id = ""
         self.provider_id = ""
+        self.name = ""
         self.ip = ""
         self.weave_ip = ""
         self.weave_prefixlen = ""
@@ -44,4 +45,4 @@ class OxidpNode(BaseModel):
     def recovery_priority(self):
         """Gets recovery priority number used by recovery script.
         """
-        return 3
+        return 4

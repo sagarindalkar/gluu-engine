@@ -134,6 +134,8 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c "source /etc
         # render config templates
         self.render_ldap_props_template()
         self.render_server_xml_template()
+        self.render_oxauth_context()
+
         self.write_salt_file()
         self.copy_duo_creds()
         self.copy_duo_web()
@@ -158,6 +160,7 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c "source /etc
             hostname,
         )
 
+        self.reconfigure_minion()
         self.add_auto_startup_entry()
         self.change_cert_access("tomcat", "tomcat")
         self.reload_supervisor()
@@ -236,3 +239,13 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c "source /etc
                                    self.app, logger=self.logger)
             setup_obj.render_https_conf()
             setup_obj.restart_nginx()
+
+    def render_oxauth_context(self):
+        """Renders oxAuth context file for Tomcat.
+        """
+        src = "nodes/oxauth/oxauth.xml"
+        dest = "/opt/tomcat/conf/Catalina/localhost/oxauth.xml"
+        ctx = {
+            "oxauth_jsf_salt": os.urandom(16).encode("hex"),
+        }
+        self.copy_rendered_jinja_template(src, dest, ctx)

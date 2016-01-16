@@ -8,6 +8,7 @@ import os.path
 import time
 import uuid
 
+import docker.errors
 from flask import current_app
 from requests.exceptions import SSLError
 from requests.exceptions import ConnectionError
@@ -207,16 +208,21 @@ class BaseModelHelper(object):
         """Callback that supposed to be called when error occurs in setup
         process.
         """
-        self.logger.info("destroying minion {}".format(self.node.name))
+        self.logger.info("stopping node {}".format(self.node.name))
 
         try:
-            self.docker.remove_container(self.node.name)
+            self.docker.stop(self.node.name)
         except SSLError:
             self.logger.warn("unable to connect to docker API "
                              "due to SSL connection errors")
         except ConnectionError:
             self.logger.warn("unable to connect to docker API "
                              "due to connection errors")
+        except docker.errors.NotFound:
+            # in case docker.stop raises 404 error code
+            # when docker failed to create container
+            self.logger.warn("can't find container {}; likely it's not "
+                             "created yet or missing".format(self.node.name))
         self.salt.unregister_minion(self.node.id)
 
         # mark node as FAILED

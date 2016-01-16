@@ -4,6 +4,7 @@
 # All rights reserved.
 
 import os.path
+import time
 from glob import iglob
 
 from .oxauth_setup import OxauthSetup
@@ -19,14 +20,18 @@ class OxtrustSetup(OxauthSetup):
         # "peer not authenticated" error
         cert_cmd = "echo -n | openssl s_client -connect {}:443 | " \
                    "sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' " \
-                   "> /tmp/ox.cert".format(self.cluster.ox_cluster_hostname)
+                   "> /etc/certs/nginx.cert".format(self.cluster.ox_cluster_hostname)
         jid = self.salt.cmd_async(self.node.id, "cmd.run", [cert_cmd])
+        self.salt.subscribe_event(jid, self.node.id)
+
+        der_cmd = "openssl x509 -outform der -in /etc/certs/nginx.cert -out /etc/certs/nginx.der"
+        jid = self.salt.cmd_async(self.node.id, "cmd.run", [der_cmd])
         self.salt.subscribe_event(jid, self.node.id)
 
         import_cmd = " ".join([
             "keytool -importcert -trustcacerts",
             "-alias '{}'".format(self.cluster.ox_cluster_hostname),
-            "-file /tmp/ox.cert",
+            "-file /etc/certs/nginx.der",
             "-keystore {}".format(self.node.truststore_fn),
             "-storepass changeit -noprompt",
         ])
@@ -124,7 +129,7 @@ class OxtrustSetup(OxauthSetup):
     def setup(self):
         """Runs the actual setup.
         """
-        hostname = self.node.domain_name
+        hostname = self.cluster.ox_cluster_hostname.split(":")[0]
 
         # render config templates
         self.render_log_config_template()
@@ -138,7 +143,6 @@ class OxtrustSetup(OxauthSetup):
         self.render_server_xml_template()
         self.write_salt_file()
         self.render_check_ssl_template()
-        self.copy_import_person_properties()
         self.copy_tomcat_index()
         # self.render_httpd_conf()
         # self.configure_vhost()
@@ -160,6 +164,7 @@ class OxtrustSetup(OxauthSetup):
             hostname,
         )
 
+        self.reconfigure_minion()
         self.add_auto_startup_entry()
         self.change_cert_access("tomcat", "tomcat")
         self.reload_supervisor()
@@ -198,15 +203,9 @@ class OxtrustSetup(OxauthSetup):
     def after_setup(self):
         """Post-setup callback.
         """
+        self.push_shib_certkey()
         self.discover_nginx()
         self.notify_nginx()
-
-    def copy_import_person_properties(self):
-        """Copies importPerson.properties template into the node.
-        """
-        src = self.get_template_path("nodes/oxtrust/gluuImportPerson.properties")
-        dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
-        self.salt.copy_file(self.node.id, src, dest)
 
     def copy_shib_config(self, parent_dir):
         """Copy config files located under shibboleth2 directory.
@@ -259,3 +258,39 @@ environment=CATALINA_PID="/var/run/tomcat.pid"
         self.logger.info("restarting tomcat")
         restart_cmd = "supervisorctl restart tomcat"
         self.salt.cmd(self.node.id, "cmd.run", [restart_cmd])
+
+    def push_shib_certkey(self):
+        resp = self.salt.cmd(self.node.id, "cmd.run",
+                             ["cat /etc/certs/shibIDP.crt"])
+        crt = resp.get(self.node.id)
+
+        resp = self.salt.cmd(self.node.id, "cmd.run",
+                             ["cat /etc/certs/shibIDP.key"])
+        key = resp.get(self.node.id)
+
+        for oxidp in self.cluster.get_oxidp_objects():
+            if crt:
+                time.sleep(5)
+                path = "/etc/certs/shibIDP.crt"
+                self.logger.info(
+                    "copying {0}:{1} to {2}:{1}".format(
+                        self.node.name,
+                        path,
+                        oxidp.name,
+                    )
+                )
+                echo_cmd = "echo '{}' > {}".format(crt, path)
+                self.salt.cmd(oxidp.id, "cmd.run", [echo_cmd])
+
+            if key:
+                time.sleep(5)
+                path = "/etc/certs/shibIDP.key"
+                self.logger.info(
+                    "copying {0}:{1} to {2}:{1}".format(
+                        self.node.name,
+                        path,
+                        oxidp.name,
+                    )
+                )
+                echo_cmd = "echo '{}' > {}".format(key, path)
+                self.salt.cmd(oxidp.id, "cmd.run", [echo_cmd])

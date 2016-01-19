@@ -36,7 +36,7 @@ class OxasimbaNode(BaseModel):
         self.tomcat_home = "/opt/tomcat"
         self.tomcat_conf_dir = "/opt/tomcat/conf"
         self.tomcat_log_folder = "/opt/tomcat/logs"
-        # self.truststore_fn = "/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/security/cacerts"
+        self.truststore_fn = "/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/security/cacerts"
         # self.ldap_binddn = "cn=directory manager"
 
     @property

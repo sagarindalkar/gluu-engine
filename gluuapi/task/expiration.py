@@ -95,9 +95,9 @@ class LicenseExpirationTask(object):
                 license_key.decrypted_public_password,
                 license_key.decrypted_license_password,
             )
-        except ValueError:  # pragma: no cover
+        except ValueError as exc:  # pragma: no cover
             self.logger.warn("unable to generate metadata for new license; "
-                             "likely caused by incorrect credentials")
+                             "reason={}".format(exc))
             decoded_license["valid"] = False
             decoded_license["metadata"] = {}
         finally:

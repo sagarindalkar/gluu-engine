@@ -13,6 +13,7 @@ from ..database import db
 from ..reqparser import NodeReq
 from ..model import STATE_IN_PROGRESS
 from ..model import STATE_SUCCESS
+from ..model import STATE_DISABLED
 from ..helper import DockerHelper
 from ..helper import SaltHelper
 from ..helper import PrometheusHelper
@@ -84,17 +85,21 @@ class NodeResource(Resource):
         provider = db.get(node.provider_id, "providers")
         app = current_app._get_current_object()
 
-        setup_classes = {
-            "ldap": LdapSetup,
-            "httpd": HttpdSetup,
-            "oxauth": OxauthSetup,
-            "oxtrust": OxtrustSetup,
-            "oxidp": OxidpSetup,
-            "nginx": NginxSetup,
-        }
-        setup_cls = setup_classes.get(node.type)
-        if setup_cls:
-            setup_cls(node, cluster, app).teardown()
+        # only do teardown on node with SUCCESS and DISABLED status
+        # to avoid unnecessary ops (e.g. propagating nginx changes,
+        # removing LDAP replication, etc.) on non-deployed nodes
+        if node.state in (STATE_SUCCESS, STATE_DISABLED,):
+            setup_classes = {
+                "ldap": LdapSetup,
+                "httpd": HttpdSetup,
+                "oxauth": OxauthSetup,
+                "oxtrust": OxtrustSetup,
+                "oxidp": OxidpSetup,
+                "nginx": NginxSetup,
+            }
+            setup_cls = setup_classes.get(node.type)
+            if setup_cls:
+                setup_cls(node, cluster, app).teardown()
 
         docker = DockerHelper(provider)
         salt = SaltHelper()

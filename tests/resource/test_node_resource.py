@@ -108,7 +108,6 @@ def test_node_post_invalid_connect_delay(app, db, cluster, provider):
     resp = app.test_client().post(
         "/nodes",
         data={
-            "cluster_id": cluster.id,
             "provider_id": provider.id,
             "node_type": "httpd",
             "connect_delay": "not-a-number",
@@ -124,7 +123,6 @@ def test_node_post_invalid_exec_delay(app, db, cluster, provider):
     resp = app.test_client().post(
         "/nodes",
         data={
-            "cluster_id": cluster.id,
             "provider_id": provider.id,
             "node_type": "httpd",
             "exec_delay": "not-a-number",
@@ -137,7 +135,6 @@ def test_node_post_invalid_cluster(app, db):
     resp = app.test_client().post(
         "/nodes",
         data={
-            "cluster_id": "123",
             "provider_id": "123",
             "node_type": "httpd",
         },
@@ -158,7 +155,6 @@ def test_node_post_ip_unavailable(monkeypatch, app, db, cluster, provider):
     resp = app.test_client().post(
         "/nodes",
         data={
-            "cluster_id": cluster.id,
             "provider_id": provider.id,
             "node_type": "oxauth",
         },
@@ -171,7 +167,6 @@ def test_node_post_invalid_provider(app, db, cluster):
     resp = app.test_client().post(
         "/nodes",
         data={
-            "cluster_id": cluster.id,
             "provider_id": "123",
             "node_type": "httpd",
         },
@@ -195,7 +190,6 @@ def test_node_post(monkeypatch, app, db, cluster, provider,
         lambda cls, connect_delay, exec_delay: None,
     )
     data = {
-        "cluster_id": cluster.id,
         "provider_id": provider.id,
         "node_type": node_type,
     }
@@ -218,7 +212,6 @@ def test_node_post_duplicate_oxtrust(monkeypatch, app, db, cluster,
         lambda cls, connect_delay, exec_delay: None,
     )
     data = {
-        "cluster_id": cluster.id,
         "provider_id": provider.id,
         "node_type": "oxtrust",
     }
@@ -241,7 +234,6 @@ def test_node_post_nonmaster_oxtrust(monkeypatch, app, db, cluster,
         lambda cls, connect_delay, exec_delay: None,
     )
     data = {
-        "cluster_id": cluster.id,
         "provider_id": provider.id,
         "node_type": "oxtrust",
     }
@@ -260,7 +252,6 @@ def test_node_post_expired_license(app, db, provider, cluster, license_key):
     resp = app.test_client().post(
         "/nodes",
         data={
-            "cluster_id": cluster.id,
             "provider_id": provider.id,
             "node_type": "httpd",
         },
@@ -314,7 +305,6 @@ def test_node_duplicated_nginx(app, db, cluster, provider, nginx_node):
     resp = app.test_client().post(
         "/nodes",
         data={
-            "cluster_id": cluster.id,
             "provider_id": provider.id,
             "node_type": "nginx",
         },
@@ -335,7 +325,6 @@ def test_node_ldap_max_exceeded(app, db, cluster, provider, ldap_node):
     resp = app.test_client().post(
         "/nodes",
         data={
-            "cluster_id": cluster.id,
             "provider_id": provider.id,
             "node_type": "ldap",
         },

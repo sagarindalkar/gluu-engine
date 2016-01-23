@@ -78,11 +78,7 @@ class ProviderResource(Resource):
 
 class ProviderListResource(Resource):
     def post(self):
-        try:
-            cluster = db.all("clusters")[0]
-        except IndexError:
-            cluster = None
-
+        cluster = db.get(request.form.get("cluster_id", ""), "clusters")
         if not cluster:
             return {
                 "status": 403,
@@ -177,6 +173,7 @@ class ProviderListResource(Resource):
                     db.update(license_key.id, license_key, "license_keys")
 
         provider = Provider(fields=data)
+        provider.cluster_id = data["cluster_id"]
         db.persist(provider, "providers")
 
         prov_helper = ProviderHelper(provider, app)

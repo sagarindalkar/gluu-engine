@@ -15,6 +15,7 @@ from .helper import distribute_cluster_data
 from .log import configure_global_logging
 from .task import LicenseExpirationTask
 from .task import OxidpWatcherTask
+from .database import db
 
 # global context settings
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
@@ -118,3 +119,36 @@ def distribute_data():
     crochet_setup()
     app = create_app()
     distribute_cluster_data(app.config["DATABASE_URI"])
+
+
+@main.command("upgrade-providers")
+def upgrade_providers():
+    """Upgrade providers for multi-cluster support.
+    """
+    click.echo("checking providers having empty cluster_id")
+
+    app = create_app()
+    db.app = app
+
+    providers = db.search_from_table(
+        "providers",
+        (db.where("cluster_id") == "") | (~db.where("cluster_id")),
+    )
+    for provider in providers:
+        cluster_id = click.prompt(
+            "cluster ID for {} provider {}".format(provider.type, provider.id)
+        )
+        cluster_exists = db.count_from_table(
+            "clusters", db.where("id") == cluster_id,
+        )
+        if not cluster_exists:
+            click.echo("cluster ID {} is not found".format(cluster_id))
+        else:
+            click.echo("attaching cluster {} to {} provider {}".format(
+                cluster_id, provider.type, provider.id
+            ))
+            provider.cluster_id = cluster_id
+            db.update(provider.id, provider, "providers")
+            click.echo("cluster {} has been attached to {} provider {}".format(
+                cluster_id, provider.type, provider.id
+            ))

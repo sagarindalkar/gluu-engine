@@ -80,13 +80,14 @@ def oxtrust_node(cluster, provider):
 
 
 @pytest.fixture()
-def provider():
+def provider(cluster):
     from gluuapi.model import Provider
 
     provider = Provider({
         "docker_base_url": "unix:///var/run/docker.sock",
         "hostname": "gluu-master",
     })
+    provider.cluster_id = cluster.id
     return provider
 
 

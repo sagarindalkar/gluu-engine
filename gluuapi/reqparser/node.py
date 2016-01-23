@@ -15,7 +15,6 @@ NODE_CHOICES = ["ldap", "oxauth", "oxtrust", "oxidp", "nginx"]
 
 
 class NodeReq(ma.Schema):
-    cluster_id = ma.Str(required=True)
     provider_id = ma.Str(required=True)
 
     try:
@@ -30,17 +29,6 @@ class NodeReq(ma.Schema):
     exec_delay = ma.Int(default=15, missing=15,
                         error="must use numerical value")
 
-    @validates("cluster_id")
-    def validate_cluster(self, value):
-        """Validates cluster's ID.
-
-        :param value: ID of the cluster.
-        """
-        cluster = db.get(value, "clusters")
-        self.context["cluster"] = cluster
-        if not cluster:
-            raise ValidationError("invalid cluster ID")
-
     @validates("provider_id")
     def validate_provider(self, value):
         """Validates provider's ID.
@@ -52,6 +40,13 @@ class NodeReq(ma.Schema):
 
         if not provider:
             raise ValidationError("invalid provider ID")
+
+        cluster = db.get(provider.cluster_id, "clusters")
+        self.context["cluster"] = cluster
+
+        if not cluster:
+            raise ValidationError("provider doesn't have cluster ID")
+
         if provider.type == "consumer":
             license_key = db.all("license_keys")[0]
             if license_key.expired:

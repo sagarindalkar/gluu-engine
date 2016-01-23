@@ -2,6 +2,7 @@
 # Copyright (c) 2015 Gluu
 #
 # All rights reserved.
+import os
 
 from flask import current_app
 from flask import request
@@ -115,6 +116,12 @@ class NodeResource(Resource):
         prometheus = PrometheusHelper(current_app._get_current_object())
         prometheus.update()
         distribute_cluster_data(current_app.config["DATABASE_URI"])
+
+        # remove node's log file
+        try:
+            os.unlink(node.setup_logpath)
+        except OSError:
+            pass
         return {}, 204
 
 

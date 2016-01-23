@@ -13,7 +13,7 @@ from ..database import db
 from ..reqparser import NodeReq
 from ..model import STATE_IN_PROGRESS
 from ..model import STATE_SUCCESS
-from ..model import STATE_DISABLED
+from ..model import STATE_FAILED
 from ..helper import DockerHelper
 from ..helper import SaltHelper
 from ..helper import PrometheusHelper
@@ -85,10 +85,10 @@ class NodeResource(Resource):
         provider = db.get(node.provider_id, "providers")
         app = current_app._get_current_object()
 
-        # only do teardown on node with SUCCESS and DISABLED status
-        # to avoid unnecessary ops (e.g. propagating nginx changes,
-        # removing LDAP replication, etc.) on non-deployed nodes
-        if node.state in (STATE_SUCCESS, STATE_DISABLED,):
+        # only do teardown on node with SUCCESS, DISABLED, IN_PROGRESS status;
+        # this means we don't need to do teardown on FAILED node
+        # as FAILED node (mostly) is not attached into the cluster
+        if node.state != STATE_FAILED:
             setup_classes = {
                 "ldap": LdapSetup,
                 "httpd": HttpdSetup,

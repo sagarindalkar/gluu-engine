@@ -125,7 +125,7 @@ command=/usr/sbin/nginx -g "daemon off;"
                                      self.app, logger=self.logger)
 
             setup_obj.delete_nginx_cert()
-            setup_obj.remove_host_entries(self.node)
+            setup_obj.remove_nginx_entry(self.node)
 
             # wait before telling oxtrust to find nginx node
             time.sleep(2)
@@ -171,7 +171,7 @@ command=/usr/sbin/nginx -g "daemon off;"
                                    self.app, logger=self.logger)
 
             setup_obj.delete_nginx_cert()
-            setup_obj.remove_host_entries(self.node)
+            setup_obj.remove_nginx_entry(self.node)
 
             # wait before telling oxidp to find nginx node
             time.sleep(2)

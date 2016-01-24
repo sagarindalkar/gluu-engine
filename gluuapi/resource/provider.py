@@ -78,13 +78,6 @@ class ProviderResource(Resource):
 
 class ProviderListResource(Resource):
     def post(self):
-        cluster = db.get(request.form.get("cluster_id", ""), "clusters")
-        if not cluster:
-            return {
-                "status": 403,
-                "message": "requires at least 1 cluster created first",
-            }, 403
-
         data, errors = ProviderReq(
             context={"docker_base_url": request.form.get("docker_base_url")}
         ).load(request.form)

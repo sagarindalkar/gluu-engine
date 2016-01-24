@@ -1,17 +1,16 @@
 import json
 
 
-def test_provider_no_cluster(app, cluster):
+def test_provider_invalid_cluster(app, cluster):
     resp = app.test_client().post(
         "/providers",
         data={
             "docker_base_url": "unix:///var/run/docker.sock",
             "hostname": "local",
             "type": "master",
-            "cluster_id": cluster.id,
         },
     )
-    assert resp.status_code == 403
+    assert resp.status_code == 400
 
 
 def test_provider_list_post_master(monkeypatch, app, db, cluster,

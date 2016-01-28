@@ -6,6 +6,8 @@ The gluu-flask server is used to enable management of Gluu Server clusters.
 There is an ever-evolving [wiki page](http://www.gluu.co/gluu_salt) which describes
 the design of the gluu-flask component.
 
+__NOTE__: The `master` branch is used for unreleased version. For __v0.4.x__ releases, use the `version_0.4` branch instead.
+
 ## Prerequisites
 
 ### Ubuntu packages

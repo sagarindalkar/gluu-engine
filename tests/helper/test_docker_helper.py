@@ -37,6 +37,15 @@ def test_get_container_ip(monkeypatch, docker_helper):
     assert docker_helper.get_container_ip("abc") == ipaddr
 
 
+def test_run_container(monkeypatch, docker_helper):
+    monkeypatch.setattr(
+        "docker.Client.create_container",
+        lambda cls, image, name, detach, environment, host_config: {"Id": "123"},
+    )
+    monkeypatch.setattr("docker.Client.start", lambda cls, container: "")
+    assert docker_helper.run_container("abc", "gluuopendj") == "123"
+
+
 def test_inspect_container(monkeypatch, docker_helper):
     monkeypatch.setattr(
         "docker.Client.inspect_container",
@@ -107,15 +116,6 @@ def test_pull_image(monkeypatch, docker_helper, stream_output, pulled):
     assert docker_helper.pull_image("gluuopendj") is pulled
 
 
-def test_run_container(monkeypatch, docker_helper):
-    monkeypatch.setattr(
-        "docker.Client.create_container",
-        lambda cls, image, name, detach, environment, host_config: {"Id": "123"},
-    )
-    monkeypatch.setattr("docker.Client.start", lambda cls, container: "")
-    assert docker_helper.run_container("abc", "gluuopendj") == "123"
-
-
 def test_setup_container(monkeypatch, docker_helper):
     monkeypatch.setattr(
         "gluuapi.helper.docker_helper.DockerHelper.image_exists",
@@ -127,6 +127,6 @@ def test_setup_container(monkeypatch, docker_helper):
     )
     monkeypatch.setattr(
         "gluuapi.helper.docker_helper.DockerHelper.run_container",
-        lambda cls, name, image, env, port_bindings, volumes, dns, dns_search: "123",
+        lambda cls, name, image, env, port_bindings, volumes, dns, dns_search, ulimits: "123",
     )
     assert docker_helper.setup_container("gluuopendj_123", "gluuopendj") == "123"

@@ -41,6 +41,12 @@ from ..utils import exc_traceback
 class BaseModelHelper(object):
     __metaclass__ = abc.ABCMeta
 
+    port_bindings = {}
+
+    volumes = {}
+
+    ulimits = []
+
     @abc.abstractproperty
     def setup_class(self):
         """Node setup class. Must be overriden in subclass.
@@ -55,10 +61,6 @@ class BaseModelHelper(object):
     def image(self):
         """Docker image name. Must be overriden in subclass.
         """
-
-    port_bindings = {}
-
-    volumes = {}
 
     def __init__(self, cluster, provider, app):
         self.salt_master_ipaddr = app.config["SALT_MASTER_IPADDR"]
@@ -126,6 +128,7 @@ class BaseModelHelper(object):
                 volumes=self.volumes,
                 dns=[bridge_ip],
                 dns_search=["gluu.local"],
+                ulimits=self.ulimits,
             )
 
             # container is not running
@@ -233,6 +236,9 @@ class LdapModelHelper(BaseModelHelper):
     setup_class = LdapSetup
     node_class = LdapNode
     image = "gluuopendj"
+    ulimits = [
+        {"name": "nofile", "soft": 65536, "hard": 131072},
+    ]
 
 
 class OxauthModelHelper(BaseModelHelper):

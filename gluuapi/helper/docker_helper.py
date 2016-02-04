@@ -45,7 +45,7 @@ class DockerHelper(object):
         return True if images else False
 
     def setup_container(self, name, image, env=None, port_bindings=None,
-                        volumes=None, dns=None, dns_search=None):
+                        volumes=None, dns=None, dns_search=None, ulimits=None):
         self.logger.info("creating container {!r}".format(name))
 
         image = "{}/{}".format(self.registry_base_url, image)
@@ -55,7 +55,8 @@ class DockerHelper(object):
             self.pull_image(image)
 
         return self.run_container(
-            name, image, env, port_bindings, volumes, dns, dns_search,
+            name, image, env, port_bindings, volumes, dns,
+            dns_search, ulimits,
         )
 
     def get_container_ip(self, container_id):
@@ -113,12 +114,32 @@ class DockerHelper(object):
         return True
 
     def run_container(self, name, image, env=None, port_bindings=None,
-                      volumes=None, dns=None, dns_search=None):
+                      volumes=None, dns=None, dns_search=None,
+                      ulimits=None):
+        """Runs a docker container in detached mode.
+
+        This is a two-steps operation:
+
+        1. Creates container
+        2. Starts container
+
+        :param name: A name for the container.
+        :param image: The image to run.
+        :param env: Environment variables.
+        :param port_bindings: Port bindings.
+        :param volumes: Mapped volumes.
+        :param dns: DNS name servers.
+        :param dns_search: DNS search domains.
+        :param ulimits: ulimit settings.
+        :returns: A string of container ID in long format if container
+                  is running successfully, otherwise an empty string.
+        """
         env = env or {}
         port_bindings = port_bindings or {}
         volumes = volumes or {}
         dns = dns or []
         dns_search = dns_search or []
+        ulimits = ulimits or []
 
         container = self.docker.create_container(
             image=image,
@@ -130,6 +151,7 @@ class DockerHelper(object):
                 binds=volumes,
                 dns=dns,
                 dns_search=dns_search,
+                ulimits=ulimits,
             ),
         )
         container_id = container["Id"]

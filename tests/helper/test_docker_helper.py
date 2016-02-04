@@ -134,7 +134,7 @@ def test_setup_container_existing_image(monkeypatch, docker_helper):
     )
     monkeypatch.setattr(
         "gluuapi.helper.docker_helper.DockerHelper.run_container",
-        lambda cls, name, image, port_bindings, volumes, dns, dns_search: "123",
+        lambda cls, name, image, port_bindings, volumes, dns, dns_search, ulimits: "123",
     )
 
     container_id = docker_helper.setup_container(

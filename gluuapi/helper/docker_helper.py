@@ -73,7 +73,7 @@ class DockerHelper(object):
         return True
 
     def run_container(self, name, image, port_bindings=None, volumes=None,
-                      dns=None, dns_search=None):
+                      dns=None, dns_search=None, ulimits=None):
         """Runs a docker container in detached mode.
 
         This is a two-steps operation:
@@ -95,6 +95,7 @@ class DockerHelper(object):
         container_id = ""
         dns = dns or []
         dns_search = dns_search or []
+        ulimits = ulimits or []
 
         self.logger.info("creating container {!r}".format(name))
         env = {
@@ -108,6 +109,7 @@ class DockerHelper(object):
                 binds=volumes,
                 dns=dns,
                 dns_search=dns_search,
+                ulimits=ulimits,
             ),
         )
         container_id = container["Id"]
@@ -164,7 +166,7 @@ class DockerHelper(object):
 
     def setup_container(self, name, image, dockerfile, salt_master_ipaddr,
                         port_bindings=None, volumes=None,
-                        dns=None, dns_search=None):
+                        dns=None, dns_search=None, ulimits=None):
         """Builds and runs a container.
 
         :param name: A name for the container.
@@ -194,6 +196,7 @@ class DockerHelper(object):
             return self.run_container(
                 name, image, port_bindings=port_bindings,
                 volumes=volumes, dns=dns, dns_search=dns_search,
+                ulimits=ulimits,
             )
         return ""
 

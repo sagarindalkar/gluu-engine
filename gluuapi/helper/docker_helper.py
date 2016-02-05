@@ -4,12 +4,8 @@
 # All rights reserved.
 
 import json
-import os.path
-import tempfile
-import shutil
 
 import docker.errors
-import requests
 from docker import Client
 from docker.tls import TLSConfig
 
@@ -20,6 +16,10 @@ DEFAULT_DOCKER_URL = "unix:///var/run/docker.sock"
 
 
 class DockerHelper(object):
+    @property
+    def registry_base_url(self):  # pragma: no cover
+        return "registry.gluu.org:5000"
+
     def __init__(self, provider, logger=None):
         self.logger = logger or create_file_logger()
         self.provider = provider
@@ -44,158 +44,19 @@ class DockerHelper(object):
         images = self.docker.images(name)
         return True if images else False
 
-    def build_image(self, path, tag):
-        """Builds a docker image.
-
-        :param path: Path to a directory where ``Dockerfile`` is located.
-        :param tag: Desired tag name.
-        :returns: ``True`` if image successfully built, otherwise ``False``
-        """
-        self.logger.info("building {} image".format(tag))
-
-        # pulling image update from Registry V2 raises error,
-        # hence we skip the updates until we have a correct implementation
-        pull = False
-        resp = self.docker.build(path, tag=tag, quiet=True, rm=True,
-                                 forcerm=True, pull=pull)
-
-        output = ""
-        while True:
-            try:
-                output = resp.next()
-                self.logger.info(output)
-            except StopIteration:
-                break
-
-        result = json.loads(output)
-        if "errorDetail" in result:
-            return False
-        return True
-
-    def run_container(self, name, image, port_bindings=None, volumes=None,
-                      dns=None, dns_search=None):
-        """Runs a docker container in detached mode.
-
-        This is a two-steps operation:
-
-        1. Creates container
-        2. Starts container
-
-        :param name: A name for the container.
-        :param image: The image to run.
-        :param port_bindings: Port bindings.
-        :param volumes: Mapped volumes.
-        :param dns: DNS name servers.
-        :param dns_search: DNS search domains.
-        :returns: A string of container ID in long format if container
-                  is running successfully, otherwise an empty string.
-        """
-        port_bindings = port_bindings or {}
-        volumes = volumes or {}
-        container_id = ""
-        dns = dns or []
-        dns_search = dns_search or []
+    def setup_container(self, name, image, env=None, port_bindings=None,
+                        volumes=None, dns=None, dns_search=None):
+        image = "{}/{}".format(self.registry_base_url, image)
 
         self.logger.info("creating container {!r}".format(name))
-        env = {
-            "SALT_MASTER_IPADDR": os.environ.get("SALT_MASTER_IPADDR"),
-        }
 
-        container = self.docker.create_container(
-            image=image, name=name, detach=True, environment=env,
-            host_config=self.docker.create_host_config(
-                port_bindings=port_bindings,
-                binds=volumes,
-                dns=dns,
-                dns_search=dns_search,
-            ),
-        )
-        container_id = container["Id"]
-        self.logger.info("container {!r} has been created".format(name))
-
-        if container_id:
-            self.docker.start(container=container_id)
-            self.logger.info("container {!r} with ID {!r} "
-                             "has been started".format(name, container_id))
-        return container_id
-
-    def get_remote_files(self, *files):
-        """Retrieves files from remote paths.
-
-        All retrieved files will be stored under a same temporary directory.
-
-        :param files: List of files.
-        :returns: Absolute path to temporary directory where all files
-                were downloaded to.
-        """
-        local_dir = tempfile.mkdtemp()
-
-        for file_ in files:
-            local_path = os.path.join(local_dir, os.path.basename(file_))
-            self.logger.info("downloading {!r}".format(file_))
-
-            resp = requests.get(file_)
-            if resp.status_code == 200:
-                with open(local_path, "w") as fp:
-                    fp.write(resp.text)
-        return local_dir
-
-    def _build_gluubase(self):
-        """Builds gluubase image.
-
-        :param salt_master_ipaddr: IP address of salt-master.
-        :returns: ``True`` if image successfully built, otherwise ``False``
-        """
-        build_succeed = True
-
-        if not self.image_exists("gluubase"):
-            # There must be a better way than to hard code every file one by one
-            DOCKER_REPO = 'https://raw.githubusercontent.com/GluuFederation' \
-                          '/gluu-docker/master/ubuntu/14.04'
-            minion_file = DOCKER_REPO + '/gluubase/minion'
-            supervisor_conf = DOCKER_REPO + '/gluubase/supervisord.conf'
-            render = DOCKER_REPO + '/gluubase/render.sh'
-            dockerfile = DOCKER_REPO + '/gluubase/Dockerfile'
-            files = [minion_file, supervisor_conf, render, dockerfile]
-            build_dir = self.get_remote_files(*files)
-            build_succeed = self.build_image(build_dir, "gluubase")
-            shutil.rmtree(build_dir)
-        return build_succeed
-
-    def setup_container(self, name, image, dockerfile, salt_master_ipaddr,
-                        port_bindings=None, volumes=None,
-                        dns=None, dns_search=None):
-        """Builds and runs a container.
-
-        :param name: A name for the container.
-        :param image: The image to run.
-        :param dockerfile: Path to remote Dockerfile. Used to build the image
-                           if image is not exist.
-        :param port_bindings: Port bindings.
-        :param volumes: Mapped volumes.
-        :param dns: DNS name servers.
-        :param dns_search: DNS search domains.
-
-        :returns: Container ID in long format if container running successfully,
-                otherwise an empty string.
-        """
-        if not self._build_gluubase():
-            return ""
-
-        # a flag to determine whether build image process is succeed
-        build_succeed = True
-
+        # pull the image first if not exist
         if not self.image_exists(image):
-            build_dir = self.get_remote_files(dockerfile)
-            build_succeed = self.build_image(build_dir, image)
-            shutil.rmtree(build_dir)
+            self.pull_image(image)
 
-        if build_succeed:
-            return self.run_container(
-                name, image, port_bindings=port_bindings,
-                volumes=volumes, dns=dns, dns_search=dns_search,
-            )
-        return ""
+        return self.run_container(
+            name, image, env, port_bindings, volumes, dns, dns_search,
+        )
 
     def get_container_ip(self, container_id):
         """Gets container IP.
@@ -226,7 +87,56 @@ class DockerHelper(object):
         """
         return self.docker.inspect_container(container_id)
 
-    def stop(self, container_id):
+    def stop(self, container_id):  # pragma: no cover
+        # DEPRECATED; see stop_container instead
+        self.stop_container(container_id)
+
+    def stop_container(self, container_id):  # pragma: no cover
         """Stops given container.
         """
-        return self.docker.stop(container_id)
+        self.docker.stop(container_id)
+
+    def pull_image(self, image):
+        resp = self.docker.pull(repository=image, stream=True)
+        output = ""
+
+        while True:
+            try:
+                output = resp.next()
+                self.logger.info(output)
+            except StopIteration:
+                break
+
+        result = json.loads(output)
+        if "errorDetail" in result:
+            return False
+        return True
+
+    def run_container(self, name, image, env=None, port_bindings=None,
+                      volumes=None, dns=None, dns_search=None):
+        env = env or {}
+        port_bindings = port_bindings or {}
+        volumes = volumes or {}
+        dns = dns or []
+        dns_search = dns_search or []
+
+        container = self.docker.create_container(
+            image=image,
+            name=name,
+            detach=True,
+            environment=env,
+            host_config=self.docker.create_host_config(
+                port_bindings=port_bindings,
+                binds=volumes,
+                dns=dns,
+                dns_search=dns_search,
+            ),
+        )
+        container_id = container["Id"]
+        self.logger.info("container {!r} has been created".format(name))
+
+        if container_id:
+            self.docker.start(container=container_id)
+            self.logger.info("container {!r} with ID {!r} "
+                             "has been started".format(name, container_id))
+        return container_id

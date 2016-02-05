@@ -4,7 +4,7 @@
 # All rights reserved.
 
 import abc
-import os.path
+import os
 import time
 import uuid
 
@@ -54,11 +54,6 @@ class BaseModelHelper(object):
     @abc.abstractproperty
     def image(self):
         """Docker image name. Must be overriden in subclass.
-        """
-
-    @abc.abstractproperty
-    def dockerfile(self):
-        """URL to image's Dockerfile. Must be overriden in subclass.
         """
 
     port_bindings = {}
@@ -124,8 +119,9 @@ class BaseModelHelper(object):
             container_id = self.docker.setup_container(
                 self.node.name,
                 self.image,
-                self.dockerfile,
-                self.salt_master_ipaddr,
+                env={
+                    "SALT_MASTER_IPADDR": os.environ.get("SALT_MASTER_IPADDR"),
+                },
                 port_bindings=self.port_bindings,
                 volumes=self.volumes,
                 dns=[bridge_ip],
@@ -237,24 +233,18 @@ class LdapModelHelper(BaseModelHelper):
     setup_class = LdapSetup
     node_class = LdapNode
     image = "gluuopendj"
-    dockerfile = "https://raw.githubusercontent.com/GluuFederation" \
-                 "/gluu-docker/master/ubuntu/14.04/gluuopendj/Dockerfile"
 
 
 class OxauthModelHelper(BaseModelHelper):
     setup_class = OxauthSetup
     node_class = OxauthNode
     image = "gluuoxauth"
-    dockerfile = "https://raw.githubusercontent.com/GluuFederation" \
-                 "/gluu-docker/master/ubuntu/14.04/gluuoxauth/Dockerfile"
 
 
 class OxtrustModelHelper(BaseModelHelper):
     setup_class = OxtrustSetup
     node_class = OxtrustNode
     image = "gluuoxtrust"
-    dockerfile = "https://raw.githubusercontent.com/GluuFederation" \
-                 "/gluu-docker/master/ubuntu/14.04/gluuoxtrust/Dockerfile"
     port_bindings = {8443: ("127.0.0.1", 8443)}
 
     def __init__(self, cluster, provider, app):
@@ -270,22 +260,16 @@ class HttpdModelHelper(BaseModelHelper):
     setup_class = HttpdSetup
     node_class = HttpdNode
     image = "gluuhttpd"
-    dockerfile = "https://raw.githubusercontent.com/GluuFederation" \
-                 "/gluu-docker/master/ubuntu/14.04/gluuhttpd/Dockerfile"
 
 
 class OxidpModelHelper(BaseModelHelper):
     setup_class = OxidpSetup
     node_class = OxidpNode
     image = "gluuoxidp"
-    dockerfile = "https://raw.githubusercontent.com/GluuFederation" \
-                 "/gluu-docker/master/ubuntu/14.04/gluuoxidp/Dockerfile"
 
 
 class NginxModelHelper(BaseModelHelper):
     setup_class = NginxSetup
     node_class = NginxNode
     image = "gluunginx"
-    dockerfile = "https://raw.githubusercontent.com/GluuFederation" \
-                 "/gluu-docker/master/ubuntu/14.04/gluunginx/Dockerfile"
     port_bindings = {80: ("0.0.0.0", 80), 443: ("0.0.0.0", 443)}

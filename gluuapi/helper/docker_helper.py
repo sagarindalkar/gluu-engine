@@ -16,6 +16,10 @@ DEFAULT_DOCKER_URL = "unix:///var/run/docker.sock"
 
 
 class DockerHelper(object):
+    @property
+    def registry_base_url(self):  # pragma: no cover
+        return "registry.gluu.org:5000"
+
     def __init__(self, provider, logger=None):
         self.logger = logger or create_file_logger()
         self.provider = provider
@@ -43,6 +47,8 @@ class DockerHelper(object):
     def setup_container(self, name, image, env=None, port_bindings=None,
                         volumes=None, dns=None, dns_search=None):
         self.logger.info("creating container {!r}".format(name))
+
+        image = "{}/{}".format(self.registry_base_url, image)
 
         # pull the image first if not exist
         if not self.image_exists(image):

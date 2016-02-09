@@ -20,6 +20,13 @@ sudo apt-get install -y gluu-master python-pip python-dev swig libsasl2-dev libl
 
 Note: `gluu-master` is a meta package that installs all required packages.
 
+### Get Registry Certificate
+
+```
+#! /bin/sh
+echo -n | openssl s_client -connect registry.gluu.org:5000 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > /etc/docker/certs.d/registry.gluu.org\:5000/ca.crt
+```
+
 ## Deployment
 
 ### Install pip and virtualenv

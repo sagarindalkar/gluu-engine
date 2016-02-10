@@ -113,13 +113,13 @@ class BaseSetup(object):
             "openssl", "req", "-new",
             "-key", key,
             "-out", csr,
-            "-subj", "'/CN=%s/O=%s/C=%s/ST=%s/L=%s'" % (
-                hostname,
-                self.cluster.org_name,
-                self.cluster.country_code,
-                self.cluster.state,
-                self.cluster.city,
-            )])
+            "-subj", "/C=%s/ST=%s/L=%s/O=%s/CN=%s/emailAddress='%s'" % (
+                self.cluster.country_code, self.cluster.state,
+                self.cluster.city, self.cluster.org_name,
+                self.cluster.ox_cluster_hostname,
+                self.cluster.admin_email,
+            )
+        ])
         jid = self.salt.cmd_async(self.node.id, "cmd.run", [csr_cmd])
         self.salt.subscribe_event(jid, self.node.id)
 

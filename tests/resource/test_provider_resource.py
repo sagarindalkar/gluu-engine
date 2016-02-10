@@ -1,7 +1,7 @@
 import json
 
 
-def test_provider_no_cluster(app):
+def test_provider_invalid_cluster(app, cluster):
     resp = app.test_client().post(
         "/providers",
         data={
@@ -10,7 +10,7 @@ def test_provider_no_cluster(app):
             "type": "master",
         },
     )
-    assert resp.status_code == 403
+    assert resp.status_code == 400
 
 
 def test_provider_list_post_master(monkeypatch, app, db, cluster,
@@ -26,6 +26,7 @@ def test_provider_list_post_master(monkeypatch, app, db, cluster,
             "docker_base_url": "unix:///var/run/docker.sock",
             "hostname": "local",
             "type": "master",
+            "cluster_id": cluster.id,
         },
     )
     assert resp.status_code == 201
@@ -42,6 +43,7 @@ def test_provider_list_post_duplicated_master(app, db, provider, cluster):
             "docker_base_url": "unix:///var/run/docker.sock",
             "hostname": "local",
             "type": "master",
+            "cluster_id": cluster.id,
         },
     )
     assert resp.status_code == 403
@@ -56,6 +58,7 @@ def test_provider_list_post_license_key_notfound(app, db, provider, cluster):
         data={
             "docker_base_url": "unix:///var/run/docker.sock",
             "hostname": "local",
+            "cluster_id": cluster.id,
         },
     )
     assert resp.status_code == 400
@@ -69,6 +72,7 @@ def test_provider_list_post_consumer_no_master(monkeypatch, app, db, cluster):
             "docker_base_url": "unix:///var/run/docker.sock",
             "hostname": "local",
             "type": "consumer",
+            "cluster_id": cluster.id,
         },
     )
     assert resp.status_code == 403
@@ -85,6 +89,7 @@ def test_provider_list_post_consumer_no_license(app, db, cluster, provider):
             "docker_base_url": "unix:///var/run/docker.sock",
             "hostname": "local",
             "type": "consumer",
+            "cluster_id": cluster.id,
         },
     )
     assert resp.status_code == 403
@@ -103,6 +108,7 @@ def test_provider_list_post_consumer_unretrieved_license(
             "docker_base_url": "unix:///var/run/docker.sock",
             "hostname": "local",
             "type": "consumer",
+            "cluster_id": cluster.id,
         },
     )
     assert resp.status_code == 422
@@ -123,6 +129,7 @@ def test_provider_list_post_consumer(monkeypatch, app, db, cluster,
             "docker_base_url": "unix:///var/run/docker.sock",
             "hostname": "local",
             "type": "consumer",
+            "cluster_id": cluster.id,
         },
     )
     assert resp.status_code == 201
@@ -143,6 +150,7 @@ def test_provider_list_post_consumer_no_meta(
             "docker_base_url": "unix:///var/run/docker.sock",
             "hostname": "local",
             "type": "consumer",
+            "cluster_id": cluster.id,
         },
     )
     assert resp.status_code == 201

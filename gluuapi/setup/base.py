@@ -113,13 +113,13 @@ class BaseSetup(object):
             "openssl", "req", "-new",
             "-key", key,
             "-out", csr,
-            "-subj", "'/CN=%s/O=%s/C=%s/ST=%s/L=%s'" % (
-                hostname,
-                self.cluster.org_name,
-                self.cluster.country_code,
-                self.cluster.state,
-                self.cluster.city,
-            )])
+            "-subj", "/C=%s/ST=%s/L=%s/O=%s/CN=%s/emailAddress='%s'" % (
+                self.cluster.country_code, self.cluster.state,
+                self.cluster.city, self.cluster.org_name,
+                self.cluster.ox_cluster_hostname,
+                self.cluster.admin_email,
+            )
+        ])
         jid = self.salt.cmd_async(self.node.id, "cmd.run", [csr_cmd])
         self.salt.subscribe_event(jid, self.node.id)
 
@@ -231,3 +231,87 @@ keysize: 2048
             ["echo '{}' >> /etc/salt/minion".format(payload)],
         )
         self.salt.subscribe_event(jid, self.node.id)
+
+
+class SSLCertMixin(object):
+    def import_nginx_cert(self):
+        """Imports SSL certificate from nginx node.
+        """
+        self.logger.info("importing nginx cert")
+
+        # imports nginx cert into oxtrust cacerts to avoid
+        # "peer not authenticated" error
+        cert_cmd = "echo -n | openssl s_client -connect {}:443 | " \
+                   "sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' " \
+                   "> /etc/certs/nginx.cert".format(self.cluster.ox_cluster_hostname)
+        jid = self.salt.cmd_async(self.node.id, "cmd.run", [cert_cmd])
+        self.salt.subscribe_event(jid, self.node.id)
+
+        der_cmd = "openssl x509 -outform der -in /etc/certs/nginx.cert -out /etc/certs/nginx.der"
+        jid = self.salt.cmd_async(self.node.id, "cmd.run", [der_cmd])
+        self.salt.subscribe_event(jid, self.node.id)
+
+        import_cmd = " ".join([
+            "keytool -importcert -trustcacerts",
+            "-alias '{}'".format(self.cluster.ox_cluster_hostname),
+            "-file /etc/certs/nginx.der",
+            "-keystore {}".format(self.node.truststore_fn),
+            "-storepass changeit -noprompt",
+        ])
+        jid = self.salt.cmd_async(self.node.id, "cmd.run", [import_cmd])
+        self.salt.subscribe_event(jid, self.node.id)
+
+    def delete_nginx_cert(self):
+        """Removes SSL cerficate of nginx node.
+        """
+        delete_cmd = " ".join([
+            "keytool -delete",
+            "-alias {}".format(self.cluster.ox_cluster_hostname),
+            "-keystore {}".format(self.node.truststore_fn),
+            "-storepass changeit -noprompt",
+        ])
+        self.logger.info("deleting nginx cert")
+        self.salt.cmd(self.node.id, "cmd.run", [delete_cmd])
+
+
+class HostFileMixin(object):
+    def add_nginx_entry(self, nginx):
+        """Adds entry into /etc/hosts file.
+        """
+        # currently we need to add nginx container hostname
+        # to prevent "peer not authenticated" raised by oxTrust;
+        # TODO: use a real DNS
+        self.logger.info("adding nginx entry in "
+                         "{} /etc/hosts file".format(self.node.type))
+        # add the entry only if line is not exist in /etc/hosts
+        grep_cmd = "grep -q '^{0} {1}$' /etc/hosts " \
+                   "|| echo '{0} {1}' >> /etc/hosts" \
+                   .format(nginx.weave_ip,
+                           self.cluster.ox_cluster_hostname)
+        jid = self.salt.cmd_async(self.node.id, "cmd.run", [grep_cmd])
+        self.salt.subscribe_event(jid, self.node.id)
+
+    def remove_nginx_entry(self, nginx):
+        """Removes entry from /etc/hosts file.
+        """
+        # TODO: use a real DNS
+        #
+        # currently we need to remove nginx container hostname
+        # updating ``/etc/hosts`` in-place will raise "resource or device is busy"
+        # error, hence we use the following steps instead:
+        #
+        # 1. copy the original ``/etc/hosts``
+        # 2. find-and-replace entries in copied file
+        # 3. overwrite the original ``/etc/hosts``
+        self.logger.info("removing nginx entry in "
+                         "{} /etc/hosts file".format(self.node.type))
+        backup_cmd = "cp /etc/hosts /tmp/hosts"
+        sed_cmd = "sed -i 's/{} {}//g' /tmp/hosts && sed -i '/^$/d' /tmp/hosts".format(
+            nginx.weave_ip, self.cluster.ox_cluster_hostname
+        )
+        overwrite_cmd = "cp /tmp/hosts /etc/hosts"
+        self.salt.cmd(
+            self.node.id,
+            ["cmd.run", "cmd.run", "cmd.run"],
+            [[backup_cmd], [sed_cmd], [overwrite_cmd]],
+        )

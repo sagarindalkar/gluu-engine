@@ -78,17 +78,6 @@ class ProviderResource(Resource):
 
 class ProviderListResource(Resource):
     def post(self):
-        try:
-            cluster = db.all("clusters")[0]
-        except IndexError:
-            cluster = None
-
-        if not cluster:
-            return {
-                "status": 403,
-                "message": "requires at least 1 cluster created first",
-            }, 403
-
         data, errors = ProviderReq(
             context={"docker_base_url": request.form.get("docker_base_url")}
         ).load(request.form)
@@ -177,6 +166,7 @@ class ProviderListResource(Resource):
                     db.update(license_key.id, license_key, "license_keys")
 
         provider = Provider(fields=data)
+        provider.cluster_id = data["cluster_id"]
         db.persist(provider, "providers")
 
         prov_helper = ProviderHelper(provider, app)

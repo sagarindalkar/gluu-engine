@@ -19,10 +19,12 @@ class Provider(BaseModel):
         "id",
         "docker_base_url",
         "hostname",
+        "cluster_id",
     ])
 
     def __init__(self, fields=None):
         self.id = str(uuid.uuid4())
+        self.cluster_id = ""
         self.populate(fields)
 
     @property

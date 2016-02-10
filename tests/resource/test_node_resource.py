@@ -68,27 +68,6 @@ def test_node_delete_ldap(monkeypatch, app, db, cluster, provider, ldap_node):
     assert resp.status_code == 204
 
 
-def test_node_delete_httpd(monkeypatch, app, db, cluster,
-                           provider, httpd_node):
-    db.persist(provider, "providers")
-    httpd_node.provider_id = provider.id
-    db.persist(httpd_node, "nodes")
-    db.persist(cluster, "clusters")
-
-    monkeypatch.setattr(
-        "gluuapi.setup.HttpdSetup.teardown",
-        lambda cls: None,
-    )
-
-    monkeypatch.setattr(
-        "gluuapi.helper.PrometheusHelper.update",
-        lambda cls: None,
-    )
-
-    resp = app.test_client().delete("/nodes/{}".format(httpd_node.id))
-    assert resp.status_code == 204
-
-
 def test_node_delete_failed(app):
     resp = app.test_client().delete("/nodes/random-invalid-id")
     assert resp.status_code == 404
@@ -108,9 +87,8 @@ def test_node_post_invalid_connect_delay(app, db, cluster, provider):
     resp = app.test_client().post(
         "/nodes",
         data={
-            "cluster_id": cluster.id,
             "provider_id": provider.id,
-            "node_type": "httpd",
+            "node_type": "ldap",
             "connect_delay": "not-a-number",
         },
     )
@@ -124,9 +102,8 @@ def test_node_post_invalid_exec_delay(app, db, cluster, provider):
     resp = app.test_client().post(
         "/nodes",
         data={
-            "cluster_id": cluster.id,
             "provider_id": provider.id,
-            "node_type": "httpd",
+            "node_type": "ldap",
             "exec_delay": "not-a-number",
         },
     )
@@ -137,9 +114,8 @@ def test_node_post_invalid_cluster(app, db):
     resp = app.test_client().post(
         "/nodes",
         data={
-            "cluster_id": "123",
             "provider_id": "123",
-            "node_type": "httpd",
+            "node_type": "ldap",
         },
     )
     assert resp.status_code == 400
@@ -158,7 +134,6 @@ def test_node_post_ip_unavailable(monkeypatch, app, db, cluster, provider):
     resp = app.test_client().post(
         "/nodes",
         data={
-            "cluster_id": cluster.id,
             "provider_id": provider.id,
             "node_type": "oxauth",
         },
@@ -171,9 +146,8 @@ def test_node_post_invalid_provider(app, db, cluster):
     resp = app.test_client().post(
         "/nodes",
         data={
-            "cluster_id": cluster.id,
             "provider_id": "123",
-            "node_type": "httpd",
+            "node_type": "ldap",
         },
     )
     assert resp.status_code == 400
@@ -195,13 +169,9 @@ def test_node_post(monkeypatch, app, db, cluster, provider,
         lambda cls, connect_delay, exec_delay: None,
     )
     data = {
-        "cluster_id": cluster.id,
         "provider_id": provider.id,
         "node_type": node_type,
     }
-    if node_type == "httpd":
-        data["oxauth_node_id"] = oxauth_node.id
-
     resp = app.test_client().post("/nodes", data=data)
     assert resp.status_code == 202
 
@@ -218,7 +188,6 @@ def test_node_post_duplicate_oxtrust(monkeypatch, app, db, cluster,
         lambda cls, connect_delay, exec_delay: None,
     )
     data = {
-        "cluster_id": cluster.id,
         "provider_id": provider.id,
         "node_type": "oxtrust",
     }
@@ -241,7 +210,6 @@ def test_node_post_nonmaster_oxtrust(monkeypatch, app, db, cluster,
         lambda cls, connect_delay, exec_delay: None,
     )
     data = {
-        "cluster_id": cluster.id,
         "provider_id": provider.id,
         "node_type": "oxtrust",
     }
@@ -260,9 +228,8 @@ def test_node_post_expired_license(app, db, provider, cluster, license_key):
     resp = app.test_client().post(
         "/nodes",
         data={
-            "cluster_id": cluster.id,
             "provider_id": provider.id,
-            "node_type": "httpd",
+            "node_type": "ldap",
         },
     )
     assert resp.status_code == 400
@@ -314,7 +281,6 @@ def test_node_duplicated_nginx(app, db, cluster, provider, nginx_node):
     resp = app.test_client().post(
         "/nodes",
         data={
-            "cluster_id": cluster.id,
             "provider_id": provider.id,
             "node_type": "nginx",
         },
@@ -335,7 +301,6 @@ def test_node_ldap_max_exceeded(app, db, cluster, provider, ldap_node):
     resp = app.test_client().post(
         "/nodes",
         data={
-            "cluster_id": cluster.id,
             "provider_id": provider.id,
             "node_type": "ldap",
         },

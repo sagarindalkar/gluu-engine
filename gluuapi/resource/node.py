@@ -2,6 +2,7 @@
 # Copyright (c) 2015 Gluu
 #
 # All rights reserved.
+import os
 
 from flask import current_app
 from flask import request
@@ -13,6 +14,7 @@ from ..database import db
 from ..reqparser import NodeReq
 from ..model import STATE_IN_PROGRESS
 from ..model import STATE_SUCCESS
+from ..model import STATE_FAILED
 from ..helper import DockerHelper
 from ..helper import SaltHelper
 from ..helper import PrometheusHelper
@@ -24,7 +26,6 @@ from ..helper import NginxModelHelper
 from ..helper import OxasimbaModelHelper
 from ..helper import distribute_cluster_data
 from ..setup import LdapSetup
-from ..setup import HttpdSetup
 from ..setup import OxauthSetup
 from ..setup import OxtrustSetup
 from ..setup import OxidpSetup
@@ -86,18 +87,21 @@ class NodeResource(Resource):
         provider = db.get(node.provider_id, "providers")
         app = current_app._get_current_object()
 
-        setup_classes = {
-            "ldap": LdapSetup,
-            "httpd": HttpdSetup,
-            "oxauth": OxauthSetup,
-            "oxtrust": OxtrustSetup,
-            "oxidp": OxidpSetup,
-            "nginx": NginxSetup,
-            "oxasimba": OxasimbaSetup,
-        }
-        setup_cls = setup_classes.get(node.type)
-        if setup_cls:
-            setup_cls(node, cluster, app).teardown()
+        # only do teardown on node with SUCCESS, DISABLED, IN_PROGRESS status;
+        # this means we don't need to do teardown on FAILED node
+        # as FAILED node (mostly) is not attached into the cluster
+        if node.state != STATE_FAILED:
+            setup_classes = {
+                "ldap": LdapSetup,
+                "oxauth": OxauthSetup,
+                "oxtrust": OxtrustSetup,
+                "oxidp": OxidpSetup,
+                "nginx": NginxSetup,
+                "oxasimba": OxasimbaSetup,
+            }
+            setup_cls = setup_classes.get(node.type)
+            if setup_cls:
+                setup_cls(node, cluster, app).teardown()
 
         docker = DockerHelper(provider)
         salt = SaltHelper()
@@ -113,6 +117,12 @@ class NodeResource(Resource):
         prometheus = PrometheusHelper(current_app._get_current_object())
         prometheus.update()
         distribute_cluster_data(current_app.config["DATABASE_URI"])
+
+        # remove node's log file
+        try:
+            os.unlink(node.setup_logpath)
+        except OSError:
+            pass
         return {}, 204
 
 

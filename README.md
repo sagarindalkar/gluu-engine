@@ -6,6 +6,8 @@ The gluu-flask server is used to enable management of Gluu Server clusters.
 There is an ever-evolving [wiki page](http://www.gluu.co/gluu_salt) which describes
 the design of the gluu-flask component.
 
+__NOTE__: The `master` branch is used for unreleased version. For __v0.4.x__ releases, use the `version_0.4` branch instead.
+
 ## Prerequisites
 
 ### Ubuntu packages
@@ -17,6 +19,13 @@ sudo apt-get install -y gluu-master python-pip python-dev swig libsasl2-dev libl
 ```
 
 Note: `gluu-master` is a meta package that installs all required packages.
+
+### Get Registry Certificate
+
+```
+mkdir -p /etc/docker/certs.d/registry.gluu.org:5000
+echo -n | openssl s_client -connect registry.gluu.org:5000 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > /etc/docker/certs.d/registry.gluu.org:5000/ca.crt
+```
 
 ## Deployment
 

@@ -73,6 +73,19 @@ class ProviderReq(BaseProviderReq):
         from marshmallow.validate import OneOf
         type = ma.Str(validate=OneOf(PROVIDER_CHOICES))
 
+    cluster_id = ma.Str(required=True)
+
+    @validates("cluster_id")
+    def validate_cluster(self, value):
+        """Validates cluster's ID.
+
+        :param value: ID of the cluster.
+        """
+        cluster = db.get(value, "clusters")
+        self.context["cluster"] = cluster
+        if not cluster:
+            raise ValidationError("invalid cluster ID")
+
 
 class EditProviderReq(BaseProviderReq):
     @validates("hostname")

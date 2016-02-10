@@ -80,28 +80,15 @@ def oxtrust_node(cluster, provider):
 
 
 @pytest.fixture()
-def provider():
+def provider(cluster):
     from gluuapi.model import Provider
 
     provider = Provider({
         "docker_base_url": "unix:///var/run/docker.sock",
         "hostname": "gluu-master",
     })
+    provider.cluster_id = cluster.id
     return provider
-
-
-@pytest.fixture()
-def httpd_node(cluster, provider, oxauth_node, oxidp_node):
-    from gluuapi.model import HttpdNode
-
-    node = HttpdNode()
-    node.id = "httpd_{}_123".format(cluster.id)
-    node.cluster_id = cluster.id
-    node.provider_id = provider.id
-    node.name = "httpd-node"
-    node.oxauth_node_id = oxauth_node.id
-    node.oxidp_node_id = oxidp_node.id
-    return node
 
 
 @pytest.fixture
@@ -289,19 +276,6 @@ def oxtrust_setup(request, app, oxtrust_node, cluster):
     from gluuapi.setup import OxtrustSetup
 
     setup_obj = OxtrustSetup(oxtrust_node, cluster, app)
-
-    def teardown():
-        setup_obj.remove_build_dir()
-
-    request.addfinalizer(teardown)
-    return setup_obj
-
-
-@pytest.fixture()
-def httpd_setup(request, app, httpd_node, cluster):
-    from gluuapi.setup import HttpdSetup
-
-    setup_obj = HttpdSetup(httpd_node, cluster, app)
 
     def teardown():
         setup_obj.remove_build_dir()

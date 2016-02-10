@@ -156,15 +156,6 @@ class GluuCluster(BaseModel):
         """
         return self.get_node_objects(type_="oxtrust", state=state)
 
-    def get_httpd_objects(self, state=STATE_SUCCESS):
-        """Get available httpd objects (models).
-
-        :param state: State of the node (one of SUCCESS, DISABLED,
-                      FAILED, IN_PROGRESS).
-        :returns: A list of httpd objects.
-        """
-        return self.get_node_objects(type_="httpd", state=state)
-
     def get_oxidp_objects(self, state=STATE_SUCCESS):
         """Get available oxidp objects (models).
 

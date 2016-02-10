@@ -1,9 +1,13 @@
 [Unit]
-Description=Gluu FLask Daemon
+Description=Gluu Flask Daemon
+After=network.target
 
 [Service]
-Type=forking
-ExecStart=/usr/bin/gluuapi
+Type=simple
+EnvironmentFile=-/etc/sysconfig/gluu-flask
+ExecStart=/bin/sh -c "API_ENV=$API_ENV SALT_MASTER_IPADDR=$SALT_MASTER_IPADDR HOST=$HOST PORT=$PORT /usr/bin/gluuapi daemon start"
+ExecStop=/bin/sh -c "API_ENV=$API_ENV SALT_MASTER_IPADDR=$SALT_MASTER_IPADDR HOST=$HOST PORT=$PORT /usr/bin/gluuapi daemon stop"
+ExecReload=/bin/sh -c "API_ENV=$API_ENV SALT_MASTER_IPADDR=$SALT_MASTER_IPADDR HOST=$HOST PORT=$PORT /usr/bin/gluuapi daemon restart"
 
 [Install]
 WantedBy=multi-user.target

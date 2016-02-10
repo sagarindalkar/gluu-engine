@@ -23,8 +23,8 @@ Note: `gluu-master` is a meta package that installs all required packages.
 ### Get Registry Certificate
 
 ```
-#! /bin/sh
-echo -n | openssl s_client -connect registry.gluu.org:5000 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > /etc/docker/certs.d/registry.gluu.org\:5000/ca.crt
+mkdir -p /etc/docker/certs.d/registry.gluu.org:5000
+echo -n | openssl s_client -connect registry.gluu.org:5000 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > /etc/docker/certs.d/registry.gluu.org:5000/ca.crt
 ```
 
 ## Deployment

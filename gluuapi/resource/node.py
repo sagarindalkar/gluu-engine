@@ -25,7 +25,6 @@ from ..helper import OxidpModelHelper
 from ..helper import NginxModelHelper
 from ..helper import distribute_cluster_data
 from ..setup import LdapSetup
-from ..setup import HttpdSetup
 from ..setup import OxauthSetup
 from ..setup import OxtrustSetup
 from ..setup import OxidpSetup
@@ -92,7 +91,6 @@ class NodeResource(Resource):
         if node.state != STATE_FAILED:
             setup_classes = {
                 "ldap": LdapSetup,
-                "httpd": HttpdSetup,
                 "oxauth": OxauthSetup,
                 "oxtrust": OxtrustSetup,
                 "oxidp": OxidpSetup,

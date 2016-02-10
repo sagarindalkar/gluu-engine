@@ -10,7 +10,6 @@ from .license import LicenseKey  # noqa
 from .ldap_node import LdapNode  # noqa
 from .oxauth_node import OxauthNode  # noqa
 from .oxtrust_node import OxtrustNode  # noqa
-from .httpd_node import HttpdNode  # noqa
 from .oxidp_node import OxidpNode  # noqa
 from .nginx_node import NginxNode  # noqa
 

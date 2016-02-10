@@ -18,7 +18,6 @@ from ..database import db
 from ..model import LdapNode
 from ..model import OxauthNode
 from ..model import OxtrustNode
-from ..model import HttpdNode
 from ..model import OxidpNode
 from ..model import NginxNode
 from ..model import STATE_SUCCESS
@@ -31,7 +30,6 @@ from .weave_helper import WeaveHelper
 from ..setup import LdapSetup
 from ..setup import OxauthSetup
 from ..setup import OxtrustSetup
-from ..setup import HttpdSetup
 from ..setup import OxidpSetup
 from ..setup import NginxSetup
 from ..log import create_file_logger
@@ -260,12 +258,6 @@ class OxtrustModelHelper(BaseModelHelper):
             },
         }
         super(OxtrustModelHelper, self).__init__(cluster, provider, app)
-
-
-class HttpdModelHelper(BaseModelHelper):
-    setup_class = HttpdSetup
-    node_class = HttpdNode
-    image = "gluuhttpd"
 
 
 class OxidpModelHelper(BaseModelHelper):

@@ -20,25 +20,16 @@ def test_reserve_ip_addr(cluster):
 
 
 def test_get_node_objects(db, cluster, ldap_node, oxauth_node,
-                          oxtrust_node, httpd_node):
+                          oxtrust_node):
     # saves all nodes
     db.persist(ldap_node, "nodes")
     db.persist(oxauth_node, "nodes")
     db.persist(oxtrust_node, "nodes")
-    db.persist(httpd_node, "nodes")
     data = cluster.get_node_objects(state=None)
 
     for item in data:
         assert item.cluster_id == cluster.id
-    assert len(data) == 4
-
-
-def test_get_httpd_objects(db, cluster, httpd_node):
-    db.persist(httpd_node, "nodes")
-    data = cluster.get_httpd_objects(state=None)
-
-    assert len(data) == 1
-    assert data[0].type == httpd_node.type
+    assert len(data) == 3
 
 
 def test_get_oxtrust_objects(db, cluster, oxtrust_node):

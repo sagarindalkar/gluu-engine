@@ -15,7 +15,6 @@ from ..reqparser import ClusterReq
 def format_cluster_resp(cluster):
     item = cluster.as_dict()
     item["ldap_nodes"] = [node.id for node in cluster.get_ldap_objects()]
-    item["httpd_nodes"] = [node.id for node in cluster.get_httpd_objects()]
     item["oxauth_nodes"] = [node.id for node in cluster.get_oxauth_objects()]
     item["oxtrust_nodes"] = [node.id for node in cluster.get_oxtrust_objects()]
     item["oxidp_nodes"] = [node.id for node in cluster.get_oxidp_objects()]

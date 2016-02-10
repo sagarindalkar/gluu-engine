@@ -279,5 +279,3 @@ class OxasimbaModelHelper(BaseModelHelper):
     setup_class = OxasimbaSetup
     node_class = OxasimbaNode
     image = "gluuoxasimba"
-    dockerfile = "https://raw.githubusercontent.com/GluuFederation" \
-                 "/gluu-docker/develop/ubuntu/14.04/gluuoxasimba/Dockerfile"

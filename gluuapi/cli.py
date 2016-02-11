@@ -123,7 +123,7 @@ def distribute_data():
 
 @main.command("upgrade-providers")
 def upgrade_providers():
-    """Upgrade providers for multi-cluster support.
+    """Upgrade providers to use cluster ID.
     """
     click.echo("checking providers having empty cluster_id")
 

@@ -11,9 +11,6 @@ from docker.tls import TLSConfig
 
 from ..log import create_file_logger
 
-#: Default URL to docker API
-DEFAULT_DOCKER_URL = "unix:///var/run/docker.sock"
-
 
 class DockerHelper(object):
     @property

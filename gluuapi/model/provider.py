@@ -20,6 +20,7 @@ class Provider(BaseModel):
         "docker_base_url",
         "hostname",
         "cluster_id",
+        "type",
     ])
 
     def __init__(self, fields=None):

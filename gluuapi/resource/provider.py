@@ -19,18 +19,12 @@ from ..utils import retrieve_signed_license
 from ..utils import decode_signed_license
 
 
-def format_provider_resp(provider):
-    item = provider.as_dict()
-    item["type"] = provider.type
-    return item
-
-
 class ProviderResource(Resource):
     def get(self, provider_id):
-        obj = db.get(provider_id, "providers")
-        if not obj:
+        provider = db.get(provider_id, "providers")
+        if not provider:
             return {"status": 404, "message": "Provider not found"}, 404
-        return format_provider_resp(obj)
+        return provider.as_dict()
 
     def delete(self, provider_id):
         provider = db.get(provider_id, "providers")
@@ -73,7 +67,7 @@ class ProviderResource(Resource):
 
         prov_helper = ProviderHelper(provider, current_app._get_current_object())
         prov_helper.setup(data["connect_delay"], data["exec_delay"])
-        return format_provider_resp(provider)
+        return provider.as_dict()
 
 
 class ProviderListResource(Resource):
@@ -175,8 +169,8 @@ class ProviderListResource(Resource):
         headers = {
             "Location": url_for("provider", provider_id=provider.id),
         }
-        return format_provider_resp(provider), 201, headers
+        return provider.as_dict(), 201, headers
 
     def get(self):
-        obj_list = db.all("providers")
-        return [format_provider_resp(item) for item in obj_list]
+        providers = db.all("providers")
+        return [provider.as_dict() for provider in providers]

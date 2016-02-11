@@ -126,3 +126,32 @@ class SaltHelper(object):
                 raise SaltEventError(err_msg, ret["data"]["return"],
                                      exit_code=ret["data"]["retcode"])
         return ret
+
+
+def prepare_minion(key, connect_delay=10, exec_delay=15, logger=None):
+    """Waits for minion to connect before doing any remote execution.
+
+    :param key: Minion ID.
+    :param connect_delay: Time to wait before start connecting to minion.
+    :param exec_delay: Time to wait before start executing remote command.
+    :param logger: Instance of logger object.
+    """
+    # wait for 10 seconds to make sure minion connected
+    # and sent its key to master
+    # TODO: there must be a way around this
+    if logger:
+        logger.info("Waiting for minion to connect; sleeping for "
+                    "{} seconds".format(connect_delay))
+    time.sleep(connect_delay)
+
+    # register the container as minion
+    salt = SaltHelper()
+    salt.register_minion(key)
+
+    # delay the remote execution
+    # see https://github.com/saltstack/salt/issues/13561
+    # TODO: there must be a way around this
+    if logger:
+        logger.info("Preparing remote execution; sleeping for "
+                    "{} seconds".format(exec_delay))
+    time.sleep(exec_delay)

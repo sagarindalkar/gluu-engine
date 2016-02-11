@@ -31,15 +31,20 @@ from ..setup import OxidpSetup
 from ..setup import NginxSetup
 
 
+def get_node(db, node_id):
+    try:
+        node = db.search_from_table(
+            "nodes",
+            (db.where("id") == node_id) | (db.where("name") == node_id),
+        )[0]
+    except IndexError:
+        node = None
+    return node
+
+
 class NodeResource(Resource):
     def get(self, node_id):
-        try:
-            node = db.search_from_table(
-                "nodes",
-                (db.where("id") == node_id) | (db.where("name") == node_id),
-            )[0]
-        except IndexError:
-            node = None
+        node = get_node(db, node_id)
 
         if not node:
             return {"status": 404, "message": "Node not found"}, 404
@@ -58,13 +63,8 @@ class NodeResource(Resource):
         else:
             force_delete = False
 
-        try:
-            node = db.search_from_table(
-                "nodes",
-                (db.where("id") == node_id) | (db.where("name") == node_id),
-            )[0]
-        except IndexError:
-            node = None
+        # get node object
+        node = get_node(db, node_id)
 
         if not node:
             return {"status": 404, "message": "Node not found"}, 404

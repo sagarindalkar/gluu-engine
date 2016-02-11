@@ -232,15 +232,6 @@ class GluuCluster(BaseModel):
         return str(addr), pool.prefixlen
 
     @property
-    def nodes_count(self):
-        """Gets total number of nodes belong to cluster.
-
-        :returns: Total number of nodes.
-        """
-        condition = db.where("cluster_id") == self.id
-        return db.count_from_table("nodes", condition)
-
-    @property
     def prometheus_weave_ip(self):
         """Gets weave IP of prometheus container.
 
@@ -262,7 +253,8 @@ class GluuCluster(BaseModel):
         return str(addr), pool.prefixlen
 
     def get_node_addrs(self):
-        """Collects all weave IP addresses from all nodes belong to the cluster.
+        """Collects all weave IP addresses from all nodes belong to
+        the cluster.
 
         :returns: A list of weave IP addresses.
         """
@@ -271,3 +263,18 @@ class GluuCluster(BaseModel):
             db.where("cluster_id") == self.id,
         )
         return filter(None, [node.weave_ip for node in nodes])
+
+    def count_node_objects(self, type_="", state=STATE_SUCCESS):
+        """Counts available node objects (models).
+
+        :param state: State of the node (one of SUCCESS, DISABLED,
+                      FAILED, IN_PROGRESS).
+        :param type_: Type of the node.
+        :returns: A list of node objects.
+        """
+        condition = db.where("cluster_id") == self.id
+        if state:
+            condition = (condition) & (db.where("state") == state)
+        if type_:
+            condition = (condition) & (db.where("type") == type_)
+        return db.count_from_table("nodes", condition)

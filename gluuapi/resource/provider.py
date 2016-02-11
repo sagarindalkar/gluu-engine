@@ -31,7 +31,7 @@ class ProviderResource(Resource):
         if not provider:
             return {"status": 404, "message": "Provider not found"}, 404
 
-        if provider.nodes_count:
+        if provider.count_node_objects(state=""):
             msg = "Cannot delete provider while having nodes " \
                   "deployed on this provider"
             return {"status": 403, "message": msg}, 403

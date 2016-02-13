@@ -25,6 +25,7 @@ from ..model import STATE_SUCCESS
 from ..model import STATE_FAILED
 from .docker_helper import DockerHelper
 from .salt_helper import SaltHelper
+from .salt_helper import prepare_minion
 from .provider_helper import distribute_cluster_data
 from .prometheus_helper import PrometheusHelper
 from .weave_helper import WeaveHelper
@@ -84,29 +85,6 @@ class BaseModelHelper(object):
         self.database_uri = app.config["DATABASE_URI"]
         self.weave = WeaveHelper(self.provider, self.app, logger=self.logger)
 
-    def prepare_minion(self, connect_delay=10, exec_delay=15):
-        """Waits for minion to connect before doing any remote execution.
-
-        :param connect_delay: Time to wait before start connecting to minion.
-        :param exec_delay: Time to wait before start executing remote command.
-        """
-        # wait for 10 seconds to make sure minion connected
-        # and sent its key to master
-        # TODO: there must be a way around this
-        self.logger.info("Waiting for minion to connect; sleeping for "
-                         "{} seconds".format(connect_delay))
-        time.sleep(connect_delay)
-
-        # register the container as minion
-        self.salt.register_minion(self.node.id)
-
-        # delay the remote execution
-        # see https://github.com/saltstack/salt/issues/13561
-        # TODO: there must be a way around this
-        self.logger.info("Preparing remote execution; sleeping for "
-                         "{} seconds".format(exec_delay))
-        time.sleep(exec_delay)
-
     @run_in_reactor
     def setup(self, connect_delay=10, exec_delay=15):
         """Runs the node setup.
@@ -140,7 +118,12 @@ class BaseModelHelper(object):
 
             # container ID in short format
             self.node.id = container_id[:12]
-            self.prepare_minion(connect_delay, exec_delay)
+            prepare_minion(
+                self.node.id,
+                connect_delay=connect_delay,
+                exec_delay=exec_delay,
+                logger=self.logger,
+            )
 
             # minion is not connected
             if not self.salt.is_minion_registered(self.node.id):

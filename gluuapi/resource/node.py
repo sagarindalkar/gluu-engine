@@ -2,6 +2,7 @@
 # Copyright (c) 2015 Gluu
 #
 # All rights reserved.
+
 import os
 
 from flask import current_app
@@ -13,7 +14,6 @@ from requests.exceptions import SSLError
 from ..database import db
 from ..reqparser import NodeReq
 from ..model import STATE_IN_PROGRESS
-from ..model import STATE_SUCCESS
 from ..model import STATE_FAILED
 from ..helper import DockerHelper
 from ..helper import SaltHelper
@@ -33,15 +33,20 @@ from ..setup import NginxSetup
 from ..setup import OxasimbaSetup
 
 
+def get_node(db, node_id):
+    try:
+        node = db.search_from_table(
+            "nodes",
+            (db.where("id") == node_id) | (db.where("name") == node_id),
+        )[0]
+    except IndexError:
+        node = None
+    return node
+
+
 class NodeResource(Resource):
     def get(self, node_id):
-        try:
-            node = db.search_from_table(
-                "nodes",
-                (db.where("id") == node_id) | (db.where("name") == node_id),
-            )[0]
-        except IndexError:
-            node = None
+        node = get_node(db, node_id)
 
         if not node:
             return {"status": 404, "message": "Node not found"}, 404
@@ -60,13 +65,8 @@ class NodeResource(Resource):
         else:
             force_delete = False
 
-        try:
-            node = db.search_from_table(
-                "nodes",
-                (db.where("id") == node_id) | (db.where("name") == node_id),
-            )[0]
-        except IndexError:
-            node = None
+        # get node object
+        node = get_node(db, node_id)
 
         if not node:
             return {"status": 404, "message": "Node not found"}, 404
@@ -156,42 +156,36 @@ class NodeListResource(Resource):
         provider = data["context"]["provider"]
         params = data["params"]
 
-        # only allow 1 oxtrust/oxasimba per cluster and it should be in master
-        if node_type in ("oxtrust", "oxasimba",):
-            # TODO: perhaps move it to reqparser/node.py
-            node_num = db.count_from_table(
-                "nodes",
-                (db.where("type") == node_type) & (db.where("state") == STATE_SUCCESS),
-            )
-            if node_num:
-                return {
-                    "status": 403,
-                    "message": "cannot deploy additional {} node to cluster".format(node_type),
-                }, 403
-            if provider.type != "master":
-                return {
-                    "status": 403,
-                    "message": "cannot deploy {} node to non-master provider".format(node_type),
-                }, 403
+        # only allow 1 oxtrust node per cluster
+        if node_type == "oxtrust" and cluster.count_node_objects(type_="oxtrust"):
+            return {
+                "status": 403,
+                "message": "cannot deploy additional oxtrust node "
+                           "to cluster",
+            }, 403
 
-        # TODO: perhaps it's better move the logic to reqparser/node.py
-        if node_type == "nginx":
-            nginx_num = len(provider.get_node_objects(type_="nginx"))
-            if nginx_num:
-                # only allow 1 nginx per provider
-                return {
-                    "status": 403,
-                    "message": "cannot deploy additional nginx node to specified provider",
-                }, 403
+        # only allow oxtrust node in master provider
+        if node_type == "oxtrust" and provider.type != "master":
+            return {
+                "status": 403,
+                "message": "cannot deploy oxtrust node "
+                           "to non-master provider",
+            }, 403
 
-        # TODO: perhaps it's better move the logic to reqparser/node.py
-        if node_type == "ldap":
-            if len(cluster.get_ldap_objects()) >= 4:
-                # only allow 4 ldap per cluster
-                return {
-                    "status": 403,
-                    "message": "cannot deploy additional ldap node to cluster",
-                }, 403
+        # only allow 1 nginx per provider
+        if node_type == "nginx" and provider.count_node_objects(type_="nginx"):
+            return {
+                "status": 403,
+                "message": "cannot deploy additional nginx node "
+                           "to specified provider",
+            }, 403
+
+        # only allow 4 ldap per cluster
+        if node_type == "ldap" and cluster.count_node_objects(type_="ldap") >= 4:
+            return {
+                "status": 403,
+                "message": "cannot deploy additional ldap node to cluster",
+            }, 403
 
         addr, prefixlen = cluster.reserve_ip_addr()
         if not addr:

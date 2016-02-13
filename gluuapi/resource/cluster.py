@@ -34,7 +34,7 @@ class ClusterResource(Resource):
         if not cluster:
             return {"status": 404, "message": "Cluster not found"}, 404
 
-        if cluster.nodes_count:
+        if cluster.count_node_objects(state=""):
             msg = "Cannot delete cluster while having nodes " \
                   "deployed on this cluster"
             return {"status": 403, "message": msg}, 403

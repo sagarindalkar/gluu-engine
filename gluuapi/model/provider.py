@@ -20,21 +20,13 @@ class Provider(BaseModel):
         "docker_base_url",
         "hostname",
         "cluster_id",
+        "type",
     ])
 
     def __init__(self, fields=None):
         self.id = str(uuid.uuid4())
         self.cluster_id = ""
         self.populate(fields)
-
-    @property
-    def nodes_count(self):
-        """Gets total number of nodes belong to provider.
-
-        :returns: Total number of nodes.
-        """
-        condition = db.where("provider_id") == self.id
-        return db.count_from_table("nodes", condition)
 
     def get_node_objects(self, type_="", state=STATE_SUCCESS):
         """Gets available node objects (models).
@@ -82,3 +74,18 @@ class Provider(BaseModel):
         to docker Remote API.
         """
         return "{}/{}__ca.pem".format(self.docker_cert_dir, self.id)
+
+    def count_node_objects(self, type_="", state=STATE_SUCCESS):
+        """Counts available node objects (models).
+
+        :param state: State of the node (one of SUCCESS, DISABLED,
+                      FAILED, IN_PROGRESS).
+        :param type_: Type of the node.
+        :returns: A list of node objects.
+        """
+        condition = db.where("provider_id") == self.id
+        if type_:
+            condition = (condition) & (db.where("type") == type_)
+        if state:
+            condition = (condition) & (db.where("state") == state)
+        return db.count_from_table("nodes", condition)

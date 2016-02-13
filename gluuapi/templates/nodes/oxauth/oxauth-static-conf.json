@@ -16,6 +16,7 @@
         "umaBase":"ou=uma,o={{ inum_org }},o=gluu",
         "umaPolicy":"ou=policies,ou=uma,o={{ inum_org }},o=gluu",
         "u2fBase":"ou=u2f,o={{ inum_org }},o=gluu",
-        "metric":"ou=metric,o={{ inum_org }},o=gluu"
+        "metric":"ou=metric,o={{ inum_org }},o=gluu",
+        "sectorIdentifiers":"ou=sector_identifiers,o={{ inum_org }},o=gluu"
     }
 }

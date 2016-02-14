@@ -1,10 +1,30 @@
-Changelog
-=========
+# Changelog
 
 Here you can see the full list of changes between each gluu-flask release.
 
-Version 0.4.2
--------------
+## Version 0.5.0
+
+Release date to be announced later.
+
+### Bug Fixes
+
+* Fixed error when stopping failed node deployment.
+
+### Enhancements
+
+* Speed up node teardown by skipping provisioning in failed node.
+* Node's deployment log are deleted after node teardown.
+* Set max. file descriptor in `ldap` node.
+* `httpd` node is completely removed from cluster.
+* `weave` is upgraded to v1.4.4.
+* `docker` is upgraded to v1.1.0.
+* `gluuoxauth` image is upgraded to v2.4.2.
+* `gluuoxtrust` image is upgraded to v2.4.2.
+* `gluuoxidp` image is upgraded to v2.4.2.
+* Cluster ID is now attached as provider attribute. Refer to migration guide for upgrading existing providers.
+* Speed up image downloads/updates by pulling them from Gluu's private registry. Refer to migration guide for upgrading images.
+
+## Version 0.4.2
 
 Released on January 12th, 2016.
 
@@ -24,8 +44,7 @@ Released on January 12th, 2016.
 * Added feature to convert SSL pem-based to der-based format certificate. Related issue: [#56](https://github.com/GluuFederation/gluu-flask/issues/56).
 * Fixed I/O error in VM with low-resource. Related issue: [#58](https://github.com/GluuFederation/gluu-flask/issues/58).
 
-Version 0.4.1
--------------
+## Version 0.4.1
 
 Released on November 28th, 2015.
 
@@ -37,8 +56,7 @@ Released on November 28th, 2015.
 * `gluuoxtrust` image is updated to use oxTrust v2.4.1.
 * `gluuopendj` image is updated to use latest `oxauth-model` and `oxauth-server` JAR files.
 
-Version 0.4.0
--------------
+## Version 0.4.0
 
 Released on November 13th, 2015.
 
@@ -64,8 +82,7 @@ Released on November 13th, 2015.
 * Fixed issue in OxidpWatcherTask where cluster object is not refreshed.
 * Cluster data are distributed after enabling/disabling consumer provider (via LicenseExpirationTask)
 
-Version 0.3.3
--------------
+## Version 0.3.3
 
 Released on October 17th, 2015.
 
@@ -78,16 +95,14 @@ Released on October 17th, 2015.
 * Fixed prometheus config template.
 * Fixed templates in oxTrust.
 
-Version 0.3.2
--------------
+## Version 0.3.2
 
 Released on September 4th, 2015.
 
 * Fixed CN value in OpenDJ self-signed certificate.
 * Decreased tokens lifetime in `oxauth-config.xml`.
 
-Version 0.3.1
--------------
+## Version 0.3.1
 
 Released on August 29th, 2015.
 
@@ -102,8 +117,7 @@ Released on August 29th, 2015.
 * Added `force` optional parameter in Node API to delete specific node regardless of its state.
 * Disabled nodes are recovered through recovery command, but excluded from weave network.
 
-Version 0.3.0
--------------
+## Version 0.3.0
 
 Released on August 4th, 2015.
 
@@ -123,8 +137,7 @@ Released on August 4th, 2015.
 * Fixed LDAP discovery in oxAuth node (reference: https://github.com/GluuFederation/oxAuth/issues/52).
 * Fixed file permission to deploy log files.
 
-Version 0.2.0
--------------
+## Version 0.2.0
 
 Released on July 12th, 2015.
 
@@ -141,8 +154,7 @@ Released on July 12th, 2015.
 * Weave is launched and exposed after registering provider.
 * Added node state to track the progress of deployment.
 
-Version 0.1.0
--------------
+## Version 0.1.0
 
 Released on June 12th, 2015.
 

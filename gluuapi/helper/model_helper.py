@@ -4,12 +4,10 @@
 # All rights reserved.
 
 import abc
-import os.path
+import logging
 import time
-import uuid
 
 import docker.errors
-from flask import current_app
 from requests.exceptions import SSLError
 from requests.exceptions import ConnectionError
 from crochet import run_in_reactor
@@ -23,6 +21,7 @@ from ..model import OxidpNode
 from ..model import NginxNode
 from ..model import STATE_SUCCESS
 from ..model import STATE_FAILED
+from ..model import STATE_DISABLED
 from .docker_helper import DockerHelper
 from .salt_helper import SaltHelper
 from .provider_helper import distribute_cluster_data
@@ -67,27 +66,23 @@ class BaseModelHelper(object):
         """URL to image's Dockerfile. Must be overriden in subclass.
         """
 
-    def __init__(self, cluster, provider, app):
-        self.salt_master_ipaddr = app.config["SALT_MASTER_IPADDR"]
-        self.log_dir = app.config["LOG_DIR"]
-        self.cluster = cluster
-        self.provider = provider
+    def __init__(self, node, app, logpath=None):
+        self.node = node
+        self.cluster = db.get(self.node.cluster_id, "clusters")
+        self.provider = db.get(self.node.provider_id, "providers")
 
-        self.node = self.node_class()
-        self.node.cluster_id = cluster.id
-        self.node.provider_id = provider.id
-        self.node.name = "{}_{}".format(self.image, uuid.uuid4())
+        if logpath:
+            self.logger = create_file_logger(logpath, name=self.node.name)
+        else:
+            self.logger = logging.getLogger(
+                __name__ + "." + self.__class__.__name__,
+            )
 
-        self.logpath = os.path.join(self.log_dir, self.node.name + "-setup.log")
-        self.node.setup_logpath = self.logpath
-        self.logger = create_file_logger(self.logpath, name=self.node.name)
-
+        self.app = app
         self.docker = DockerHelper(self.provider, logger=self.logger)
         self.salt = SaltHelper()
-        self.app = current_app._get_current_object()
-        self.template_dir = app.config["TEMPLATES_DIR"]
-        self.database_uri = app.config["DATABASE_URI"]
         self.weave = WeaveHelper(self.provider, self.app, logger=self.logger)
+        self.prometheus = PrometheusHelper(self.app, logger=self.logger)
 
     def prepare_minion(self, connect_delay=10, exec_delay=15):
         """Waits for minion to connect before doing any remote execution.
@@ -127,7 +122,7 @@ class BaseModelHelper(object):
                 self.node.name,
                 self.image,
                 self.dockerfile,
-                self.salt_master_ipaddr,
+                self.app.config["SALT_MASTER_IPADDR"],
                 port_bindings=self.port_bindings,
                 volumes=self.volumes,
                 dns=[bridge_ip],
@@ -192,8 +187,7 @@ class BaseModelHelper(object):
             setup_obj.remove_build_dir()
 
             # updating prometheus
-            prometheus = PrometheusHelper(self.app)
-            prometheus.update()
+            self.prometheus.update()
 
             elapsed = time.time() - start
             self.logger.info("{} setup is finished ({} seconds)".format(
@@ -203,7 +197,7 @@ class BaseModelHelper(object):
             self.logger.error(exc_traceback())
             self.on_setup_error()
         finally:
-            distribute_cluster_data(self.database_uri)
+            distribute_cluster_data(self.app.config["DATABASE_URI"])
 
     def on_setup_error(self):
         """Callback that supposed to be called when error occurs in setup
@@ -235,6 +229,37 @@ class BaseModelHelper(object):
             self.node,
         )
 
+    @run_in_reactor
+    def teardown(self):
+        self.logger.info("{} teardown is started".format(self.image))
+        start = time.time()
+
+        # only do teardown on node with SUCCESS and DISABLED status
+        # to avoid unnecessary ops (e.g. propagating nginx changes,
+        # removing LDAP replication, etc.) on non-deployed nodes
+        if self.node.state in (STATE_SUCCESS, STATE_DISABLED,):
+            setup_obj = self.setup_class(
+                self.node, self.cluster, self.app, logger=self.logger,
+            )
+            setup_obj.teardown()
+
+        try:
+            self.docker.remove_container(self.node.name)
+        except SSLError:  # pragma: no cover
+            self.logger.warn("unable to connect to docker API "
+                             "due to SSL connection errors")
+
+        self.salt.unregister_minion(self.node.id)
+
+        # updating prometheus
+        self.prometheus.update()
+        distribute_cluster_data(self.app.config["DATABASE_URI"])
+
+        elapsed = time.time() - start
+        self.logger.info("{} teardown is finished ({} seconds)".format(
+            self.image, elapsed
+        ))
+
 
 class LdapModelHelper(BaseModelHelper):
     setup_class = LdapSetup
@@ -263,13 +288,13 @@ class OxtrustModelHelper(BaseModelHelper):
                  "/gluu-docker/master/ubuntu/14.04/gluuoxtrust/Dockerfile"
     port_bindings = {8443: ("127.0.0.1", 8443)}
 
-    def __init__(self, cluster, provider, app):
+    def __init__(self, node, app, logpath=None):
         self.volumes = {
             app.config["OXIDP_VOLUMES_DIR"]: {
                 "bind": "/opt/idp",
             },
         }
-        super(OxtrustModelHelper, self).__init__(cluster, provider, app)
+        super(OxtrustModelHelper, self).__init__(node, app, logpath)
 
 
 class HttpdModelHelper(BaseModelHelper):

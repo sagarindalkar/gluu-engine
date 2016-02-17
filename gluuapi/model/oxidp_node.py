@@ -29,6 +29,7 @@ class OxidpNode(BaseModel):
         self.weave_ip = ""
         self.weave_prefixlen = ""
         self.type = "oxidp"
+        self.image = "gluuoxidp"
         self.state = ""
         self.setup_logpath = ""
         self.domain_name = ""

@@ -22,6 +22,7 @@ from .resource import ProviderListResource
 from .resource import LicenseKeyListResource
 from .resource import LicenseKeyResource
 from .resource import NodeLogResource
+from .resource import NodeLogListResource
 from .database import db
 
 
@@ -66,6 +67,7 @@ def register_resources():
     restapi.add_resource(NodeResource, '/nodes/<string:node_id>')
 
     restapi.add_resource(NodeLogResource, '/logs/<logpath>')
+    restapi.add_resource(NodeLogListResource, '/logs')
 
     restapi.add_resource(ClusterListResource, '/clusters')
     restapi.add_resource(ClusterResource, '/clusters/<string:cluster_id>')

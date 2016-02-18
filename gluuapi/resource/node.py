@@ -5,6 +5,7 @@
 
 import os.path
 import uuid
+from glob import iglob
 
 from flask import current_app
 from flask import request
@@ -228,3 +229,15 @@ class NodeLogResource(Resource):
                 "status": 404,
                 "message": "log not found",
             }, 404
+
+
+class NodeLogListResource(Resource):
+    def get(self):
+        app = current_app._get_current_object()
+        log_dir = app.config["LOG_DIR"]
+
+        setup_logs = iglob("{}/*-setup.log".format(log_dir))
+        teardown_logs = iglob("{}/*-teardown.log".format(log_dir))
+        logs = list(setup_logs) + list(teardown_logs)
+
+        return [log.replace(log_dir + "/", "") for log in logs]

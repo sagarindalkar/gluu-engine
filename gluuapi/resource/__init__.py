@@ -12,3 +12,4 @@ from .cluster import ClusterListResource  # noqa
 from .node import NodeResource  # noqa
 from .node import NodeListResource  # noqa
 from .node import NodeLogResource  # noqa
+from .node import NodeLogListResource  # noqa

@@ -1,4 +1,5 @@
 import json
+import os
 
 import pytest
 
@@ -65,6 +66,11 @@ def test_node_delete_ldap(monkeypatch, app, db, cluster, provider, ldap_node):
     )
 
     resp = app.test_client().delete("/nodes/{}".format(ldap_node.id))
+
+    os.unlink(os.path.join(
+        app.config["LOG_DIR"],
+        "{}-teardown.log".format(ldap_node.name),
+    ))
     assert resp.status_code == 204
 
 
@@ -86,6 +92,11 @@ def test_node_delete_httpd(monkeypatch, app, db, cluster,
     )
 
     resp = app.test_client().delete("/nodes/{}".format(httpd_node.id))
+
+    os.unlink(os.path.join(
+        app.config["LOG_DIR"],
+        "{}-teardown.log".format(httpd_node.name),
+    ))
     assert resp.status_code == 204
 
 
@@ -300,6 +311,14 @@ def test_node_delete_force(monkeypatch, app, db, ldap_node, cluster,
     resp = app.test_client().delete(
         "/nodes/{}?force_rm={}".format(ldap_node.id, force_delete),
     )
+
+    try:
+        os.unlink(os.path.join(
+            app.config["LOG_DIR"],
+            "{}-teardown.log".format(ldap_node.name),
+        ))
+    except OSError:
+        pass
     assert resp.status_code == status_code
 
 

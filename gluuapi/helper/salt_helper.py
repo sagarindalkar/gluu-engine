@@ -14,7 +14,7 @@ import salt.utils.event
 
 from ..errors import SaltEventError
 
-SALT_EVENT_TIMEOUT = 3 * 60
+SALT_EVENT_TIMEOUT = 2 * 60
 
 
 class SaltHelper(object):

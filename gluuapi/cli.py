@@ -15,6 +15,8 @@ from .helper import distribute_cluster_data
 from .log import configure_global_logging
 from .task import LicenseExpirationTask
 from .task import OxidpWatcherTask
+from .database import db
+from .model import NodeLog
 
 # global context settings
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
@@ -118,3 +120,13 @@ def distribute_data():
     crochet_setup()
     app = create_app()
     distribute_cluster_data(app.config["DATABASE_URI"])
+
+
+@main.command("populate-node-logs")
+def populate_node_logs():
+    """Populate node logs.
+    """
+    create_app()
+
+    for node in db.all("nodes"):
+        NodeLog.create_or_get(node)

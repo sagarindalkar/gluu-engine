@@ -5,7 +5,6 @@
 
 import os.path
 import uuid
-from glob import iglob
 
 from flask import current_app
 from flask import request
@@ -27,6 +26,7 @@ from ..model import OxauthNode
 from ..model import OxtrustNode
 from ..model import OxidpNode
 from ..model import NginxNode
+from ..model import NodeLog
 
 
 class NodeResource(Resource):
@@ -90,8 +90,8 @@ class NodeResource(Resource):
         # unique ``node.name`` instead)
         db.delete_from_table("nodes", db.where("name") == node.name)
 
-        teardown_log = "{}-teardown.log".format(node.name)
-        logpath = os.path.join(app.config["LOG_DIR"], teardown_log)
+        node_log = NodeLog.create_or_get(node)
+        logpath = os.path.join(app.config["LOG_DIR"], node_log.teardown_log)
 
         # run the teardown process
         helper_class = self.helper_classes[node.type]
@@ -99,7 +99,11 @@ class NodeResource(Resource):
         helper.teardown()
 
         headers = {
-            "X-Gluu-Teardown-Log": url_for("nodelogresource", logpath=teardown_log, _external=True),
+            "X-Node-Teardown-Log": url_for(
+                "nodelogteardownresource",
+                id=node_log.id,
+                _external=True,
+            ),
         }
         return {}, 204, headers
 
@@ -122,8 +126,8 @@ class NodeListResource(Resource):
     }
 
     def get(self):
-        obj_list = db.all("nodes")
-        return [item.as_dict() for item in obj_list]
+        nodes = db.all("nodes")
+        return [node.as_dict() for node in nodes]
 
     def post(self):
         app = current_app._get_current_object()
@@ -200,8 +204,10 @@ class NodeListResource(Resource):
         node.state = STATE_IN_PROGRESS
         db.persist(node, "nodes")
 
-        setup_log = "{}-setup.log".format(node.name)
-        logpath = os.path.join(app.config["LOG_DIR"], setup_log)
+        # log related setup
+        node_log = NodeLog.create_or_get(node)
+
+        logpath = os.path.join(app.config["LOG_DIR"], node_log.setup_log)
 
         # run the setup process
         helper_class = self.helper_classes[params["node_type"]]
@@ -210,16 +216,73 @@ class NodeListResource(Resource):
 
         headers = {
             "X-Deploy-Log": logpath,  # deprecated in favor of X-Gluu-Setup-Log
-            "X-Gluu-Setup-Log": url_for("nodelogresource", logpath=setup_log, _external=True),
+            "X-Node-Setup-Log": url_for(
+                "nodelogsetupresource",
+                id=node_log.id,
+                _external=True,
+            ),
             "Location": url_for("noderesource", node_id=node.name),
         }
         return node.as_dict(), 202, headers
 
 
 class NodeLogResource(Resource):
-    def get(self, logpath):
+    def get(self, id):
+        node_log = db.get(id, "node_logs")
+        if not node_log:
+            return {"status": 404, "message": "Node log not found"}, 404
+        return node_log.as_dict()
+
+    def delete(self, id):
+        node_log = db.get(id, "node_logs")
+        if not node_log:
+            return {"status": 404, "message": "Node log not found"}, 404
+
+        db.delete(id, "node_logs")
+
         app = current_app._get_current_object()
-        abs_logpath = os.path.join(app.config["LOG_DIR"], logpath)
+        abs_setup_log = os.path.join(app.config["LOG_DIR"],
+                                     node_log.setup_log)
+        abs_teardown_log = os.path.join(app.config["LOG_DIR"],
+                                        node_log.teardown_log)
+
+        # cleanup unused logs
+        for log in [abs_setup_log, abs_teardown_log]:
+            try:
+                os.unlink(log)
+            except OSError:
+                pass
+        return {}, 204
+
+
+class NodeLogSetupResource(Resource):
+    def get(self, id):
+        node_log = db.get(id, "node_logs")
+        if not node_log:
+            return {"status": 404, "message": "Node setup log not found"}, 404
+
+        app = current_app._get_current_object()
+        abs_logpath = os.path.join(app.config["LOG_DIR"], node_log.setup_log)
+
+        try:
+            with open(abs_logpath) as fp:
+                return [line.strip() for line in fp]
+        except IOError:
+            return {
+                "status": 404,
+                "message": "log not found",
+            }, 404
+
+
+class NodeLogTeardownResource(Resource):
+    def get(self, id):
+        node_log = db.get(id, "node_logs")
+        if not node_log:
+            return {"status": 404, "message": "Node teardown log not found"}, 404
+
+        app = current_app._get_current_object()
+        abs_logpath = os.path.join(app.config["LOG_DIR"],
+                                   node_log.teardown_log)
 
         try:
             with open(abs_logpath) as fp:
@@ -233,11 +296,5 @@ class NodeLogResource(Resource):
 
 class NodeLogListResource(Resource):
     def get(self):
-        app = current_app._get_current_object()
-        log_dir = app.config["LOG_DIR"]
-
-        setup_logs = iglob("{}/*-setup.log".format(log_dir))
-        teardown_logs = iglob("{}/*-teardown.log".format(log_dir))
-        logs = list(setup_logs) + list(teardown_logs)
-
-        return [log.replace(log_dir + "/", "") for log in logs]
+        node_logs = db.all("node_logs")
+        return [node_log.as_dict() for node_log in node_logs]

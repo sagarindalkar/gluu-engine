@@ -129,4 +129,5 @@ def populate_node_logs():
     create_app()
 
     for node in db.all("nodes"):
+        click.echo("populating logs for node {}".format(node.name))
         NodeLog.create_or_get(node)

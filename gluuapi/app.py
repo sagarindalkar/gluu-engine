@@ -8,20 +8,24 @@ import os
 
 from flask import Flask
 
-from gluuapi.settings import ProdConfig
-from gluuapi.settings import DevConfig
-from gluuapi.settings import TestConfig
-from gluuapi.extensions import restapi
-from gluuapi.extensions import ma
-from gluuapi.resource import NodeResource
-from gluuapi.resource import NodeListResource
-from gluuapi.resource import ClusterResource
-from gluuapi.resource import ClusterListResource
-from gluuapi.resource import ProviderResource
-from gluuapi.resource import ProviderListResource
-from gluuapi.resource import LicenseKeyListResource
-from gluuapi.resource import LicenseKeyResource
-from gluuapi.database import db
+from .settings import ProdConfig
+from .settings import DevConfig
+from .settings import TestConfig
+from .extensions import restapi
+from .extensions import ma
+from .resource import NodeResource
+from .resource import NodeListResource
+from .resource import ClusterResource
+from .resource import ClusterListResource
+from .resource import ProviderResource
+from .resource import ProviderListResource
+from .resource import LicenseKeyListResource
+from .resource import LicenseKeyResource
+from .resource import NodeLogResource
+from .resource import NodeLogSetupResource
+from .resource import NodeLogTeardownResource
+from .resource import NodeLogListResource
+from .database import db
 
 
 def _get_config_object(api_env=""):
@@ -63,6 +67,11 @@ def register_extensions(app):
 def register_resources():
     restapi.add_resource(NodeListResource, '/nodes')
     restapi.add_resource(NodeResource, '/nodes/<string:node_id>')
+
+    restapi.add_resource(NodeLogResource, '/node_logs/<id>')
+    restapi.add_resource(NodeLogSetupResource, '/node_logs/<id>/setup')
+    restapi.add_resource(NodeLogTeardownResource, '/node_logs/<id>/teardown')
+    restapi.add_resource(NodeLogListResource, '/node_logs')
 
     restapi.add_resource(ClusterListResource, '/clusters')
     restapi.add_resource(ClusterResource, '/clusters/<string:cluster_id>')

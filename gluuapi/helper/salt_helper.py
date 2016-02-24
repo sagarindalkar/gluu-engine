@@ -14,6 +14,8 @@ import salt.utils.event
 
 from ..errors import SaltEventError
 
+SALT_EVENT_TIMEOUT = 2 * 60
+
 
 class SaltHelper(object):
     client = salt.client.LocalClient()
@@ -105,8 +107,8 @@ class SaltHelper(object):
         return self.client.cmd_async(tgt, fun, arg)
 
     @classmethod
-    def subscribe_event(cls, jid, key, wait=60, skip_retcodes=None,
-                        silent=False, err_msg=""):
+    def subscribe_event(cls, jid, key, wait=SALT_EVENT_TIMEOUT,
+                        skip_retcodes=None, silent=False, err_msg=""):
         """Subscribes to salt event and respond necessarily.
         """
         skip_retcodes = skip_retcodes or []

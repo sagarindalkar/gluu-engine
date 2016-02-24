@@ -24,7 +24,16 @@ Release date to be announced later.
 * Cluster ID is now attached as provider attribute. Refer to migration guide for upgrading existing providers.
 * Speed up image downloads/updates by pulling them from Gluu's private registry. Refer to migration guide for upgrading images.
 
-## Version 0.4.2
+Version 0.4.3
+-------------
+
+Released on February 25th, 2016.
+
+* Fixed blocking node deletion process. Related issue: [#69](https://github.com/GluuFederation/gluu-flask/issues/69).
+* Added NodeLog API.
+
+Version 0.4.2
+-------------
 
 Released on January 12th, 2016.
 

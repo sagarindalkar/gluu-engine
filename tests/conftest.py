@@ -316,3 +316,14 @@ def patched_run(monkeypatch):
         "subprocess.check_output",
         lambda cmd, stderr, shell, cwd: "",
     )
+
+
+@pytest.fixture()
+def node_log():
+    from gluuapi.model import NodeLog
+
+    node_log = NodeLog()
+    node_log.id = "nginx_123"
+    node_log.setup_log = node_log.id + "-setup.log"
+    node_log.teardown_log = node_log.id + "-teardown.log"
+    return node_log

@@ -382,6 +382,7 @@ command=/opt/opendj/bin/start-ds --quiet -N
         self.reconfigure_minion()
         self.add_auto_startup_entry()
         self.reload_supervisor()
+        self.ensure_opendj_running()
         self.configure_opendj()
         self.index_opendj("site")
         self.index_opendj("userRoot")
@@ -796,3 +797,19 @@ command=/opt/opendj/bin/start-ds --quiet -N
         src = "nodes/oxtrust/oxtrust-import-person.json"
         ctx = {}
         return self.render_jinja_template(src, ctx)
+
+    def ensure_opendj_running(self):
+        max_retry = 6
+        retry_attempt = 0
+
+        while retry_attempt < max_retry:
+            status_cmd = "supervisorctl status opendj"
+            resp = self.salt.cmd(self.node.id, "cmd.run", [status_cmd])
+            output = resp.get(self.node.id, "")
+
+            if "RUNNING" in output:
+                break
+            else:
+                self.logger.warn("opendj is not running; retrying ...")
+                time.sleep(10)
+                retry_attempt += 1

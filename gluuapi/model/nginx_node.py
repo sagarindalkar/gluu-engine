@@ -28,6 +28,7 @@ class NginxNode(BaseModel):
         self.cluster_id = ""
         self.provider_id = ""
         self.type = "nginx"
+        self.image = "gluunginx"
         self.state = ""
         self.setup_logpath = ""
         self.domain_name = ""

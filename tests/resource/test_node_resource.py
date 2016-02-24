@@ -1,4 +1,6 @@
 import json
+import os
+import shutil
 
 import pytest
 
@@ -65,6 +67,11 @@ def test_node_delete_ldap(monkeypatch, app, db, cluster, provider, ldap_node):
     )
 
     resp = app.test_client().delete("/nodes/{}".format(ldap_node.id))
+
+    os.unlink(os.path.join(
+        app.config["LOG_DIR"],
+        "{}-teardown.log".format(ldap_node.name),
+    ))
     assert resp.status_code == 204
 
 
@@ -267,6 +274,14 @@ def test_node_delete_force(monkeypatch, app, db, ldap_node, cluster,
     resp = app.test_client().delete(
         "/nodes/{}?force_rm={}".format(ldap_node.id, force_delete),
     )
+
+    try:
+        os.unlink(os.path.join(
+            app.config["LOG_DIR"],
+            "{}-teardown.log".format(ldap_node.name),
+        ))
+    except OSError:
+        pass
     assert resp.status_code == status_code
 
 
@@ -306,3 +321,90 @@ def test_node_ldap_max_exceeded(app, db, cluster, provider, ldap_node):
         },
     )
     assert resp.status_code == 403
+
+
+def test_list_node_log(app, db, node_log):
+    db.persist(node_log, "node_logs")
+
+    resp = app.test_client().get("/node_logs")
+    assert resp.status_code == 200
+
+
+def test_get_node_log(app, db, node_log):
+    db.persist(node_log, "node_logs")
+
+    resp = app.test_client().get("/node_logs/{}".format(node_log.id))
+    assert resp.status_code == 200
+
+
+def test_get_node_log_not_found(app):
+    resp = app.test_client().get("/node_logs/random")
+    assert resp.status_code == 404
+
+
+def test_get_node_setup_log(app, db, node_log):
+    dummy_log_src = os.path.join(os.path.dirname(__file__), "setup.log")
+    dummy_log_dest = os.path.join(app.config["LOG_DIR"], node_log.setup_log)
+    shutil.copyfile(dummy_log_src, dummy_log_dest)
+
+    db.persist(node_log, "node_logs")
+
+    resp = app.test_client().get("/node_logs/{}/setup".format(node_log.id))
+
+    try:
+        os.unlink(dummy_log_dest)
+    except OSError:
+        pass
+    assert resp.status_code == 200
+
+
+def test_get_node_setup_log_invalid_node(app, node_log):
+    resp = app.test_client().get("/node_logs/{}/setup".format(node_log.id))
+    assert resp.status_code == 404
+
+
+def test_get_node_teardown_log_not_found(app, db, node_log):
+    db.persist(node_log, "node_logs")
+
+    resp = app.test_client().get("/node_logs/{}/teardown".format(node_log.id))
+    assert resp.status_code == 404
+
+
+def test_get_node_teardown_log(app, db, node_log):
+    dummy_log_src = os.path.join(os.path.dirname(__file__), "teardown.log")
+    dummy_log_dest = os.path.join(app.config["LOG_DIR"], node_log.teardown_log)
+    shutil.copyfile(dummy_log_src, dummy_log_dest)
+
+    db.persist(node_log, "node_logs")
+
+    resp = app.test_client().get("/node_logs/{}/teardown".format(node_log.id))
+
+    try:
+        os.unlink(dummy_log_dest)
+    except OSError:
+        pass
+    assert resp.status_code == 200
+
+
+def test_get_node_teardown_log_invalid_node(app, node_log):
+    resp = app.test_client().get("/node_logs/{}/teardown".format(node_log.id))
+    assert resp.status_code == 404
+
+
+def test_get_node_setup_log_not_found(app, db, node_log):
+    db.persist(node_log, "node_logs")
+
+    resp = app.test_client().get("/node_logs/{}/setup".format(node_log.id))
+    assert resp.status_code == 404
+
+
+def test_delete_node_log(app, db, node_log):
+    db.persist(node_log, "node_logs")
+
+    resp = app.test_client().delete("/node_logs/{}".format(node_log.id))
+    assert resp.status_code == 204
+
+
+def test_delete_node_log_not_found(app):
+    resp = app.test_client().delete("/node_logs/random")
+    assert resp.status_code == 404

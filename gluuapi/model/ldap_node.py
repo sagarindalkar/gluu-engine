@@ -35,6 +35,7 @@ class LdapNode(BaseModel):
         self.weave_ip = ""
         self.weave_prefixlen = ""
         self.type = 'ldap'
+        self.image = "gluuopendj"
         self.state = ""
         self.setup_logpath = ""
         self.domain_name = ""

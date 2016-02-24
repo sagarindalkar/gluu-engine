@@ -28,6 +28,7 @@ class OxauthNode(BaseModel):
         self.weave_ip = ""
         self.weave_prefixlen = ""
         self.type = "oxauth"
+        self.image = "gluuoxauth"
         self.state = ""
         self.setup_logpath = ""
         self.domain_name = ""

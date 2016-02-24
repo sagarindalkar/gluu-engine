@@ -17,3 +17,5 @@ from .base import STATE_IN_PROGRESS  # noqa
 from .base import STATE_FAILED  # noqa
 from .base import STATE_SUCCESS  # noqa
 from .base import STATE_DISABLED  # noqa
+
+from .log import NodeLog  # noqa

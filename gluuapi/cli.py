@@ -16,6 +16,10 @@ from .log import configure_global_logging
 from .task import LicenseExpirationTask
 from .task import OxidpWatcherTask
 from .database import db
+# <<<<<<< HEAD
+# =======
+from .model import NodeLog
+# >>>>>>> version_0.4
 
 # global context settings
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
@@ -121,6 +125,7 @@ def distribute_data():
     distribute_cluster_data(app.config["DATABASE_URI"])
 
 
+# <<<<<<< HEAD
 @main.command("upgrade-providers")
 def upgrade_providers():
     """Upgrade providers to use cluster ID.
@@ -152,3 +157,16 @@ def upgrade_providers():
             click.echo("cluster {} has been attached to {} provider {}".format(
                 cluster_id, provider.type, provider.id
             ))
+# =======
+
+
+@main.command("populate-node-logs")
+def populate_node_logs():
+    """Populate node logs.
+    """
+    create_app()
+
+    for node in db.all("nodes"):
+        click.echo("populating logs for node {}".format(node.name))
+        NodeLog.create_or_get(node)
+# >>>>>>> version_0.4

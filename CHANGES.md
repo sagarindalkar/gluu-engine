@@ -3,6 +3,14 @@ Changelog
 
 Here you can see the full list of changes between each gluu-flask release.
 
+Version 0.4.3
+-------------
+
+Released on February 25th, 2016.
+
+* Fixed blocking node deletion process. Related issue: [#69](https://github.com/GluuFederation/gluu-flask/issues/69).
+* Added NodeLog API.
+
 Version 0.4.2
 -------------
 

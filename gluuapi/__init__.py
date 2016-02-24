@@ -3,4 +3,4 @@
 #
 # All rights reserved.
 
-__version__ = "0.4.3-beta1"
+__version__ = "0.4.3"

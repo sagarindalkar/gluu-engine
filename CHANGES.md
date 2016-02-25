@@ -3,6 +3,13 @@ Changelog
 
 Here you can see the full list of changes between each gluu-flask release.
 
+Version 0.4.4
+-------------
+
+Released on February 26th, 2016.
+
+* Added URL to setup and teardown log in Node Log. Related issue: [#73](https://github.com/GluuFederation/gluu-flask/issues/73).
+
 Version 0.4.3
 -------------
 

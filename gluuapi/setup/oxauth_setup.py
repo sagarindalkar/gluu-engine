@@ -140,6 +140,7 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c "source /etc
         self.copy_duo_creds()
         self.copy_duo_web()
         self.copy_gplus_secrets()
+        self.copy_oxpush2_creds()
         self.render_httpd_conf()
         self.configure_vhost()
 
@@ -249,3 +250,11 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c "source /etc
             "oxauth_jsf_salt": os.urandom(16).encode("hex"),
         }
         self.copy_rendered_jinja_template(src, dest, ctx)
+
+    def copy_oxpush2_creds(self):
+        """Copies oxPush2's credential file into the node.
+        """
+        src = self.get_template_path("nodes/oxauth/oxpush2_creds.json")
+        dest = "/etc/certs/oxpush2_creds.json"
+        self.logger.info("copying oxpush2_creds.json")
+        self.salt.copy_file(self.node.id, src, dest)

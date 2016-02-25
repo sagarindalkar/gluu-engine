@@ -11,15 +11,17 @@ class NodeLog(BaseModel):
     resource_fields = dict.fromkeys([
         "id",
         "node_name",
-        # "setup_log",
-        # "teardown_log",
+        "setup_log_url",
+        "teardown_log_url",
     ])
 
     def __init__(self):
         self.id = ""
         self.node_name = ""
         self.setup_log = ""
+        self.setup_log_url = ""
         self.teardown_log = ""
+        self.teardown_log_url = ""
 
     @staticmethod
     def create_or_get(node):

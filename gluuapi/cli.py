@@ -9,6 +9,7 @@ import os
 import click
 from crochet import setup as crochet_setup
 from daemonocle import Daemon
+from flask import url_for
 
 from .app import create_app
 from .helper import distribute_cluster_data
@@ -16,10 +17,7 @@ from .log import configure_global_logging
 from .task import LicenseExpirationTask
 from .task import OxidpWatcherTask
 from .database import db
-# <<<<<<< HEAD
-# =======
 from .model import NodeLog
-# >>>>>>> version_0.4
 
 # global context settings
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
@@ -125,7 +123,6 @@ def distribute_data():
     distribute_cluster_data(app.config["DATABASE_URI"])
 
 
-# <<<<<<< HEAD
 @main.command("upgrade-providers")
 def upgrade_providers():
     """Upgrade providers to use cluster ID.
@@ -157,16 +154,30 @@ def upgrade_providers():
             click.echo("cluster {} has been attached to {} provider {}".format(
                 cluster_id, provider.type, provider.id
             ))
-# =======
 
 
 @main.command("populate-node-logs")
 def populate_node_logs():
     """Populate node logs.
     """
-    create_app()
+    app = create_app()
 
     for node in db.all("nodes"):
         click.echo("populating logs for node {}".format(node.name))
-        NodeLog.create_or_get(node)
-# >>>>>>> version_0.4
+        node_log = NodeLog.create_or_get(node)
+        with app.test_request_context():
+            setup_log_url = url_for(
+                "nodelogsetupresource",
+                id=node_log.id,
+                _external=True,
+            )
+
+            if setup_log_url.startswith("http://localhost"):
+                # a hack to insert PORT, since ``test_request_context``
+                # doesn't use PORT
+                setup_log_url = setup_log_url.replace(
+                    "http://localhost",
+                    "http://localhost:{}".format(app.config["PORT"]),
+                )
+            node_log.setup_log_url = setup_log_url
+            db.update(node_log.id, node_log, "node_logs")

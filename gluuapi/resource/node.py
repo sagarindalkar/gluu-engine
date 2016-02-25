@@ -88,6 +88,13 @@ class NodeResource(Resource):
         db.delete_from_table("nodes", db.where("name") == node.name)
 
         node_log = NodeLog.create_or_get(node)
+        node_log.teardown_log_url = url_for(
+            "nodelogteardownresource",
+            id=node_log.id,
+            _external=True,
+        )
+        db.update(node_log.id, node_log, "node_logs")
+
         logpath = os.path.join(app.config["LOG_DIR"], node_log.teardown_log)
 
         # run the teardown process
@@ -96,11 +103,7 @@ class NodeResource(Resource):
         helper.teardown()
 
         headers = {
-            "X-Node-Teardown-Log": url_for(
-                "nodelogteardownresource",
-                id=node_log.id,
-                _external=True,
-            ),
+            "X-Node-Teardown-Log": node_log.teardown_log_url,
         }
         return {}, 204, headers
 
@@ -197,6 +200,12 @@ class NodeListResource(Resource):
 
         # log related setup
         node_log = NodeLog.create_or_get(node)
+        node_log.setup_log_url = url_for(
+            "nodelogsetupresource",
+            id=node_log.id,
+            _external=True,
+        )
+        db.update(node_log.id, node_log, "node_logs")
 
         logpath = os.path.join(app.config["LOG_DIR"], node_log.setup_log)
 
@@ -207,11 +216,7 @@ class NodeListResource(Resource):
 
         headers = {
             "X-Deploy-Log": logpath,  # deprecated in favor of X-Gluu-Setup-Log
-            "X-Node-Setup-Log": url_for(
-                "nodelogsetupresource",
-                id=node_log.id,
-                _external=True,
-            ),
+            "X-Node-Setup-Log": node_log.setup_log_url,
             "Location": url_for("noderesource", node_id=node.name),
         }
         return node.as_dict(), 202, headers

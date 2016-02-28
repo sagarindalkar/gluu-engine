@@ -161,6 +161,7 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c "source /etc
             hostname,
         )
 
+        self.pull_oxauth_override()
         self.reconfigure_minion()
         self.add_auto_startup_entry()
         self.change_cert_access("tomcat", "tomcat")
@@ -258,3 +259,14 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c "source /etc
         dest = "/etc/certs/oxpush2_creds.json"
         self.logger.info("copying oxpush2_creds.json")
         self.salt.copy_file(self.node.id, src, dest)
+
+    def pull_oxauth_override(self):
+        for root, dirs, files in os.walk(self.app.config["OXAUTH_OVERRIDE_DIR"]):
+            for fn in files:
+                src = os.path.join(root, fn)
+                dest = src.replace(self.app.config["OXAUTH_OVERRIDE_DIR"],
+                                   "/opt/tomcat/webapps/oxauth")
+                self.logger.info("copying {} to {}:{}".format(
+                    src, self.node.name, dest,
+                ))
+                self.salt.copy_file(self.node.id, src, dest)

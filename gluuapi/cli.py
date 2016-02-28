@@ -16,6 +16,8 @@ from .helper import distribute_cluster_data
 from .log import configure_global_logging
 from .task import LicenseExpirationTask
 from .task import OxidpWatcherTask
+from .task import OxauthWatcherTask
+from .task import OxtrustWatcherTask
 from .database import db
 from .model import NodeLog
 
@@ -35,7 +37,11 @@ def run_app(app, use_reloader=True):
 
     if not app.debug:
         LicenseExpirationTask(app).perform_job()
+
     OxidpWatcherTask(app).perform_job()
+    OxauthWatcherTask(app).perform_job()
+    OxtrustWatcherTask(app).perform_job()
+
     app.run(
         host=app.config["HOST"],
         port=int(app.config["PORT"]),

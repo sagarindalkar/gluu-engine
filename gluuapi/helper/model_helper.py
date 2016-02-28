@@ -262,7 +262,7 @@ class OxtrustModelHelper(BaseModelHelper):
 
     def __init__(self, node, app, logpath=None):
         self.volumes = {
-            app.config["OXIDP_VOLUMES_DIR"]: {
+            app.config["OXIDP_OVERRIDE_DIR"]: {
                 "bind": "/opt/idp",
             },
         }

@@ -88,6 +88,7 @@ class OxtrustSetup(HostFileMixin, SSLCertMixin, OxauthSetup):
             hostname,
         )
 
+        self.pull_oxtrust_override()
         self.reconfigure_minion()
         self.add_auto_startup_entry()
         self.change_cert_access("tomcat", "tomcat")
@@ -218,3 +219,14 @@ environment=CATALINA_PID="/var/run/tomcat.pid"
                 )
                 echo_cmd = "echo '{}' > {}".format(key, path)
                 self.salt.cmd(oxidp.id, "cmd.run", [echo_cmd])
+
+    def pull_oxtrust_override(self):
+        for root, dirs, files in os.walk(self.app.config["OXTRUST_OVERRIDE_DIR"]):
+            for fn in files:
+                src = os.path.join(root, fn)
+                dest = src.replace(self.app.config["OXTRUST_OVERRIDE_DIR"],
+                                   "/opt/tomcat/webapps/identity")
+                self.logger.info("copying {} to {}:{}".format(
+                    src, self.node.name, dest,
+                ))
+                self.salt.copy_file(self.node.id, src, dest)

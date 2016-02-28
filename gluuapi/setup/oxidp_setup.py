@@ -167,7 +167,7 @@ class OxidpSetup(HostFileMixin, SSLCertMixin, OxauthSetup):
         """
         allowed_extensions = (".xml", ".dtd", ".config", ".xsd",)
 
-        for root, dirs, files in os.walk(self.app.config["OXIDP_VOLUMES_DIR"]):
+        for root, dirs, files in os.walk(self.app.config["OXIDP_OVERRIDE_DIR"]):
             fn_list = [
                 file_ for file_ in files
                 if os.path.splitext(file_)[-1] in allowed_extensions
@@ -175,7 +175,7 @@ class OxidpSetup(HostFileMixin, SSLCertMixin, OxauthSetup):
 
             for fn in fn_list:
                 src = os.path.join(root, fn)
-                dest = src.replace(self.app.config["OXIDP_VOLUMES_DIR"],
+                dest = src.replace(self.app.config["OXIDP_OVERRIDE_DIR"],
                                    "/opt/idp")
                 self.logger.info("copying {} to {}:{}".format(
                     src, self.node.name, dest,

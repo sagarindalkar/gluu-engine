@@ -19,6 +19,7 @@ from ..model import OxauthNode
 from ..model import OxtrustNode
 from ..model import OxidpNode
 from ..model import NginxNode
+from ..model import OxasimbaNode
 from ..model import STATE_SUCCESS
 from ..model import STATE_FAILED
 from ..model import STATE_DISABLED
@@ -33,6 +34,7 @@ from ..setup import OxauthSetup
 from ..setup import OxtrustSetup
 from ..setup import OxidpSetup
 from ..setup import NginxSetup
+from ..setup import OxasimbaSetup
 from ..log import create_file_logger
 from ..utils import exc_traceback
 
@@ -280,3 +282,9 @@ class NginxModelHelper(BaseModelHelper):
     node_class = NginxNode
     image = "gluunginx"
     port_bindings = {80: ("0.0.0.0", 80), 443: ("0.0.0.0", 443)}
+
+
+class OxasimbaModelHelper(BaseModelHelper):
+    setup_class = OxasimbaSetup
+    node_class = OxasimbaNode
+    image = "gluuoxasimba"

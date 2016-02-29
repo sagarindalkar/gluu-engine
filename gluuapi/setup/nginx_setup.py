@@ -30,6 +30,7 @@ class NginxSetup(BaseSetup):
             "oxidp_nodes": self.cluster.get_oxidp_objects(),
             "oxtrust_nodes": self.cluster.get_oxtrust_objects(),
             "session_affinity": self.get_session_affinity(),
+            "oxasimba_nodes": self.cluster.get_oxasimba_objects(),
         }
 
         src = "nodes/nginx/gluu_https.conf"

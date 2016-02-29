@@ -6,16 +6,17 @@
 from .base import BaseModel
 
 
-class OxtrustNode(BaseModel):
+class OxasimbaNode(BaseModel):
     resource_fields = dict.fromkeys([
         "id",
-        "name",
         "type",
-        "ip",
         "cluster_id",
         "provider_id",
+        "ip",
+        "name",
         "weave_ip",
         "state",
+        "saml_type",
         "domain_name",
     ])
 
@@ -23,27 +24,21 @@ class OxtrustNode(BaseModel):
         self.id = ""
         self.cluster_id = ""
         self.provider_id = ""
-        self.name = ""
-        self.hostname = ""
         self.ip = ""
         self.weave_ip = ""
         self.weave_prefixlen = ""
-        self.type = "oxtrust"
-        self.image = "gluuoxtrust"
+        self.type = "oxasimba"
         self.state = ""
         self.setup_logpath = ""
         self.domain_name = ""
 
-        self.ldap_binddn = 'cn=directory manager'
         self.cert_folder = "/etc/certs"
-        self.truststore_fn = '/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/security/cacerts'
-
         self.tomcat_home = "/opt/tomcat"
         self.tomcat_conf_dir = "/opt/tomcat/conf"
         self.tomcat_log_folder = "/opt/tomcat/logs"
+        self.truststore_fn = "/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/security/cacerts"
+        # self.ldap_binddn = "cn=directory manager"
 
     @property
     def recovery_priority(self):
-        """Gets recovery priority number used by recovery script.
-        """
-        return 6
+        return 5

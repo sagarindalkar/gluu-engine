@@ -12,6 +12,7 @@ from .oxauth_node import OxauthNode  # noqa
 from .oxtrust_node import OxtrustNode  # noqa
 from .oxidp_node import OxidpNode  # noqa
 from .nginx_node import NginxNode  # noqa
+from .oxasimba_node import OxasimbaNode  # noqa
 
 from .base import STATE_IN_PROGRESS  # noqa
 from .base import STATE_FAILED  # noqa

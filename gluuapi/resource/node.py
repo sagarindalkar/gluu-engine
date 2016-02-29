@@ -19,11 +19,13 @@ from ..helper import OxauthModelHelper
 from ..helper import OxtrustModelHelper
 from ..helper import OxidpModelHelper
 from ..helper import NginxModelHelper
+from ..helper import OxasimbaModelHelper
 from ..model import LdapNode
 from ..model import OxauthNode
 from ..model import OxtrustNode
 from ..model import OxidpNode
 from ..model import NginxNode
+from ..model import OxasimbaNode
 from ..model import NodeLog
 
 
@@ -45,6 +47,7 @@ class NodeResource(Resource):
         "oxtrust": OxtrustModelHelper,
         "oxidp": OxidpModelHelper,
         "nginx": NginxModelHelper,
+        "oxasimba": OxasimbaModelHelper,
     }
 
     def get(self, node_id):
@@ -115,6 +118,7 @@ class NodeListResource(Resource):
         "oxtrust": OxtrustModelHelper,
         "oxidp": OxidpModelHelper,
         "nginx": NginxModelHelper,
+        "oxasimba": OxasimbaModelHelper,
     }
 
     node_classes = {
@@ -123,6 +127,7 @@ class NodeListResource(Resource):
         "oxtrust": OxtrustNode,
         "oxidp": OxidpNode,
         "nginx": NginxNode,
+        "oxasimba": OxasimbaNode,
     }
 
     def get(self):

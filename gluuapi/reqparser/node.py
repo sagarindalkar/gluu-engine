@@ -10,9 +10,15 @@ from marshmallow import ValidationError
 from ..database import db
 from ..extensions import ma
 
-#: A list of supported node types.
-NODE_CHOICES = ["ldap", "oxauth", "oxtrust", "oxidp", "nginx"]
-
+#: List of supported nodes
+NODE_CHOICES = [
+    "ldap",
+    "oxauth",
+    "oxtrust",
+    "oxidp",
+    "nginx",
+    "oxasimba",
+]
 
 class NodeReq(ma.Schema):
     provider_id = ma.Str(required=True)

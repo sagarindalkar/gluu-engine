@@ -10,6 +10,7 @@ from .model_helper import OxauthModelHelper  # noqa
 from .model_helper import OxtrustModelHelper  # noqa
 from .model_helper import OxidpModelHelper  # noqa
 from .model_helper import NginxModelHelper  # noqa
+from .model_helper import OxasimbaModelHelper  # noqa
 
 from .prometheus_helper import PrometheusHelper  # noqa
 from .weave_helper import WeaveHelper  # noqa

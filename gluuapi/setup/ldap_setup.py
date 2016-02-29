@@ -242,7 +242,7 @@ class LdapSetup(BaseSetup):
                 '--bindDN', '"%s"' % self.node.ldap_binddn,
                 '-j', self.node.ldap_pass_fn,
                 '--append', '--trustAll',
-                # "--rejectFile", "/tmp/rejected-{}".format(file_basename),
+                "--rejectFile", "/tmp/rejected-{}".format(file_basename),
             ])
             self.logger.info("importing {}".format(file_basename))
             jid = self.salt.cmd_async(self.node.id, 'cmd.run', [importCmd])
@@ -561,7 +561,7 @@ command=/opt/opendj/bin/start-ds --quiet -N
             '--bindDN', '"%s"' % self.node.ldap_binddn,
             '-j', self.node.ldap_pass_fn,
             '--append', '--trustAll',
-            # "--rejectFile", "/tmp/rejected-configuration.ldif",
+            "--rejectFile", "/tmp/rejected-configuration.ldif",
         ])
         self.logger.info("importing configuration.ldif")
         jid = self.salt.cmd_async(self.node.id, 'cmd.run', [import_cmd])
@@ -785,7 +785,7 @@ command=/opt/opendj/bin/start-ds --quiet -N
             '--bindDN', '"%s"' % self.node.ldap_binddn,
             '-j', self.node.ldap_pass_fn,
             '--append', '--trustAll',
-            # "--rejectFile", "/tmp/rejected-scim.ldif",
+            "--rejectFile", "/tmp/rejected-scim.ldif",
         ])
         self.logger.info("importing scim.ldif")
         jid = self.salt.cmd_async(self.node.id, 'cmd.run', [import_cmd])

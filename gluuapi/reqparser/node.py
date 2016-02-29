@@ -17,7 +17,7 @@ NODE_CHOICES = [
     "oxtrust",
     "oxidp",
     "nginx",
-    "oxasimba",
+    # "oxasimba",
 ]
 
 class NodeReq(ma.Schema):

@@ -7,15 +7,18 @@ import os.path
 import time
 from glob import iglob
 
+from .base import SSLCertMixin
+from .base import HostFileMixin
 from .oxauth_setup import OxauthSetup
 
 
-class OxasimbaSetup(OxauthSetup):
+class OxasimbaSetup(HostFileMixin, SSLCertMixin, OxauthSetup):
     def setup(self):
         hostname = self.node.domain_name
 
         # render config templates
         self.copy_selector_template()
+        self.render_ldap_props_template()
         self.render_server_xml_template()
         self.render_httpd_conf()
         self.configure_vhost()
@@ -143,7 +146,7 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c "source /etc
 
     def pull_idp_metadata(self):
         files = iglob("{}/metadata/*-idp-metadata.xml".format(
-            self.app.config["OXIDP_VOLUMES_DIR"],
+            self.app.config["OXIDP_OVERRIDE_DIR"],
         ))
 
         for src in files:
@@ -151,84 +154,6 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c "source /etc
             dest = "/opt/idp/metadata/{}".format(fn)
             self.logger.info("copying {}".format(fn))
             self.salt.copy_file(self.node.id, src, dest)
-
-    def import_nginx_cert(self):
-        """Imports SSL certificate from nginx node.
-        """
-        self.logger.info("importing nginx cert")
-
-        # imports nginx cert into oxtrust cacerts to avoid
-        # "peer not authenticated" error
-        cert_cmd = "echo -n | openssl s_client -connect {}:443 | " \
-                   "sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' " \
-                   "> /etc/certs/nginx.cert".format(self.cluster.ox_cluster_hostname)
-        jid = self.salt.cmd_async(self.node.id, "cmd.run", [cert_cmd])
-        self.salt.subscribe_event(jid, self.node.id)
-
-        der_cmd = "openssl x509 -outform der -in /etc/certs/nginx.cert -out /etc/certs/nginx.der"
-        jid = self.salt.cmd_async(self.node.id, "cmd.run", [der_cmd])
-        self.salt.subscribe_event(jid, self.node.id)
-
-        import_cmd = " ".join([
-            "keytool -importcert -trustcacerts",
-            "-alias '{}'".format(self.cluster.ox_cluster_hostname),
-            "-file /etc/certs/nginx.der",
-            "-keystore {}".format(self.node.truststore_fn),
-            "-storepass changeit -noprompt",
-        ])
-        jid = self.salt.cmd_async(self.node.id, "cmd.run", [import_cmd])
-        self.salt.subscribe_event(jid, self.node.id)
-
-    def delete_nginx_cert(self):
-        """Removes SSL cerficate of nginx node.
-        """
-        delete_cmd = " ".join([
-            "keytool -delete",
-            "-alias {}".format(self.cluster.ox_cluster_hostname),
-            "-keystore {}".format(self.node.truststore_fn),
-            "-storepass changeit -noprompt",
-        ])
-        self.logger.info("deleting nginx cert")
-        self.salt.cmd(self.node.id, "cmd.run", [delete_cmd])
-
-    def add_host_entries(self, nginx):
-        """Adds entry into /etc/hosts file.
-        """
-        # currently we need to add nginx container hostname
-        # to prevent "peer not authenticated" raised by oxTrust;
-        # TODO: use a real DNS
-        self.logger.info("adding nginx entry in oxAsimba /etc/hosts file")
-        # add the entry only if line is not exist in /etc/hosts
-        grep_cmd = "grep -q '^{0} {1}$' /etc/hosts " \
-                   "|| echo '{0} {1}' >> /etc/hosts" \
-                   .format(nginx.weave_ip,
-                           self.cluster.ox_cluster_hostname)
-        jid = self.salt.cmd_async(self.node.id, "cmd.run", [grep_cmd])
-        self.salt.subscribe_event(jid, self.node.id)
-
-    def remove_host_entries(self, nginx):
-        """Removes entry from /etc/hosts file.
-        """
-        # TODO: use a real DNS
-        #
-        # currently we need to remove nginx container hostname
-        # updating ``/etc/hosts`` in-place will raise "resource or device is busy"
-        # error, hence we use the following steps instead:
-        #
-        # 1. copy the original ``/etc/hosts``
-        # 2. find-and-replace entries in copied file
-        # 3. overwrite the original ``/etc/hosts``
-        self.logger.info("removing nginx entry in oxAsimba /etc/hosts file")
-        backup_cmd = "cp /etc/hosts /tmp/hosts"
-        sed_cmd = "sed -i 's/{} {}//g' /tmp/hosts && sed -i '/^$/d' /tmp/hosts".format(
-            nginx.weave_ip, self.cluster.ox_cluster_hostname
-        )
-        overwrite_cmd = "cp /tmp/hosts /etc/hosts"
-        self.salt.cmd(
-            self.node.id,
-            ["cmd.run", "cmd.run", "cmd.run"],
-            [[backup_cmd], [sed_cmd], [overwrite_cmd]],
-        )
 
     def discover_nginx(self):
         """Discovers nginx node.
@@ -238,7 +163,7 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c "source /etc
             # if we already have nginx node in the the cluster,
             # add entry to /etc/hosts and import the cert
             nginx = self.provider.get_node_objects(type_="nginx")[0]
-            self.add_host_entries(nginx)
+            self.add_nginx_entry(nginx)
             self.import_nginx_cert()
         except IndexError:
             pass
@@ -255,3 +180,22 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c "source /etc
         """
         self.notify_nginx()
         self.after_teardown()
+
+    def render_ldap_props_template(self):
+        """Copies rendered jinja template for LDAP connection.
+        """
+        src = "nodes/oxasimba/oxasimba-ldap.properties"
+        dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
+
+        ldap_hosts = ",".join([
+            "{}:{}".format(ldap.domain_name, ldap.ldaps_port)
+            for ldap in self.cluster.get_ldap_objects()
+        ])
+        ctx = {
+            "ldap_binddn": self.node.ldap_binddn,
+            "encoded_ox_ldap_pw": self.cluster.encoded_ox_ldap_pw,
+            "ldap_hosts": ldap_hosts,
+            "inum_appliance": self.cluster.inum_appliance,
+            # "cert_folder": self.node.cert_folder,
+        }
+        self.copy_rendered_jinja_template(src, dest, ctx)

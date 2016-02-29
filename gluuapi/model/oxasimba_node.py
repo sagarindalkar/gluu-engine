@@ -28,6 +28,7 @@ class OxasimbaNode(BaseModel):
         self.weave_ip = ""
         self.weave_prefixlen = ""
         self.type = "oxasimba"
+        self.image = "gluuoxasimba"
         self.state = ""
         self.setup_logpath = ""
         self.domain_name = ""
@@ -37,7 +38,7 @@ class OxasimbaNode(BaseModel):
         self.tomcat_conf_dir = "/opt/tomcat/conf"
         self.tomcat_log_folder = "/opt/tomcat/logs"
         self.truststore_fn = "/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/security/cacerts"
-        # self.ldap_binddn = "cn=directory manager"
+        self.ldap_binddn = "cn=directory manager"
 
     @property
     def recovery_priority(self):

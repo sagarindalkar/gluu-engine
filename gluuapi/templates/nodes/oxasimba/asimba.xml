@@ -86,8 +86,10 @@
 		  * the attributerelease policy to apply
 		  * the pre- and post-authorization policy to apply
 		  * a property-list for each requestor
+		  *
+		  * LDAPFactory class: reads IDPs both from XML configuration and LDAP.
 	-->
-	<requestorpoolfactory class="com.alfaariss.oa.engine.requestor.configuration.ConfigurationFactory">
+	<requestorpoolfactory class="org.gluu.asimba.engine.requestor.ldap.LDAPFactory">
 		<pool id="requestorpool.1" friendlyname="Requestor Pool 1" enabled="true">
 			<authentication forced="false">
 				<profile id="remote.saml2" />
@@ -148,10 +150,7 @@
 		                <idpprofile id="saml2" />
 
 					    <!-- When IDP could not be automatically selected, use a selector component to select an IDP -->
-		                <selector
-		                    class="com.alfaariss.oa.authentication.remote.saml2.selector.DefaultSelector"
-		                    always_show_select_form="true" />
-
+		                <selector class="org.gluu.authentication.remote.saml2.selector.ApplicationSelectorLDAP" always_show_select_form="true" />
 
 						<!-- Indicate whether logout is supported by the SAML-SP profile -->
 						<logout enabled="false" />
@@ -170,10 +169,12 @@
 							* scoping: false
 							* avoid_subjectconfirmation: false
 							* nameidpolicy enabled: false
-							* �file�: Provide the absolute location of metadata -->
+							* �file�: Provide the absolute location of metadata
+							*
+							* IDPStorageLDAP class: reads IDPs both from XML configuration and LDAP.
+						-->
 
-						<idps id="saml2idps-chained"
-							class="com.alfaariss.oa.authentication.remote.saml2.idp.storage.config.IDPConfigStorage">
+						<idps id="saml2idps-chained" class="org.gluu.asimba.authentication.remote.saml2.idp.storage.ldap.IDPStorageLDAP">
 
 							<idp id="https://%(ox_cluster_hostname)s/idp/shibboleth" friendlyname="Gluu Server CE"
 								scoping="false" avoid_subjectconfirmation="false">
@@ -201,7 +202,7 @@
 
 	<!--
         IDP Profiles.
-        Configure the �baseURL� of Asimba Proxy server. Just add the hostname of your IDP. Rest of the URL will be same as it is by default. -->
+        Configure the �baseURL� of Asimba Proxy server. Just add the ox_cluster_hostname of your IDP. Rest of the URL will be same as it is by default. -->
 
 	<profiles>
 		<profile id="saml2" class="com.alfaariss.oa.profile.saml2.SAML2Profile">
@@ -308,7 +309,7 @@
 							<attribute name="email"/>
 						</format>
  -->
-						<format id="urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress">
+ 						<format id="urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress">
 							<attribute name="email"/>
 						</format>
 					</nameid>
@@ -323,8 +324,8 @@
                         </binding>
 <!--
                         <binding id="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Artifact" >
-                            <property name="post" value="false" />
-                            <property name="path" value="/ui/profiles/saml2/http-artifact-post.jsp" />
+                        	<property name="post" value="false" />
+                        	<property name="path" value="/ui/profiles/saml2/http-artifact-post.jsp" />
                         </binding>
                         <binding id="urn:oasis:names:tc:SAML:2.0:bindings:SOAP" />
  -->
@@ -413,15 +414,15 @@
 
 
 	<!--
-	    <postauthorization> defines which profiles are available in this server instance
-	-->
+	  <postauthorization> defines which profiles are available in this server instance
+	 -->
 
-	<postauthorization class="com.alfaariss.oa.engine.authorization.configuration.ConfigurationFactory"
-			enabled="true">
-		<profile id="postauthz.1" friendlyname="Default PostAuthorization Profile" enabled="true">
-			<method id="AuthnContextToUserAttributesMethod" />
-		</profile>
-	</postauthorization>
+	 <postauthorization class="com.alfaariss.oa.engine.authorization.configuration.ConfigurationFactory"
+	 		enabled="true">
+	 	<profile id="postauthz.1" friendlyname="Default PostAuthorization Profile" enabled="true">
+	 		<method id="AuthnContextToUserAttributesMethod" />
+	 	</profile>
+	 </postauthorization>
 
 
 

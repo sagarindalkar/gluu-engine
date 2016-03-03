@@ -232,6 +232,14 @@ class LdapModelHelper(BaseModelHelper):
         {"name": "nofile", "soft": 65536, "hard": 131072},
     ]
 
+    def __init__(self, node, app, logpath=None):
+        self.volumes = {
+            app.config["OPENDJ_DB_VOLUME_DIR"]: {
+                "bind": "/opt/opendj/db",
+            },
+        }
+        super(LdapModelHelper, self).__init__(node, app, logpath)
+
 
 class OxauthModelHelper(BaseModelHelper):
     setup_class = OxauthSetup

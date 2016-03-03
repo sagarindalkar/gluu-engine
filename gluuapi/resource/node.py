@@ -175,11 +175,12 @@ class NodeListResource(Resource):
                            "to specified provider",
             }, 403
 
-        # only allow 4 ldap per cluster
-        if node_type == "ldap" and cluster.count_node_objects(type_="ldap") >= 4:
+        # only allow 1 ldap per provider
+        if node_type == "ldap" and provider.count_node_objects(type_="ldap"):
             return {
                 "status": 403,
-                "message": "cannot deploy additional ldap node to cluster",
+                "message": "cannot deploy additional ldap node "
+                           "to specified provider",
             }, 403
 
         addr, prefixlen = cluster.reserve_ip_addr()

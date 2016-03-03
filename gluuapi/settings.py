@@ -23,13 +23,19 @@ class Config(object):
     LOG_DIR = os.environ.get("LOG_DIR", "/var/log/gluu")
     INSTANCE_DIR = os.path.join(DATA_DIR, "instance")
     DOCKER_CERT_DIR = os.path.join(DATA_DIR, "docker_certs")
+
     CUSTOM_LDAP_SCHEMA_DIR = os.path.join(
         DATA_DIR, "custom", "opendj", "schema",
     )
     SSL_CERT_DIR = os.path.join(DATA_DIR, "ssl_certs")
+
+    # container override directories
     OXAUTH_OVERRIDE_DIR = os.path.join(DATA_DIR, "override", "oxauth")
     OXTRUST_OVERRIDE_DIR = os.path.join(DATA_DIR, "override", "oxtrust")
     OXIDP_OVERRIDE_DIR = os.path.join(DATA_DIR, "override", "oxidp")
+
+    # container volume directories
+    OPENDJ_DB_VOLUME_DIR = os.path.join(DATA_DIR, "volumes", "opendj", "db")
 
 
 class ProdConfig(Config):

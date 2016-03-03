@@ -1,7 +1,6 @@
 def test_ldap_model_helper(monkeypatch, app, cluster, provider, db, ldap_node):
     from gluuapi.helper.model_helper import LdapModelHelper
     from gluuapi.setup import LdapSetup
-    from gluuapi.model import LdapNode
 
     db.persist(cluster, "clusters")
     db.persist(provider, "providers")
@@ -20,15 +19,12 @@ def test_ldap_model_helper(monkeypatch, app, cluster, provider, db, ldap_node):
 
         # some sanity checks
         assert helper.setup_class == LdapSetup
-        assert helper.node_class == LdapNode
-        assert helper.image == "gluuopendj"
 
 
 def test_oxauth_model_helper(monkeypatch, app, cluster, provider,
                              oxauth_node, db):
     from gluuapi.helper import OxauthModelHelper
     from gluuapi.setup import OxauthSetup
-    from gluuapi.model import OxauthNode
 
     db.persist(cluster, "clusters")
     db.persist(provider, "providers")
@@ -47,15 +43,12 @@ def test_oxauth_model_helper(monkeypatch, app, cluster, provider,
 
         # some sanity checks
         assert helper.setup_class == OxauthSetup
-        assert helper.node_class == OxauthNode
-        assert helper.image == "gluuoxauth"
 
 
 def test_oxtrust_model_helper(monkeypatch, app, cluster, provider,
                               oxtrust_node, db):
     from gluuapi.helper import OxtrustModelHelper
     from gluuapi.setup import OxtrustSetup
-    from gluuapi.model import OxtrustNode
 
     db.persist(cluster, "clusters")
     db.persist(provider, "providers")
@@ -74,5 +67,3 @@ def test_oxtrust_model_helper(monkeypatch, app, cluster, provider,
 
         # some sanity checks
         assert helper.setup_class == OxtrustSetup
-        assert helper.node_class == OxtrustNode
-        assert helper.image == "gluuoxtrust"

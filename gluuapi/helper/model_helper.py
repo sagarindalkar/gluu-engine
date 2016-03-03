@@ -13,22 +13,16 @@ from requests.exceptions import SSLError
 from requests.exceptions import ConnectionError
 from crochet import run_in_reactor
 
-from ..database import db
-from ..model import LdapNode
-from ..model import OxauthNode
-from ..model import OxtrustNode
-from ..model import OxidpNode
-from ..model import NginxNode
-from ..model import OxasimbaNode
-from ..model import STATE_SUCCESS
-from ..model import STATE_FAILED
-from ..model import STATE_DISABLED
 from .docker_helper import DockerHelper
 from .salt_helper import SaltHelper
 from .salt_helper import prepare_minion
 from .provider_helper import distribute_cluster_data
 from .prometheus_helper import PrometheusHelper
 from .weave_helper import WeaveHelper
+from ..database import db
+from ..model import STATE_SUCCESS
+from ..model import STATE_FAILED
+from ..model import STATE_DISABLED
 from ..setup import LdapSetup
 from ..setup import OxauthSetup
 from ..setup import OxtrustSetup
@@ -51,16 +45,6 @@ class BaseModelHelper(object):
     @abc.abstractproperty
     def setup_class(self):
         """Node setup class. Must be overriden in subclass.
-        """
-
-    @abc.abstractproperty
-    def node_class(self):
-        """Node model class. Must be overriden in subclass.
-        """
-
-    @abc.abstractproperty
-    def image(self):
-        """Docker image name. Must be overriden in subclass.
         """
 
     def __init__(self, node, app, logpath=None):
@@ -94,7 +78,7 @@ class BaseModelHelper(object):
 
             container_id = self.docker.setup_container(
                 self.node.name,
-                self.image,
+                self.node.image,
                 env={
                     "SALT_MASTER_IPADDR": os.environ.get("SALT_MASTER_IPADDR"),
                 },
@@ -146,7 +130,7 @@ class BaseModelHelper(object):
             # add DNS record
             self.weave.dns_add(self.node.id, self.node.domain_name)
 
-            self.logger.info("{} setup is started".format(self.image))
+            self.logger.info("{} setup is started".format(self.node.image))
             start = time.time()
 
             setup_obj = self.setup_class(self.node, self.cluster,
@@ -171,7 +155,7 @@ class BaseModelHelper(object):
 
             elapsed = time.time() - start
             self.logger.info("{} setup is finished ({} seconds)".format(
-                self.image, elapsed
+                self.node.image, elapsed
             ))
         except Exception:
             self.logger.error(exc_traceback())
@@ -198,6 +182,7 @@ class BaseModelHelper(object):
             # when docker failed to create container
             self.logger.warn("can't find container {}; likely it's not "
                              "created yet or missing".format(self.node.name))
+
         self.salt.unregister_minion(self.node.id)
 
         # mark node as FAILED
@@ -211,7 +196,7 @@ class BaseModelHelper(object):
 
     @run_in_reactor
     def teardown(self):
-        self.logger.info("{} teardown is started".format(self.image))
+        self.logger.info("{} teardown is started".format(self.node.image))
         start = time.time()
 
         # only do teardown on node with SUCCESS and DISABLED status
@@ -237,14 +222,12 @@ class BaseModelHelper(object):
 
         elapsed = time.time() - start
         self.logger.info("{} teardown is finished ({} seconds)".format(
-            self.image, elapsed
+            self.node.image, elapsed
         ))
 
 
 class LdapModelHelper(BaseModelHelper):
     setup_class = LdapSetup
-    node_class = LdapNode
-    image = "gluuopendj"
     ulimits = [
         {"name": "nofile", "soft": 65536, "hard": 131072},
     ]
@@ -252,14 +235,10 @@ class LdapModelHelper(BaseModelHelper):
 
 class OxauthModelHelper(BaseModelHelper):
     setup_class = OxauthSetup
-    node_class = OxauthNode
-    image = "gluuoxauth"
 
 
 class OxtrustModelHelper(BaseModelHelper):
     setup_class = OxtrustSetup
-    node_class = OxtrustNode
-    image = "gluuoxtrust"
     port_bindings = {8443: ("127.0.0.1", 8443)}
 
     def __init__(self, node, app, logpath=None):
@@ -273,18 +252,12 @@ class OxtrustModelHelper(BaseModelHelper):
 
 class OxidpModelHelper(BaseModelHelper):
     setup_class = OxidpSetup
-    node_class = OxidpNode
-    image = "gluuoxidp"
 
 
 class NginxModelHelper(BaseModelHelper):
     setup_class = NginxSetup
-    node_class = NginxNode
-    image = "gluunginx"
     port_bindings = {80: ("0.0.0.0", 80), 443: ("0.0.0.0", 443)}
 
 
 class OxasimbaModelHelper(BaseModelHelper):
     setup_class = OxasimbaSetup
-    node_class = OxasimbaNode
-    image = "gluuoxasimba"

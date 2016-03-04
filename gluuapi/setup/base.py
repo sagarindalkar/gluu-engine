@@ -16,6 +16,8 @@ from jinja2 import PackageLoader
 from ..database import db
 from ..log import create_file_logger
 from ..helper import SaltHelper
+from ..helper import DockerHelper
+from ..errors import DockerExecError
 
 
 class BaseSetup(object):
@@ -33,6 +35,7 @@ class BaseSetup(object):
         )
         self.app = app
         self.template_dir = self.app.config["TEMPLATES_DIR"]
+        self.docker = DockerHelper(self.provider, logger=self.logger)
 
     @abc.abstractmethod
     def setup(self):
@@ -95,8 +98,8 @@ class BaseSetup(object):
             "-out", key_with_password,
             "-passout", "pass:'{}'".format(password), "2048",
         ])
-        jid = self.salt.cmd_async(self.node.id, "cmd.run", [keypass_cmd])
-        self.salt.subscribe_event(jid, self.node.id)
+        keypass_cmd = '''sh -c "{}"'''.format(keypass_cmd)
+        self.docker.exec_cmd(self.node.id, keypass_cmd)
 
         # command to create key file
         key_cmd = " ".join([
@@ -105,8 +108,8 @@ class BaseSetup(object):
             "pass:'{}'".format(password),
             "-out", key,
         ])
-        jid = self.salt.cmd_async(self.node.id, "cmd.run", [key_cmd])
-        self.salt.subscribe_event(jid, self.node.id)
+        key_cmd = '''sh -c "{}"'''.format(key_cmd)
+        self.docker.exec_cmd(self.node.id, key_cmd)
 
         # command to create csr file
         csr_cmd = " ".join([
@@ -120,8 +123,8 @@ class BaseSetup(object):
                 self.cluster.admin_email,
             )
         ])
-        jid = self.salt.cmd_async(self.node.id, "cmd.run", [csr_cmd])
-        self.salt.subscribe_event(jid, self.node.id)
+        csr_cmd = '''sh -c "{}"'''.format(csr_cmd)
+        self.docker.exec_cmd(self.node.id, csr_cmd)
 
         # command to create crt file
         crt_cmd = " ".join([
@@ -131,19 +134,25 @@ class BaseSetup(object):
             "-signkey", key,
             "-out", crt,
         ])
-        jid = self.salt.cmd_async(self.node.id, "cmd.run", [crt_cmd])
-        self.salt.subscribe_event(jid, self.node.id)
+        crt_cmd = '''sh -c "{}"'''.format(crt_cmd)
+        self.docker.exec_cmd(self.node.id, crt_cmd)
 
         self.logger.info("changing access to {} certificates".format(suffix))
-        self.salt.cmd(
+        self.docker.exec_cmd(
             self.node.id,
-            ["cmd.run", "cmd.run", "cmd.run", "cmd.run"],
-            [
-                ["chown {}:{} {}".format(user, group, key_with_password)],
-                ["chmod 700 {}".format(key_with_password)],
-                ["chown {}:{} {}".format(user, group, key)],
-                ["chmod 700 {}".format(key)],
-            ],
+            "chown {}:{} {}".format(user, group, key_with_password),
+        )
+        self.docker.exec_cmd(
+            self.node.id,
+            "chmod 700 {}".format(key_with_password),
+        )
+        self.docker.exec_cmd(
+            self.node.id,
+            "chown {}:{} {}".format(user, group, key),
+        )
+        self.docker.exec_cmd(
+            self.node.id,
+            "chmod 700 {}".format(key),
         )
 
     def change_cert_access(self, user, group):
@@ -153,11 +162,13 @@ class BaseSetup(object):
         :param group: Group who owns the certificates.
         """
         self.logger.info("changing access to {}".format(self.node.cert_folder))
-        self.salt.cmd(
+        self.docker.exec_cmd(
             self.node.id,
-            ["cmd.run", "cmd.run"],
-            [["chown -R {}:{} {}".format(user, group, self.node.cert_folder)],
-             ["chmod -R 500 {}".format(self.node.cert_folder)]],
+            "chown -R {}:{} {}".format(user, group, self.node.cert_folder),
+        )
+        self.docker.exec_cmd(
+            self.node.id,
+            "chmod -R 500 {}".format(self.node.cert_folder),
         )
 
     def get_template_path(self, path):
@@ -213,43 +224,26 @@ class BaseSetup(object):
         """
         self.logger.info("reloading supervisord; "
                          "this may take 30 seconds or more")
-        reload_cmd = "kill -HUP `cat /var/run/supervisord.pid`"
-        jid = self.salt.cmd_async(self.node.id, "cmd.run", [reload_cmd])
-        self.salt.subscribe_event(jid, self.node.id)
+        self.docker.exec_cmd(self.node.id, "supervisorctl reload")
         time.sleep(30)
-
-    def reconfigure_minion(self):
-        # downsizing keysize to 2048
-        payload = """
-keysize: 2048
-"""
-
-        self.logger.info("reconfiguring minion")
-        jid = self.salt.cmd_async(
-            self.node.id,
-            'cmd.run',
-            ["echo '{}' >> /etc/salt/minion".format(payload)],
-        )
-        self.salt.subscribe_event(jid, self.node.id)
 
 
 class SSLCertMixin(object):
     def import_nginx_cert(self):
         """Imports SSL certificate from nginx node.
         """
-        self.logger.info("importing nginx cert")
+        self.logger.info("importing nginx cert to {}".format(self.node.name))
 
         # imports nginx cert into oxtrust cacerts to avoid
         # "peer not authenticated" error
         cert_cmd = "echo -n | openssl s_client -connect {}:443 | " \
                    "sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' " \
                    "> /etc/certs/nginx.cert".format(self.cluster.ox_cluster_hostname)
-        jid = self.salt.cmd_async(self.node.id, "cmd.run", [cert_cmd])
-        self.salt.subscribe_event(jid, self.node.id)
+        cert_cmd = '''sh -c "{}"'''.format(cert_cmd)
+        self.docker.exec_cmd(self.node.id, cert_cmd)
 
         der_cmd = "openssl x509 -outform der -in /etc/certs/nginx.cert -out /etc/certs/nginx.der"
-        jid = self.salt.cmd_async(self.node.id, "cmd.run", [der_cmd])
-        self.salt.subscribe_event(jid, self.node.id)
+        self.docker.exec_cmd(self.node.id, der_cmd)
 
         import_cmd = " ".join([
             "keytool -importcert -trustcacerts",
@@ -258,8 +252,8 @@ class SSLCertMixin(object):
             "-keystore {}".format(self.node.truststore_fn),
             "-storepass changeit -noprompt",
         ])
-        jid = self.salt.cmd_async(self.node.id, "cmd.run", [import_cmd])
-        self.salt.subscribe_event(jid, self.node.id)
+        import_cmd = '''sh -c "{}"'''.format(import_cmd)
+        self.docker.exec_cmd(self.node.id, import_cmd)
 
     def delete_nginx_cert(self):
         """Removes SSL cerficate of nginx node.
@@ -270,8 +264,13 @@ class SSLCertMixin(object):
             "-keystore {}".format(self.node.truststore_fn),
             "-storepass changeit -noprompt",
         ])
-        self.logger.info("deleting nginx cert")
-        self.salt.cmd(self.node.id, "cmd.run", [delete_cmd])
+        self.logger.info("deleting nginx cert (if any) in {}".format(self.node.name))
+        try:
+            self.docker.exec_cmd(self.node.id, delete_cmd)
+        except DockerExecError as exc:
+            if exc.exit_code == 1:
+                # certificate already imported
+                pass
 
 
 class HostFileMixin(object):
@@ -282,14 +281,14 @@ class HostFileMixin(object):
         # to prevent "peer not authenticated" raised by oxTrust;
         # TODO: use a real DNS
         self.logger.info("adding nginx entry in "
-                         "{} /etc/hosts file".format(self.node.type))
+                         "{}:/etc/hosts".format(self.node.name))
         # add the entry only if line is not exist in /etc/hosts
         grep_cmd = "grep -q '^{0} {1}$' /etc/hosts " \
                    "|| echo '{0} {1}' >> /etc/hosts" \
                    .format(nginx.weave_ip,
                            self.cluster.ox_cluster_hostname)
-        jid = self.salt.cmd_async(self.node.id, "cmd.run", [grep_cmd])
-        self.salt.subscribe_event(jid, self.node.id)
+        grep_cmd = '''sh -c "{}"'''.format(grep_cmd)
+        self.docker.exec_cmd(self.node.id, grep_cmd)
 
     def remove_nginx_entry(self, nginx):
         """Removes entry from /etc/hosts file.
@@ -303,15 +302,18 @@ class HostFileMixin(object):
         # 1. copy the original ``/etc/hosts``
         # 2. find-and-replace entries in copied file
         # 3. overwrite the original ``/etc/hosts``
-        self.logger.info("removing nginx entry in "
-                         "{} /etc/hosts file".format(self.node.type))
+        self.logger.info("removing nginx entry (if any) in "
+                         "{}:/etc/hosts".format(self.node.name))
         backup_cmd = "cp /etc/hosts /tmp/hosts"
+        backup_cmd = '''sh -c "{}"'''.format(backup_cmd)
+        self.docker.exec_cmd(self.node.id, backup_cmd)
+
         sed_cmd = "sed -i 's/{} {}//g' /tmp/hosts && sed -i '/^$/d' /tmp/hosts".format(
             nginx.weave_ip, self.cluster.ox_cluster_hostname
         )
+        sed_cmd = '''sh -c "{}"'''.format(sed_cmd)
+        self.docker.exec_cmd(self.node.id, sed_cmd)
+
         overwrite_cmd = "cp /tmp/hosts /etc/hosts"
-        self.salt.cmd(
-            self.node.id,
-            ["cmd.run", "cmd.run", "cmd.run"],
-            [[backup_cmd], [sed_cmd], [overwrite_cmd]],
-        )
+        overwrite_cmd = '''sh -c "{}"'''.format(overwrite_cmd)
+        self.docker.exec_cmd(self.node.id, overwrite_cmd)

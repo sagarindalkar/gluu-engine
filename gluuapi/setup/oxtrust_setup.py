@@ -48,7 +48,7 @@ class OxtrustSetup(HostFileMixin, SSLCertMixin, OxauthSetup):
         dest = "/usr/bin/{}".format(os.path.basename(src))
         ctx = {"ox_cluster_hostname": self.cluster.ox_cluster_hostname}
         self.render_template(src, dest, ctx)
-        self.salt.cmd(self.node.id, "cmd.run", ["chmod +x {}".format(dest)])
+        self.docker.exec_cmd(self.node.id, "chmod +x {}".format(dest))
 
     def setup(self):
         """Runs the actual setup.
@@ -89,7 +89,6 @@ class OxtrustSetup(HostFileMixin, SSLCertMixin, OxauthSetup):
         )
 
         self.pull_oxtrust_override()
-        self.reconfigure_minion()
         self.add_auto_startup_entry()
         self.change_cert_access("tomcat", "tomcat")
         self.reload_supervisor()
@@ -142,7 +141,7 @@ class OxtrustSetup(HostFileMixin, SSLCertMixin, OxauthSetup):
 
         parent_dest = "/opt/tomcat/conf/shibboleth2/{}".format(parent_dir)
         mkdir_cmd = "mkdir -p {}".format(parent_dest)
-        self.salt.cmd(self.node.id, "cmd.run", [mkdir_cmd])
+        self.docker.exec_cmd(self.node.id, mkdir_cmd)
 
         for src in files:
             if os.path.isdir(src):
@@ -158,16 +157,12 @@ class OxtrustSetup(HostFileMixin, SSLCertMixin, OxauthSetup):
         payload = """
 [program:tomcat]
 command=/opt/tomcat/bin/catalina.sh run
-environment=CATALINA_PID="/var/run/tomcat.pid"
+environment=CATALINA_PID=/var/run/tomcat.pid
 """
 
         self.logger.info("adding supervisord entry")
-        jid = self.salt.cmd_async(
-            self.node.id,
-            'cmd.run',
-            ["echo '{}' >> /etc/supervisor/conf.d/supervisord.conf".format(payload)],
-        )
-        self.salt.subscribe_event(jid, self.node.id)
+        cmd = '''sh -c "echo '{}' >> /etc/supervisor/conf.d/supervisord.conf"'''.format(payload)
+        self.docker.exec_cmd(self.node.id, cmd)
 
     def copy_tomcat_index(self):
         """Copies Tomcat's index.html into the node.
@@ -182,16 +177,14 @@ environment=CATALINA_PID="/var/run/tomcat.pid"
         """
         self.logger.info("restarting tomcat")
         restart_cmd = "supervisorctl restart tomcat"
-        self.salt.cmd(self.node.id, "cmd.run", [restart_cmd])
+        self.docker.exec_cmd(self.node.id, restart_cmd)
 
     def push_shib_certkey(self):
-        resp = self.salt.cmd(self.node.id, "cmd.run",
-                             ["cat /etc/certs/shibIDP.crt"])
-        crt = resp.get(self.node.id)
+        resp = self.docker.exec_cmd(self.node.id, "cat /etc/certs/shibIDP.crt")
+        crt = resp.retval
 
-        resp = self.salt.cmd(self.node.id, "cmd.run",
-                             ["cat /etc/certs/shibIDP.key"])
-        key = resp.get(self.node.id)
+        resp = self.docker.exec_cmd(self.node.id, "cat /etc/certs/shibIDP.key")
+        key = resp.retval
 
         for oxidp in self.cluster.get_oxidp_objects():
             if crt:
@@ -205,7 +198,7 @@ environment=CATALINA_PID="/var/run/tomcat.pid"
                     )
                 )
                 echo_cmd = "echo '{}' > {}".format(crt, path)
-                self.salt.cmd(oxidp.id, "cmd.run", [echo_cmd])
+                self.docker.exec_cmd(self.node.id, echo_cmd)
 
             if key:
                 time.sleep(5)
@@ -218,7 +211,7 @@ environment=CATALINA_PID="/var/run/tomcat.pid"
                     )
                 )
                 echo_cmd = "echo '{}' > {}".format(key, path)
-                self.salt.cmd(oxidp.id, "cmd.run", [echo_cmd])
+                self.docker.exec_cmd(self.node.id, echo_cmd)
 
     def pull_oxtrust_override(self):
         for root, dirs, files in os.walk(self.app.config["OXTRUST_OVERRIDE_DIR"]):

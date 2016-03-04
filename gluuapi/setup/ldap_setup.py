@@ -62,9 +62,9 @@ class LdapSetup(BaseSetup):
         with codecs.open(local_dest, "w", encoding="utf-8") as fp:
             fp.write(self.cluster.decrypted_admin_pw)
 
-        self.salt.cmd(
-            self.node.id, "cmd.run",
-            ["mkdir -p {}".format(os.path.dirname(self.node.ldap_pass_fn))],
+        self.docker.exec_cmd(
+            self.node.id,
+            "mkdir -p {}".format(os.path.dirname(self.node.ldap_pass_fn)),
         )
         self.salt.copy_file(self.node.id, local_dest, self.node.ldap_pass_fn)
 
@@ -72,10 +72,9 @@ class LdapSetup(BaseSetup):
         """Removes temporary LDAP password.
         """
         self.logger.info("deleting temporary LDAP password")
-        self.salt.cmd(
+        self.docker.exec_cmd(
             self.node.id,
-            'cmd.run',
-            ['rm -f {}'.format(self.node.ldap_pass_fn)],
+            'rm -f {}'.format(self.node.ldap_pass_fn)
         )
 
     def add_ldap_schema(self):
@@ -114,32 +113,25 @@ class LdapSetup(BaseSetup):
         ])
 
         self.logger.info("running opendj setup")
-        jid = self.salt.cmd_async(self.node.id, 'cmd.run',
-                                  ["{}".format(setupCmd)])
-        self.salt.subscribe_event(jid, self.node.id)
+        self.docker.exec_cmd(self.node.id, setupCmd)
 
         # Use predefined dsjavaproperties
         self.logger.info("running dsjavaproperties")
-        jid = self.salt.cmd_async(
-            self.node.id,
-            'cmd.run',
-            [self.node.ldap_ds_java_prop_command],
-        )
-        self.salt.subscribe_event(jid, self.node.id)
+        self.docker.exec_cmd(self.node.id, self.node.ldap_ds_java_prop_command)
 
     def configure_opendj(self):
         """Configures OpenDJ.
         """
         config_changes = [
-            ['set-global-configuration-prop', '--set', 'single-structural-objectclass-behavior:accept'],
-            ['set-attribute-syntax-prop', '--syntax-name', '"Directory String"', '--set', 'allow-zero-length-values:true'],
-            ['set-password-policy-prop', '--policy-name', '"Default Password Policy"', '--set', 'allow-pre-encoded-passwords:true'],
-            ['set-log-publisher-prop', '--publisher-name', '"File-Based Audit Logger"', '--set', 'enabled:true'],
-            ['create-backend', '--backend-name', 'site', '--set', 'base-dn:o=site', '--type local-db', '--set', 'enabled:true'],
-            ['set-connection-handler-prop', '--handler-name', '"LDAP Connection Handler"', '--set', 'enabled:false'],
-            ['set-access-control-handler-prop', '--remove', 'global-aci:\'(targetattr!="userPassword||authPassword||changes||changeNumber||changeType||changeTime||targetDN||newRDN||newSuperior||deleteOldRDN||targetEntryUUID||changeInitiatorsName||changeLogCookie||includedAttributes")(version 3.0; acl "Anonymous read access"; allow (read,search,compare) userdn="ldap:///anyone";)\''],
-            ['set-global-configuration-prop', '--set', 'reject-unauthenticated-requests:true'],
-            ['set-password-policy-prop', '--policy-name', '"Default Password Policy"', '--set', 'default-password-storage-scheme:"Salted SHA-512"'],
+            "set-global-configuration-prop --set single-structural-objectclass-behavior:accept",
+            "set-attribute-syntax-prop --syntax-name 'Directory String' --set allow-zero-length-values:true",
+            "set-password-policy-prop --policy-name 'Default Password Policy' --set allow-pre-encoded-passwords:true",
+            "set-log-publisher-prop --publisher-name 'File-Based Audit Logger' --set enabled:true",
+            "create-backend --backend-name site --set base-dn:o=site --type local-db --set enabled:true",
+            "set-connection-handler-prop --handler-name 'LDAP Connection Handler' --set enabled:false",
+            'set-access-control-handler-prop --remove global-aci:\'(targetattr!=\\"userPassword||authPassword||changes||changeNumber||changeType||changeTime||targetDN||newRDN||newSuperior||deleteOldRDN||targetEntryUUID||changeInitiatorsName||changeLogCookie||includedAttributes\\")(version 3.0; acl \\"Anonymous read access\\"; allow (read,search,compare) userdn=\\"ldap:///anyone\\";)\'',
+            "set-global-configuration-prop --set reject-unauthenticated-requests:true",
+            "set-password-policy-prop --policy-name 'Default Password Policy' --set default-password-storage-scheme:'Salted SHA-512'",
         ]
 
         for changes in config_changes:
@@ -147,13 +139,14 @@ class LdapSetup(BaseSetup):
                 self.node.ldap_dsconfig_command, '--trustAll', '--no-prompt',
                 '--hostname', self.node.domain_name,
                 '--port', self.node.ldap_admin_port,
-                '--bindDN', '"%s"' % self.node.ldap_binddn,
+                '--bindDN', "'{}'".format(self.node.ldap_binddn),
                 '--bindPasswordFile', self.node.ldap_pass_fn,
-            ] + changes)
+                changes,
+            ])
             self.logger.info("configuring opendj config changes: {}".format(dsconfigCmd))
-            jid = self.salt.cmd_async(self.node.id, 'cmd.run', [dsconfigCmd])
-            self.salt.subscribe_event(jid, self.node.id)
-            time.sleep(1)
+
+            dsconfigCmd = '''sh -c "{}"'''.format(dsconfigCmd)
+            self.docker.exec_cmd(self.node.id, dsconfigCmd)
 
     def index_opendj(self, backend):
         """Creates required index in OpenDJ server.
@@ -185,13 +178,11 @@ class LdapSetup(BaseSetup):
                         '--set', 'index-entry-limit:4000',
                         '--hostName', self.node.domain_name,
                         '--port', self.node.ldap_admin_port,
-                        '--bindDN', '"%s"' % self.node.ldap_binddn,
+                        '--bindDN', "'{}'".format(self.node.ldap_binddn),
                         '-j', self.node.ldap_pass_fn,
                         '--trustAll', '--noPropertiesFile', '--no-prompt',
                     ])
-                    jid = self.salt.cmd_async(self.node.id, 'cmd.run', [index_cmd])
-                    self.salt.subscribe_event(jid, self.node.id)
-                    time.sleep(1)
+                    self.docker.exec_cmd(self.node.id, index_cmd)
 
     def import_ldif(self):
         """Renders and imports predefined ldif files.
@@ -215,11 +206,7 @@ class LdapSetup(BaseSetup):
         }
 
         ldifFolder = '%s/ldif' % self.node.ldap_base_folder
-        self.salt.cmd(
-            self.node.id,
-            "cmd.run",
-            ["mkdir -p {}".format(ldifFolder)]
-        )
+        self.docker.exec_cmd(self.node.id, "mkdir -p {}".format(ldifFolder))
 
         # render templates
         for ldif_file in self.ldif_files:
@@ -239,14 +226,13 @@ class LdapSetup(BaseSetup):
                 '--backendID', backend_id,
                 '--hostname', self.node.domain_name,
                 '--port', self.node.ldap_admin_port,
-                '--bindDN', '"%s"' % self.node.ldap_binddn,
+                '--bindDN', "'{}'".format(self.node.ldap_binddn),
                 '-j', self.node.ldap_pass_fn,
                 '--append', '--trustAll',
                 "--rejectFile", "/tmp/rejected-{}".format(file_basename),
             ])
             self.logger.info("importing {}".format(file_basename))
-            jid = self.salt.cmd_async(self.node.id, 'cmd.run', [importCmd])
-            self.salt.subscribe_event(jid, self.node.id)
+            self.docker.exec_cmd(self.node.id, importCmd)
 
     def export_opendj_public_cert(self):
         """Exports OpenDJ public certificate.
@@ -256,18 +242,18 @@ class LdapSetup(BaseSetup):
         openDjTruststoreFn = '%s/config/truststore' % self.node.ldap_base_folder
         openDjPin = "`cat {}`".format(openDjPinFn)
 
-        self.salt.cmd(
+        self.docker.exec_cmd(
             self.node.id,
-            ["cmd.run", "cmd.run"],
-            [
-                ["mkdir -p {}".format(os.path.dirname(self.node.opendj_cert_fn))],
-                ["touch {}".format(self.node.opendj_cert_fn)],
-            ],
+            "mkdir -p {}".format(os.path.dirname(self.node.opendj_cert_fn)),
+        )
+        self.docker.exec_cmd(
+            self.node.id,
+            "touch {}".format(self.node.opendj_cert_fn),
         )
 
         # Export public OpenDJ certificate
         self.logger.info("exporting OpenDJ certificate")
-        cmdsrt = ' '.join([
+        cmd = ' '.join([
             self.node.keytool_command, '-exportcert',
             '-keystore', openDjTruststoreFn,
             '-storepass', openDjPin,
@@ -275,20 +261,20 @@ class LdapSetup(BaseSetup):
             '-alias', 'server-cert',
             '-rfc',
         ])
-        jid = self.salt.cmd_async(self.node.id, 'cmd.run', [cmdsrt])
-        self.salt.subscribe_event(jid, self.node.id)
+        cmd = '''sh -c "{}"'''.format(cmd)
+        self.docker.exec_cmd(self.node.id, cmd)
 
         # Import OpenDJ certificate into java truststore
-        cmdstr = ' '.join([
+        self.logger.info("importing OpenDJ certificate into Java truststore")
+        cmd = ' '.join([
             "/usr/bin/keytool", "-import", "-trustcacerts", "-alias",
             "{}_opendj".format(self.node.weave_ip),
             "-file", self.node.opendj_cert_fn,
             "-keystore", self.node.truststore_fn,
             "-storepass", "changeit", "-noprompt",
         ])
-        self.logger.info("importing OpenDJ certificate into Java truststore")
-        jid = self.salt.cmd_async(self.node.id, 'cmd.run', [cmdstr])
-        self.salt.subscribe_event(jid, self.node.id)
+        cmd = '''sh -c "{}"'''.format(cmd)
+        self.docker.exec_cmd(self.node.id, cmd)
 
     def replicate_from(self, existing_node):
         """Setups a replication between two OpenDJ servers.
@@ -327,8 +313,7 @@ class LdapSetup(BaseSetup):
             self.logger.info("enabling {!r} replication between {} and {}".format(
                 base_dn, existing_node.weave_ip, self.node.weave_ip,
             ))
-            resp = self.salt.cmd(self.node.id, "cmd.run", [enable_cmd])
-            self.logger.info(resp.get(self.node.id, "").strip())
+            self.docker.exec_cmd(self.node.id, enable_cmd)
 
             # wait before initializing the replication to ensure it
             # has been enabled
@@ -348,9 +333,11 @@ class LdapSetup(BaseSetup):
             self.logger.info("initializing {!r} replication between {} and {}".format(
                 base_dn, existing_node.weave_ip, self.node.weave_ip,
             ))
-            resp = self.salt.cmd(self.node.id, "cmd.run", [init_cmd])
-            self.logger.info(resp.get(self.node.id, "").strip())
+            self.docker.exec_cmd(self.node.id, init_cmd)
             time.sleep(5)
+
+        self.logger.info("see related logs at {}:/tmp directory "
+                         "for replication process".format(self.node.name))
 
         # cleanups temporary password file
         setup_obj.delete_ldap_pw()
@@ -365,12 +352,8 @@ command=/opt/opendj/bin/start-ds --quiet -N
 """
 
         self.logger.info("adding supervisord entry")
-        jid = self.salt.cmd_async(
-            self.node.id,
-            'cmd.run',
-            ["echo '{}' >> /etc/supervisor/conf.d/supervisord.conf".format(payload)],
-        )
-        self.salt.subscribe_event(jid, self.node.id)
+        cmd = '''sh -c "echo '{}' >> /etc/supervisor/conf.d/supervisord.conf"'''.format(payload)
+        self.docker.exec_cmd(self.node.id, cmd)
 
     def setup(self):
         """Runs the actual setup.
@@ -379,7 +362,6 @@ command=/opt/opendj/bin/start-ds --quiet -N
         self.add_ldap_schema()
         self.import_custom_schema()
         self.setup_opendj()
-        self.reconfigure_minion()
         self.add_auto_startup_entry()
         self.reload_supervisor()
         self.ensure_opendj_running()
@@ -464,10 +446,6 @@ command=/opt/opendj/bin/start-ds --quiet -N
             # wait for process to run in the background
             time.sleep(5)
 
-        # stop the server
-        stop_cmd = "supervisorctl stop ldap"
-        self.salt.cmd(self.node.id, "cmd.run", [stop_cmd])
-
         # remove password file
         self.delete_ldap_pw()
 
@@ -504,7 +482,7 @@ command=/opt/opendj/bin/start-ds --quiet -N
             "-Z -X",
         ])
         self.logger.info("modifying oxIDPAuthentication entry")
-        self.salt.cmd(self.node.id, "cmd.run", [ldapmod_cmd])
+        self.docker.exec_cmd(self.node.id, ldapmod_cmd)
 
     def import_custom_schema(self):
         """Copies user-defined LDAP schema into the node.
@@ -531,7 +509,7 @@ command=/opt/opendj/bin/start-ds --quiet -N
             "--adminPasswordFile", self.node.ldap_pass_fn,
             "-X", "-n", "--disableAll",
         ])
-        self.salt.cmd(self.node.id, "cmd.run", [disable_repl_cmd])
+        self.docker.exec_cmd(self.node.id, disable_repl_cmd)
 
     def import_base64_config(self):
         """Copies rendered configuration.ldif and imports into LDAP.
@@ -558,14 +536,13 @@ command=/opt/opendj/bin/start-ds --quiet -N
             '--backendID', "userRoot",
             '--hostname', self.node.domain_name,
             '--port', self.node.ldap_admin_port,
-            '--bindDN', '"%s"' % self.node.ldap_binddn,
+            '--bindDN', "'{}'".format(self.node.ldap_binddn),
             '-j', self.node.ldap_pass_fn,
             '--append', '--trustAll',
             "--rejectFile", "/tmp/rejected-configuration.ldif",
         ])
         self.logger.info("importing configuration.ldif")
-        jid = self.salt.cmd_async(self.node.id, 'cmd.run', [import_cmd])
-        self.salt.subscribe_event(jid, self.node.id)
+        self.docker.exec_cmd(self.node.id, import_cmd)
 
     def gen_openid_key(self):
         """Generates OpenID Connect key.
@@ -583,12 +560,11 @@ command=/opt/opendj/bin/start-ds --quiet -N
             "oxauth-server-2.4.2.Final.jar",
         ])
         classpath = ":".join(jars)
-        resp = self.salt.cmd(
+        resp = self.docker.exec_cmd(
             self.node.id,
-            "cmd.run",
-            ["java -cp {} org.xdi.oxauth.util.KeyGenerator".format(classpath)],
+            "java -cp {} org.xdi.oxauth.util.KeyGenerator".format(classpath),
         )
-        return resp.get(self.node.id, "")
+        return resp.retval
 
     def render_oxauth_config(self):
         """Renders oxAuth configuration.
@@ -782,14 +758,13 @@ command=/opt/opendj/bin/start-ds --quiet -N
             '--backendID', "userRoot",
             '--hostname', self.node.domain_name,
             '--port', self.node.ldap_admin_port,
-            '--bindDN', '"%s"' % self.node.ldap_binddn,
+            '--bindDN', "'{}'".format(self.node.ldap_binddn),
             '-j', self.node.ldap_pass_fn,
             '--append', '--trustAll',
             "--rejectFile", "/tmp/rejected-scim.ldif",
         ])
         self.logger.info("importing scim.ldif")
-        jid = self.salt.cmd_async(self.node.id, 'cmd.run', [import_cmd])
-        self.salt.subscribe_event(jid, self.node.id)
+        self.docker.exec_cmd(self.node.id, import_cmd)
 
     def render_oxtrust_import_person(self):
         """Renders oxTrust import person configuration.
@@ -804,10 +779,9 @@ command=/opt/opendj/bin/start-ds --quiet -N
 
         while retry_attempt < max_retry:
             status_cmd = "supervisorctl status opendj"
-            resp = self.salt.cmd(self.node.id, "cmd.run", [status_cmd])
-            output = resp.get(self.node.id, "")
+            resp = self.docker.exec_cmd(self.node.id, status_cmd)
 
-            if "RUNNING" in output:
+            if "RUNNING" in resp.retval:
                 break
             else:
                 self.logger.warn("opendj is not running; retrying ...")

@@ -48,8 +48,7 @@ class OxauthSetup(BaseSetup):
             '-name', hostname,
             '-passout', 'pass:%s' % keystore_pw,
         ])
-        jid = self.salt.cmd_async(self.node.id, "cmd.run", [export_cmd])
-        self.salt.subscribe_event(jid, self.node.id)
+        self.docker.exec_cmd(self.node.id, export_cmd)
 
         # Import p12 to keystore
         import_cmd = " ".join([
@@ -63,20 +62,17 @@ class OxauthSetup(BaseSetup):
             '-keyalg', 'RSA',
             '-noprompt',
         ])
-        jid = self.salt.cmd_async(self.node.id, "cmd.run", [import_cmd])
-        self.salt.subscribe_event(jid, self.node.id)
+        self.docker.exec_cmd(self.node.id, import_cmd)
 
         self.logger.info("changing access to keystore file")
-        self.salt.cmd(
-            self.node.id,
-            ["cmd.run", "cmd.run", "cmd.run", "cmd.run"],
-            [
-                ["chown {}:{} {}".format(user, group, pkcs_fn)],
-                ["chmod 700 {}".format(pkcs_fn)],
-                ["chown {}:{} {}".format(user, group, keystore_fn)],
-                ["chmod 700 {}".format(keystore_fn)],
-            ],
+        self.docker.exec_cmd(
+            self.node.id, "chown {}:{} {}".format(user, group, pkcs_fn)
         )
+        self.docker.exec_cmd(self.node.id, "chmod 700 {}".format(pkcs_fn))
+        self.docker.exec_cmd(
+            self.node.id, "chown {}:{} {}".format(user, group, keystore_fn)
+        )
+        self.docker.exec_cmd(self.node.id, "chmod 700 {}".format(keystore_fn))
 
     def render_ldap_props_template(self):
         """Copies rendered jinja template for LDAP connection.
@@ -114,19 +110,15 @@ class OxauthSetup(BaseSetup):
         payload = """
 [program:tomcat]
 command=/opt/tomcat/bin/catalina.sh run
-environment=CATALINA_PID="/var/run/tomcat.pid"
+environment=CATALINA_PID=/var/run/tomcat.pid
 
 [program:httpd]
-command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c "source /etc/apache2/envvars && /usr/sbin/apache2ctl -DFOREGROUND"
+command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /etc/apache2/envvars && /usr/sbin/apache2ctl -DFOREGROUND\\"
 """
 
         self.logger.info("adding supervisord entry")
-        jid = self.salt.cmd_async(
-            self.node.id,
-            'cmd.run',
-            ["echo '{}' >> /etc/supervisor/conf.d/supervisord.conf".format(payload)],
-        )
-        self.salt.subscribe_event(jid, self.node.id)
+        cmd = '''sh -c "echo '{}' >> /etc/supervisor/conf.d/supervisord.conf"'''.format(payload)
+        self.docker.exec_cmd(self.node.id, cmd)
 
     def setup(self):
         hostname = self.node.domain_name
@@ -162,7 +154,6 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c "source /etc
         )
 
         self.pull_oxauth_override()
-        self.reconfigure_minion()
         self.add_auto_startup_entry()
         self.change_cert_access("tomcat", "tomcat")
         self.reload_supervisor()
@@ -207,16 +198,13 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c "source /etc
         """Configures Apache2 virtual host.
         """
         a2enmod_cmd = "a2enmod ssl headers proxy proxy_http proxy_ajp"
-        jid = self.salt.cmd_async(self.node.id, "cmd.run", [a2enmod_cmd])
-        self.salt.subscribe_event(jid, self.node.id)
+        self.docker.exec_cmd(self.node.id, a2enmod_cmd)
 
         a2dissite_cmd = "a2dissite 000-default"
-        jid = self.salt.cmd_async(self.node.id, "cmd.run", [a2dissite_cmd])
-        self.salt.subscribe_event(jid, self.node.id)
+        self.docker.exec_cmd(self.node.id, a2dissite_cmd)
 
         a2ensite_cmd = "a2ensite gluu_httpd"
-        jid = self.salt.cmd_async(self.node.id, "cmd.run", [a2ensite_cmd])
-        self.salt.subscribe_event(jid, self.node.id)
+        self.docker.exec_cmd(self.node.id, a2ensite_cmd)
 
     def render_httpd_conf(self):
         """Copies rendered Apache2's virtual host into the node.

@@ -4,12 +4,18 @@
 # All rights reserved.
 
 import json
+from collections import namedtuple
 
 import docker.errors
 from docker import Client
 from docker.tls import TLSConfig
 
 from ..log import create_file_logger
+from ..errors import DockerExecError
+
+
+DockerExecResult = namedtuple("DockerExecResult",
+                              ["cmd", "exit_code", "retval"])
 
 
 class DockerHelper(object):
@@ -159,3 +165,19 @@ class DockerHelper(object):
             self.logger.info("container {!r} with ID {!r} "
                              "has been started".format(name, container_id))
         return container_id
+
+    def exec_cmd(self, container, cmd):
+        exec_cmd = self.docker.exec_create(container, cmd=cmd)
+        retval = self.docker.exec_start(exec_cmd)
+        inspect = self.docker.exec_inspect(exec_cmd)
+
+        if inspect["ExitCode"] != 0:
+            raise DockerExecError(
+                "error while running docker exec",
+                retval,
+                inspect["ExitCode"],
+            )
+
+        result = DockerExecResult(cmd=cmd, exit_code=inspect["ExitCode"],
+                                  retval=retval.strip())
+        return result

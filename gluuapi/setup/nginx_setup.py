@@ -12,11 +12,9 @@ from ..model import STATE_SUCCESS
 
 class NginxSetup(BaseSetup):
     def get_session_affinity(self):
-        ngx_cmd = "nginx -V"
-        resp = self.salt.cmd(self.node.id, "cmd.run", [ngx_cmd])
-        if resp.get(self.node.id, ""):
-            if "nginx-sticky-module-ng" in resp[self.node.id]:
-                return "sticky secure httponly hash=sha1"
+        resp = self.docker.exec_cmd(self.node.id, "nginx -V")
+        if "nginx-sticky-module-ng" in resp.retval:
+            return "sticky secure httponly hash=sha1"
         return "ip_hash"
 
     def render_https_conf(self):
@@ -41,35 +39,29 @@ class NginxSetup(BaseSetup):
         """Enables virtual host.
         """
         rm_cmd = "rm /etc/nginx/sites-enabled/default"
-        jid = self.salt.cmd_async(self.node.id, "cmd.run", [rm_cmd])
-        self.salt.subscribe_event(jid, self.node.id)
+        self.docker.exec_cmd(self.node.id, rm_cmd)
 
         symlink_cmd = "ln -sf /etc/nginx/sites-available/gluu_https.conf " \
                       "/etc/nginx/sites-enabled/gluu_https.conf"
-        jid = self.salt.cmd_async(self.node.id, "cmd.run", [symlink_cmd])
-        self.salt.subscribe_event(jid, self.node.id)
+        self.docker.exec_cmd(self.node.id, symlink_cmd)
 
     def add_auto_startup_entry(self):
         """Adds supervisor program for auto-startup.
         """
         payload = """
 [program:{}]
-command=/usr/sbin/nginx -g "daemon off;"
+command=/usr/sbin/nginx -g \\"daemon off;\\"
 """.format(self.node.type)
         self.logger.info("adding supervisord entry")
-        jid = self.salt.cmd_async(
-            self.node.id,
-            'cmd.run',
-            ["echo '{}' >> /etc/supervisor/conf.d/supervisord.conf".format(payload)],
-        )
-        self.salt.subscribe_event(jid, self.node.id)
+        cmd = '''sh -c "echo '{}' >> /etc/supervisor/conf.d/supervisord.conf"'''.format(payload)
+        self.docker.exec_cmd(self.node.id, cmd)
 
     def restart_nginx(self):
         """Restarts nginx via supervisorctl.
         """
         self.logger.info("restarting nginx")
         service_cmd = "supervisorctl restart nginx"
-        self.salt.cmd(self.node.id, "cmd.run", [service_cmd])
+        self.docker.exec_cmd(self.node.id, service_cmd)
 
     def setup(self):
         """Runs the actual setup.
@@ -92,23 +84,20 @@ command=/usr/sbin/nginx -g "daemon off;"
             self.gen_cert("nginx", self.cluster.decrypted_admin_pw,
                           "www-data", "www-data", hostname)
 
-            resp = self.salt.cmd(self.node.id, "cmd.run",
-                                 ["cat /etc/certs/nginx.crt"])
-            if resp.get(self.node.id):
+            resp = self.docker.exec_cmd(self.node.id, "cat /etc/certs/nginx.crt")
+            if resp.retval:
                 with open(ssl_cert, "w") as fp:
-                    fp.write(resp[self.node.id])
+                    fp.write(resp.retval)
 
-            resp = self.salt.cmd(self.node.id, "cmd.run",
-                                 ["cat /etc/certs/nginx.key"])
-            if resp.get(self.node.id):
+            resp = self.docker.exec_cmd(self.node.id, "cat /etc/certs/nginx.key")
+            if resp.retval:
                 with open(ssl_key, "w") as fp:
-                    fp.write(resp[self.node.id])
+                    fp.write(resp.retval)
 
         self.change_cert_access("www-data", "www-data")
         self.render_https_conf()
         self.configure_vhost()
         self.copy_index_html()
-        self.reconfigure_minion()
         self.add_auto_startup_entry()
         self.reload_supervisor()
         return True

@@ -56,19 +56,15 @@ class OxasimbaSetup(HostFileMixin, SSLCertMixin, OxauthSetup):
         payload = """
 [program:tomcat]
 command=/opt/tomcat/bin/catalina.sh run
-environment=CATALINA_PID="/var/run/tomcat.pid"
+environment=CATALINA_PID=/var/run/tomcat.pid
 
 [program:httpd]
-command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c "source /etc/apache2/envvars && /usr/sbin/apache2ctl -DFOREGROUND"
+command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /etc/apache2/envvars && /usr/sbin/apache2ctl -DFOREGROUND\\"
 """
 
         self.logger.info("adding supervisord entry")
-        jid = self.salt.cmd_async(
-            self.node.id,
-            'cmd.run',
-            ["echo '{}' >> /etc/supervisor/conf.d/supervisord.conf".format(payload)],
-        )
-        self.salt.subscribe_event(jid, self.node.id)
+        cmd = '''sh -c "echo '{}' >> /etc/supervisor/conf.d/supervisord.conf"'''.format(payload)
+        self.docker.exec_cmd(self.node.id, cmd)
 
     def render_server_xml_template(self):
         src = "nodes/oxasimba/server.xml"
@@ -95,8 +91,7 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c "source /etc
     def unpack_jar(self):
         unpack_cmd = "unzip -qq /opt/tomcat/webapps/oxasimba.war " \
                      "-d /tmp/asimba"
-        jid = self.salt.cmd_async(self.node.id, "cmd.run", [unpack_cmd])
-        self.salt.subscribe_event(jid, self.node.id)
+        self.docker.exec_cmd(self.node.id, unpack_cmd)
         time.sleep(5)
 
     def copy_selector_template(self):
@@ -126,23 +121,19 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c "source /etc
         # rebuild jar
         jar_cmd = "/usr/bin/jar cmf /tmp/asimba/META-INF/MANIFEST.MF " \
                   "/tmp/asimba.war -C /tmp/asimba ."
-        jid = self.salt.cmd_async(self.node.id, "cmd.run", [jar_cmd])
-        self.salt.subscribe_event(jid, self.node.id)
+        self.docker.exec_cmd(self.node.id, jar_cmd)
 
         # remove oxasimba.war
         rm_cmd = "rm /opt/tomcat/webapps/oxasimba.war"
-        jid = self.salt.cmd_async(self.node.id, "cmd.run", [rm_cmd])
-        self.salt.subscribe_event(jid, self.node.id)
+        self.docker.exec_cmd(self.node.id, rm_cmd)
 
         # install reconfigured asimba.jar
         mv_cmd = "mv /tmp/asimba.war /opt/tomcat/webapps/asimba.war"
-        jid = self.salt.cmd_async(self.node.id, "cmd.run", [mv_cmd])
-        self.salt.subscribe_event(jid, self.node.id)
+        self.docker.exec_cmd(self.node.id, mv_cmd)
 
         # remove temporary asimba
         rm_cmd = "rm -rf /tmp/asimba"
-        jid = self.salt.cmd_async(self.node.id, "cmd.run", [rm_cmd])
-        self.salt.subscribe_event(jid, self.node.id)
+        self.docker.exec_cmd(self.node.id, rm_cmd)
 
     def pull_idp_metadata(self):
         files = iglob("{}/metadata/*-idp-metadata.xml".format(

@@ -9,6 +9,8 @@ import time
 from .base import SSLCertMixin
 from .base import HostFileMixin
 from .oxauth_setup import OxauthSetup
+from ..database import db
+from ..helper import DockerHelper
 
 
 class OxidpSetup(HostFileMixin, SSLCertMixin, OxauthSetup):
@@ -86,7 +88,6 @@ class OxidpSetup(HostFileMixin, SSLCertMixin, OxauthSetup):
         self.pull_shib_config()
         self.pull_shib_certkey()
 
-        self.reconfigure_minion()
         self.add_auto_startup_entry()
         self.change_cert_access("tomcat", "tomcat")
         self.reload_supervisor()
@@ -120,7 +121,8 @@ class OxidpSetup(HostFileMixin, SSLCertMixin, OxauthSetup):
             cert_cmd = "echo -n | openssl s_client -connect {0}:{1} | " \
                        "sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' " \
                        "> /etc/certs/{0}.crt".format(ldap.domain_name, ldap.ldaps_port)
-            self.salt.cmd(self.node.id, "cmd.run", [cert_cmd])
+            cert_cmd = '''sh -c "{}"'''.format(cert_cmd)
+            self.docker.exec_cmd(self.node.id, cert_cmd)
 
             import_cmd = " ".join([
                 "keytool -importcert -trustcacerts",
@@ -129,7 +131,8 @@ class OxidpSetup(HostFileMixin, SSLCertMixin, OxauthSetup):
                 "-keystore {}".format(self.node.truststore_fn),
                 "-storepass changeit -noprompt",
             ])
-            self.salt.cmd(self.node.id, "cmd.run", [import_cmd])
+            import_cmd = '''sh -c "{}"'''.format(import_cmd)
+            self.docker.exec_cmd(self.node.id, import_cmd)
 
     def render_nutcracker_conf(self):
         """Copies twemproxy configuration into the node.
@@ -148,7 +151,7 @@ class OxidpSetup(HostFileMixin, SSLCertMixin, OxauthSetup):
         """
         self.logger.info("restarting twemproxy in {}".format(self.node.name))
         restart_cmd = "supervisorctl restart nutcracker"
-        self.salt.cmd(self.node.id, "cmd.run", [restart_cmd])
+        self.docker.exec_cmd(self.node.id, restart_cmd)
 
     def teardown(self):
         """Teardowns the node.
@@ -188,7 +191,7 @@ class OxidpSetup(HostFileMixin, SSLCertMixin, OxauthSetup):
         payload = """
 [program:tomcat]
 command=/opt/tomcat/bin/catalina.sh run
-environment=CATALINA_PID="/var/run/tomcat.pid"
+environment=CATALINA_PID=/var/run/tomcat.pid
 
 [program:memcached]
 command=/usr/bin/memcached -p 11211 -u memcache -m 64 -t 4 -l 127.0.0.1 -l {} -vv
@@ -199,16 +202,12 @@ stderr_logfile=/var/log/memcached.log
 command=nutcracker -c /etc/nutcracker.yml -p /var/run/nutcracker.pid -o /var/log/nutcracker.log -v 11
 
 [program:httpd]
-command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c "source /etc/apache2/envvars && /usr/sbin/apache2ctl -DFOREGROUND"
+command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /etc/apache2/envvars && /usr/sbin/apache2ctl -DFOREGROUND\\"
 """.format(self.node.weave_ip)
 
         self.logger.info("adding supervisord entry")
-        jid = self.salt.cmd_async(
-            self.node.id,
-            'cmd.run',
-            ["echo '{}' >> /etc/supervisor/conf.d/supervisord.conf".format(payload)],
-        )
-        self.salt.subscribe_event(jid, self.node.id)
+        cmd = '''sh -c "echo '{}' >> /etc/supervisor/conf.d/supervisord.conf"'''.format(payload)
+        self.docker.exec_cmd(self.node.id, cmd)
 
     def render_server_xml_template(self):
         """Copies rendered Tomcat's server.xml into the node.
@@ -242,20 +241,22 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c "source /etc
         except IndexError:
             return
 
+        provider = db.get(oxtrust.provider_id, "providers")
+        docker = DockerHelper(provider, logger=self.logger)
+
         for fn in ["shibIDP.crt", "shibIDP.key"]:
             path = "/etc/certs/{}".format(fn)
             cat_cmd = "cat {}".format(path)
-            resp = self.salt.cmd(oxtrust.id, "cmd.run", [cat_cmd])
+            resp = docker.exec_cmd(oxtrust.id, cat_cmd)
 
-            txt = resp.get(oxtrust.id, "")
-            if txt:
+            if resp.retval:
                 time.sleep(5)
                 self.logger.info(
                     "copying {0}:{1} to {2}:{1}".format(oxtrust.name, path,
                                                         self.node.name)
                 )
-                echo_cmd = "echo '{}' > {}".format(txt, path)
-                self.salt.cmd(self.node.id, "cmd.run", [echo_cmd])
+                echo_cmd = "echo '{}' > {}".format(resp.retval, path)
+                self.docker.exec_cmd(self.node.id, echo_cmd)
 
     def discover_nginx(self):
         """Discovers nginx node.

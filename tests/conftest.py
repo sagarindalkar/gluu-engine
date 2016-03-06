@@ -246,9 +246,10 @@ def salt_helper():
 
 
 @pytest.fixture()
-def ldap_setup(request, app, ldap_node, cluster):
+def ldap_setup(request, app, ldap_node, cluster, db, provider):
     from gluuapi.setup import LdapSetup
 
+    db.persist(provider, "providers")
     setup_obj = LdapSetup(ldap_node, cluster, app)
 
     def teardown():
@@ -259,9 +260,10 @@ def ldap_setup(request, app, ldap_node, cluster):
 
 
 @pytest.fixture()
-def oxauth_setup(request, app, oxauth_node, cluster):
+def oxauth_setup(request, app, oxauth_node, cluster, db, provider):
     from gluuapi.setup import OxauthSetup
 
+    db.persist(provider, "providers")
     setup_obj = OxauthSetup(oxauth_node, cluster, app)
 
     def teardown():
@@ -272,9 +274,10 @@ def oxauth_setup(request, app, oxauth_node, cluster):
 
 
 @pytest.fixture()
-def oxtrust_setup(request, app, oxtrust_node, cluster):
+def oxtrust_setup(request, app, oxtrust_node, cluster, db, provider):
     from gluuapi.setup import OxtrustSetup
 
+    db.persist(provider, "providers")
     setup_obj = OxtrustSetup(oxtrust_node, cluster, app)
 
     def teardown():
@@ -285,9 +288,10 @@ def oxtrust_setup(request, app, oxtrust_node, cluster):
 
 
 @pytest.fixture()
-def oxidp_setup(request, app, oxidp_node, cluster):
+def oxidp_setup(request, app, oxidp_node, cluster, db, provider):
     from gluuapi.setup import OxidpSetup
 
+    db.persist(provider, "providers")
     setup_obj = OxidpSetup(oxidp_node, cluster, app)
 
     def teardown():
@@ -298,9 +302,10 @@ def oxidp_setup(request, app, oxidp_node, cluster):
 
 
 @pytest.fixture()
-def nginx_setup(request, app, nginx_node, cluster):
+def nginx_setup(request, app, nginx_node, cluster, db, provider):
     from gluuapi.setup import NginxSetup
 
+    db.persist(provider, "providers")
     setup_obj = NginxSetup(nginx_node, cluster, app)
 
     def teardown():
@@ -327,3 +332,13 @@ def node_log():
     node_log.setup_log = node_log.id + "-setup.log"
     node_log.teardown_log = node_log.id + "-teardown.log"
     return node_log
+
+
+@pytest.fixture()
+def patched_exec_cmd(monkeypatch):
+    from gluuapi.helper.docker_helper import DockerExecResult
+
+    monkeypatch.setattr(
+        "gluuapi.helper.DockerHelper.exec_cmd",
+        lambda cls, container, cmd: DockerExecResult(cmd, 0, ""),
+    )

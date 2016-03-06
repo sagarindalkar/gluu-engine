@@ -1,15 +1,14 @@
-def test_setup(nginx_setup, patched_salt, patched_sleep,
-               salt_event_ok, patched_run):
+def test_setup(nginx_setup, patched_sleep, patched_exec_cmd):
     # TODO: it might be better to split the tests
     nginx_setup.setup()
 
 
-def test_setup_restart_nginx(nginx_setup, patched_salt, patched_run):
+def test_setup_restart_nginx(nginx_setup, patched_exec_cmd):
     nginx_setup.restart_nginx()
 
 
 def test_setup_notify_oxtrust(nginx_setup, oxtrust_node, provider, db,
-                              patched_salt, patched_sleep, patched_run):
+                              patched_sleep, patched_exec_cmd):
     from gluuapi.model import STATE_SUCCESS
 
     oxtrust_node.provider_id = provider.id
@@ -21,10 +20,7 @@ def test_setup_notify_oxtrust(nginx_setup, oxtrust_node, provider, db,
     nginx_setup.notify_oxtrust()
 
 
-def test_setup_notify_oxtrust_skipped(nginx_setup, provider, db,
-                                      patched_salt, patched_sleep,
-                                      patched_run):
-    nginx_setup.provider = provider
+def test_setup_notify_oxtrust_skipped(nginx_setup):
     nginx_setup.notify_oxtrust()
 
 
@@ -39,8 +35,7 @@ def test_after_setup(nginx_setup, nginx_node, provider,
     nginx_setup.after_setup()
 
 
-def test_teardown(nginx_setup, nginx_node, provider,
-                  patched_salt, patched_run):
+def test_teardown(nginx_setup, nginx_node, provider):
     from gluuapi.model import STATE_SUCCESS
 
     nginx_node.state = STATE_SUCCESS

@@ -35,7 +35,7 @@ class Config(object):
     OXIDP_OVERRIDE_DIR = os.path.join(DATA_DIR, "override", "oxidp")
 
     # container volume directories
-    OPENDJ_DB_VOLUME_DIR = os.path.join(DATA_DIR, "volumes", "opendj", "db")
+    OPENDJ_VOLUME_DIR = os.path.join(DATA_DIR, "volumes", "opendj")
 
 
 class ProdConfig(Config):

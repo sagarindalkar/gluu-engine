@@ -237,8 +237,9 @@ class LdapModelHelper(BaseModelHelper):
     ]
 
     def __init__(self, node, app, logpath=None):
+        db_volume = os.path.join(app.config["OPENDJ_VOLUME_DIR"], node.name, "db")
         self.volumes = {
-            app.config["OPENDJ_DB_VOLUME_DIR"]: {
+            db_volume: {
                 "bind": "/opt/opendj/db",
             },
         }

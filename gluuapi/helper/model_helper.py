@@ -130,6 +130,9 @@ class BaseModelHelper(object):
             # add DNS record
             self.weave.dns_add(self.node.id, self.node.domain_name)
 
+            if self.node.type == "ldap":
+                self.weave.dns_add(self.node.id, "ldap.gluu.local")
+
             self.logger.info("{} setup is started".format(self.node.image))
             start = time.time()
 
@@ -207,6 +210,7 @@ class BaseModelHelper(object):
                 self.node, self.cluster, self.app, logger=self.logger,
             )
             setup_obj.teardown()
+            setup_obj.remove_build_dir()
 
         try:
             self.docker.remove_container(self.node.name)

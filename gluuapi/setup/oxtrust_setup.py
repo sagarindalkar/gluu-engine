@@ -28,15 +28,10 @@ class OxtrustSetup(HostFileMixin, SSLCertMixin, OxauthSetup):
         """
         src = "nodes/oxtrust/oxtrust-ldap.properties"
         dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
-
-        ldap_hosts = ",".join([
-            "{}:{}".format(ldap.domain_name, ldap.ldaps_port)
-            for ldap in self.cluster.get_ldap_objects()
-        ])
         ctx = {
             "ldap_binddn": self.node.ldap_binddn,
             "encoded_ox_ldap_pw": self.cluster.encoded_ox_ldap_pw,
-            "ldap_hosts": ldap_hosts,
+            "ldap_hosts": "ldap.gluu.local:{}".format(self.cluster.ldaps_port),
             "inum_appliance": self.cluster.inum_appliance,
         }
         self.copy_rendered_jinja_template(src, dest, ctx)

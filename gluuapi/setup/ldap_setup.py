@@ -9,8 +9,6 @@ import json
 import os.path
 import time
 
-import ldap as ldaplib
-
 from .base import BaseSetup
 from .oxauth_setup import OxauthSetup
 from .oxtrust_setup import OxtrustSetup
@@ -96,7 +94,7 @@ class LdapSetup(BaseSetup):
         src = self.get_template_path("nodes/opendj/opendj-setup.properties")
         dest = os.path.join(self.node.ldap_base_folder, os.path.basename(src))
         ctx = {
-            "ldap_hostname": self.node.domain_name,
+            "ldap_hostname": "ldap.gluu.local",
             "ldap_port": self.node.ldap_port,
             "ldaps_port": self.node.ldaps_port,
             "ldap_jmx_port": self.node.ldap_jmx_port,
@@ -194,7 +192,7 @@ class LdapSetup(BaseSetup):
             "encoded_ldap_pw": self.cluster.encoded_ldap_pw,
             "encoded_ox_ldap_pw": self.cluster.encoded_ox_ldap_pw,
             "inum_appliance": self.cluster.inum_appliance,
-            "hostname": self.node.domain_name,
+            "hostname": "ldap.gluu.local",
             "ox_cluster_hostname": self.cluster.ox_cluster_hostname,
             "ldaps_port": self.node.ldaps_port,
             "ldap_binddn": self.node.ldap_binddn,
@@ -378,6 +376,7 @@ command=/opt/opendj/bin/start-ds --quiet -N
         except IndexError:
             self.import_ldif()
             self.import_base64_scim_config()
+            self.import_base64_config()
 
         self.export_opendj_public_cert()
         self.delete_ldap_pw()
@@ -389,7 +388,7 @@ command=/opt/opendj/bin/start-ds --quiet -N
         Typically this method should be called after adding/removing
         any OpenDJ server.
         """
-        # notify oxAuth to re-render ``oxauth-ldap.propertia
+        # notify oxAuth to re-render ``oxauth-ldap.properties
         for oxauth in self.cluster.get_oxauth_objects():
             setup_obj = OxauthSetup(oxauth, self.cluster,
                                     self.app, logger=self.logger)
@@ -417,27 +416,10 @@ command=/opt/opendj/bin/start-ds --quiet -N
         if self.node.state == STATE_SUCCESS:
             self.notify_ox()
 
-        # modify oxIDPAuthentication entry when we have more LDAP nodes
-        self.write_ldap_pw()
-        time.sleep(5)
-        self.modify_oxidp_auth()
-
-        # if this is the first ldap, import configuration.ldif
-        if len(self.cluster.get_ldap_objects()) == 1:
-            self.import_base64_config()
-        else:
-            peer_node = self.cluster.get_ldap_objects()[0]
-            self.modify_oxtrust_config(peer_node)
-
-        # remove password file
-        self.delete_ldap_pw()
-
     def teardown(self):
         """Teardowns the node.
         """
         self.write_ldap_pw()
-        time.sleep(5)
-        self.modify_oxidp_auth()
 
         # stop the replication agreement
         ldap_num = len(self.cluster.get_ldap_objects())
@@ -449,40 +431,8 @@ command=/opt/opendj/bin/start-ds --quiet -N
         # remove password file
         self.delete_ldap_pw()
 
-        # modify oxtrust config
         if self.node.state == STATE_SUCCESS:
-            try:
-                peer_node = self.cluster.get_ldap_objects()[0]
-                self.modify_oxtrust_config(peer_node)
-            except IndexError:
-                pass
             self.notify_ox()
-        self.after_teardown()
-
-    def modify_oxidp_auth(self):
-        """Updates oxIDPAuthentication entry in LDAP.
-        """
-        nodes = self.cluster.get_ldap_objects()
-        self.copy_rendered_jinja_template(
-            "nodes/opendj/ldif/appliance-mod.ldif",
-            "/opt/opendj/ldif/appliance-mod.ldif",
-            ctx={
-                "nodes": nodes,
-                "inum_appliance": self.cluster.inum_appliance,
-                "ldap_binddn": self.node.ldap_binddn,
-                "encoded_ox_ldap_pw": self.cluster.encoded_ox_ldap_pw,
-            },
-        )
-        ldapmod_cmd = " ".join([
-            "/opt/opendj/bin/ldapmodify",
-            "-f /opt/opendj/ldif/appliance-mod.ldif",
-            "-j {}".format(self.node.ldap_pass_fn),
-            "-p {}".format(self.node.ldaps_port),
-            "-D '{}'".format(self.node.ldap_binddn),
-            "-Z -X",
-        ])
-        self.logger.info("modifying oxIDPAuthentication entry")
-        self.docker.exec_cmd(self.node.id, ldapmod_cmd)
 
     def import_custom_schema(self):
         """Copies user-defined LDAP schema into the node.
@@ -596,10 +546,6 @@ command=/opt/opendj/bin/start-ds --quiet -N
         """Renders oxTrust configuration.
         """
         src = "nodes/oxtrust/oxtrust-config.json"
-        ldap_hosts = ",".join([
-            "{}:{}".format(ldap.domain_name, ldap.ldaps_port)
-            for ldap in self.cluster.get_ldap_objects()
-        ])
         ctx = {
             "inum_appliance": self.cluster.inum_appliance,
             "inum_org": self.cluster.inum_org,
@@ -613,7 +559,7 @@ command=/opt/opendj/bin/start-ds --quiet -N
             "oxauth_client_id": self.cluster.oxauth_client_id,
             "oxauth_client_encoded_pw": self.cluster.oxauth_client_encoded_pw,
             "truststore_fn": self.node.truststore_fn,
-            "ldap_hosts": ldap_hosts,
+            "ldap_hosts": "ldap.gluu.local:{}".format(self.cluster.ldaps_port),
             "config_generation": "true",
             "scim_rs_client_id": self.cluster.scim_rs_client_id,
             "oxtrust_hostname": "localhost:8443",
@@ -624,11 +570,10 @@ command=/opt/opendj/bin/start-ds --quiet -N
         """Renders oxTrust CR configuration.
         """
         src = "nodes/oxtrust/oxtrust-cache-refresh.json"
-        ldap_hosts = self.cluster.get_ldap_objects()
         ctx = {
             "ldap_binddn": self.node.ldap_binddn,
             "encoded_ox_ldap_pw": self.cluster.encoded_ox_ldap_pw,
-            "ldap_hosts": ldap_hosts,
+            "ldap_hosts": "ldap.gluu.local:{}".format(self.cluster.ldaps_port),
         }
         return self.render_jinja_template(src, ctx)
 
@@ -643,96 +588,6 @@ command=/opt/opendj/bin/start-ds --quiet -N
             "oxtrust_hostname": "localhost:8443",
         }
         return self.render_jinja_template(src, ctx)
-
-    def modify_oxtrust_config(self, node):
-        """Updates oxTrust configuration in LDAP.
-        """
-        self.logger.info("modifying oxTrust configuration")
-
-        # we're using weave IP instead since domain_name is available
-        # only from inside the container
-        uri = "ldaps://{}:{}".format(node.weave_ip, node.ldaps_port)
-
-        # credentials to authenticate to LDAP server
-        user = node.ldap_binddn
-        passwd = self.cluster.decrypted_admin_pw
-
-        # base DN for oxtrust config
-        oxtrust_base = ",".join([
-            "ou=oxtrust",
-            "ou=configuration",
-            "inum={}".format(self.cluster.inum_appliance),
-            "ou=appliances",
-            "o=gluu",
-        ])
-        scope = ldaplib.SCOPE_BASE
-
-        conn = self.get_ldap_conn(uri, user, passwd)
-        if conn:
-            dn, attrs = self.search_from_ldap(conn, oxtrust_base, scope)
-            if dn:
-                ox_rev = str(int(attrs["oxRevision"][0]) + 1)
-
-                # we only care about ``idpLdapServer``
-                app_conf = json.loads(attrs["oxTrustConfApplication"][0])
-                app_conf["idpLdapServer"] = ",".join([
-                    "{}:{}".format(node_.domain_name, node_.ldaps_port)
-                    for node_ in self.cluster.get_ldap_objects()
-                ])
-                serialized_app_conf = json.dumps(app_conf)
-
-                # we only care about ``inumConfig`` -> ``servers``
-                cr_conf = json.loads(attrs["oxTrustConfCacheRefresh"][0])
-                cr_conf["inumConfig"]["servers"] = [
-                    "{}:{}".format(node_.domain_name, node_.ldaps_port)
-                    for node_ in self.cluster.get_ldap_objects()
-                ]
-                serialized_cr_conf = json.dumps(cr_conf)
-
-                # list of attributes need to be updated
-                modlist = [
-                    (ldaplib.MOD_REPLACE, "oxRevision", ox_rev),
-                    (ldaplib.MOD_REPLACE, "oxTrustConfApplication",
-                     serialized_app_conf),
-                    (ldaplib.MOD_REPLACE, "oxTrustConfCacheRefresh",
-                     serialized_cr_conf),
-                ]
-                # update the attributes
-                conn.modify_s(dn, modlist)
-
-            # release the connection to LDAP server
-            conn.unbind_s()
-
-    def get_ldap_conn(self, uri, user, passwd):
-        """Establishes LDAP connection.
-        """
-        ldaplib.set_option(ldaplib.OPT_X_TLS_REQUIRE_CERT,
-                           ldaplib.OPT_X_TLS_NEVER)
-
-        try:
-            conn = ldaplib.initialize(uri)
-            conn.set_option(ldaplib.OPT_REFERRALS, 0)
-            conn.set_option(ldaplib.OPT_PROTOCOL_VERSION, 3)
-            conn.set_option(ldaplib.OPT_X_TLS, ldaplib.OPT_X_TLS_DEMAND)
-            conn.set_option(ldaplib.OPT_X_TLS_DEMAND, True)
-            conn.set_option(ldaplib.OPT_DEBUG_LEVEL, 255)
-            conn.simple_bind_s(user, passwd)
-        except ldaplib.SERVER_DOWN as exc:
-            self.logger.error(exc.message)
-        return conn
-
-    def search_from_ldap(self, conn, base, scope,
-                         filterstr="(objectClass=*)",
-                         attrlist=None, attrsonly=0):
-        """Searches for entries in LDAP.
-        """
-        try:
-            result = conn.search_s(base, scope)
-            ret = result[0]
-        except ldaplib.NO_SUCH_OBJECT as exc:
-            self.logger.error(exc.message)
-            ret = ("", {})
-        return ret
 
     def import_base64_scim_config(self):
         """Copies SCIM configuration (scim.ldif) into the node

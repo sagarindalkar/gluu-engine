@@ -188,8 +188,6 @@ class BaseSetup(object):
         """After teardown callback. This method is supposed to be called
         after calling ``teardown``.
         """
-        # remove logs directory
-        self.remove_build_dir()
 
     def render_jinja_template(self, src, ctx=None):
         """Renders jinja template.

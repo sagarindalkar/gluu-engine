@@ -69,15 +69,10 @@ def test_teardown(ldap_setup, cluster, provider, oxauth_node, db,
     ldap_setup.teardown()
 
 
-def test_teardown_with_replication(monkeypatch, ldap_setup, cluster, db,
+def test_teardown_with_replication(ldap_setup, cluster, db,
                                    patched_sleep, patched_exec_cmd):
     from gluuapi.model import LdapNode
     from gluuapi.model import STATE_SUCCESS
-
-    monkeypatch.setattr(
-        "gluuapi.setup.LdapSetup.get_ldap_conn",
-        lambda cls, uri, user, passwd: None,
-    )
 
     node1 = LdapNode()
     node1.id = "ldap-123"
@@ -122,16 +117,11 @@ def test_notify_ox(ldap_setup, db, oxauth_node, oxtrust_node,
     ldap_setup.notify_ox()
 
 
-def test_after_setup_modify_config(monkeypatch, cluster, ldap_setup,
+def test_after_setup_modify_config(cluster, ldap_setup,
                                    patched_sleep, patched_exec_cmd):
     from gluuapi.database import db
     from gluuapi.model import LdapNode
     from gluuapi.model import STATE_SUCCESS
-
-    monkeypatch.setattr(
-        "gluuapi.setup.LdapSetup.modify_oxtrust_config",
-        lambda cls, node: None,
-    )
 
     db.persist(cluster, "clusters")
 

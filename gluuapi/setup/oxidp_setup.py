@@ -9,6 +9,7 @@ import time
 from .base import SSLCertMixin
 from .base import HostFileMixin
 from .oxauth_setup import OxauthSetup
+from ..errors import DockerExecError
 from ..database import db
 from ..helper import DockerHelper
 
@@ -42,14 +43,10 @@ class OxidpSetup(HostFileMixin, SSLCertMixin, OxauthSetup):
         """
         src = "nodes/oxidp/oxidp-ldap.properties"
         dest = os.path.join("/opt/tomcat/conf/oxidp-ldap.properties")
-        ldap_hosts = ",".join([
-            "{}:{}".format(ldap.domain_name, ldap.ldaps_port)
-            for ldap in self.cluster.get_ldap_objects()
-        ])
         ctx = {
             "inum_appliance": self.cluster.inum_appliance,
             "encoded_ox_ldap_pw": self.cluster.encoded_ox_ldap_pw,
-            "ldap_hosts": ldap_hosts,
+            "ldap_hosts": "ldap.gluu.local:{}".format(self.cluster.ldaps_port),
             "ldap_binddn": self.node.ldap_binddn,
         }
         self.copy_rendered_jinja_template(src, dest, ctx)
@@ -132,7 +129,12 @@ class OxidpSetup(HostFileMixin, SSLCertMixin, OxauthSetup):
                 "-storepass changeit -noprompt",
             ])
             import_cmd = '''sh -c "{}"'''.format(import_cmd)
-            self.docker.exec_cmd(self.node.id, import_cmd)
+
+            try:
+                self.docker.exec_cmd(self.node.id, import_cmd)
+            except DockerExecError as exc:
+                if exc.exit_code == 1:
+                    pass
 
     def render_nutcracker_conf(self):
         """Copies twemproxy configuration into the node.

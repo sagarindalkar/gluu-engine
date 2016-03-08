@@ -5,7 +5,7 @@
         "configId":"local_inum",
         "bindDN":"{{ ldap_binddn }}",
         "bindPassword":"{{ encoded_ox_ldap_pw }}",
-        "servers":[{% for node in ldap_hosts %}"{{ node.domain_name }}:{{ node.ldaps_port }}"{% if loop.index != ldap_hosts|length %},{% endif %}{% endfor %}],
+        "servers":["{{ ldap_hosts }}"],
         "maxConnections":10,
         "useSSL":true,
         "baseDNs":[

@@ -162,3 +162,9 @@ def generate_base64_contents(text, num_spaces):
     if num_spaces:
         text = reindent(text, 1)
     return text
+
+
+def get_sys_random_chars(size=12, chars=_DEFAULT_CHARS):
+    """Generates random characters based on OS.
+    """
+    return ''.join(random.SystemRandom().choice(chars) for _ in range(size))

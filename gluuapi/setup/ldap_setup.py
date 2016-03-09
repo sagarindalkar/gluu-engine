@@ -4,16 +4,18 @@
 # All rights reserved.
 
 import codecs
-from glob import iglob
 import json
 import os.path
 import time
+from glob import iglob
+from random import randint
 
 from .base import BaseSetup
 from .oxauth_setup import OxauthSetup
 from .oxtrust_setup import OxtrustSetup
 from .oxidp_setup import OxidpSetup
 from ..utils import generate_base64_contents
+from ..utils import get_sys_random_chars
 from ..model import STATE_SUCCESS
 
 
@@ -524,6 +526,8 @@ command=/opt/opendj/bin/start-ds --quiet -N
             "ox_cluster_hostname": self.cluster.ox_cluster_hostname,
             "inum_appliance": self.cluster.inum_appliance,
             "inum_org": self.cluster.inum_org,
+            "pairwise_calculation_key": get_sys_random_chars(randint(20, 30)),
+            "pairwise_calculation_salt": get_sys_random_chars(randint(20, 30)),
         }
         return self.render_jinja_template(src, ctx)
 

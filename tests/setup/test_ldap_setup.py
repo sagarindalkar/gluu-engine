@@ -106,14 +106,12 @@ def test_replicate_from(ldap_setup, db, provider,
     ldap_setup.replicate_from(peer_node)
 
 
-def test_notify_ox(ldap_setup, db, oxauth_node, oxtrust_node,
+def test_notify_ox(ldap_setup, db, oxidp_node,
                    patched_sleep, patched_exec_cmd):
     from gluuapi.model import STATE_SUCCESS
 
-    oxauth_node.state = STATE_SUCCESS
-    db.persist(oxauth_node, "nodes")
-    oxtrust_node.state = STATE_SUCCESS
-    db.persist(oxtrust_node, "nodes")
+    oxidp_node.state = STATE_SUCCESS
+    db.persist(oxidp_node, "nodes")
     ldap_setup.notify_ox()
 
 

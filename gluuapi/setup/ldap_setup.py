@@ -11,8 +11,6 @@ from glob import iglob
 from random import randint
 
 from .base import BaseSetup
-from .oxauth_setup import OxauthSetup
-from .oxtrust_setup import OxtrustSetup
 from .oxidp_setup import OxidpSetup
 from ..utils import generate_base64_contents
 from ..utils import get_sys_random_chars
@@ -390,26 +388,11 @@ command=/opt/opendj/bin/start-ds --quiet -N
         Typically this method should be called after adding/removing
         any OpenDJ server.
         """
-        # notify oxAuth to re-render ``oxauth-ldap.properties
-        for oxauth in self.cluster.get_oxauth_objects():
-            setup_obj = OxauthSetup(oxauth, self.cluster,
-                                    self.app, logger=self.logger)
-            setup_obj.render_ldap_props_template()
-
-        # notify oxTrust to re-render ``oxtrust-ldap.properties``
-        for oxtrust in self.cluster.get_oxtrust_objects():
-            setup_obj = OxtrustSetup(oxtrust, self.cluster,
-                                     self.app, logger=self.logger)
-            setup_obj.render_ldap_props_template()
-            # a hack to force oxTrust re-generate SAML metadata
-            setup_obj.restart_tomcat()
-
-        # notify oxIdp to re-render ``oxidp-ldap.properties``
-        # and import OpenDJ certficate
+        # import all OpenDJ certficates because oxIdp checks matched
+        # certificate
         for oxidp in self.cluster.get_oxidp_objects():
             setup_obj = OxidpSetup(oxidp, self.cluster,
                                    self.app, logger=self.logger)
-            setup_obj.render_ldap_props_template()
             setup_obj.import_ldap_certs()
 
     def after_setup(self):

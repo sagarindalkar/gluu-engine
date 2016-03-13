@@ -251,20 +251,8 @@ class SSLCertMixin(object):
             "-storepass changeit -noprompt",
         ])
         import_cmd = '''sh -c "{}"'''.format(import_cmd)
-        self.docker.exec_cmd(self.node.id, import_cmd)
-
-    def delete_nginx_cert(self):
-        """Removes SSL cerficate of nginx node.
-        """
-        delete_cmd = " ".join([
-            "keytool -delete",
-            "-alias {}".format(self.cluster.ox_cluster_hostname),
-            "-keystore {}".format(self.node.truststore_fn),
-            "-storepass changeit -noprompt",
-        ])
-        self.logger.info("deleting nginx cert (if any) in {}".format(self.node.name))
         try:
-            self.docker.exec_cmd(self.node.id, delete_cmd)
+            self.docker.exec_cmd(self.node.id, import_cmd)
         except DockerExecError as exc:
             if exc.exit_code == 1:
                 # certificate already imported

@@ -120,7 +120,6 @@ command=/usr/sbin/nginx -g \\"daemon off;\\"
             setup_obj = OxtrustSetup(oxtrust, self.cluster,
                                      self.app, logger=self.logger)
 
-            setup_obj.delete_nginx_cert()
             setup_obj.remove_nginx_entry(self.node)
 
             # wait before telling oxtrust to find nginx node
@@ -156,7 +155,7 @@ command=/usr/sbin/nginx -g \\"daemon off;\\"
         self.salt.copy_file(self.node.id, src, dest)
 
     def notify_oxidp(self):
-        """Notifies oxTrust to run required operations (if any)
+        """Notifies oxIdp to run required operations (if any)
         after this node has been added/removed.
         """
         # a hack to avoid circular import
@@ -166,7 +165,6 @@ command=/usr/sbin/nginx -g \\"daemon off;\\"
             setup_obj = OxidpSetup(oxidp, self.cluster,
                                    self.app, logger=self.logger)
 
-            setup_obj.delete_nginx_cert()
             setup_obj.remove_nginx_entry(self.node)
 
             # wait before telling oxidp to find nginx node

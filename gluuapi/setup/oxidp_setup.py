@@ -243,6 +243,7 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
         except IndexError:
             return
 
+        # oxtrust container might be in another host
         provider = db.get(oxtrust.provider_id, "providers")
         docker = DockerHelper(provider, logger=self.logger)
 
@@ -257,7 +258,7 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
                     "copying {0}:{1} to {2}:{1}".format(oxtrust.name, path,
                                                         self.node.name)
                 )
-                echo_cmd = "echo '{}' > {}".format(resp.retval, path)
+                echo_cmd = '''sh -c "echo '{}' > {}"'''.format(resp.retval, path)
                 self.docker.exec_cmd(self.node.id, echo_cmd)
 
     def discover_nginx(self):

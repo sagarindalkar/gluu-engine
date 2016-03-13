@@ -10,6 +10,8 @@ from glob import iglob
 from .base import SSLCertMixin
 from .base import HostFileMixin
 from .oxauth_setup import OxauthSetup
+from ..database import db
+from ..helper import DockerHelper
 
 
 class OxtrustSetup(HostFileMixin, SSLCertMixin, OxauthSetup):
@@ -182,6 +184,10 @@ environment=CATALINA_PID=/var/run/tomcat.pid
         key = resp.retval
 
         for oxidp in self.cluster.get_oxidp_objects():
+            # oxidp container might be in another host
+            provider = db.get(oxidp.provider_id, "providers")
+            docker = DockerHelper(provider, logger=self.logger)
+
             if crt:
                 time.sleep(5)
                 path = "/etc/certs/shibIDP.crt"
@@ -192,8 +198,8 @@ environment=CATALINA_PID=/var/run/tomcat.pid
                         oxidp.name,
                     )
                 )
-                echo_cmd = "echo '{}' > {}".format(crt, path)
-                self.docker.exec_cmd(self.node.id, echo_cmd)
+                echo_cmd = '''sh -c "echo '{}' > {}"'''.format(crt, path)
+                docker.exec_cmd(oxidp.id, echo_cmd)
 
             if key:
                 time.sleep(5)
@@ -205,8 +211,8 @@ environment=CATALINA_PID=/var/run/tomcat.pid
                         oxidp.name,
                     )
                 )
-                echo_cmd = "echo '{}' > {}".format(key, path)
-                self.docker.exec_cmd(self.node.id, echo_cmd)
+                echo_cmd = '''sh -c "echo '{}' > {}"'''.format(key, path)
+                docker.exec_cmd(oxidp.id, echo_cmd)
 
     def pull_oxtrust_override(self):
         for root, dirs, files in os.walk(self.app.config["OXTRUST_OVERRIDE_DIR"]):

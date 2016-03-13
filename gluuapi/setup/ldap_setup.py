@@ -232,7 +232,7 @@ class LdapSetup(BaseSetup):
             self.logger.info("importing {}".format(file_basename))
             self.docker.exec_cmd(self.node.id, importCmd)
 
-    def export_opendj_public_cert(self):
+    def export_opendj_cert(self):
         """Exports OpenDJ public certificate.
         """
         # Load password to acces OpenDJ truststore
@@ -240,10 +240,6 @@ class LdapSetup(BaseSetup):
         openDjTruststoreFn = '%s/config/truststore' % self.node.ldap_base_folder
         openDjPin = "`cat {}`".format(openDjPinFn)
 
-        self.docker.exec_cmd(
-            self.node.id,
-            "mkdir -p {}".format(os.path.dirname(self.node.opendj_cert_fn)),
-        )
         self.docker.exec_cmd(
             self.node.id,
             "touch {}".format(self.node.opendj_cert_fn),
@@ -262,11 +258,12 @@ class LdapSetup(BaseSetup):
         cmd = '''sh -c "{}"'''.format(cmd)
         self.docker.exec_cmd(self.node.id, cmd)
 
+    def import_opendj_cert(self):
         # Import OpenDJ certificate into java truststore
         self.logger.info("importing OpenDJ certificate into Java truststore")
         cmd = ' '.join([
-            "/usr/bin/keytool", "-import", "-trustcacerts", "-alias",
-            "{}_opendj".format(self.node.weave_ip),
+            "/usr/bin/keytool", "-import", "-trustcacerts",
+            "-alias", self.node.domain_name,
             "-file", self.node.opendj_cert_fn,
             "-keystore", self.node.truststore_fn,
             "-storepass", "changeit", "-noprompt",
@@ -378,7 +375,8 @@ command=/opt/opendj/bin/start-ds --quiet -N
             self.import_base64_scim_config()
             self.import_base64_config()
 
-        self.export_opendj_public_cert()
+        self.export_opendj_cert()
+        self.import_opendj_cert()
         self.delete_ldap_pw()
         return True
 

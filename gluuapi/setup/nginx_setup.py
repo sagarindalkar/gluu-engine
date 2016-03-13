@@ -84,6 +84,12 @@ command=/usr/sbin/nginx -g \\"daemon off;\\"
             self.gen_cert("nginx", self.cluster.decrypted_admin_pw,
                           "www-data", "www-data", hostname)
 
+            # save certs locally, so we can reuse and distribute them
+            try:
+                os.makedirs(self.app.config["SSL_CERT_DIR"])
+            except OSError:
+                pass
+
             resp = self.docker.exec_cmd(self.node.id, "cat /etc/certs/nginx.crt")
             if resp.retval:
                 with open(ssl_cert, "w") as fp:

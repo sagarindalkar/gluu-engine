@@ -95,7 +95,6 @@ class OxtrustSetup(HostFileMixin, SSLCertMixin, OxauthSetup):
         """Teardowns the node.
         """
         self.notify_nginx()
-        self.after_teardown()
 
     def render_server_xml_template(self):
         """Copies rendered Tomcat's server.xml into the node.

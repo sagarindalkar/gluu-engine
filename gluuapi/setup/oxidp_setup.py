@@ -163,9 +163,7 @@ class OxidpSetup(HostFileMixin, SSLCertMixin, OxauthSetup):
                                    self.app, logger=self.logger)
             setup_obj.render_nutcracker_conf()
             setup_obj.restart_nutcracker()
-
         self.notify_nginx()
-        self.after_teardown()
 
     def pull_shib_config(self):
         """Copies all existing oxIdp config and metadata files.

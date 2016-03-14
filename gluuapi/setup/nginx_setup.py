@@ -142,9 +142,7 @@ command=/usr/sbin/nginx -g \\"daemon off;\\"
         if (self.provider.type == "master"
                 and self.node.state == STATE_SUCCESS):
             self.notify_oxtrust()
-
         self.notify_oxidp()
-        self.after_teardown()
 
     def copy_index_html(self):
         """Copies custom index.html for nginx.

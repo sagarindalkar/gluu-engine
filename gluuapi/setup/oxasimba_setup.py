@@ -170,7 +170,6 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
         """Teardowns the node.
         """
         self.notify_nginx()
-        self.after_teardown()
 
     def render_ldap_props_template(self):
         """Copies rendered jinja template for LDAP connection.

@@ -159,7 +159,6 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
         """Teardowns the node.
         """
         self.notify_nginx()
-        self.after_teardown()
 
     def after_setup(self):
         """Post-setup callback.

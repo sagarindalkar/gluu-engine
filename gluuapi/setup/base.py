@@ -117,9 +117,11 @@ class BaseSetup(object):
             "-key", key,
             "-out", csr,
             "-subj", "/C=%s/ST=%s/L=%s/O=%s/CN=%s/emailAddress='%s'" % (
-                self.cluster.country_code, self.cluster.state,
-                self.cluster.city, self.cluster.org_name,
-                self.cluster.ox_cluster_hostname,
+                self.cluster.country_code,
+                self.cluster.state,
+                self.cluster.city,
+                self.cluster.org_name,
+                hostname,
                 self.cluster.admin_email,
             )
         ])

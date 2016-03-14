@@ -54,7 +54,7 @@ class OxidpSetup(HostFileMixin, SSLCertMixin, OxauthSetup):
     def setup(self):
         """Runs the actual setup.
         """
-        hostname = self.cluster.ox_cluster_hostname.split(":")[0]
+        hostname = self.node.domain_name
 
         # render config templates
         self.render_server_xml_template()

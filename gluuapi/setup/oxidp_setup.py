@@ -229,7 +229,6 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
 
         ctx = {
             "hostname": self.node.domain_name,
-            "weave_ip": self.node.weave_ip,
             "httpd_cert_fn": "/etc/certs/httpd.crt",
             "httpd_key_fn": "/etc/certs/httpd.key",
         }

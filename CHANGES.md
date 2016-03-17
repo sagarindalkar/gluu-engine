@@ -6,12 +6,7 @@ Here you can see the full list of changes between each gluu-flask release.
 
 Release date to be announced later.
 
-### Bug Fixes
-
 * Fixed error when stopping failed node deployment.
-
-### Enhancements
-
 * Speed up node teardown by skipping provisioning in failed node.
 * Node's deployment log are deleted after node teardown.
 * Set max. file descriptor in `ldap` node.
@@ -23,6 +18,9 @@ Release date to be announced later.
 * `gluuoxidp` image is upgraded to v2.4.2.
 * Cluster ID is now attached as provider attribute. Refer to migration guide for upgrading existing providers.
 * Speed up image downloads/updates by pulling them from Gluu's private registry. Refer to migration guide for upgrading images.
+* Removed `X-Deploy-Log` header from Node API response.
+* Removed unused `gluuapi distribute-data` command.
+* Removed unused `gluuapi populate-node-logs` command.
 
 ## Version 0.4.4
 

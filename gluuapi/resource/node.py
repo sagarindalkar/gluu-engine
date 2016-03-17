@@ -221,7 +221,6 @@ class NodeListResource(Resource):
         helper.setup(params["connect_delay"], params["exec_delay"])
 
         headers = {
-            "X-Deploy-Log": logpath,  # deprecated in favor of X-Gluu-Setup-Log
             "X-Node-Setup-Log": node_log.setup_log_url,
             "Location": url_for("noderesource", node_id=node.name),
         }

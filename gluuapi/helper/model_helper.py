@@ -248,6 +248,14 @@ class LdapModelHelper(BaseModelHelper):
 
 class OxauthModelHelper(BaseModelHelper):
     setup_class = OxauthSetup
+    def __init__(self, node, app, logpath=None):
+        path = app.config['OXAUTH_MAP_JARS']
+        self.volumes = {
+            path: {
+                'bind': '/opt/tomcat/webapps/oxauth/WEB-INF/lib',
+            },
+        }
+        super(OxauthModelHelper, self).__init__(node, app, logpath)
 
 
 class OxtrustModelHelper(BaseModelHelper):

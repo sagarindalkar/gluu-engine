@@ -3,6 +3,7 @@
 #
 # All rights reserved.
 
+import os
 import logging
 
 from crochet import run_in_reactor
@@ -11,6 +12,7 @@ from twisted.python import filepath
 
 from ..database import db
 from ..helper import SaltHelper
+from ..helper import DockerHelper
 
 
 class BaseWatcherTask(object):
@@ -133,6 +135,13 @@ class BaseWatcherTask(object):
             self.logger.info("copying {} to {}:{}".format(
                 src, node.name, dest,
             ))
+
+            # create destination directory if not exist
+            provider = db.get(node.provider_id, "providers")
+            docker = DockerHelper(provider, logger=self.logger)
+            docker.exec_cmd(node.id, "mkdir -p {}".format(os.path.dirname(dest)))
+
+            # copy the file to container
             self.salt.copy_file(node.id, src, dest)
 
     def get_nodes(self):

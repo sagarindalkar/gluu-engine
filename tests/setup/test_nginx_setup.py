@@ -1,4 +1,4 @@
-def test_setup(nginx_setup, patched_sleep, patched_exec_cmd):
+def test_setup(nginx_setup, patched_sleep, patched_exec_cmd, patched_run):
     # TODO: it might be better to split the tests
     nginx_setup.setup()
 

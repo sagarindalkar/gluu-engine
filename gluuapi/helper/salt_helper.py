@@ -3,8 +3,6 @@
 #
 # All rights reserved.
 
-import codecs
-import os
 import time
 
 import salt.config
@@ -13,6 +11,7 @@ import salt.client
 import salt.utils.event
 
 from ..errors import SaltEventError
+from ..utils import run
 
 SALT_EVENT_TIMEOUT = 2 * 60
 
@@ -45,30 +44,10 @@ class SaltHelper(object):
         keys = self.key_store.list_keys()
         return key in keys["minions"]
 
-    def _file_dict(self, fn_):
-        """Take a path and return the contents of the file as a string
-        """
-        with codecs.open(fn_, "r", encoding="utf-8") as fp:
-            data = fp.read()
-        return {fn_: data}
-
-    def _load_files(self, src):
-        """Parse the files indicated in ``src`` and load them into
-        a python object for transport.
-        """
-        files = {}
-        for fn_ in src:
-            if os.path.isfile(fn_):
-                files.update(self._file_dict(fn_))
-            elif os.path.isdir(fn_):
-                raise ValueError("{} is a directory, only files "
-                                 "are supported.".format(fn_))
-        return files
-
     def copy_file(self, tgt, src, dest):
         """Copies file to minion.
         """
-        ret = self.cmd(tgt, "cp.recv", [self._load_files([src]), dest])
+        ret = run("salt-cp {} {} {}".format(tgt, src, dest))
         time.sleep(1)
 
         max_retry = 5
@@ -84,8 +63,8 @@ class SaltHelper(object):
 
             # re-copy the file, but this time we will wait for 5 seconds
             # before doing subsequent checks
-            ret = self.cmd(tgt, "cp.recv", [self._load_files([src]), dest])
             time.sleep(5)
+            ret = run("salt-cp {} {} {}".format(tgt, src, dest))
 
             # mark as N-time retry attempt
             retry_attempt += 1

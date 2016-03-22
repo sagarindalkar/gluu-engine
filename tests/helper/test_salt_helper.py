@@ -36,26 +36,6 @@ def test_is_minion_registered(monkeypatch, salt_helper):
     assert salt_helper.is_minion_registered("abc") is True
 
 
-def test_file_dict(salt_helper):
-    fn = "tests/helper/sample.txt"
-    actual = salt_helper._file_dict(fn)
-    expected = {fn: "example\n"}
-    assert actual == expected
-
-
-def test_load_files(salt_helper):
-    fn = "tests/helper/sample.txt"
-    actual = salt_helper._load_files([fn])
-    expected = {fn: "example\n"}
-    assert actual == expected
-
-
-def test_load_files_error(salt_helper):
-    fn = "tests/helper"
-    with pytest.raises(ValueError):
-        salt_helper._load_files([fn])
-
-
 def test_copy_file(monkeypatch, salt_helper, patched_sleep):
     monkeypatch.setattr(
         "salt.client.LocalClient.cmd",

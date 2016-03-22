@@ -1,4 +1,4 @@
-def test_setup(ldap_setup, db, provider,
+def test_setup(ldap_setup, db, provider, patched_run,
                patched_sleep, patched_exec_cmd):
     # TODO: it might be better to split the tests
     db.persist(provider, "providers")
@@ -6,7 +6,8 @@ def test_setup(ldap_setup, db, provider,
 
 
 def test_setup_with_replication(ldap_setup, db, cluster, provider,
-                                patched_sleep, patched_exec_cmd):
+                                patched_sleep, patched_exec_cmd,
+                                patched_run):
     from gluuapi.model import LdapNode
     from gluuapi.model import STATE_SUCCESS
 
@@ -61,7 +62,7 @@ def test_after_setup(cluster, ldap_setup, provider, db,
 
 
 def test_teardown(ldap_setup, cluster, provider, oxauth_node, db,
-                  patched_sleep, patched_exec_cmd):
+                  patched_sleep, patched_exec_cmd, patched_run):
     db.persist(cluster, "clusters")
     db.persist(provider, "providers")
     oxauth_node.state = "SUCCESS"
@@ -69,7 +70,7 @@ def test_teardown(ldap_setup, cluster, provider, oxauth_node, db,
     ldap_setup.teardown()
 
 
-def test_teardown_with_replication(ldap_setup, cluster, db,
+def test_teardown_with_replication(ldap_setup, cluster, db, patched_run,
                                    patched_sleep, patched_exec_cmd):
     from gluuapi.model import LdapNode
     from gluuapi.model import STATE_SUCCESS
@@ -90,7 +91,7 @@ def test_teardown_with_replication(ldap_setup, cluster, db,
     ldap_setup.teardown()
 
 
-def test_replicate_from(ldap_setup, db, provider,
+def test_replicate_from(ldap_setup, db, provider, patched_run,
                         patched_sleep, patched_exec_cmd):
     from gluuapi.model import LdapNode
     from gluuapi.model import STATE_SUCCESS

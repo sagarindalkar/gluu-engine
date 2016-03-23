@@ -25,7 +25,7 @@ class WeaveHelper(object):
         self.logger = logger or logging.getLogger(
             __name__ + "." + self.__class__.__name__,
         )
-        self.weave_encryption = self.app.config.['WEAVE_ENCRYPTION']
+        self.weave_encryption = self.app.config['WEAVE_ENCRYPTION']
 
     @run_in_reactor
     def launch_async(self):

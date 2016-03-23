@@ -13,6 +13,7 @@ from crochet import run_in_reactor
 from .salt_helper import SaltHelper
 from .salt_helper import prepare_minion
 from .weave_helper import WeaveHelper
+from .docker_helper import DockerHelper
 from ..database import db
 
 
@@ -67,6 +68,7 @@ class ProviderHelper(object):
         )
         self.weave.launch()
         self.import_docker_certs()
+        self.docker = DockerHelper(self.provider, logger=self.logger)
 
         if recover_dns:
             # if weave relaunched while having containers deployed in
@@ -74,6 +76,10 @@ class ProviderHelper(object):
             # hence we're restoring them
             nodes = self.provider.get_node_objects()
             for node in nodes:
+                meta = self.docker.inspect_container(node.id)
+                if meta["State"]["Running"] is False:
+                    continue
+
                 self.weave.dns_add(node.id, node.domain_name)
                 if node.type == "ldap":
                     self.weave.dns_add(node.id, "ldap.gluu.local")

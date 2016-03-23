@@ -100,7 +100,8 @@ class LdapSetup(BaseSetup):
             "ldap_jmx_port": self.node.ldap_jmx_port,
             "ldap_admin_port": self.node.ldap_admin_port,
             "ldap_binddn": self.node.ldap_binddn,
-            "ldapPassFn": self.node.ldap_pass_fn,
+            "ldap_pass_fn": self.node.ldap_pass_fn,
+            "ldap_backend_type": "local-db",  # we're still using OpenDJ 2.6
         }
         self.render_template(src, dest, ctx)
 

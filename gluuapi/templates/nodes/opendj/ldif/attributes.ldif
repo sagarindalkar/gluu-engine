@@ -377,7 +377,7 @@ gluuStatus: active
 inum: %(inum_org)s!0005!5EC6
 urn: http://openid.net/specs/openid-connect-core-1_0.html/StandardClaims/nickname
 description: Casual name of the End-User that may or may not be the same as the given_name.
- For instance, a nickname value of Mike might be returned alongside a given_name value
+ For instance, a nickname value of Mike might be returned alongside a given_name value 
  of Michael.
 
 dn: inum=%(inum_org)s!0005!0C85,ou=attributes,o=%(inum_org)s,o=gluu

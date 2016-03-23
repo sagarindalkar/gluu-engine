@@ -38,6 +38,7 @@ class Config(object):
     OPENDJ_VOLUME_DIR = os.path.join(DATA_DIR, "volumes", "opendj")
     OXAUTH_VOLUME_DIR = os.path.join(DATA_DIR, "volumes", "oxauth")
     OXAUTH_MAP_JARS = os.path.join(OXAUTH_VOLUME_DIR, 'jars')
+    WEAVE_ENCRYPTION = False
 
 
 class ProdConfig(Config):

@@ -47,6 +47,7 @@ def create_app():
     app.config.from_object(_get_config_object(api_env))
 
     # loads custom ``settings.py`` from instance folder
+    # to enable weave encryption put WEAVE_ENCRYPTION = True
     app.instance_path = app.config["INSTANCE_DIR"]
     app.config.from_pyfile(
         os.path.join(app.instance_path, "settings.py"),

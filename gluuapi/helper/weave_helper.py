@@ -25,6 +25,7 @@ class WeaveHelper(object):
         self.logger = logger or logging.getLogger(
             __name__ + "." + self.__class__.__name__,
         )
+        self.weave_encryption = self.app.config.['WEAVE_ENCRYPTION']
 
     @run_in_reactor
     def launch_async(self):
@@ -67,10 +68,10 @@ class WeaveHelper(object):
         time.sleep(5)
 
         ctx = {
-            "password": self.cluster.decrypted_admin_pw,
+            "password": ('--password ' + self.cluster.decrypted_admin_pw) if self.weave_encryption else '',
             "ipnet": self.cluster.weave_ip_network,
         }
-        launch_cmd = "weave launch-router --password {password} " \
+        launch_cmd = "weave launch-router {password} " \
                      "--dns-domain gluu.local " \
                      "--ipalloc-range {ipnet} " \
                      "--ipalloc-default-subnet {ipnet}".format(**ctx)
@@ -85,7 +86,7 @@ class WeaveHelper(object):
         time.sleep(5)
 
         ctx = {
-            "password": self.cluster.decrypted_admin_pw,
+            "password": ('--password ' + self.cluster.decrypted_admin_pw) if self.weave_encryption else '',
             "ipnet": self.cluster.weave_ip_network,
             "master_ipaddr": self.app.config["SALT_MASTER_IPADDR"],
         }

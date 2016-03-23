@@ -66,7 +66,8 @@ class ProviderResource(Resource):
         db.update(provider.id, provider, "providers")
 
         prov_helper = ProviderHelper(provider, current_app._get_current_object())
-        prov_helper.setup(data["connect_delay"], data["exec_delay"])
+        prov_helper.setup(data["connect_delay"], data["exec_delay"],
+                          recover_dns=True)
         return provider.as_dict()
 
 

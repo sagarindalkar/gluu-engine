@@ -51,12 +51,14 @@ class ProviderHelper(object):
         )
 
     @run_in_reactor
-    def setup(self, connect_delay=10, exec_delay=15):
+    def setup(self, connect_delay=10, exec_delay=15, recover_dns=False):
         """Runs the actual setup.
 
         :param connect_delay: Time to wait before start connecting to minion.
         :param exec_delay: Time to wait before start executing remote command.
         """
+        self.logger.info("Provider {} setup is started".format(self.provider.id))
+
         prepare_minion(
             self.provider.hostname,
             connect_delay=connect_delay,
@@ -65,7 +67,20 @@ class ProviderHelper(object):
         )
         self.weave.launch()
         self.import_docker_certs()
+
+        if recover_dns:
+            # if weave relaunched while having containers deployed in
+            # weave network, their DNS entries will disappear;
+            # hence we're restoring them
+            nodes = self.provider.get_node_objects()
+            for node in nodes:
+                self.weave.dns_add(node.id, node.domain_name)
+                if node.type == "ldap":
+                    self.weave.dns_add(node.id, "ldap.gluu.local")
+
+        # distribute the data updates
         distribute_cluster_data(self.app.config["DATABASE_URI"])
+        self.logger.info("Provider {} setup is finished".format(self.provider.id))
 
     def import_docker_certs(self):
         """Imports certificates and keys required for accessing

@@ -90,7 +90,7 @@ class WeaveHelper(object):
             "ipnet": self.cluster.weave_ip_network,
             "master_ipaddr": self.app.config["SALT_MASTER_IPADDR"],
         }
-        launch_cmd = "weave launch-router --password {password} " \
+        launch_cmd = "weave launch-router {password} " \
                      "--dns-domain gluu.local " \
                      "--ipalloc-range {ipnet} " \
                      "--ipalloc-default-subnet {ipnet} " \

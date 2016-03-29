@@ -267,7 +267,9 @@ class NodeLogSetupResource(Resource):
 
         try:
             with open(abs_logpath) as fp:
-                return [line.strip() for line in fp]
+                resp = node_log.as_dict()
+                resp["setup_log_contents"] = [line.strip() for line in fp]
+                return resp
         except IOError:
             return {
                 "status": 404,
@@ -287,7 +289,9 @@ class NodeLogTeardownResource(Resource):
 
         try:
             with open(abs_logpath) as fp:
-                return [line.strip() for line in fp]
+                resp = node_log.as_dict()
+                resp["teardown_log_contents"] = [line.strip() for line in fp]
+                return resp
         except IOError:
             return {
                 "status": 404,

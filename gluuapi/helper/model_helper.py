@@ -164,6 +164,13 @@ class BaseModelHelper(object):
             self.logger.error(exc_traceback())
             self.on_setup_error()
         finally:
+            # mark NodeLog as finished
+            node_log = db.get(self.node.name, "node_logs")
+            if node_log:
+                node_log.setup_finished = True
+                db.update(node_log.id, node_log, "node_logs")
+
+            # distribute recovery data
             distribute_cluster_data(self.app.config["DATABASE_URI"])
 
     def on_setup_error(self):
@@ -222,12 +229,20 @@ class BaseModelHelper(object):
 
         # updating prometheus
         self.prometheus.update()
-        distribute_cluster_data(self.app.config["DATABASE_URI"])
 
         elapsed = time.time() - start
         self.logger.info("{} teardown is finished ({} seconds)".format(
             self.node.image, elapsed
         ))
+
+        # mark NodeLog as finished
+        node_log = db.get(self.node.name, "node_logs")
+        if node_log:
+            node_log.teardown_finished = True
+            db.update(node_log.id, node_log, "node_logs")
+
+        # distribute recovery data
+        distribute_cluster_data(self.app.config["DATABASE_URI"])
 
 
 class LdapModelHelper(BaseModelHelper):

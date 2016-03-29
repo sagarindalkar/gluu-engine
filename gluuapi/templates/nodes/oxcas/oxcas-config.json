@@ -1,0 +1,45 @@
+{
+    "applicationName":"Saml",
+
+    "openIdProviderUrl":"https://{{ ox_cluster_hostname }}/.well-known/openid-configuration",
+    "openIdClientId":"{{ oxauth_client_id }}",
+    "openIdClientPassword":"{{ oxauth_client_encoded_pw }}",
+    "openIdScopes":[
+        "openid",
+        "profile",
+        "email",
+        "user_name"
+    ],
+    "openIdRedirectUrl": "https://{{ ox_cluster_hostname }}/cas/login",
+    "openIdDefaultAuthenticator":true,
+    "openIdClaimMapping":[
+        {
+            "claim":"sub",
+            "attribute":"username"
+        },
+        {
+            "claim":"email",
+            "attribute":"email"
+        },
+        {
+            "claim":"given_name",
+            "attribute":"first_name"
+        },
+        {
+            "claim":"family_name",
+            "attribute":"family_name"
+        },
+        {
+            "claim":"name",
+            "attribute":"display_name"
+        },
+        {
+            "claim":"locale",
+            "attribute":"locale"
+        },
+        {
+            "claim":"zoneinfo",
+            "attribute":"zone"
+        }
+    ]
+}

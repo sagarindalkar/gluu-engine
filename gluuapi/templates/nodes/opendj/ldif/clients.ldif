@@ -19,6 +19,7 @@ oxAuthScope: inum=%(inum_org)s!0009!43F1,ou=scopes,o=%(inum_org)s,o=gluu
 oxAuthRedirectURI: https://%(oxtrust_hostname)s/identity/scim/auth
 oxAuthRedirectURI: https://%(oxtrust_hostname)s/identity/authentication/authcode
 oxAuthRedirectURI: https://%(ox_cluster_hostname)s/idp/auth-code.jsp
+oxAuthRedirectURI: https://%(ox_cluster_hostname)s/cas/login
 oxAuthPostLogoutRedirectURI: https://%(oxtrust_hostname)s/identity/authentication/finishlogout
 oxAuthTokenEndpointAuthMethod: client_secret_basic
 oxAuthIdTokenSignedResponseAlg: HS256

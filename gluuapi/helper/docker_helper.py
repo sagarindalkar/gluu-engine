@@ -162,8 +162,6 @@ class DockerHelper(object):
 
         if container_id:
             self.docker.start(container=container_id)
-            self.logger.info("container {!r} with ID {!r} "
-                             "has been started".format(name, container_id))
         return container_id
 
     def exec_cmd(self, container, cmd):

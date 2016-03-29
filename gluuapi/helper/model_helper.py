@@ -73,6 +73,9 @@ class BaseModelHelper(object):
         :param exec_delay: Time to wait before start executing remote command.
         """
         try:
+            self.logger.info("{} setup is started".format(self.node.image))
+            start = time.time()
+
             # get docker bridge IP as it's where weavedns runs
             bridge_ip = self.weave.docker_bridge_ip()
 
@@ -132,9 +135,6 @@ class BaseModelHelper(object):
 
             if self.node.type == "ldap":
                 self.weave.dns_add(self.node.id, "ldap.gluu.local")
-
-            self.logger.info("{} setup is started".format(self.node.image))
-            start = time.time()
 
             setup_obj = self.setup_class(self.node, self.cluster,
                                          self.app, logger=self.logger)

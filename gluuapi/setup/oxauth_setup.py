@@ -136,7 +136,7 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
         self.gen_cert("httpd", self.cluster.decrypted_admin_pw,
                       "www-data", "www-data", hostname)
 
-        self.pull_oxauth_override()
+        # self.pull_oxauth_override()
         self.add_auto_startup_entry()
         self.change_cert_access("tomcat", "tomcat")
         self.reload_supervisor()

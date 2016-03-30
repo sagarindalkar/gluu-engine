@@ -85,7 +85,7 @@ class OxtrustSetup(HostFileMixin, SSLCertMixin, OxauthSetup):
             hostname,
         )
 
-        self.pull_oxtrust_override()
+        # self.pull_oxtrust_override()
         self.add_auto_startup_entry()
         self.change_cert_access("tomcat", "tomcat")
         self.reload_supervisor()

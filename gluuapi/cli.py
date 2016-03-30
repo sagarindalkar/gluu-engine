@@ -14,8 +14,8 @@ from .app import create_app
 from .log import configure_global_logging
 from .task import LicenseExpirationTask
 from .task import OxidpWatcherTask
-from .task import OxauthWatcherTask
-from .task import OxtrustWatcherTask
+# from .task import OxauthWatcherTask
+# from .task import OxtrustWatcherTask
 from .database import db
 
 # global context settings
@@ -36,8 +36,8 @@ def run_app(app, use_reloader=True):
         LicenseExpirationTask(app).perform_job()
 
     OxidpWatcherTask(app).perform_job()
-    OxauthWatcherTask(app).perform_job()
-    OxtrustWatcherTask(app).perform_job()
+    # OxauthWatcherTask(app).perform_job()
+    # OxtrustWatcherTask(app).perform_job()
 
     app.run(
         host=app.config["HOST"],

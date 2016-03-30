@@ -129,6 +129,7 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
         self.copy_duo_web()
         self.copy_gplus_secrets()
         self.copy_oxpush2_creds()
+        self.copy_setenv()
         self.render_httpd_conf()
         self.configure_vhost()
 
@@ -238,3 +239,9 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
                     src, self.node.name, dest,
                 ))
                 self.salt.copy_file(self.node.id, src, dest)
+
+    def copy_setenv(self):
+        src = self.get_template_path("nodes/oxauth/setenv.sh")
+        dest = "/opt/tomcat/bin/setenv.sh"
+        self.logger.info("copying setenv.sh")
+        self.salt.copy_file(self.node.id, src, dest)

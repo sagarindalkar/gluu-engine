@@ -132,22 +132,8 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
         self.render_httpd_conf()
         self.configure_vhost()
 
-        self.gen_cert("shibIDP", self.cluster.decrypted_admin_pw,
-                      "tomcat", "tomcat", hostname)
         self.gen_cert("httpd", self.cluster.decrypted_admin_pw,
                       "www-data", "www-data", hostname)
-
-        # IDP keystore
-        self.gen_keystore(
-            "shibIDP",
-            self.cluster.shib_jks_fn,
-            self.cluster.decrypted_admin_pw,
-            "{}/shibIDP.key".format(self.node.cert_folder),
-            "{}/shibIDP.crt".format(self.node.cert_folder),
-            "tomcat",
-            "tomcat",
-            hostname,
-        )
 
         self.pull_oxauth_override()
         self.add_auto_startup_entry()

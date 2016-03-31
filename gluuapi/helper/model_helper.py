@@ -23,6 +23,8 @@ from ..database import db
 from ..model import STATE_SUCCESS
 from ..model import STATE_FAILED
 from ..model import STATE_DISABLED
+from ..model import STATE_SETUP_FINISHED
+from ..model import STATE_TEARDOWN_FINISHED
 from ..setup import LdapSetup
 from ..setup import OxauthSetup
 from ..setup import OxtrustSetup
@@ -167,7 +169,7 @@ class BaseModelHelper(object):
             # mark NodeLog as finished
             node_log = db.get(self.node.name, "node_logs")
             if node_log:
-                node_log.setup_finished = True
+                node_log.state = STATE_SETUP_FINISHED
                 db.update(node_log.id, node_log, "node_logs")
 
             # distribute recovery data
@@ -238,7 +240,7 @@ class BaseModelHelper(object):
         # mark NodeLog as finished
         node_log = db.get(self.node.name, "node_logs")
         if node_log:
-            node_log.teardown_finished = True
+            node_log.state = STATE_TEARDOWN_FINISHED
             db.update(node_log.id, node_log, "node_logs")
 
         # distribute recovery data

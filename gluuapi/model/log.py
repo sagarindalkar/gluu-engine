@@ -13,8 +13,7 @@ class NodeLog(BaseModel):
         "node_name",
         "setup_log_url",
         "teardown_log_url",
-        "setup_finished",
-        "teardown_finished",
+        "state",
     ])
 
     def __init__(self):
@@ -24,8 +23,7 @@ class NodeLog(BaseModel):
         self.setup_log_url = ""
         self.teardown_log = ""
         self.teardown_log_url = ""
-        self.setup_finished = False
-        self.teardown_finished = False
+        self.state = ""
 
     @staticmethod
     def create_or_get(node):

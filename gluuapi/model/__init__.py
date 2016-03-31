@@ -20,3 +20,8 @@ from .base import STATE_SUCCESS  # noqa
 from .base import STATE_DISABLED  # noqa
 
 from .log import NodeLog  # noqa
+
+from .base import STATE_SETUP_IN_PROGRESS  # noqa
+from .base import STATE_SETUP_FINISHED  # noqa
+from .base import STATE_TEARDOWN_IN_PROGRESS  # noqa
+from .base import STATE_TEARDOWN_FINISHED  # noqa

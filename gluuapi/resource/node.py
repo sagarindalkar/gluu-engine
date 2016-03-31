@@ -14,6 +14,8 @@ from flask_restful import Resource
 from ..database import db
 from ..reqparser import NodeReq
 from ..model import STATE_IN_PROGRESS
+from ..model import STATE_SETUP_IN_PROGRESS
+from ..model import STATE_TEARDOWN_IN_PROGRESS
 from ..helper import LdapModelHelper
 from ..helper import OxauthModelHelper
 from ..helper import OxtrustModelHelper
@@ -91,6 +93,7 @@ class NodeResource(Resource):
         db.delete_from_table("nodes", db.where("name") == node.name)
 
         node_log = NodeLog.create_or_get(node)
+        node_log.state = STATE_TEARDOWN_IN_PROGRESS
         node_log.teardown_log_url = url_for(
             "nodelogteardownresource",
             id=node_log.id,
@@ -206,6 +209,7 @@ class NodeListResource(Resource):
 
         # log related setup
         node_log = NodeLog.create_or_get(node)
+        node_log.state = STATE_SETUP_IN_PROGRESS
         node_log.setup_log_url = url_for(
             "nodelogsetupresource",
             id=node_log.id,

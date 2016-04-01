@@ -267,13 +267,11 @@ class OxauthModelHelper(BaseModelHelper):
     setup_class = OxauthSetup
 
     def __init__(self, node, app, logpath=None):
-        # FIXME: mapping volume to lib directory will crash oxAuth on startup
-        # path = app.config['OXAUTH_MAP_JARS']
-        # self.volumes = {
-        #     path: {
-        #         'bind': '/opt/tomcat/webapps/oxauth/WEB-INF/lib',
-        #     },
-        # }
+        self.volumes = {
+            "/var/gluu/webapps/oxauth": {
+                'bind': '/var/gluu/webapps/oxauth',
+            },
+        }
         super(OxauthModelHelper, self).__init__(node, app, logpath)
 
 
@@ -285,6 +283,9 @@ class OxtrustModelHelper(BaseModelHelper):
         self.volumes = {
             app.config["OXIDP_OVERRIDE_DIR"]: {
                 "bind": "/opt/idp",
+            },
+            "/var/gluu/webapps/identity": {
+                'bind': '/var/gluu/webapps/identity',
             },
         }
         super(OxtrustModelHelper, self).__init__(node, app, logpath)

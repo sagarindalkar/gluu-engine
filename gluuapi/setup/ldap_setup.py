@@ -491,8 +491,8 @@ command=/opt/opendj/bin/start-ds --quiet -N
             "commons-lang-2.6.jar",
             "log4j-1.2.17.jar",
             "commons-codec-1.5.jar",
-            "oxauth-model-2.4.2.Final.jar",
-            "oxauth-server-2.4.2.Final.jar",
+            "oxauth-model-2.4.3.Final.jar",
+            "oxauth-server-2.4.3.Final.jar",
         ])
         classpath = ":".join(jars)
         resp = self.docker.exec_cmd(

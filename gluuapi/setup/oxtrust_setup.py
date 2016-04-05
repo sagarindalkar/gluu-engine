@@ -62,9 +62,12 @@ class OxtrustSetup(HostFileMixin, SSLCertMixin, OxauthSetup):
 
         self.render_ldap_props_template()
         self.render_server_xml_template()
+        # FIXME: error when custom oxTrust context is used
+        # self.render_oxtrust_context()
         self.write_salt_file()
         self.render_check_ssl_template()
         self.copy_tomcat_index()
+        self.copy_setenv()
         # self.render_httpd_conf()
         # self.configure_vhost()
 
@@ -223,3 +226,16 @@ environment=CATALINA_PID=/var/run/tomcat.pid
                     src, self.node.name, dest,
                 ))
                 self.salt.copy_file(self.node.id, src, dest)
+
+    def copy_setenv(self):
+        src = self.get_template_path("nodes/oxtrust/setenv.sh")
+        dest = "/opt/tomcat/bin/setenv.sh"
+        self.logger.info("copying setenv.sh")
+        self.salt.copy_file(self.node.id, src, dest)
+
+    def render_oxtrust_context(self):
+        """Renders oxTrust context file for Tomcat.
+        """
+        src = "nodes/oxtrust/identity.xml"
+        dest = "/opt/tomcat/conf/Catalina/localhost/identity.xml"
+        self.copy_rendered_jinja_template(src, dest)

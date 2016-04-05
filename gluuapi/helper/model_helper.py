@@ -268,8 +268,14 @@ class OxauthModelHelper(BaseModelHelper):
 
     def __init__(self, node, app, logpath=None):
         self.volumes = {
-            "/var/gluu/webapps/oxauth": {
-                'bind': '/var/gluu/webapps/oxauth',
+            "/var/gluu/webapps/oxauth/pages": {
+                'bind': '/var/gluu/webapps/oxauth/pages',
+            },
+            "/var/gluu/webapps/oxauth/resources": {
+                'bind': '/var/gluu/webapps/oxauth/resources',
+            },
+            "/var/gluu/webapps/oxauth/libs": {
+                'bind': '/var/gluu/webapps/oxauth/libs',
             },
         }
         super(OxauthModelHelper, self).__init__(node, app, logpath)
@@ -284,8 +290,14 @@ class OxtrustModelHelper(BaseModelHelper):
             app.config["OXIDP_OVERRIDE_DIR"]: {
                 "bind": "/opt/idp",
             },
-            "/var/gluu/webapps/identity": {
-                'bind': '/var/gluu/webapps/identity',
+            "/var/gluu/webapps/oxtrust/pages": {
+                'bind': '/var/gluu/webapps/oxtrust/pages',
+            },
+            "/var/gluu/webapps/oxtrust/resources": {
+                'bind': '/var/gluu/webapps/oxtrust/resources',
+            },
+            "/var/gluu/webapps/oxtrust/libs": {
+                'bind': '/var/gluu/webapps/oxtrust/libs',
             },
         }
         super(OxtrustModelHelper, self).__init__(node, app, logpath)

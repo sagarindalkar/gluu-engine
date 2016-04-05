@@ -62,8 +62,7 @@ class OxtrustSetup(HostFileMixin, SSLCertMixin, OxauthSetup):
 
         self.render_ldap_props_template()
         self.render_server_xml_template()
-        # FIXME: error when custom oxTrust context is used
-        # self.render_oxtrust_context()
+        self.render_oxtrust_context()
         self.write_salt_file()
         self.render_check_ssl_template()
         self.copy_tomcat_index()

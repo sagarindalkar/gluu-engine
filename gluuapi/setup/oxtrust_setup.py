@@ -5,7 +5,6 @@
 
 import os.path
 import time
-from glob import iglob
 
 from .base import SSLCertMixin
 from .base import HostFileMixin
@@ -54,11 +53,8 @@ class OxtrustSetup(HostFileMixin, SSLCertMixin, OxauthSetup):
 
         # render config templates
         self.render_log_config_template()
-        self.copy_shib_config("idp")
-        self.copy_shib_config("idp/schema")
-        self.copy_shib_config("idp/ProfileConfiguration")
-        self.copy_shib_config("idp/MetadataFilter")
-        self.copy_shib_config("sp")
+        self.unpack_shib_config()
+        self.copy_attribute_resolver()
 
         self.render_ldap_props_template()
         self.render_server_xml_template()
@@ -128,26 +124,6 @@ class OxtrustSetup(HostFileMixin, SSLCertMixin, OxauthSetup):
         self.push_shib_certkey()
         self.discover_nginx()
         self.notify_nginx()
-
-    def copy_shib_config(self, parent_dir):
-        """Copy config files located under shibboleth2 directory.
-        """
-        # create a generator to keep the result of globbing
-        files = iglob(self.get_template_path(
-            "nodes/oxtrust/shibboleth2/{}/*".format(parent_dir)
-        ))
-
-        parent_dest = "/opt/tomcat/conf/shibboleth2/{}".format(parent_dir)
-        mkdir_cmd = "mkdir -p {}".format(parent_dest)
-        self.docker.exec_cmd(self.node.id, mkdir_cmd)
-
-        for src in files:
-            if os.path.isdir(src):
-                continue
-            fn = os.path.basename(src)
-            dest = "{}/{}".format(parent_dest, fn)
-            self.logger.info("copying {}".format(fn))
-            self.salt.copy_file(self.node.id, src, dest)
 
     def add_auto_startup_entry(self):
         """Adds supervisor program for auto-startup.
@@ -238,3 +214,18 @@ environment=CATALINA_PID=/var/run/tomcat.pid
         src = "nodes/oxtrust/identity.xml"
         dest = "/opt/tomcat/conf/Catalina/localhost/identity.xml"
         self.copy_rendered_jinja_template(src, dest)
+
+    def unpack_shib_config(self):
+        self.logger.info("unpacking shibboleth2 config")
+        lib_dir = "/opt/tomcat/webapps/identity/WEB-INF/lib"
+        jar_file = "oxtrust-configuration-2.4.3.Final.jar "
+        unzip_cmd = "unzip -qq {}/{} shibboleth2/* -d /opt/tomcat/conf".format(
+            lib_dir, jar_file,
+        )
+        self.docker.exec_cmd(self.node.id, unzip_cmd)
+
+    def copy_attribute_resolver(self):
+        src = self.get_template_path("nodes/oxtrust/attribute-resolver.xml.vm")
+        dest = "/opt/tomcat/conf/shibboleth2/idp/attribute-resolver.xml.vm"
+        self.logger.info("copying attribute-resolver.xml.vm")
+        self.salt.copy_file(self.node.id, src, dest)

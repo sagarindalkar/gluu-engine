@@ -18,6 +18,7 @@ from .task import OxidpWatcherTask
 # from .task import OxtrustWatcherTask
 from .database import db
 from .helper import SaltHelper
+from .utils import run
 
 # global context settings
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])

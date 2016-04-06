@@ -17,6 +17,7 @@ from .task import OxidpWatcherTask
 # from .task import OxauthWatcherTask
 # from .task import OxtrustWatcherTask
 from .database import db
+from .helper import SaltHelper
 
 # global context settings
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
@@ -148,3 +149,20 @@ def upgrade_providers():
             click.echo("cluster {} has been attached to {} provider {}".format(
                 cluster_id, provider.type, provider.id
             ))
+
+
+@main.command('distribute-payload')
+def distpayload():
+    volume_root = '/var/gluu/webapps/oxauth'
+    check_salt()
+    run('docker restart nginx_sfs')
+    master_ip = os.environ.get("SALT_MASTER_IPADDR")
+    providers = db.all('providers')
+    salt = SaltHelper()
+    cmd = 'wget -r -q -nH -np -R index.html* http://{}:9001 -P {}'.format(master_ip, volume_root)
+    for provider in providers:
+        salt.cmd(provider.hostname, 'cmd.run', cmd)
+    oxauths = db.search_from_table('nodes', ((db.where('type') == 'oxauth') & (db.where('state') == 'SUCCESS')) )
+    cmd = "supervisorctl restart tomcat"
+    for oxauth in oxauths:
+        salt.cmd(oxauth.id, 'cmd.run', cmd)

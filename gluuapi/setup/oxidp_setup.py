@@ -38,19 +38,6 @@ class OxidpSetup(HostFileMixin, SSLCertMixin, OxauthSetup):
                 dest,
             )
 
-    def render_ldap_props_template(self):
-        """Copies rendered jinja template for LDAP connection.
-        """
-        src = "nodes/oxidp/oxidp-ldap.properties"
-        dest = os.path.join("/opt/tomcat/conf/oxidp-ldap.properties")
-        ctx = {
-            "inum_appliance": self.cluster.inum_appliance,
-            "encoded_ox_ldap_pw": self.cluster.encoded_ox_ldap_pw,
-            "ldap_hosts": "ldap.gluu.local:{}".format(self.cluster.ldaps_port),
-            "ldap_binddn": self.node.ldap_binddn,
-        }
-        self.copy_rendered_jinja_template(src, dest, ctx)
-
     def setup(self):
         """Runs the actual setup.
         """

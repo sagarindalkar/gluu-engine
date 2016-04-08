@@ -169,16 +169,3 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
         """Teardowns the node.
         """
         self.notify_nginx()
-
-    def render_ldap_props_template(self):
-        """Copies rendered jinja template for LDAP connection.
-        """
-        src = "nodes/oxasimba/oxasimba-ldap.properties"
-        dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
-        ctx = {
-            "ldap_binddn": self.node.ldap_binddn,
-            "encoded_ox_ldap_pw": self.cluster.encoded_ox_ldap_pw,
-            "ldap_hosts": "ldap.gluu.local:{}".format(self.cluster.ldaps_port),
-            "inum_appliance": self.cluster.inum_appliance,
-        }
-        self.copy_rendered_jinja_template(src, dest, ctx)

@@ -24,19 +24,6 @@ class OxtrustSetup(HostFileMixin, SSLCertMixin, OxauthSetup):
         }
         self.copy_rendered_jinja_template(src, dest, ctx)
 
-    def render_ldap_props_template(self):
-        """Copies rendered jinja template for LDAP connection.
-        """
-        src = "nodes/oxtrust/oxtrust-ldap.properties"
-        dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
-        ctx = {
-            "ldap_binddn": self.node.ldap_binddn,
-            "encoded_ox_ldap_pw": self.cluster.encoded_ox_ldap_pw,
-            "ldap_hosts": "ldap.gluu.local:{}".format(self.cluster.ldaps_port),
-            "inum_appliance": self.cluster.inum_appliance,
-        }
-        self.copy_rendered_jinja_template(src, dest, ctx)
-
     def render_check_ssl_template(self):
         """Renders check_ssl script into the node.
         """

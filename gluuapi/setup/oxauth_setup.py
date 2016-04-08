@@ -77,7 +77,7 @@ class OxauthSetup(BaseSetup):
     def render_ldap_props_template(self):
         """Copies rendered jinja template for LDAP connection.
         """
-        src = "nodes/oxauth/oxauth-ldap.properties"
+        src = "nodes/_shared/ox-ldap.properties"
         dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
 
         ctx = {

@@ -138,6 +138,9 @@ class BaseModelHelper(object):
             if self.node.type == "ldap":
                 self.weave.dns_add(self.node.id, "ldap.gluu.local")
 
+            if self.node.type == "nginx":
+                self.weave.dns_add(self.node.id, self.cluster.ox_cluster_hostname)
+
             setup_obj = self.setup_class(self.node, self.cluster,
                                          self.app, logger=self.logger)
             setup_obj.setup()

@@ -96,14 +96,16 @@ class OxtrustSetup(HostFileMixin, SSLCertMixin, OxauthSetup):
         """Discovers nginx node.
         """
         self.logger.info("discovering available nginx node")
-        try:
-            # if we already have nginx node in the the cluster,
-            # add entry to /etc/hosts and import the cert
-            nginx = self.provider.get_node_objects(type_="nginx")[0]
-            self.add_nginx_entry(nginx)
+        if self.cluster.count_node_objects(type_="nginx"):
             self.import_nginx_cert()
-        except IndexError:
-            pass
+        # try:
+        #     # if we already have nginx node in the the cluster,
+        #     # add entry to /etc/hosts and import the cert
+        #     # nginx = self.provider.get_node_objects(type_="nginx")[0]
+        #     # self.add_nginx_entry(nginx)
+        #     self.import_nginx_cert()
+        # except IndexError:
+        #     pass
 
     def after_setup(self):
         """Post-setup callback.

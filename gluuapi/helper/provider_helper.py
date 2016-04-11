@@ -44,6 +44,7 @@ def distribute_cluster_data(src):
 class ProviderHelper(object):
     def __init__(self, provider, app, logger=None):
         self.provider = provider
+        self.cluster = db.get(provider.cluster_id, "clusters")
         self.app = app
         self.weave = WeaveHelper(provider, self.app)
         self.salt = SaltHelper()
@@ -83,6 +84,9 @@ class ProviderHelper(object):
                 self.weave.dns_add(node.id, node.domain_name)
                 if node.type == "ldap":
                     self.weave.dns_add(node.id, "ldap.gluu.local")
+
+                if node.type == "nginx":  # and self.cluster is not None:
+                    self.weave.dns_add(node.id, self.cluster.ox_cluster_hostname)
 
         # distribute the data updates
         distribute_cluster_data(self.app.config["DATABASE_URI"])

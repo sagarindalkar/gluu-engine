@@ -249,11 +249,13 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
         """Discovers nginx node.
         """
         self.logger.info("discovering available nginx node")
-        try:
-            # if we already have nginx node in the the cluster,
-            # add entry to /etc/hosts and import the cert
-            nginx = self.cluster.get_nginx_objects()[0]
-            self.add_nginx_entry(nginx)
+        if self.cluster.count_node_objects(type_="nginx"):
             self.import_nginx_cert()
-        except IndexError:
-            pass
+        # try:
+        #     # if we already have nginx node in the the cluster,
+        #     # add entry to /etc/hosts and import the cert
+        #     # nginx = self.cluster.get_nginx_objects()[0]
+        #     # self.add_nginx_entry(nginx)
+        #     self.import_nginx_cert()
+        # except IndexError:
+        #     pass

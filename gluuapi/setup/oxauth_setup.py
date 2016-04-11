@@ -125,12 +125,6 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
         self.render_oxauth_context()
 
         self.write_salt_file()
-        self.copy_duo_creds()
-        self.copy_duo_web()
-        self.copy_gplus_secrets()
-        self.copy_oxpush2_creds()
-        self.copy_setenv()
-        self.copy_cert_creds()
         self.render_httpd_conf()
         self.configure_vhost()
 
@@ -165,30 +159,6 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
         """Post-setup callback.
         """
         self.notify_nginx()
-
-    def copy_duo_creds(self):
-        """Copies Duo's credential file into the node.
-        """
-        src = self.get_template_path("nodes/oxauth/duo_creds.json")
-        dest = "/etc/certs/duo_creds.json"
-        self.logger.info("copying duo_creds.json")
-        self.salt.copy_file(self.node.id, src, dest)
-
-    def copy_duo_web(self):
-        """Copies Duo's web script file into the node.
-        """
-        src = self.get_template_path("nodes/oxauth/duo_web.py")
-        dest = "/opt/tomcat/conf/python/duo_web.py"
-        self.logger.info("copying duo_web.py")
-        self.salt.copy_file(self.node.id, src, dest)
-
-    def copy_gplus_secrets(self):
-        """Copies Google Plus' credential file into the node.
-        """
-        src = self.get_template_path("nodes/oxauth/gplus_client_secrets.json")
-        dest = "/etc/certs/gplus_client_secrets.json"
-        self.logger.info("copying gplus_client_secrets.json")
-        self.salt.copy_file(self.node.id, src, dest)
 
     def configure_vhost(self):
         """Configures Apache2 virtual host.
@@ -235,14 +205,6 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
         }
         self.copy_rendered_jinja_template(src, dest, ctx)
 
-    def copy_oxpush2_creds(self):
-        """Copies oxPush2's credential file into the node.
-        """
-        src = self.get_template_path("nodes/oxauth/oxpush2_creds.json")
-        dest = "/etc/certs/oxpush2_creds.json"
-        self.logger.info("copying oxpush2_creds.json")
-        self.salt.copy_file(self.node.id, src, dest)
-
     def pull_oxauth_override(self):
         for root, dirs, files in os.walk(self.app.config["OXAUTH_OVERRIDE_DIR"]):
             for fn in files:
@@ -253,17 +215,3 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
                     src, self.node.name, dest,
                 ))
                 self.salt.copy_file(self.node.id, src, dest)
-
-    def copy_setenv(self):
-        src = self.get_template_path("nodes/oxauth/setenv.sh")
-        dest = "/opt/tomcat/bin/setenv.sh"
-        self.logger.info("copying setenv.sh")
-        self.salt.copy_file(self.node.id, src, dest)
-
-    def copy_cert_creds(self):
-        """Copies cert credential file into the node.
-        """
-        src = self.get_template_path("nodes/oxauth/cert_creds.json")
-        dest = "/etc/certs/cert_creds.json"
-        self.logger.info("copying cert_creds.json")
-        self.salt.copy_file(self.node.id, src, dest)

@@ -130,6 +130,7 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
         self.copy_gplus_secrets()
         self.copy_oxpush2_creds()
         self.copy_setenv()
+        self.copy_cert_creds()
         self.render_httpd_conf()
         self.configure_vhost()
 
@@ -257,4 +258,12 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
         src = self.get_template_path("nodes/oxauth/setenv.sh")
         dest = "/opt/tomcat/bin/setenv.sh"
         self.logger.info("copying setenv.sh")
+        self.salt.copy_file(self.node.id, src, dest)
+
+    def copy_cert_creds(self):
+        """Copies cert credential file into the node.
+        """
+        src = self.get_template_path("nodes/oxauth/cert_creds.json")
+        dest = "/etc/certs/cert_creds.json"
+        self.logger.info("copying cert_creds.json")
         self.salt.copy_file(self.node.id, src, dest)

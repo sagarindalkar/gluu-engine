@@ -15,29 +15,6 @@ from ..helper import DockerHelper
 
 
 class OxidpSetup(HostFileMixin, SSLCertMixin, OxauthSetup):
-    def copy_static_conf(self):
-        """Copies oxIdp static configuration into the node.
-        """
-        static_conf = {
-            "idp.xml": "/opt/tomcat/conf/Catalina/localhost/idp.xml",
-            "idp-metadata.xml": "/opt/idp/metadata/idp-metadata.xml",
-            "attribute-resolver.xml": "/opt/idp/conf/attribute-resolver.xml",
-            "relying-party.xml": "/opt/idp/conf/relying-party.xml",
-            "attribute-filter.xml": "/opt/idp/conf/attribute-filter.xml",
-            "internal.xml": "/opt/idp/conf/internal.xml",
-            "service.xml": "/opt/idp/conf/service.xml",
-            "logging.xml": "/opt/idp/conf/logging.xml",
-            "handler.xml": "/opt/idp/conf/handler.xml",
-        }
-
-        for src, dest in static_conf.items():
-            self.logger.info("copying {}".format(src))
-            self.salt.copy_file(
-                self.node.id,
-                self.get_template_path("nodes/oxidp/{}".format(src)),
-                dest,
-            )
-
     def setup(self):
         """Runs the actual setup.
         """
@@ -45,7 +22,6 @@ class OxidpSetup(HostFileMixin, SSLCertMixin, OxauthSetup):
 
         # render config templates
         self.render_server_xml_template()
-        self.copy_static_conf()
         self.render_ldap_props_template()
         self.write_salt_file()
         self.render_httpd_conf()

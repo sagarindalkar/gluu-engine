@@ -14,16 +14,6 @@ from ..helper import DockerHelper
 
 
 class OxtrustSetup(HostFileMixin, SSLCertMixin, OxauthSetup):
-    def render_log_config_template(self):
-        """Copies rendered oxTrust log config file.
-        """
-        src = "nodes/oxtrust/oxTrustLogRotationConfiguration.xml"
-        dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
-        ctx = {
-            "tomcat_log_folder": self.node.tomcat_log_folder,
-        }
-        self.copy_rendered_jinja_template(src, dest, ctx)
-
     def render_check_ssl_template(self):
         """Renders check_ssl script into the node.
         """
@@ -38,21 +28,10 @@ class OxtrustSetup(HostFileMixin, SSLCertMixin, OxauthSetup):
         """
         hostname = self.cluster.ox_cluster_hostname.split(":")[0]
 
-        # render config templates
-        self.render_log_config_template()
-        self.unpack_shib_config()
-        self.copy_attribute_resolver()
-
         self.render_ldap_props_template()
         self.render_server_xml_template()
-        self.render_oxtrust_context()
         self.write_salt_file()
         self.render_check_ssl_template()
-        self.copy_tomcat_index()
-        self.copy_setenv()
-        # self.render_httpd_conf()
-        # self.configure_vhost()
-
         self.gen_cert("shibIDP", self.cluster.decrypted_admin_pw,
                       "tomcat", "tomcat", hostname)
         # self.gen_cert("httpd", self.cluster.decrypted_admin_pw,
@@ -127,14 +106,6 @@ environment=CATALINA_PID=/var/run/tomcat.pid
         cmd = '''sh -c "echo '{}' >> /etc/supervisor/conf.d/supervisord.conf"'''.format(payload)
         self.docker.exec_cmd(self.node.id, cmd)
 
-    def copy_tomcat_index(self):
-        """Copies Tomcat's index.html into the node.
-        """
-        self.logger.info("copying index.html")
-        src = self.get_template_path("nodes/oxtrust/index.html")
-        dest = "/opt/tomcat/webapps/ROOT/index.html"
-        self.salt.copy_file(self.node.id, src, dest)
-
     def restart_tomcat(self):
         """Restarts Tomcat via supervisorctl.
         """
@@ -190,31 +161,3 @@ environment=CATALINA_PID=/var/run/tomcat.pid
                     src, self.node.name, dest,
                 ))
                 self.salt.copy_file(self.node.id, src, dest)
-
-    def copy_setenv(self):
-        src = self.get_template_path("nodes/oxtrust/setenv.sh")
-        dest = "/opt/tomcat/bin/setenv.sh"
-        self.logger.info("copying setenv.sh")
-        self.salt.copy_file(self.node.id, src, dest)
-
-    def render_oxtrust_context(self):
-        """Renders oxTrust context file for Tomcat.
-        """
-        src = "nodes/oxtrust/identity.xml"
-        dest = "/opt/tomcat/conf/Catalina/localhost/identity.xml"
-        self.copy_rendered_jinja_template(src, dest)
-
-    def unpack_shib_config(self):
-        self.logger.info("unpacking shibboleth2 config")
-        lib_dir = "/opt/tomcat/webapps/identity/WEB-INF/lib"
-        jar_file = "oxtrust-configuration-2.4.3.Final.jar "
-        unzip_cmd = "unzip -qq {}/{} shibboleth2/* -d /opt/tomcat/conf".format(
-            lib_dir, jar_file,
-        )
-        self.docker.exec_cmd(self.node.id, unzip_cmd)
-
-    def copy_attribute_resolver(self):
-        src = self.get_template_path("nodes/oxtrust/attribute-resolver.xml.vm")
-        dest = "/opt/tomcat/conf/shibboleth2/idp/attribute-resolver.xml.vm"
-        self.logger.info("copying attribute-resolver.xml.vm")
-        self.salt.copy_file(self.node.id, src, dest)

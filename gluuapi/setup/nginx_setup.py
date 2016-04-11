@@ -103,7 +103,6 @@ command=/usr/sbin/nginx -g \\"daemon off;\\"
         self.change_cert_access("www-data", "www-data")
         self.render_https_conf()
         self.configure_vhost()
-        self.copy_index_html()
         self.add_auto_startup_entry()
         self.reload_supervisor()
         return True
@@ -143,14 +142,6 @@ command=/usr/sbin/nginx -g \\"daemon off;\\"
                 and self.node.state == STATE_SUCCESS):
             self.notify_oxtrust()
         self.notify_oxidp()
-
-    def copy_index_html(self):
-        """Copies custom index.html for nginx.
-        """
-        self.logger.info("copying index.html")
-        src = self.get_template_path("nodes/nginx/index.html")
-        dest = "/usr/share/nginx/html/index.html"
-        self.salt.copy_file(self.node.id, src, dest)
 
     def notify_oxidp(self):
         """Notifies oxIdp to run required operations (if any)

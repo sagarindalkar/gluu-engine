@@ -30,20 +30,7 @@ class LdapSetup(BaseSetup):
             'nodes/opendj/ldif/clients.ldif',
             'nodes/opendj/ldif/people.ldif',
             'nodes/opendj/ldif/groups.ldif',
-            'nodes/opendj/ldif/o_site.ldif',
             'nodes/opendj/ldif/scripts.ldif',
-        ]
-        return map(self.get_template_path, templates)
-
-    @property
-    def schema_files(self):  # pragma: no cover
-        """List of predefined LDAP schema files.
-        """
-        templates = [
-            "nodes/opendj/schema/77-customAttributes.ldif",
-            "nodes/opendj/schema/101-ox.ldif",
-            "nodes/opendj/schema/96-eduperson.ldif",
-            "nodes/opendj/schema/100-user.ldif",
         ]
         return map(self.get_template_path, templates)
 
@@ -81,11 +68,9 @@ class LdapSetup(BaseSetup):
         ctx = {
             "inum_org_fn": self.cluster.inum_org_fn,
         }
-        for schema_file in self.schema_files:
-            src = schema_file
-            basename = os.path.basename(src)
-            dest = os.path.join(self.node.schema_folder, basename)
-            self.render_template(src, dest, ctx)
+        src = self.get_template_path("nodes/opendj/schema/100-user.ldif")
+        dest = os.path.join(self.node.schema_folder, "100-user.ldif")
+        self.render_template(src, dest, ctx)
 
     def setup_opendj(self):
         """Setups OpenDJ server without actually running the server
@@ -150,9 +135,13 @@ class LdapSetup(BaseSetup):
     def index_opendj(self, backend):
         """Creates required index in OpenDJ server.
         """
-        json_tmpl = self.get_template_path("nodes/opendj/opendj_index.json")
-        with open(json_tmpl, 'r') as fp:
-            index_json = json.load(fp)
+
+        resp = self.docker.exec_cmd(self.node.id, "cat /opt/opendj/opendj_index.json")  # noqa
+        try:
+            index_json = json.loads(resp.retval)
+        except ValueError:
+            self.logger.warn("unable to read JSON string from opendj_index.json")
+            index_json = []
 
         for attr_map in index_json:
             attr_name = attr_map['attribute']
@@ -186,6 +175,23 @@ class LdapSetup(BaseSetup):
     def import_ldif(self):
         """Renders and imports predefined ldif files.
         """
+
+        def _import_ldif(ldif_fn, backend_id):
+            file_basename = os.path.basename(ldif_fn)
+            importCmd = " ".join([
+                self.node.import_ldif_command,
+                '--ldifFile', ldif_fn,
+                '--backendID', backend_id,
+                '--hostname', self.node.domain_name,
+                '--port', self.node.ldap_admin_port,
+                '--bindDN', "'{}'".format(self.node.ldap_binddn),
+                '-j', self.node.ldap_pass_fn,
+                '--append', '--trustAll',
+                "--rejectFile", "/tmp/rejected-{}".format(file_basename),
+            ])
+            self.logger.info("importing {}".format(file_basename))
+            self.docker.exec_cmd(self.node.id, importCmd)
+
         # template's context
         ctx = {
             "oxauth_client_id": self.cluster.oxauth_client_id,
@@ -213,25 +219,13 @@ class LdapSetup(BaseSetup):
             file_basename = os.path.basename(src)
             dest = os.path.join(ldifFolder, file_basename)
             self.render_template(src, dest, ctx)
+            backend_id = "userRoot"
+            _import_ldif(dest, backend_id)
 
-            if file_basename == "o_site.ldif":
-                backend_id = "site"
-            else:
-                backend_id = "userRoot"
-
-            importCmd = " ".join([
-                self.node.import_ldif_command,
-                '--ldifFile', dest,
-                '--backendID', backend_id,
-                '--hostname', self.node.domain_name,
-                '--port', self.node.ldap_admin_port,
-                '--bindDN', "'{}'".format(self.node.ldap_binddn),
-                '-j', self.node.ldap_pass_fn,
-                '--append', '--trustAll',
-                "--rejectFile", "/tmp/rejected-{}".format(file_basename),
-            ])
-            self.logger.info("importing {}".format(file_basename))
-            self.docker.exec_cmd(self.node.id, importCmd)
+        # import o_site.ldif
+        backend_id = "site"
+        dest = "/opt/opendj/ldif/o_site.ldif"
+        _import_ldif(dest, backend_id)
 
     def export_opendj_cert(self):
         """Exports OpenDJ public certificate.

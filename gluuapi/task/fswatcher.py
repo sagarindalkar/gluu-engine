@@ -163,7 +163,7 @@ class OxidpWatcherTask(BaseWatcherTask):
         return self.app.config["OXIDP_OVERRIDE_DIR"]
 
 
-class OxauthWatcherTask(BaseWatcherTask):
+class OxauthWatcherTask(BaseWatcherTask):  # pragma: no cover
     node_type = "oxauth"
     dest_dir = "/opt/tomcat/webapps/oxauth"
 
@@ -172,7 +172,7 @@ class OxauthWatcherTask(BaseWatcherTask):
         return self.app.config["OXAUTH_OVERRIDE_DIR"]
 
 
-class OxtrustWatcherTask(BaseWatcherTask):
+class OxtrustWatcherTask(BaseWatcherTask):  # pragma: no cover
     node_type = "oxtrust"
     dest_dir = "/opt/tomcat/webapps/identity"
 

@@ -119,8 +119,6 @@ command=/usr/sbin/nginx -g \\"daemon off;\\"
             setup_obj = OxtrustSetup(oxtrust, self.cluster,
                                      self.app, logger=self.logger)
 
-            # setup_obj.remove_nginx_entry(self.node)
-
             # wait before telling oxtrust to find nginx node
             time.sleep(2)
             setup_obj.discover_nginx()
@@ -153,8 +151,6 @@ command=/usr/sbin/nginx -g \\"daemon off;\\"
         for oxidp in self.cluster.get_oxidp_objects():
             setup_obj = OxidpSetup(oxidp, self.cluster,
                                    self.app, logger=self.logger)
-
-            # setup_obj.remove_nginx_entry(self.node)
 
             # wait before telling oxidp to find nginx node
             time.sleep(2)

@@ -7,14 +7,13 @@ import os.path
 import time
 
 from .base import SSLCertMixin
-from .base import HostFileMixin
 from .oxauth_setup import OxauthSetup
 from ..errors import DockerExecError
 from ..database import db
 from ..helper import DockerHelper
 
 
-class OxidpSetup(HostFileMixin, SSLCertMixin, OxauthSetup):
+class OxidpSetup(SSLCertMixin, OxauthSetup):
     def setup(self):
         """Runs the actual setup.
         """
@@ -227,11 +226,3 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
         self.logger.info("discovering available nginx node")
         if self.cluster.count_node_objects(type_="nginx"):
             self.import_nginx_cert()
-        # try:
-        #     # if we already have nginx node in the the cluster,
-        #     # add entry to /etc/hosts and import the cert
-        #     # nginx = self.cluster.get_nginx_objects()[0]
-        #     # self.add_nginx_entry(nginx)
-        #     self.import_nginx_cert()
-        # except IndexError:
-        #     pass

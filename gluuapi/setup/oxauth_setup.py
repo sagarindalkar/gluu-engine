@@ -205,7 +205,7 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
         }
         self.copy_rendered_jinja_template(src, dest, ctx)
 
-    def pull_oxauth_override(self):
+    def pull_oxauth_override(self):  # pragma: no cover
         for root, dirs, files in os.walk(self.app.config["OXAUTH_OVERRIDE_DIR"]):
             for fn in files:
                 src = os.path.join(root, fn)

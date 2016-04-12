@@ -8,11 +8,10 @@ import time
 from glob import iglob
 
 from .base import SSLCertMixin
-from .base import HostFileMixin
 from .oxauth_setup import OxauthSetup
 
 
-class OxasimbaSetup(HostFileMixin, SSLCertMixin, OxauthSetup):
+class OxasimbaSetup(SSLCertMixin, OxauthSetup):
     def setup(self):
         hostname = self.node.domain_name
 
@@ -151,14 +150,6 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
         self.logger.info("discovering available nginx node")
         if self.cluster.count_node_objects(type_="nginx"):
             self.import_nginx_cert()
-        # try:
-        #     # if we already have nginx node in the the cluster,
-        #     # add entry to /etc/hosts and import the cert
-        #     # nginx = self.provider.get_node_objects(type_="nginx")[0]
-        #     # self.add_nginx_entry(nginx)
-        #     self.import_nginx_cert()
-        # except IndexError:
-        #     pass
 
     def after_setup(self):
         """Post-setup callback.

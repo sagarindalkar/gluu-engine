@@ -7,13 +7,12 @@ import os.path
 import time
 
 from .base import SSLCertMixin
-from .base import HostFileMixin
 from .oxauth_setup import OxauthSetup
 from ..database import db
 from ..helper import DockerHelper
 
 
-class OxtrustSetup(HostFileMixin, SSLCertMixin, OxauthSetup):
+class OxtrustSetup(SSLCertMixin, OxauthSetup):
     def render_check_ssl_template(self):
         """Renders check_ssl script into the node.
         """
@@ -77,14 +76,6 @@ class OxtrustSetup(HostFileMixin, SSLCertMixin, OxauthSetup):
         self.logger.info("discovering available nginx node")
         if self.cluster.count_node_objects(type_="nginx"):
             self.import_nginx_cert()
-        # try:
-        #     # if we already have nginx node in the the cluster,
-        #     # add entry to /etc/hosts and import the cert
-        #     # nginx = self.provider.get_node_objects(type_="nginx")[0]
-        #     # self.add_nginx_entry(nginx)
-        #     self.import_nginx_cert()
-        # except IndexError:
-        #     pass
 
     def after_setup(self):
         """Post-setup callback.
@@ -151,7 +142,7 @@ environment=CATALINA_PID=/var/run/tomcat.pid
                 echo_cmd = '''sh -c "echo '{}' > {}"'''.format(key, path)
                 docker.exec_cmd(oxidp.id, echo_cmd)
 
-    def pull_oxtrust_override(self):
+    def pull_oxtrust_override(self):  # pragma: no cover
         for root, dirs, files in os.walk(self.app.config["OXTRUST_OVERRIDE_DIR"]):
             for fn in files:
                 src = os.path.join(root, fn)

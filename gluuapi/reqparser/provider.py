@@ -7,6 +7,7 @@ import re
 
 from marshmallow import validates
 from marshmallow import ValidationError
+from marshmallow.validate import OneOf
 from docker.utils import parse_host
 from docker.errors import DockerException
 
@@ -66,12 +67,7 @@ class BaseProviderReq(ma.Schema):
 
 
 class ProviderReq(BaseProviderReq):
-    try:
-        type = ma.Select(choices=PROVIDER_CHOICES, required=True)
-    except AttributeError:  # pragma: no cover
-        # marshmallow.Select is removed starting from 2.0.0
-        from marshmallow.validate import OneOf
-        type = ma.Str(validate=OneOf(PROVIDER_CHOICES))
+    type = ma.Str(validate=OneOf(PROVIDER_CHOICES))
 
     cluster_id = ma.Str(required=True)
 

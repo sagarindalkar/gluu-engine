@@ -52,6 +52,7 @@ def test_provider_list_post_duplicated_master(app, db, provider, cluster):
 def test_provider_list_post_license_key_notfound(app, db, provider, cluster):
     db.persist(cluster, "clusters")
     # creates a master first
+    provider.type = "master"
     db.persist(provider, "providers")
     resp = app.test_client().post(
         "/providers",
@@ -59,9 +60,10 @@ def test_provider_list_post_license_key_notfound(app, db, provider, cluster):
             "docker_base_url": "unix:///var/run/docker.sock",
             "hostname": "local",
             "cluster_id": cluster.id,
+            "type": "consumer",
         },
     )
-    assert resp.status_code == 400
+    assert resp.status_code == 403
 
 
 def test_provider_list_post_consumer_no_master(monkeypatch, app, db, cluster):

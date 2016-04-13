@@ -7,6 +7,8 @@ import os.path
 import time
 from glob import iglob
 
+from blinker import signal
+
 from .base import SSLCertMixin
 from .ox_base import OxBaseSetup
 
@@ -156,9 +158,11 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
         """
         self.pull_idp_metadata()
         self.discover_nginx()
-        self.notify_nginx()
+        complete_sgn = signal("ox_setup_completed")
+        complete_sgn.send(self)
 
     def teardown(self):
         """Teardowns the node.
         """
-        self.notify_nginx()
+        complete_sgn = signal("ox_teardown_completed")
+        complete_sgn.send(self)

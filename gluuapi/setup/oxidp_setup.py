@@ -6,6 +6,8 @@
 import os.path
 import time
 
+from blinker import signal
+
 from .base import SSLCertMixin
 from .ox_base import OxBaseSetup
 from ..errors import DockerExecError
@@ -69,7 +71,8 @@ class OxidpSetup(SSLCertMixin, OxBaseSetup):
             setup_obj.restart_nutcracker()
 
         self.discover_nginx()
-        self.notify_nginx()
+        complete_sgn = signal("ox_setup_completed")
+        complete_sgn.send(self)
 
     def import_ldap_certs(self):
         """Imports all LDAP certificates.
@@ -125,7 +128,9 @@ class OxidpSetup(SSLCertMixin, OxBaseSetup):
                                    self.app, logger=self.logger)
             setup_obj.render_nutcracker_conf()
             setup_obj.restart_nutcracker()
-        self.notify_nginx()
+
+        complete_sgn = signal("ox_teardown_completed")
+        complete_sgn.send(self)
 
     def pull_shib_config(self):
         """Copies all existing oxIdp config and metadata files.

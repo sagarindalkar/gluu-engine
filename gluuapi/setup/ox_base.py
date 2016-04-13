@@ -7,7 +7,6 @@ import codecs
 import os
 
 from .base import BaseSetup
-from .nginx_setup import NginxSetup
 
 
 class OxBaseSetup(BaseSetup):
@@ -100,12 +99,3 @@ class OxBaseSetup(BaseSetup):
 
         a2ensite_cmd = "a2ensite gluu_httpd"
         self.docker.exec_cmd(self.node.id, a2ensite_cmd)
-
-    def notify_nginx(self):
-        """Notifies nginx to re-render virtual host and restart the process.
-        """
-        for nginx in self.cluster.get_nginx_objects():
-            setup_obj = NginxSetup(nginx, self.cluster,
-                                   self.app, logger=self.logger)
-            setup_obj.render_https_conf()
-            setup_obj.restart_nginx()

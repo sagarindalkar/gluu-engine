@@ -5,6 +5,8 @@
 
 import os.path
 
+from blinker import signal
+
 from .ox_base import OxBaseSetup
 
 
@@ -73,12 +75,14 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
     def teardown(self):
         """Teardowns the node.
         """
-        self.notify_nginx()
+        complete_sgn = signal("ox_teardown_completed")
+        complete_sgn.send(self)
 
     def after_setup(self):
         """Post-setup callback.
         """
-        self.notify_nginx()
+        complete_sgn = signal("ox_setup_completed")
+        complete_sgn.send(self)
 
     def render_httpd_conf(self):
         """Copies rendered Apache2's virtual host into the node.

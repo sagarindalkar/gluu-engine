@@ -6,6 +6,8 @@
 import os.path
 import time
 
+from blinker import signal
+
 from .base import SSLCertMixin
 from .ox_base import OxBaseSetup
 from ..database import db
@@ -57,7 +59,8 @@ class OxtrustSetup(SSLCertMixin, OxBaseSetup):
     def teardown(self):
         """Teardowns the node.
         """
-        self.notify_nginx()
+        complete_sgn = signal("ox_teardown_completed")
+        complete_sgn.send(self)
 
     def render_server_xml_template(self):
         """Copies rendered Tomcat's server.xml into the node.
@@ -82,7 +85,8 @@ class OxtrustSetup(SSLCertMixin, OxBaseSetup):
         """
         self.push_shib_certkey()
         self.discover_nginx()
-        self.notify_nginx()
+        complete_sgn = signal("ox_setup_completed")
+        complete_sgn.send(self)
 
     def add_auto_startup_entry(self):
         """Adds supervisor program for auto-startup.

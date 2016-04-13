@@ -19,6 +19,8 @@ from .task import OxidpWatcherTask
 from .database import db
 from .helper import SaltHelper
 from .utils import run
+from .setup.signals import connect_setup_signals
+from .setup.signals import connect_teardown_signals
 
 # global context settings
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
@@ -40,6 +42,9 @@ def run_app(app, use_reloader=True):
     OxidpWatcherTask(app).perform_job()
     # OxauthWatcherTask(app).perform_job()
     # OxtrustWatcherTask(app).perform_job()
+
+    connect_setup_signals()
+    connect_teardown_signals()
 
     app.run(
         host=app.config["HOST"],
@@ -163,7 +168,7 @@ def distpayload():
     cmd = 'wget -r -q -nH -np -R index.html* http://{}:9001 -P {}'.format(master_ip, volume_root)
     for provider in providers:
         salt.cmd(provider.hostname, 'cmd.run', cmd)
-    oxauths = db.search_from_table('nodes', ((db.where('type') == 'oxauth') & (db.where('state') == 'SUCCESS')) )
+    oxauths = db.search_from_table('nodes', ((db.where('type') == 'oxauth') & (db.where('state') == 'SUCCESS')))
     cmd = "supervisorctl restart tomcat"
     for oxauth in oxauths:
         salt.cmd(oxauth.id, 'cmd.run', cmd)

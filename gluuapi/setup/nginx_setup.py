@@ -4,10 +4,10 @@
 # All rights reserved.
 
 import os
-import time
+
+from blinker import signal
 
 from .base import BaseSetup
-from ..model import STATE_SUCCESS
 
 
 class NginxSetup(BaseSetup):
@@ -107,51 +107,14 @@ command=/usr/sbin/nginx -g \\"daemon off;\\"
         self.reload_supervisor()
         return True
 
-    def notify_oxtrust(self):
-        """Notifies oxTrust to run required operations (if any)
-        after this node has been added/removed.
-        """
-        # a hack to avoid circular import
-        from .oxtrust_setup import OxtrustSetup
-
-        try:
-            oxtrust = self.provider.get_node_objects(type_="oxtrust")[0]
-            setup_obj = OxtrustSetup(oxtrust, self.cluster,
-                                     self.app, logger=self.logger)
-
-            # wait before telling oxtrust to find nginx node
-            time.sleep(2)
-            setup_obj.discover_nginx()
-        except IndexError:
-            pass
-
     def after_setup(self):
         """Post-setup callback.
         """
-        if (self.provider.type == "master"
-                and self.node.state == STATE_SUCCESS):
-            self.notify_oxtrust()
-        self.notify_oxidp()
+        complete_sgn = signal("nginx_setup_completed")
+        complete_sgn.send(self)
 
     def teardown(self):
         """Teardowns the node.
         """
-        if (self.provider.type == "master"
-                and self.node.state == STATE_SUCCESS):
-            self.notify_oxtrust()
-        self.notify_oxidp()
-
-    def notify_oxidp(self):
-        """Notifies oxIdp to run required operations (if any)
-        after this node has been added/removed.
-        """
-        # a hack to avoid circular import
-        from .oxidp_setup import OxidpSetup
-
-        for oxidp in self.cluster.get_oxidp_objects():
-            setup_obj = OxidpSetup(oxidp, self.cluster,
-                                   self.app, logger=self.logger)
-
-            # wait before telling oxidp to find nginx node
-            time.sleep(2)
-            setup_obj.discover_nginx()
+        complete_sgn = signal("nginx_teardown_completed")
+        complete_sgn.send(self)

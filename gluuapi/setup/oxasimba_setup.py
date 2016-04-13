@@ -8,10 +8,10 @@ import time
 from glob import iglob
 
 from .base import SSLCertMixin
-from .oxauth_setup import OxauthSetup
+from .ox_base import OxBaseSetup
 
 
-class OxasimbaSetup(SSLCertMixin, OxauthSetup):
+class OxasimbaSetup(SSLCertMixin, OxBaseSetup):  # pragma: no cover
     def setup(self):
         hostname = self.node.domain_name
 

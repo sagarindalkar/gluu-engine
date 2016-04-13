@@ -7,12 +7,12 @@ import os.path
 import time
 
 from .base import SSLCertMixin
-from .oxauth_setup import OxauthSetup
+from .ox_base import OxBaseSetup
 from ..database import db
 from ..helper import DockerHelper
 
 
-class OxtrustSetup(SSLCertMixin, OxauthSetup):
+class OxtrustSetup(SSLCertMixin, OxBaseSetup):
     def render_check_ssl_template(self):
         """Renders check_ssl script into the node.
         """

@@ -7,13 +7,13 @@ import os.path
 import time
 
 from .base import SSLCertMixin
-from .oxauth_setup import OxauthSetup
+from .ox_base import OxBaseSetup
 from ..errors import DockerExecError
 from ..database import db
 from ..helper import DockerHelper
 
 
-class OxidpSetup(SSLCertMixin, OxauthSetup):
+class OxidpSetup(SSLCertMixin, OxBaseSetup):
     def setup(self):
         """Runs the actual setup.
         """

@@ -7,10 +7,10 @@ import os.path
 
 from blinker import signal
 
-from .ox_base import OxBaseSetup
+from .base import OxSetup
 
 
-class OxauthSetup(OxBaseSetup):
+class OxauthSetup(OxSetup):
     def render_server_xml_template(self):
         """Copies rendered Tomcat's server.xml into the node.
         """

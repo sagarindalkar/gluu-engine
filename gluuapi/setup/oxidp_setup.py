@@ -8,14 +8,13 @@ import time
 
 from blinker import signal
 
-from .base import SSLCertMixin
-from .ox_base import OxBaseSetup
+from .base import OxSetup
 from ..errors import DockerExecError
 from ..database import db
 from ..helper import DockerHelper
 
 
-class OxidpSetup(SSLCertMixin, OxBaseSetup):
+class OxidpSetup(OxSetup):
     def setup(self):
         """Runs the actual setup.
         """

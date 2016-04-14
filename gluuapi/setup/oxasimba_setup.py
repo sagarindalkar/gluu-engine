@@ -9,11 +9,10 @@ from glob import iglob
 
 from blinker import signal
 
-from .base import SSLCertMixin
-from .ox_base import OxBaseSetup
+from .base import OxSetup
 
 
-class OxasimbaSetup(SSLCertMixin, OxBaseSetup):  # pragma: no cover
+class OxasimbaSetup(OxSetup):  # pragma: no cover
     def setup(self):
         hostname = self.node.domain_name
 

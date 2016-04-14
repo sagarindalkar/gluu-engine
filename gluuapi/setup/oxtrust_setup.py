@@ -8,13 +8,12 @@ import time
 
 from blinker import signal
 
-from .base import SSLCertMixin
-from .ox_base import OxBaseSetup
+from .base import OxSetup
 from ..database import db
 from ..helper import DockerHelper
 
 
-class OxtrustSetup(SSLCertMixin, OxBaseSetup):
+class OxtrustSetup(OxSetup):
     def render_check_ssl_template(self):
         """Renders check_ssl script into the node.
         """

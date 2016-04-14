@@ -31,6 +31,7 @@ class LdapSetup(BaseSetup):
             'nodes/opendj/ldif/people.ldif',
             'nodes/opendj/ldif/groups.ldif',
             'nodes/opendj/ldif/scripts.ldif',
+            'nodes/opendj/ldif/asimba.ldif',
         ]
         return map(self.get_template_path, templates)
 
@@ -453,6 +454,7 @@ command=/opt/opendj/bin/start-ds --quiet -N
             "oxtrust_import_person_base64": generate_base64_contents(self.render_oxtrust_import_person(), 1),
             "oxidp_config_base64": generate_base64_contents(self.render_oxidp_config(), 1),
             "oxcas_config_base64": generate_base64_contents(self.render_oxcas_config(), 1),
+            "oxasimba_config_base64": generate_base64_contents(self.render_oxasimba_config(), 1),
         }
         self.copy_rendered_jinja_template(
             "nodes/opendj/ldif/configuration.ldif",
@@ -632,5 +634,14 @@ command=/opt/opendj/bin/start-ds --quiet -N
             "ox_cluster_hostname": self.cluster.ox_cluster_hostname,
             "oxauth_client_id": self.cluster.oxauth_client_id,
             "oxauth_client_encoded_pw": self.cluster.oxauth_client_encoded_pw,
+        }
+        return self.render_jinja_template(src, ctx)
+
+    def render_oxasimba_config(self):
+        """Renders oxAsimba configuration.
+        """
+        src = "nodes/oxasimba/oxasimba-config.json"
+        ctx = {
+            "inum_org": self.cluster.inum_org,
         }
         return self.render_jinja_template(src, ctx)

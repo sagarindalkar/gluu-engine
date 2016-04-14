@@ -1,0 +1,8 @@
+{
+    "orgInum":"{{ inum_org }}",
+    "oxasimba":"ou=oxasimba,o={{ inum_org }},o=gluu",
+    "idps":"ou=idps,ou=oxasimba,o={{ inum_org }},o=gluu",
+    "selectors":"ou=selectors,ou=oxasimba,o={{ inum_org }},o=gluu",
+    "requestors":"ou=requestors,ou=oxasimba,o={{ inum_org }},o=gluu",
+    "requestorpools":"ou=requestorpools,ou=oxasimba,o={{ inum_org }},o=gluu"
+}

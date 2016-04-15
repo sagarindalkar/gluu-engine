@@ -326,13 +326,10 @@ class OxSetup(BaseSetup):
 
         # imports nginx cert into oxtrust cacerts to avoid
         # "peer not authenticated" error
-        cert_cmd = "echo -n | openssl s_client -connect {}:443 | " \
-                   "sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' " \
-                   "> /etc/certs/nginx.cert".format(self.cluster.ox_cluster_hostname)
-        cert_cmd = '''sh -c "{}"'''.format(cert_cmd)
-        self.docker.exec_cmd(self.node.id, cert_cmd)
+        ssl_cert = os.path.join(self.app.config["SSL_CERT_DIR"], "nginx.crt")
+        self.salt.copy_file(self.node.id, ssl_cert, "/etc/certs/nginx.crt")
 
-        der_cmd = "openssl x509 -outform der -in /etc/certs/nginx.cert -out /etc/certs/nginx.der"
+        der_cmd = "openssl x509 -outform der -in /etc/certs/nginx.crt -out /etc/certs/nginx.der"
         self.docker.exec_cmd(self.node.id, der_cmd)
 
         import_cmd = " ".join([
@@ -343,6 +340,7 @@ class OxSetup(BaseSetup):
             "-storepass changeit -noprompt",
         ])
         import_cmd = '''sh -c "{}"'''.format(import_cmd)
+
         try:
             self.docker.exec_cmd(self.node.id, import_cmd)
         except DockerExecError as exc:

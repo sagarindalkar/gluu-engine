@@ -172,6 +172,9 @@ class BaseModelHelper(object):
             # mark NodeLog as finished
             node_log = db.get(self.node.name, "node_logs")
             if node_log:
+                # avoid concurrent writes, see https://github.com/msiemens/tinydb/issues/91
+                time.sleep(2)
+
                 node_log.state = STATE_SETUP_FINISHED
                 db.update(node_log.id, node_log, "node_logs")
 
@@ -243,6 +246,9 @@ class BaseModelHelper(object):
         # mark NodeLog as finished
         node_log = db.get(self.node.name, "node_logs")
         if node_log:
+            # avoid concurrent writes, see https://github.com/msiemens/tinydb/issues/91
+            time.sleep(2)
+
             node_log.state = STATE_TEARDOWN_FINISHED
             db.update(node_log.id, node_log, "node_logs")
 

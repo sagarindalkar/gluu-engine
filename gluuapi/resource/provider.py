@@ -20,16 +20,21 @@ from ..model import DigitalOceanProvider
 # from ..utils import retrieve_signed_license
 # from ..utils import decode_signed_license
 
-PROVIDER_TYPES = ['generic', 'aws', 'digitalocean', 'google']
+PROVIDER_TYPES = [
+    'generic',
+    # 'aws',
+    'digitalocean',
+    # 'google',
+]
 
 
 class CreateProviderResource(Resource):
     def __init__(self):
         self.validate = {
             'generic': self.validate_generic,
-            'aws': self.validate_aws,
+            # 'aws': self.validate_aws,
             'digitalocean': self.validate_digitalocean,
-            'google': self.validate_google,
+            # 'google': self.validate_google,
         }
         self.model_cls = {
             'generic': GenericProvider,
@@ -42,15 +47,15 @@ class CreateProviderResource(Resource):
         data, errors = GenericProviderReq().load(request.form)
         return data, errors
 
-    def validate_aws(self):
-        pass
+    # def validate_aws(self):
+    #     pass
 
     def validate_digitalocean(self):
         data, errors = DigitalOceanProviderReq().load(request.form)
         return data, errors
 
-    def validate_google(self):
-        pass
+    # def validate_google(self):
+    #     pass
 
     def post(self, provider_type):
         if provider_type not in PROVIDER_TYPES:
@@ -98,9 +103,9 @@ class ProviderResource(Resource):
     def __init__(self):
         self.validate = {
             'generic': self.validate_generic,
-            'aws': self.validate_aws,
+            # 'aws': self.validate_aws,
             'digitalocean': self.validate_digitalocean,
-            'google': self.validate_google,
+            # 'google': self.validate_google,
         }
         self.model_cls = {
             'generic': GenericProvider,
@@ -113,15 +118,15 @@ class ProviderResource(Resource):
         data, errors = GenericProviderReq().load(request.form)
         return data, errors
 
-    def validate_aws(self):
-        pass
+    # def validate_aws(self):
+    #     pass
 
     def validate_digitalocean(self):
         data, errors = DigitalOceanProviderReq().load(request.form)
         return data, errors
 
-    def validate_google(self):
-        pass
+    # def validate_google(self):
+    #     pass
 
     def get(self, provider_type, provider_id):
         if provider_type not in PROVIDER_TYPES:

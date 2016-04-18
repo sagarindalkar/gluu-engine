@@ -13,12 +13,10 @@ pyzmq==14.6.0
 #storage
 tinydb==3.0.0
 jsonpickle==0.9.0
-python-ldap==2.4.22
 
 netaddr==0.7.14
 m2crypto==0.22.3
-daemonocle==0.8
-click==2.5
+daemonocle==1.0.1
 marshmallow==2.0.0.b3
 flask-marshmallow==0.6.0
 blinker>=1.3

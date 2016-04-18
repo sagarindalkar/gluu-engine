@@ -10,15 +10,17 @@ from flask_restful import Resource
 
 from ..database import db
 from ..reqparser import GenericProviderReq
+from ..reqparser import DigitalOceanProviderReq
 # from ..reqparser import EditProviderReq
 from ..model import GenericProvider
+from ..model import DigitalOceanProvider
 # from ..helper import SaltHelper
 # from ..helper import distribute_cluster_data
 # from ..helper import ProviderHelper
 # from ..utils import retrieve_signed_license
 # from ..utils import decode_signed_license
 
-PROVIDER_TYPES = ['generic', 'aws', 'do', 'google']
+PROVIDER_TYPES = ['generic', 'aws', 'digitalocean', 'google']
 
 
 class CreateProviderResource(Resource):
@@ -26,8 +28,14 @@ class CreateProviderResource(Resource):
         self.validate = {
             'generic': self.validate_generic,
             'aws': self.validate_aws,
-            'do': self.validate_do,
+            'digitalocean': self.validate_digitalocean,
             'google': self.validate_google,
+        }
+        self.model_cls = {
+            'generic': GenericProvider,
+            # 'aws': self.validate_aws,
+            'digitalocean': DigitalOceanProvider,
+            # 'google': self.validate_google,
         }
 
     def validate_generic(self):
@@ -37,8 +45,9 @@ class CreateProviderResource(Resource):
     def validate_aws(self):
         pass
 
-    def validate_do(self):
-        pass
+    def validate_digitalocean(self):
+        data, errors = DigitalOceanProviderReq().load(request.form)
+        return data, errors
 
     def validate_google(self):
         pass
@@ -58,7 +67,8 @@ class CreateProviderResource(Resource):
                 "params": errors,
             }, 400
 
-        provider = GenericProvider(data)
+        model_cls = self.model_cls[provider_type]
+        provider = model_cls(data)
         db.persist(provider, "{}_providers".format(provider_type))
 
         headers = {
@@ -73,8 +83,11 @@ class ProviderListResource(Resource):
         if not provider_type:
             # list all providers by type
             generic_providers = db.all("generic_providers")
+            digitalocean_providers = db.all("digitalocean_providers")
+
             # TODO: merge all providers
-            return [provider.as_dict() for provider in generic_providers]
+            providers = generic_providers + digitalocean_providers
+            return [provider.as_dict() for provider in providers]
 
         # list specific provider types
         providers = db.all("{}_providers".format(provider_type))
@@ -86,8 +99,14 @@ class ProviderResource(Resource):
         self.validate = {
             'generic': self.validate_generic,
             'aws': self.validate_aws,
-            'do': self.validate_do,
+            'digitalocean': self.validate_digitalocean,
             'google': self.validate_google,
+        }
+        self.model_cls = {
+            'generic': GenericProvider,
+            # 'aws': self.validate_aws,
+            'digitalocean': DigitalOceanProvider,
+            # 'google': self.validate_google,
         }
 
     def validate_generic(self):
@@ -97,8 +116,9 @@ class ProviderResource(Resource):
     def validate_aws(self):
         pass
 
-    def validate_do(self):
-        pass
+    def validate_digitalocean(self):
+        data, errors = DigitalOceanProviderReq().load(request.form)
+        return data, errors
 
     def validate_google(self):
         pass

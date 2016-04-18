@@ -9,7 +9,17 @@ from .base import BaseModel
 from ..database import db
 
 
-class GenericProvider(BaseModel):
+class BaseProvider(BaseModel):
+    def is_in_use(self):
+        """Checks whether the provider has linked nodes.
+
+        :returns: True if provider has any node, otherwise False.
+        """
+        condition = db.where("provider_id") == self.id
+        return db.count_from_table("nodes", condition)
+
+
+class GenericProvider(BaseProvider):
     resource_fields = dict.fromkeys([
         'id',
         'name',
@@ -33,14 +43,59 @@ class GenericProvider(BaseModel):
         self.generic_ssh_user = fields.get('generic_ssh_user', '')
         self.generic_ssh_port = fields.get('generic_ssh_port', '')
 
-    def is_in_use(self):
-        condition = db.where("provider_id") == self.id
-        return db.count_from_table("nodes", condition)
+
+class DigitalOceanProvider(BaseProvider):
+    resource_fields = dict.fromkeys([
+        "id",
+        "name",
+        "driver",
+        "digitalocean_access_token",
+        "digitalocean_backups",
+        "digitalocean_private_networking",
+        "digitalocean_region",
+        "digitalocean_size",
+        "digitalocean_image",
+        "digitalocean_ipv6",
+    ])
+
+    def __init__(self, fields=None):
+        self.id = str(uuid.uuid4())
+        self.driver = "digitalocean"
+        self.populate(fields)
+
+    def populate(self, fields=None):
+        fields = fields or {}
+
+        self.name = fields.get("name", "")
+        self.digitalocean_access_token = fields.get(
+            "digitalocean_access_token",
+            "",
+        )
+        self.digitalocean_backups = fields.get(
+            "digitalocean_backups",
+            False,
+        )
+        self.digitalocean_image = fields.get(
+            "digitalocean_image",
+            "ubuntu-14-04-x64",
+        )
+        self.digitalocean_ipv6 = fields.get(
+            "digitalocean_ipv6",
+            False,
+        )
+        self.digitalocean_private_networking = fields.get(
+            "digitalocean_private_networking",
+            False,
+        )
+        self.digitalocean_region = fields.get(
+            "digitalocean_region",
+            "",
+        )
+        self.digitalocean_size = fields.get(
+            "digitalocean_size",
+            "4gb",
+        )
 
 
-class Aws(BaseModel):
-    pass
-
-
-class Do(BaseModel):
+class AWSProvider(BaseProvider):
     pass

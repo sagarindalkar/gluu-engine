@@ -8,7 +8,7 @@ import re
 
 from marshmallow import validates
 from marshmallow import ValidationError
-# from marshmallow.validate import OneOf
+from marshmallow.validate import OneOf
 # from docker.utils import parse_host
 # from docker.errors import DockerException
 
@@ -71,6 +71,61 @@ class GenericProviderReq(BaseProviderReq):
         if value != 22:
             if not (1024 <= value <= 49152):
                 raise ValidationError("port must be 22 or 1024 - 49152 range")
+
+
+#: List of all DigitalOcean regions.
+#: https://developers.digitalocean.com/documentation/v2/#list-all-regions
+DO_REGION_CHOICES = (
+    "nyc1",  # New York 1
+    "nyc2",  # New York 2
+    "nyc3",  # New York 3
+    "ams1",  # Amsterdam 1
+    "ams2",  # Amsterdam 2
+    "ams3",  # Amsterdam 3
+    "sgp1",  # Singapore 1
+    "lon1",  # London 1
+    "sfo1",  # San Fransisco 1
+    "tor1",  # Toronto 1
+)
+
+#: List of all DigitalOcean sizes.
+#: See https://developers.digitalocean.com/documentation/v2/#list-all-sizes
+DO_SIZE_CHOICES = (
+    "512mb",
+    "1gb",
+    "2gb",
+    "4gb",
+    "8gb",
+    "16gb",
+    "32gb",
+    "48gb",
+    "64gb",
+)
+
+
+class DigitalOceanProviderReq(BaseProviderReq):
+    # Digital Ocean access token
+    digitalocean_access_token = ma.Str(required=True)
+
+    # enable backups for droplet
+    digitalocean_backups = ma.Bool(default=False)
+
+    # # Digital Ocean Image
+    # digitalocean_image = ma.Str(default="ubuntu-14-04-x64")
+
+    # # enable ipv6 for droplet
+    # digitalocean_ipv6 = ma.Bool(default=False)
+
+    # enable private networking for droplet
+    digitalocean_private_networking = ma.Bool(default=False)
+
+    # Digital Ocean region
+    digitalocean_region = ma.Str(
+        required=True, validate=OneOf(DO_REGION_CHOICES),
+    )
+
+    # Digital Ocean size
+    digitalocean_size = ma.Str(validate=OneOf(DO_SIZE_CHOICES), default="4gb")
 
 
 # class EditProviderReq(BaseProviderReq):

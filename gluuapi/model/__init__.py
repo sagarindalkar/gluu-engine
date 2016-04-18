@@ -4,7 +4,8 @@
 # All rights reserved.
 
 #from .provider import Provider  # noqa
-from .provider import GenericProvider # noqa
+from .provider import GenericProvider  # noqa
+from .provider import DigitalOceanProvider  # noqa
 from .gluu_cluster import GluuCluster  # noqa
 from .license import LicenseKey  # noqa
 

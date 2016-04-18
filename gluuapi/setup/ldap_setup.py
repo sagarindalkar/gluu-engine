@@ -177,22 +177,6 @@ class LdapSetup(BaseSetup):
         """Renders and imports predefined ldif files.
         """
 
-        def _import_ldif(ldif_fn, backend_id):
-            file_basename = os.path.basename(ldif_fn)
-            importCmd = " ".join([
-                self.node.import_ldif_command,
-                '--ldifFile', ldif_fn,
-                '--backendID', backend_id,
-                '--hostname', self.node.domain_name,
-                '--port', self.node.ldap_admin_port,
-                '--bindDN', "'{}'".format(self.node.ldap_binddn),
-                '-j', self.node.ldap_pass_fn,
-                '--append', '--trustAll',
-                "--rejectFile", "/tmp/rejected-{}".format(file_basename),
-            ])
-            self.logger.info("importing {}".format(file_basename))
-            self.docker.exec_cmd(self.node.id, importCmd)
-
         # template's context
         ctx = {
             "oxauth_client_id": self.cluster.oxauth_client_id,
@@ -221,12 +205,12 @@ class LdapSetup(BaseSetup):
             dest = os.path.join(ldifFolder, file_basename)
             self.render_template(src, dest, ctx)
             backend_id = "userRoot"
-            _import_ldif(dest, backend_id)
+            self._run_import_ldif(dest, backend_id)
 
         # import o_site.ldif
         backend_id = "site"
         dest = "/opt/opendj/ldif/o_site.ldif"
-        _import_ldif(dest, backend_id)
+        self._run_import_ldif(dest, backend_id)
 
     def export_opendj_cert(self):
         """Exports OpenDJ public certificate.
@@ -461,19 +445,7 @@ command=/opt/opendj/bin/start-ds --quiet -N
             "/opt/opendj/ldif/configuration.ldif",
             ctx,
         )
-        import_cmd = " ".join([
-            self.node.import_ldif_command,
-            '--ldifFile', "/opt/opendj/ldif/configuration.ldif",
-            '--backendID', "userRoot",
-            '--hostname', self.node.domain_name,
-            '--port', self.node.ldap_admin_port,
-            '--bindDN', "'{}'".format(self.node.ldap_binddn),
-            '-j', self.node.ldap_pass_fn,
-            '--append', '--trustAll',
-            "--rejectFile", "/tmp/rejected-configuration.ldif",
-        ])
-        self.logger.info("importing configuration.ldif")
-        self.docker.exec_cmd(self.node.id, import_cmd)
+        self._run_import_ldif("/opt/opendj/ldif/configuration.ldif", "userRoot")
 
     def gen_openid_key(self):
         """Generates OpenID Connect key.
@@ -590,19 +562,7 @@ command=/opt/opendj/bin/start-ds --quiet -N
             "/opt/opendj/ldif/scim.ldif",
             ctx,
         )
-        import_cmd = " ".join([
-            self.node.import_ldif_command,
-            '--ldifFile', "/opt/opendj/ldif/scim.ldif",
-            '--backendID', "userRoot",
-            '--hostname', self.node.domain_name,
-            '--port', self.node.ldap_admin_port,
-            '--bindDN', "'{}'".format(self.node.ldap_binddn),
-            '-j', self.node.ldap_pass_fn,
-            '--append', '--trustAll',
-            "--rejectFile", "/tmp/rejected-scim.ldif",
-        ])
-        self.logger.info("importing scim.ldif")
-        self.docker.exec_cmd(self.node.id, import_cmd)
+        self._run_import_ldif("/opt/opendj/ldif/scim.ldif", "userRoot")
 
     def render_oxtrust_import_person(self):
         """Renders oxTrust import person configuration.
@@ -645,3 +605,20 @@ command=/opt/opendj/bin/start-ds --quiet -N
             "inum_org": self.cluster.inum_org,
         }
         return self.render_jinja_template(src, ctx)
+
+    def _run_import_ldif(self, ldif_fn, backend_id):
+        file_basename = os.path.basename(ldif_fn)
+        importCmd = " ".join([
+            self.node.import_ldif_command,
+            '--ldifFile', ldif_fn,
+            '--backendID', backend_id,
+            '--hostname', self.node.domain_name,
+            '--port', self.node.ldap_admin_port,
+            '--bindDN', "'{}'".format(self.node.ldap_binddn),
+            '-j', self.node.ldap_pass_fn,
+            "--rejectFile", "/tmp/rejected-{}".format(file_basename),
+            '--append',
+            '--trustAll',
+        ])
+        self.logger.info("importing {}".format(file_basename))
+        self.docker.exec_cmd(self.node.id, importCmd)

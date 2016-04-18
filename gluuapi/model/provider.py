@@ -5,8 +5,8 @@
 
 import uuid
 
-from ..database import db
 from .base import BaseModel
+from ..database import db
 
 
 class GenericProvider(BaseModel):
@@ -25,7 +25,6 @@ class GenericProvider(BaseModel):
         self.driver = 'generic'
         self.populate(fields)
 
-
     def populate(self, fields=None):
         fields = fields or {}
         self.name = fields.get('name', '')
@@ -34,9 +33,8 @@ class GenericProvider(BaseModel):
         self.generic_ssh_user = fields.get('generic_ssh_user', '')
         self.generic_ssh_port = fields.get('generic_ssh_port', '')
 
-
-    def is_in_use():
-        condition = db.where("provider_id") == self.uid
+    def is_in_use(self):
+        condition = db.where("provider_id") == self.id
         return db.count_from_table("nodes", condition)
 
 
@@ -45,4 +43,4 @@ class Aws(BaseModel):
 
 
 class Do(BaseModel):
-    pass 
+    pass

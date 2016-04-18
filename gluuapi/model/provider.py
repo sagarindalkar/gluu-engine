@@ -7,85 +7,42 @@ import uuid
 
 from ..database import db
 from .base import BaseModel
-from .base import STATE_SUCCESS
 
 
-class Provider(BaseModel):
-    """Provider is a model represents a Docker host.
-
-    Docker host could be any reachable machine, either local or remote.
-    """
+class GenericProvider(BaseModel):
     resource_fields = dict.fromkeys([
-        "id",
-        "docker_base_url",
-        "hostname",
-        "cluster_id",
-        "type",
+        'id',
+        'name',
+        'driver',
+        'generic_ip_address',
+        'generic_ssh_key',
+        'generic_ssh_user',
+        'generic_ssh_port'
     ])
 
     def __init__(self, fields=None):
         self.id = str(uuid.uuid4())
-        self.cluster_id = ""
+        self.driver = 'generic'
         self.populate(fields)
 
-    def get_node_objects(self, type_="", state=STATE_SUCCESS):
-        """Gets available node objects (models).
-
-        :param state: State of the node (one of SUCCESS, DISABLED,
-                      FAILED, IN_PROGRESS).
-        :param type_: Type of the node.
-        :returns: A list of node objects.
-        """
-        condition = db.where("provider_id") == self.id
-        if type_:
-            condition = (condition) & (db.where("type") == type_)
-        if state:
-            condition = (condition) & (db.where("state") == state)
-        return db.search_from_table("nodes", condition)
 
     def populate(self, fields=None):
         fields = fields or {}
+        self.name = fields.get('name', '')
+        self.generic_ip_address = fields.get('generic_ip_address', '')
+        self.generic_ssh_key = fields.get('generic_ssh_key', '')
+        self.generic_ssh_user = fields.get('generic_ssh_user', '')
+        self.generic_ssh_port = fields.get('generic_ssh_port', '')
 
-        self.docker_base_url = fields.get("docker_base_url", "")
-        self.hostname = fields.get("hostname", "")
-        self.type = fields.get("type", "")
 
-        # Path to directory to store all docker client certs
-        self.docker_cert_dir = fields.get("docker_cert_dir",
-                                          "/etc/gluu/docker_certs")
-
-    @property
-    def ssl_cert_path(self):
-        """Absolute path to SSL certificate used for making request
-        to docker Remote API.
-        """
-        return "{}/{}__cert.pem".format(self.docker_cert_dir, self.id)
-
-    @property
-    def ssl_key_path(self):
-        """Absolute path to SSL private key used for making request
-        to docker Remote API.
-        """
-        return "{}/{}__key.pem".format(self.docker_cert_dir, self.id)
-
-    @property
-    def ca_cert_path(self):
-        """Absolute path to CA certificate used for making request
-        to docker Remote API.
-        """
-        return "{}/{}__ca.pem".format(self.docker_cert_dir, self.id)
-
-    def count_node_objects(self, type_="", state=STATE_SUCCESS):
-        """Counts available node objects (models).
-
-        :param state: State of the node (one of SUCCESS, DISABLED,
-                      FAILED, IN_PROGRESS).
-        :param type_: Type of the node.
-        :returns: A list of node objects.
-        """
-        condition = db.where("provider_id") == self.id
-        if type_:
-            condition = (condition) & (db.where("type") == type_)
-        if state:
-            condition = (condition) & (db.where("state") == state)
+    def is_in_use():
+        condition = db.where("provider_id") == self.uid
         return db.count_from_table("nodes", condition)
+
+
+class Aws(BaseModel):
+    pass
+
+
+class Do(BaseModel):
+    pass 

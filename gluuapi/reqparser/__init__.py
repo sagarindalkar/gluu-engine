@@ -5,6 +5,7 @@
 
 from .cluster import ClusterReq  # noqa
 from .node import NodeReq  # noqa
-from .provider import ProviderReq  # noqa
+from .provider import GenericProviderReq  # noqa
+#from .provider import DoProviderReq  # noqa
 from .provider import EditProviderReq  # noqa
 from .license import LicenseKeyReq  # noqa

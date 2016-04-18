@@ -19,6 +19,7 @@ from .resource import ClusterResource
 from .resource import ClusterListResource
 from .resource import ProviderResource
 from .resource import ProviderListResource
+from .resource import CreateProviderResource
 from .resource import LicenseKeyListResource
 from .resource import LicenseKeyResource
 from .resource import NodeLogResource
@@ -77,10 +78,19 @@ def register_resources():
     restapi.add_resource(ClusterListResource, '/clusters')
     restapi.add_resource(ClusterResource, '/clusters/<string:cluster_id>')
 
-    restapi.add_resource(ProviderResource, "/providers/<string:provider_id>",
-                         endpoint="provider")
-    restapi.add_resource(ProviderListResource, "/providers",
-                         endpoint="providerlist")
+    #restapi.add_resource(ProviderResource, "/providers/<string:provider_id>",
+    #                     endpoint="provider")
+    #restapi.add_resource(ProviderListResource, "/providers",
+    #                     endpoint="providerlist")
+    restapi.add_resource(ProviderResource,
+        "/providers/<string:provider_type>/<string:provider_id>",
+        endpoint="provider")
+    restapi.add_resource(ProviderListResource,
+        "/providers/<string:provider_type>",
+        endpoint="provider_list")
+    restapi.add_resource(CreateProviderResource,
+        "/providers/<string:provider_type>",
+        endpoint="Create_Provider")
 
     restapi.add_resource(LicenseKeyListResource, "/license_keys",
                          endpoint="licensekeylist")

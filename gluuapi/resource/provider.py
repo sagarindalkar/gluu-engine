@@ -9,41 +9,103 @@ from flask import current_app
 from flask_restful import Resource
 
 from ..database import db
-from ..reqparser import ProviderReq
+from ..reqparser import GenericProviderReq
 from ..reqparser import EditProviderReq
-from ..model import Provider
+from ..model import GenericProvider
 from ..helper import SaltHelper
 from ..helper import distribute_cluster_data
 from ..helper import ProviderHelper
 from ..utils import retrieve_signed_license
 from ..utils import decode_signed_license
 
+PROVIDER_TYPES = ['generic', 'aws', 'do', 'google']
+
+
+class CreateProviderResource(Resource):
+    def __init__(self):
+        self.validate = {
+            'generic': self.validate_generic,
+            'aws': self.validate_aws,
+            'do': self.validate_do,
+            'google': self.validate_google,
+        }
+
+    def validate_generic(self):
+        data, errors = GenericProviderReq().load(request.form)
+        return data, errors
+
+    def validate_aws(self):
+        pass
+
+    def validate_do(self):
+        pass
+
+    def validate_google(self):
+        pass
+
+    def post(self, provider_type):
+        if provider_type not in PROVIDER_TYPES:
+            return {"status": 404, "message": "Provider type is not supported"}, 404
+        else:
+            data, errors = self.validate[provider_type]()
+        
+        if errors:
+            return {
+                "status": 400,
+                "message": "Invalid data",
+                "params": errors,
+            }, 400
+
+        provider = GenericProvider(data)
+        db.persist(provider, "{}_providers".format(provider_type))
+
+        headers = {
+            "Location": url_for("provider", provider_type = provider_type, provider_id = provider.id),
+        }
+        return provider.as_dict(), 201, headers
+
+
+class ProviderListResource(Resource):
+    def get(self, provider_type=None):
+        if not provider_type:
+            # list all providers by type
+            pass
+        else:
+            # list spacific provider types
+            pass
+
 
 class ProviderResource(Resource):
-    def get(self, provider_id):
-        provider = db.get(provider_id, "providers")
+    def get(self, provider_type, provider_id):
+        if provider_type not in PROVIDER_TYPES:
+            return {"status": 404, "message": "Provider type is not supported"}, 404
+
+        provider = db.get(provider_id, "{}_providers".format(provider_type))
         if not provider:
             return {"status": 404, "message": "Provider not found"}, 404
         return provider.as_dict()
 
-    def delete(self, provider_id):
-        provider = db.get(provider_id, "providers")
+    def delete(self, provider_type, provider_id):
+        if provider_type not in PROVIDER_TYPES:
+            return {"status": 404, "message": "Provider type is not supported"}, 404
+            
+        provider = db.get(provider_id, "{}_providers".format(provider_type))
         if not provider:
             return {"status": 404, "message": "Provider not found"}, 404
 
-        if provider.count_node_objects(state=""):
-            msg = "Cannot delete provider while having nodes " \
-                  "deployed on this provider"
+        if provider.is_in_use():
+            msg = "Cannot delete provider while having nodes \
+                  deployed using this provider"
             return {"status": 403, "message": msg}, 403
 
-        db.delete(provider_id, "providers")
-        salt = SaltHelper()
-        salt.reject_minion(provider.hostname)
-        distribute_cluster_data(current_app.config["DATABASE_URI"])
+        db.delete(provider_id, "{}_providers".format(provider_type))
         return {}, 204
 
-    def put(self, provider_id):
-        provider = db.get(provider_id, "providers")
+    def put(self, provider_type, provider_id):
+        if provider_type not in PROVIDER_TYPES:
+            return {"status": 404, "message": "Provider type is not supported"}, 404
+
+        provider = db.get(provider_id, "{}_providers".format(provider_type))
         if not provider:
             return {"status": 404, "message": "Provider not found"}, 404
 
@@ -60,17 +122,11 @@ class ProviderResource(Resource):
                 "params": errors,
             }, 400
 
-        data["type"] = provider.type
-        data["docker_cert_dir"] = current_app.config["DOCKER_CERT_DIR"]
         provider.populate(data)
-        db.update(provider.id, provider, "providers")
-
-        prov_helper = ProviderHelper(provider, current_app._get_current_object())
-        prov_helper.setup(data["connect_delay"], data["exec_delay"],
-                          recover_dns=True)
+        db.update(provider.id, provider, "{}_providers".format(provider_type))
         return provider.as_dict()
 
-
+'''
 class ProviderListResource(Resource):
     def post(self):
         data, errors = ProviderReq(
@@ -175,3 +231,4 @@ class ProviderListResource(Resource):
     def get(self):
         providers = db.all("providers")
         return [provider.as_dict() for provider in providers]
+'''

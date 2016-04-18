@@ -18,7 +18,7 @@ class BaseModel(object):
         """
         fields = tuple(self.resource_fields.keys())
         return {
-            k: v for k, v in self.__dict__.items()
+            k: v for k, v in self.__dict__.iteritems()
             if k in fields
         }
 

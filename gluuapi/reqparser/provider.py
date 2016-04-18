@@ -3,6 +3,7 @@
 #
 # All rights reserved.
 
+import os
 import re
 
 from marshmallow import validates
@@ -16,71 +17,68 @@ from ..database import db
 
 # regex pattern for hostname as defined by RFC 952 and RFC 1123
 HOSTNAME_RE = re.compile('^(?![0-9]+$)(?!-)[a-zA-Z0-9-]{,63}(?<!-)$')
+NAME_RE = re.compile('^[a-zA-Z0-9_]+$')
+USERNAME_RE = re.compile('^[a-z_][a-z0-9_-]*[$]?$')
 
-PROVIDER_CHOICES = ("master", "consumer",)
+DRIVERS = ['generic','amazonec2','digitalocean', 'google']
+
+
+def valid_ip(ip=''):
+    if ip:
+        return [0<=int(x)<256 for x in re.split('\.',re.match(r'^\d+\.\d+\.\d+\.\d+$',ip).group(0))].count(True)==4
+    else:
+        False
 
 
 class BaseProviderReq(ma.Schema):
-    hostname = ma.Str(required=True)
-    docker_base_url = ma.Str(required=True)
-    connect_delay = ma.Int(default=10, missing=10,
-                           error="must use numerical value")
-    exec_delay = ma.Int(default=15, missing=15,
-                        error="must use numerical value")
+    name = ma.Str(required=True)
 
-    @validates("hostname")
-    def validate_hostname(self, value):
-        """Validates provider's hostname.
+    @validates("name")
+    def validate_name(self, value):
+        """Validates provider's name.
 
-        :param value: Provider's hostname.
+        :param value: Provider's name.
         """
-        # some provider like AWS uses dotted hostname,
-        # e.g. ip-172-31-24-54.ec2.internal
-        valid = all(HOSTNAME_RE.match(v) for v in value.split("."))
+        # no need to check for uniqueness
+        valid = NAME_RE.match(value)
         if not valid:
-            raise ValidationError("invalid hostname")
+            raise ValidationError("invalid name")
 
-        # ensure hostname is unique (not taken by existing providers)
-        hostname_num = db.count_from_table(
-            "providers",
-            db.where("hostname") == value,
-        )
-        if hostname_num:
-            raise ValidationError("hostname has been taken by "
-                                  "existing provider")
 
-    @validates("docker_base_url")
-    def validate_docker_base_url(self, value):
-        """Validates provider's docker URL.
+class GenericProviderReq(BaseProviderReq):
+    generic_ip_address = ma.Str(required=True)
+    generic_ssh_key = ma.Str(required=True)
+    generic_ssh_user = ma.Str(required=True)
+    generic_ssh_port = ma.Str(required=True)
+ 
+    @validates("generic_ip_address")
+    def validate_generic_ip_address(self, value):
+        if not HOSTNAME_RE.match(value) and not valid_ip(value):
+            raise ValidationError("invalid ip or hostname")
+    
+    #forcing user to put key first in path
+    @validates("generic_ssh_key")
+    def validate_generic_ssh_key(self, value):
+        if not os.path.isfile(value):
+            raise ValidationError("ssh key not found")
 
-        :param value: URL to docker Remote API.
-        """
-        # enforce value to use `unix` or `https` prefix
-        if not any([value.startswith("unix"), value.startswith("https")]):
-            raise ValidationError("Must use unix or https prefix")
+    @validates("generic_ssh_user")
+    def validate_generic_ssh_user(self, value):
+        if not (1 <= len(value) <= 31):
+            raise ValidationError("username too long")
+        elif not USERNAME_RE.match(value):
+            raise ValidationError("invalid username")
 
+    @validates("generic_ssh_port")
+    def validate_generic_ssh_port(self, value):
         try:
-            # check whether value is supported by docker
-            parse_host(value)
-        except DockerException as exc:
-            raise ValidationError(exc.message)
+            port = int(value)
+        except ValueError:
+            raise ValidationError("invalid number")
 
-
-class ProviderReq(BaseProviderReq):
-    type = ma.Str(validate=OneOf(PROVIDER_CHOICES))
-
-    cluster_id = ma.Str(required=True)
-
-    @validates("cluster_id")
-    def validate_cluster(self, value):
-        """Validates cluster's ID.
-
-        :param value: ID of the cluster.
-        """
-        cluster = db.get(value, "clusters")
-        self.context["cluster"] = cluster
-        if not cluster:
-            raise ValidationError("invalid cluster ID")
+        if port != 22:
+            if not (1024 <= port <= 49152):
+                raise ValidationError("port must be 22 or 1024-49152")
 
 
 class EditProviderReq(BaseProviderReq):

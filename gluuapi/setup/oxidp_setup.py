@@ -11,14 +11,14 @@ from blinker import signal
 from .base import OxSetup
 from ..errors import DockerExecError
 from ..database import db
-from ..helper import DockerHelper
+from ..dockerclient import Docker
 
 
 class OxidpSetup(OxSetup):
     def setup(self):
         """Runs the actual setup.
         """
-        hostname = self.node.domain_name
+        hostname = self.container.domain_name
 
         # render config templates
         self.render_server_xml_template()
@@ -37,8 +37,8 @@ class OxidpSetup(OxSetup):
             "shibIDP",
             self.cluster.shib_jks_fn,
             self.cluster.decrypted_admin_pw,
-            "{}/shibIDP.key".format(self.node.cert_folder),
-            "{}/shibIDP.crt".format(self.node.cert_folder),
+            "{}/shibIDP.key".format(self.container.cert_folder),
+            "{}/shibIDP.crt".format(self.container.cert_folder),
             "tomcat",
             "tomcat",
             hostname,
@@ -61,7 +61,7 @@ class OxidpSetup(OxSetup):
         # notify oxidp peers to re-render their nutcracker.yml
         # and restart the daemon
         for node in self.cluster.get_oxidp_objects():
-            if node.id == self.node.id:
+            if node.id == self.container.id:
                 continue
 
             setup_obj = OxidpSetup(node, self.cluster,
@@ -83,19 +83,19 @@ class OxidpSetup(OxSetup):
                        "sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' " \
                        "> /etc/certs/{0}.crt".format(ldap.domain_name, ldap.ldaps_port)
             cert_cmd = '''sh -c "{}"'''.format(cert_cmd)
-            self.docker.exec_cmd(self.node.id, cert_cmd)
+            self.docker.exec_cmd(self.container.id, cert_cmd)
 
             import_cmd = " ".join([
                 "keytool -importcert -trustcacerts",
                 "-alias '{}'".format(ldap.domain_name),
                 "-file /etc/certs/{}.crt".format(ldap.domain_name),
-                "-keystore {}".format(self.node.truststore_fn),
+                "-keystore {}".format(self.container.truststore_fn),
                 "-storepass changeit -noprompt",
             ])
             import_cmd = '''sh -c "{}"'''.format(import_cmd)
 
             try:
-                self.docker.exec_cmd(self.node.id, import_cmd)
+                self.docker.exec_cmd(self.container.id, import_cmd)
             except DockerExecError as exc:
                 if exc.exit_code == 1:
                     pass
@@ -115,9 +115,9 @@ class OxidpSetup(OxSetup):
     def restart_nutcracker(self):
         """Restarts twemproxy via supervisorctl.
         """
-        self.logger.info("restarting twemproxy in {}".format(self.node.name))
+        self.logger.info("restarting twemproxy in {}".format(self.container.name))
         restart_cmd = "supervisorctl restart nutcracker"
-        self.docker.exec_cmd(self.node.id, restart_cmd)
+        self.docker.exec_cmd(self.container.id, restart_cmd)
 
     def teardown(self):
         """Teardowns the node.
@@ -147,9 +147,9 @@ class OxidpSetup(OxSetup):
                 dest = src.replace(self.app.config["OXIDP_OVERRIDE_DIR"],
                                    "/opt/idp")
                 self.logger.info("copying {} to {}:{}".format(
-                    src, self.node.name, dest,
+                    src, self.container.name, dest,
                 ))
-                self.salt.copy_file(self.node.id, src, dest)
+                self.docker.copy_to_container(self.container.id, src, dest)
 
     def add_auto_startup_entry(self):
         """Adds supervisor program for auto-startup.
@@ -169,17 +169,17 @@ command=nutcracker -c /etc/nutcracker.yml -p /var/run/nutcracker.pid -o /var/log
 
 [program:httpd]
 command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /etc/apache2/envvars && /usr/sbin/apache2ctl -DFOREGROUND\\"
-""".format(self.node.weave_ip)
+""".format(self.container.weave_ip)
 
         self.logger.info("adding supervisord entry")
         cmd = '''sh -c "echo '{}' >> /etc/supervisor/conf.d/supervisord.conf"'''.format(payload)
-        self.docker.exec_cmd(self.node.id, cmd)
+        self.docker.exec_cmd(self.container.id, cmd)
 
     def render_server_xml_template(self):
         """Copies rendered Tomcat's server.xml into the node.
         """
         src = "nodes/oxidp/server.xml"
-        dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
+        dest = os.path.join(self.container.tomcat_conf_dir, os.path.basename(src))
         ctx = {
             "shib_jks_pass": self.cluster.decrypted_admin_pw,
             "shib_jks_fn": self.cluster.shib_jks_fn,
@@ -194,7 +194,7 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
         dest = os.path.join("/etc/apache2/sites-available", file_basename)
 
         ctx = {
-            "hostname": self.node.domain_name,
+            "hostname": self.container.domain_name,
             "httpd_cert_fn": "/etc/certs/httpd.crt",
             "httpd_key_fn": "/etc/certs/httpd.key",
         }
@@ -207,8 +207,8 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
             return
 
         # oxtrust container might be in another host
-        provider = db.get(oxtrust.provider_id, "providers")
-        docker = DockerHelper(provider, logger=self.logger)
+        node = db.get(oxtrust.node_id, "nodes")
+        docker = Docker(self.machine.config(node.name), logger=self.logger)
 
         for fn in ["shibIDP.crt", "shibIDP.key"]:
             path = "/etc/certs/{}".format(fn)
@@ -219,10 +219,10 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
                 time.sleep(5)
                 self.logger.info(
                     "copying {0}:{1} to {2}:{1}".format(oxtrust.name, path,
-                                                        self.node.name)
+                                                        self.container.name)
                 )
                 echo_cmd = '''sh -c "echo '{}' > {}"'''.format(resp.retval, path)
-                self.docker.exec_cmd(self.node.id, echo_cmd)
+                self.docker.exec_cmd(self.container.id, echo_cmd)
 
     def discover_nginx(self):
         """Discovers nginx node.

@@ -10,7 +10,7 @@ from blinker import signal
 
 from .base import OxSetup
 from ..database import db
-from ..helper import DockerHelper
+from ..dockerclient import Docker
 
 
 class OxtrustSetup(OxSetup):
@@ -21,7 +21,7 @@ class OxtrustSetup(OxSetup):
         dest = "/usr/bin/{}".format(os.path.basename(src))
         ctx = {"ox_cluster_hostname": self.cluster.ox_cluster_hostname}
         self.render_template(src, dest, ctx)
-        self.docker.exec_cmd(self.node.id, "chmod +x {}".format(dest))
+        self.docker.exec_cmd(self.container.id, "chmod +x {}".format(dest))
 
     def setup(self):
         """Runs the actual setup.
@@ -42,8 +42,8 @@ class OxtrustSetup(OxSetup):
             "shibIDP",
             self.cluster.shib_jks_fn,
             self.cluster.decrypted_admin_pw,
-            "{}/shibIDP.key".format(self.node.cert_folder),
-            "{}/shibIDP.crt".format(self.node.cert_folder),
+            "{}/shibIDP.key".format(self.container.cert_folder),
+            "{}/shibIDP.crt".format(self.container.cert_folder),
             "tomcat",
             "tomcat",
             hostname,
@@ -65,7 +65,7 @@ class OxtrustSetup(OxSetup):
         """Copies rendered Tomcat's server.xml into the node.
         """
         src = "nodes/oxtrust/server.xml"
-        dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
+        dest = os.path.join(self.container.tomcat_conf_dir, os.path.basename(src))
         ctx = {
             "shib_jks_pass": self.cluster.decrypted_admin_pw,
             "shib_jks_fn": self.cluster.shib_jks_fn,
@@ -98,33 +98,33 @@ environment=CATALINA_PID=/var/run/tomcat.pid
 
         self.logger.info("adding supervisord entry")
         cmd = '''sh -c "echo '{}' >> /etc/supervisor/conf.d/supervisord.conf"'''.format(payload)
-        self.docker.exec_cmd(self.node.id, cmd)
+        self.docker.exec_cmd(self.container.id, cmd)
 
     def restart_tomcat(self):
         """Restarts Tomcat via supervisorctl.
         """
         self.logger.info("restarting tomcat")
         restart_cmd = "supervisorctl restart tomcat"
-        self.docker.exec_cmd(self.node.id, restart_cmd)
+        self.docker.exec_cmd(self.container.id, restart_cmd)
 
     def push_shib_certkey(self):
-        resp = self.docker.exec_cmd(self.node.id, "cat /etc/certs/shibIDP.crt")
+        resp = self.docker.exec_cmd(self.container.id, "cat /etc/certs/shibIDP.crt")
         crt = resp.retval
 
-        resp = self.docker.exec_cmd(self.node.id, "cat /etc/certs/shibIDP.key")
+        resp = self.docker.exec_cmd(self.container.id, "cat /etc/certs/shibIDP.key")
         key = resp.retval
 
         for oxidp in self.cluster.get_oxidp_objects():
             # oxidp container might be in another host
-            provider = db.get(oxidp.provider_id, "providers")
-            docker = DockerHelper(provider, logger=self.logger)
+            node = db.get(oxidp.node_id, "nodes")
+            docker = Docker(self.machine.config(node.name), logger=self.logger)
 
             if crt:
                 time.sleep(5)
                 path = "/etc/certs/shibIDP.crt"
                 self.logger.info(
                     "copying {0}:{1} to {2}:{1}".format(
-                        self.node.name,
+                        self.container.name,
                         path,
                         oxidp.name,
                     )
@@ -137,7 +137,7 @@ environment=CATALINA_PID=/var/run/tomcat.pid
                 path = "/etc/certs/shibIDP.key"
                 self.logger.info(
                     "copying {0}:{1} to {2}:{1}".format(
-                        self.node.name,
+                        self.container.name,
                         path,
                         oxidp.name,
                     )
@@ -152,6 +152,6 @@ environment=CATALINA_PID=/var/run/tomcat.pid
                 dest = src.replace(self.app.config["OXTRUST_OVERRIDE_DIR"],
                                    "/opt/tomcat/webapps/identity")
                 self.logger.info("copying {} to {}:{}".format(
-                    src, self.node.name, dest,
+                    src, self.container.name, dest,
                 ))
-                self.salt.copy_file(self.node.id, src, dest)
+                self.docker.copy_to_container(self.container.id, src, dest)

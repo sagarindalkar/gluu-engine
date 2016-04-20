@@ -12,7 +12,7 @@ from .base import BaseSetup
 
 class NginxSetup(BaseSetup):
     def get_session_affinity(self):
-        resp = self.docker.exec_cmd(self.node.id, "nginx -V")
+        resp = self.docker.exec_cmd(self.container.id, "nginx -V")
         if "nginx-sticky-module-ng" in resp.retval:
             return "sticky secure httponly hash=sha1"
         return "ip_hash"
@@ -39,11 +39,11 @@ class NginxSetup(BaseSetup):
         """Enables virtual host.
         """
         rm_cmd = "rm /etc/nginx/sites-enabled/default"
-        self.docker.exec_cmd(self.node.id, rm_cmd)
+        self.docker.exec_cmd(self.container.id, rm_cmd)
 
         symlink_cmd = "ln -sf /etc/nginx/sites-available/gluu_https.conf " \
                       "/etc/nginx/sites-enabled/gluu_https.conf"
-        self.docker.exec_cmd(self.node.id, symlink_cmd)
+        self.docker.exec_cmd(self.container.id, symlink_cmd)
 
     def add_auto_startup_entry(self):
         """Adds supervisor program for auto-startup.
@@ -51,17 +51,17 @@ class NginxSetup(BaseSetup):
         payload = """
 [program:{}]
 command=/usr/sbin/nginx -g \\"daemon off;\\"
-""".format(self.node.type)
+""".format(self.container.type)
         self.logger.info("adding supervisord entry")
         cmd = '''sh -c "echo '{}' >> /etc/supervisor/conf.d/supervisord.conf"'''.format(payload)
-        self.docker.exec_cmd(self.node.id, cmd)
+        self.docker.exec_cmd(self.container.id, cmd)
 
     def restart_nginx(self):
         """Restarts nginx via supervisorctl.
         """
         self.logger.info("restarting nginx")
         service_cmd = "supervisorctl restart nginx"
-        self.docker.exec_cmd(self.node.id, service_cmd)
+        self.docker.exec_cmd(self.container.id, service_cmd)
 
     def setup(self):
         """Runs the actual setup.
@@ -77,9 +77,9 @@ command=/usr/sbin/nginx -g \\"daemon off;\\"
         if os.path.exists(ssl_cert) and os.path.exists(ssl_key):
             # copy cert and key
             self.logger.info("copying existing SSL cert")
-            self.salt.copy_file(self.node.id, ssl_cert, "/etc/certs/nginx.crt")
+            self.docker.copy_to_container(self.container.id, ssl_cert, "/etc/certs/nginx.crt")
             self.logger.info("copying existing SSL key")
-            self.salt.copy_file(self.node.id, ssl_key, "/etc/certs/nginx.key")
+            self.docker.copy_to_container(self.container.id, ssl_key, "/etc/certs/nginx.key")
         else:
             self.gen_cert("nginx", self.cluster.decrypted_admin_pw,
                           "www-data", "www-data", hostname)
@@ -90,12 +90,12 @@ command=/usr/sbin/nginx -g \\"daemon off;\\"
             except OSError:
                 pass
 
-            resp = self.docker.exec_cmd(self.node.id, "cat /etc/certs/nginx.crt")
+            resp = self.docker.exec_cmd(self.container.id, "cat /etc/certs/nginx.crt")
             if resp.retval:
                 with open(ssl_cert, "w") as fp:
                     fp.write(resp.retval)
 
-            resp = self.docker.exec_cmd(self.node.id, "cat /etc/certs/nginx.key")
+            resp = self.docker.exec_cmd(self.container.id, "cat /etc/certs/nginx.key")
             if resp.retval:
                 with open(ssl_key, "w") as fp:
                     fp.write(resp.retval)

@@ -55,22 +55,22 @@ class LicenseExpirationTask(object):
             self.logger.info("trying to retrieve license update")
             new_license_key = self.update_license_key(license_key)
 
-            providers = new_license_key.get_provider_objects()
-            for provider in providers:
+            worker_nodes = db.all("nodes", db.where("type") == "worker")
+            for node in worker_nodes:
                 if new_license_key.expired:
                     # unable to do license_key renewal, hence we're going to
-                    # disable oxauth and oxidp nodes
+                    # disable oxauth and oxidp containers
                     for type_ in ["oxauth", "oxidp"]:
-                        self.disable_nodes(provider, type_)
+                        self.disable_containers(node, type_)
                 else:
-                    # if we have disabled oxauth and oxidp nodes in provider
+                    # if we have disabled oxauth and oxidp containers in node
                     # and license key is not expired, try to re-enable
-                    # the nodes
+                    # the containers
                     for type_ in ["oxauth", "oxidp"]:
-                        self.enable_nodes(provider, type_)
+                        self.enable_containers(node, type_)
 
-            if providers:
-                # delay before distributing the data to consumers
+            if worker_nodes:
+                # delay before distributing the data to worker nodes
                 time.sleep(5)
                 distribute_cluster_data(self.app.config["DATABASE_URI"])
 
@@ -108,43 +108,43 @@ class LicenseExpirationTask(object):
         db.update(license_key.id, license_key, "license_keys")
         return license_key
 
-    def disable_nodes(self, provider, type_):
-        """Disables nodes with certain type.
+    def disable_containers(self, node, type_):
+        """Disables containers with certain type.
 
-        Disabled node will be excluded from weave network.
+        Disabled container will be excluded from weave network.
 
-        :param provider: Provider object.
-        :param type_: Type of the node.
+        :param node: Node object.
+        :param type_: Type of the container.
         """
-        weave = WeaveHelper(provider, self.app, self.logger)
+        weave = WeaveHelper(node, self.app, self.logger)
 
-        nodes = provider.get_node_objects(type_=type_)
-        for node in nodes:
-            node.state = STATE_DISABLED
-            db.update(node.id, node, "nodes")
+        containers = node.get_container_objects(type_=type_)
+        for container in containers:
+            container.state = STATE_DISABLED
+            db.update(container.id, container, "containers")
 
-            cidr = "{}/{}".format(node.weave_ip, node.weave_prefixlen)
-            weave.detach(cidr, node.id)
-            self.logger.info("{} node {} has been "
-                             "disabled".format(type_, node.id))
+            cidr = "{}/{}".format(container.weave_ip, container.weave_prefixlen)
+            weave.detach(cidr, container.id)
+            self.logger.info("{} container {} has been "
+                             "disabled".format(type_, container.id))
 
-    def enable_nodes(self, provider, type_):
-        """Enables nodes with certain type.
+    def enable_containers(self, node, type_):
+        """Enables containers with certain type.
 
-        Enabled node will be included into weave network.
+        Enabled container will be included into weave network.
 
-        :param provider: Provider object.
-        :param type_: Type of the node.
+        :param node: Node object.
+        :param type_: Type of the container.
         """
-        weave = WeaveHelper(provider, self.app, self.logger)
+        weave = WeaveHelper(node, self.app, self.logger)
 
-        nodes = provider.get_node_objects(type_=type_, state=STATE_DISABLED)
-        for node in nodes:
-            node.state = STATE_SUCCESS
-            db.update(node.id, node, "nodes")
+        containers = node.get_container_objects(type_=type_, state=STATE_DISABLED)
+        for container in containers:
+            container.state = STATE_SUCCESS
+            db.update(container.id, container, "containers")
 
-            cidr = "{}/{}".format(node.weave_ip, node.weave_prefixlen)
-            weave.attach(cidr, node.id)
-            weave.dns_add(node.id, node.domain_name)
-            self.logger.info("{} node {} has been "
-                             "enabled".format(type_, node.id))
+            cidr = "{}/{}".format(container.weave_ip, container.weave_prefixlen)
+            weave.attach(cidr, container.id)
+            weave.dns_add(container.id, container.domain_name)
+            self.logger.info("{} container {} has been "
+                             "enabled".format(type_, container.id))

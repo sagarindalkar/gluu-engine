@@ -52,8 +52,9 @@ class DevConfig(Config):
     """Development configuration.
     """
     DEBUG = True
-    DATA_DIR = Config.APP_DIR + '/data'
-    DATABASE_URI = os.path.join(DATA_DIR, "db", "db_dev.json")
+    # DATA_DIR = Config.APP_DIR + '/data'
+    # DATABASE_URI = os.path.join(DATA_DIR, "db", "db_dev.json")
+    DATABASE_URI = os.path.join(Config.DATA_DIR, "db", "db_dev.json")
 
 
 class TestConfig(Config):

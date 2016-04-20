@@ -3,7 +3,7 @@
 #
 # All rights reserved.
 
-import os
+# import os
 import logging
 
 from crochet import run_in_reactor
@@ -11,15 +11,17 @@ from twisted.internet import inotify
 from twisted.python import filepath
 
 from ..database import db
-from ..helper import SaltHelper
-from ..helper import DockerHelper
+# from ..helper import SaltHelper
+# from ..helper import DockerHelper
+from ..machine import Machine
+from ..dockerclient import Docker
 
 
 class BaseWatcherTask(object):
     #: List of file extensions should be watched for
     allowed_extensions = tuple()
 
-    node_type = ""
+    container_type = ""
 
     @property
     def src_dir(self):
@@ -50,7 +52,8 @@ class BaseWatcherTask(object):
             "{}.{}".format(__name__, self.__class__.__name__),
         )
         self.watcher = inotify.INotify()
-        self.salt = SaltHelper()
+        # self.salt = SaltHelper()
+        self.machine = Machine()
 
         # cluster object may not be created yet
         # when the task is launched
@@ -129,27 +132,47 @@ class BaseWatcherTask(object):
             )
             return
 
-        for node in self.get_nodes():
-            self.logger.info("Found existing {} node "
-                             "with ID {}".format(self.node_type, node.id))
+        # get swarm master node
+        try:
+            master_node = db.search_from_table(
+                "node", db.where("type") == "master",
+            )[0]
+        except IndexError:
+            master_node = None
+
+        if not master_node:
+            self.logger.warn("unable to find master node")
+            return
+
+        dk = Docker(self.machine.swarm_config(master_node.name))
+
+        for container in self.get_containers():
+            self.logger.info(
+                "Found existing {} container with ID {}".format(
+                    self.container_type, container.id))
+
             self.logger.info("copying {} to {}:{}".format(
-                src, node.name, dest,
+                src, container.name, dest,
             ))
 
-            # create destination directory if not exist
-            provider = db.get(node.provider_id, "providers")
-            docker = DockerHelper(provider, logger=self.logger)
-            docker.exec_cmd(node.id, "mkdir -p {}".format(os.path.dirname(dest)))
+            # # create destination directory if not exist
+            # provider = db.get(node.provider_id, "providers")
+            # docker = DockerHelper(provider, logger=self.logger)
+            # docker.exec_cmd(node.id, "mkdir -p {}".format(os.path.dirname(dest)))
 
-            # copy the file to container
-            self.salt.copy_file(node.id, src, dest)
+            # # copy the file to container
+            # self.salt.copy_file(node.id, src, dest)
+            dk.copy_to_container(container.id, src, dest)
 
-    def get_nodes(self):
-        return self.cluster.get_node_objects(type_=self.node_type)
+    # def get_nodes(self):
+    #     return self.cluster.get_node_objects(type_=self.node_type)
+
+    def get_containers(self):
+        return self.cluster.get_container_objects(type_=self.container_type)
 
 
 class OxidpWatcherTask(BaseWatcherTask):
-    node_type = "oxidp"
+    container_type = "oxidp"
     allowed_extensions = (
         ".xml",
         ".config",
@@ -164,7 +187,7 @@ class OxidpWatcherTask(BaseWatcherTask):
 
 
 class OxauthWatcherTask(BaseWatcherTask):  # pragma: no cover
-    node_type = "oxauth"
+    container_type = "oxauth"
     dest_dir = "/opt/tomcat/webapps/oxauth"
 
     @property
@@ -173,7 +196,7 @@ class OxauthWatcherTask(BaseWatcherTask):  # pragma: no cover
 
 
 class OxtrustWatcherTask(BaseWatcherTask):  # pragma: no cover
-    node_type = "oxtrust"
+    container_type = "oxtrust"
     dest_dir = "/opt/tomcat/webapps/identity"
 
     @property

@@ -3,6 +3,8 @@
 #
 # All rights reserved.
 
+import re
+
 from marshmallow import post_load
 from marshmallow import validates
 from marshmallow import ValidationError
@@ -11,54 +13,28 @@ from marshmallow.validate import OneOf
 from ..database import db
 from ..extensions import ma
 
-#: List of supported nodes
-NODE_CHOICES = [
-    "ldap",
-    "oxauth",
-    "oxtrust",
-    "oxidp",
-    "nginx",
-    # "oxasimba",
-]
+#PROVIDER_TYPES = ['generic', 'aws', 'digitalocean', 'google'] #TODO: put it in config
+NAME_RE = re.compile('^[a-zA-Z0-9.-]+$')
 
 class NodeReq(ma.Schema):
+    name = ma.Str(required=True)
     provider_id = ma.Str(required=True)
 
-    node_type = ma.Str(validate=OneOf(NODE_CHOICES), required=True)
-
-    connect_delay = ma.Int(default=10, missing=10,
-                           error="must use numerical value")
-    exec_delay = ma.Int(default=15, missing=15,
-                        error="must use numerical value")
-
-    @validates("provider_id")
+    @validates('provider_id')
     def validate_provider(self, value):
-        """Validates provider's ID.
+        found = db.count_from_table('digitalocean_providers',
+                    db.where("id") == value)
+        if not found:
+            raise ValidationError("wrong provider id")
 
-        :param value: ID of the provider.
-        """
-        provider = db.get(value, "providers")
-        self.context["provider"] = provider
+    @validates('name')
+    def validate_name(self, value):
+        if not NAME_RE.match(value):
+            raise ValidationError("supported name format is 0-9a-zA-Z.-")
 
-        if not provider:
-            raise ValidationError("invalid provider ID")
+        if db.count_from_table('nodes', db.where('name') == value):
+            raise ValidationError("name is already taken")
 
-        cluster = db.get(provider.cluster_id, "clusters")
-        self.context["cluster"] = cluster
+    
 
-        if not cluster:
-            raise ValidationError("provider doesn't have cluster ID")
-
-        if provider.type == "consumer":
-            license_key = db.all("license_keys")[0]
-            if license_key.expired:
-                raise ValidationError("cannot deploy node to "
-                                      "provider with expired license")
-
-    @post_load
-    def finalize_data(self, data):
-        """Build finalized data.
-        """
-        out = {"params": data}
-        out.update({"context": self.context})
-        return out
+    

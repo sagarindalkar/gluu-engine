@@ -17,14 +17,14 @@ SALT_EVENT_TIMEOUT = 2 * 60
 
 
 class SaltHelper(object):
-    client = salt.client.LocalClient()
-    key_store = salt.key.Key(client.opts)
-    event = salt.utils.event.get_event(
-        "master",
-        sock_dir=client.opts["sock_dir"],
-        transport=client.opts["transport"],
-        opts=client.opts,
-    )
+    client = None #salt.client.LocalClient()
+    key_store = None #salt.key.Key(client.opts)
+    event = None #salt.utils.event.get_event(
+    #    "master",
+    #    sock_dir=client.opts["sock_dir"],
+    #    transport=client.opts["transport"],
+    #    opts=client.opts,
+    #)
 
     def register_minion(self, key):
         """Registers a minion.

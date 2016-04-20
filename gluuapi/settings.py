@@ -34,6 +34,7 @@ class Config(object):
     OXTRUST_OVERRIDE_DIR = os.path.join(DATA_DIR, "override", "oxtrust")
     OXIDP_OVERRIDE_DIR = os.path.join(DATA_DIR, "override", "oxidp")
     #DRIVERS = ['generic','amazonec2','digitalocean', 'google']
+    PROVIDER_TYPES = ['generic', 'aws', 'do', 'google']
 
     # container volume directories
     OPENDJ_VOLUME_DIR = os.path.join(DATA_DIR, "volumes", "opendj")
@@ -52,7 +53,7 @@ class DevConfig(Config):
     """
     DEBUG = True
     DATA_DIR = Config.APP_DIR + '/data'
-    DATABASE_URI = os.path.join(Config.DATA_DIR, "db", "db_dev.json")
+    DATABASE_URI = os.path.join(DATA_DIR, "db", "db_dev.json")
 
 
 class TestConfig(Config):

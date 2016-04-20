@@ -3,6 +3,7 @@
 #
 # All rights reserved.
 
+from .node import Node
 #from .provider import Provider  # noqa
 from .provider import GenericProvider  # noqa
 from .provider import DigitalOceanProvider  # noqa

@@ -89,10 +89,10 @@ class Machine(object):
         if node.type == 'master':
             clist.append('--swarm --swarm-master')
 
-        if node.type == 'slave':
+        if node.type == 'worker':
             clist.append('--swarm')
 
-        if node.type != 'keystore':
+        if node.type != 'kv':
             clist.append(self._dicovery(discovery))
 
         clist.append('{}'.format(node.name))
@@ -118,10 +118,10 @@ class Machine(object):
         if node.type == 'master':
             clist.append('--swarm --swarm-master')
 
-        if node.type == 'slave':
+        if node.type == 'worker':
             clist.append('--swarm')
 
-        if node.type != 'keystore':
+        if node.type != 'kv':
             clist.append(self._dicovery(discovery))
 
         clist.append('{}'.format(node.name))
@@ -143,10 +143,10 @@ class Machine(object):
         if node.type == 'master':
             clist.append('--swarm --swarm-master')
 
-        if node.type == 'slave':
+        if node.type == 'worker':
             clist.append('--swarm')
 
-        if node.type != 'keystore':
+        if node.type != 'kv':
             clist.append(self._dicovery(discovery))
 
         clist.append('{}'.format(node.name))
@@ -154,10 +154,7 @@ class Machine(object):
         return cmd
     
 
-    def create(self, node):
-        provider = node.provider
-        discovery = node.discovery
-        
+    def create(self, node, provider, discovery):
         if provider.driver == 'generic' and provider.used == 'no':
             cmd = self._get_generic_cmd(discovery, provider, node)
 

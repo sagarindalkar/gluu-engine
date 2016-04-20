@@ -15,6 +15,7 @@ from .extensions import restapi
 from .extensions import ma
 from .resource import NodeResource
 from .resource import NodeListResource
+from .resource import CreateNodeResource
 from .resource import ClusterResource
 from .resource import ClusterListResource
 from .resource import ProviderResource
@@ -22,10 +23,10 @@ from .resource import ProviderListResource
 from .resource import CreateProviderResource
 from .resource import LicenseKeyListResource
 from .resource import LicenseKeyResource
-from .resource import NodeLogResource
-from .resource import NodeLogSetupResource
-from .resource import NodeLogTeardownResource
-from .resource import NodeLogListResource
+#from .resource import NodeLogResource
+#from .resource import NodeLogSetupResource
+#from .resource import NodeLogTeardownResource
+#from .resource import NodeLogListResource
 from .database import db
 
 
@@ -67,13 +68,25 @@ def register_extensions(app):
 
 
 def register_resources():
-    restapi.add_resource(NodeListResource, '/nodes')
-    restapi.add_resource(NodeResource, '/nodes/<string:node_id>')
+    #ARG,
+    #node_type : master|worker|kv
+    #POST,
+    #name : name (for kv name must be gluu.discovery)
+    #provider_id : id
+    restapi.add_resource(CreateNodeResource,
+        '/nodes/<string:node_type>',
+        endpoint='create_node')
+    
+    restapi.add_resource(NodeListResource, '/nodes', endpoint='node_list')
+    
+    restapi.add_resource(NodeResource,
+        '/nodes/<string:node_id>',
+        endpoint='node')
 
-    restapi.add_resource(NodeLogResource, '/node_logs/<id>')
-    restapi.add_resource(NodeLogSetupResource, '/node_logs/<id>/setup')
-    restapi.add_resource(NodeLogTeardownResource, '/node_logs/<id>/teardown')
-    restapi.add_resource(NodeLogListResource, '/node_logs')
+    #restapi.add_resource(NodeLogResource, '/node_logs/<id>')
+    #restapi.add_resource(NodeLogSetupResource, '/node_logs/<id>/setup')
+    #restapi.add_resource(NodeLogTeardownResource, '/node_logs/<id>/teardown')
+    #restapi.add_resource(NodeLogListResource, '/node_logs')
 
     restapi.add_resource(ClusterListResource, '/clusters')
     restapi.add_resource(ClusterResource, '/clusters/<string:cluster_id>')

@@ -168,3 +168,18 @@ def get_sys_random_chars(size=12, chars=_DEFAULT_CHARS):
     """Generates random characters based on OS.
     """
     return ''.join(random.SystemRandom().choice(chars) for _ in range(size))
+
+
+from subprocess import Popen
+from subprocess import PIPE
+
+
+def run_in_shell(cmd_str, raise_error=True):
+    cmd_list = cmd_str.strip().split()
+    p = Popen(cmd_list, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+    stdout, stderr = p.communicate()
+    error_code = p.returncode
+
+    if raise_error and error_code:
+        raise RuntimeError("return code %s: %s" % (error_code, stderr.strip()))
+    return stdout.strip(), stderr.strip(), error_code

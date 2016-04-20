@@ -7,17 +7,16 @@ import json
 
 import docker.errors
 from docker import Client
-from docker.tls import TLSConfig
 
 from ..log import create_file_logger
-
 from ..registry import Registry
+from ..utils import run_in_shell
 
 
 class Docker(object):
-    def __init__(self, node, logger=None):
+    def __init__(self, config, logger=None):
         self.logger = logger or create_file_logger()
-        self.machine_conf = node.get_machine_config()
+        self.machine_conf = config
         self.registry_base_url = Registry().registry_base_url
         self.docker = Client(base_url=self.machine_conf['base_url'],
                              tls=self.machine_conf['tls'])
@@ -74,10 +73,6 @@ class Docker(object):
         :param container_id: ID or name of the container.
         """
         return self.docker.inspect_container(container_id)
-
-    def stop(self, container_id):  # pragma: no cover
-        # DEPRECATED; see stop_container instead
-        self.stop_container(container_id)
 
     def stop_container(self, container_id):  # pragma: no cover
         """Stops given container.
@@ -149,3 +144,23 @@ class Docker(object):
             self.logger.info("container {!r} with ID {!r} "
                              "has been started".format(name, container_id))
         return container_id
+
+    def copy_to_container(self, container, src, dest):
+        cfg_str = self._machine_conf_str()
+        cmd = "docker {} cp {} {}:{}".format(cfg_str, src, container, dest)
+        stdout, stderr, err_code = run_in_shell(cmd)
+
+    # def copy_from_container(self, container, src, dest):
+    #     cfg_str = self._machine_conf_str()
+    #     cmd = "docker {} cp {}:{} {}".format(cfg_str, container, src, dest)
+    #     stdout, stderr, err_code = run_in_shell(cmd)
+
+    def _machine_conf_str(self):
+        cfg_str = " ".join([
+            "--tlsverify",
+            "--tlscacert={}".format(self.machine_conf["tls"].ca_cert),
+            "--tlscert={}".format(self.machine_conf["tls"].cert[0]),
+            "--tlskey={}".format(self.machine_conf["tls"].cert[1]),
+            "-H={}".format(self.machine_conf["base_url"].replace("https", "tcp")),
+        ])
+        return cfg_str

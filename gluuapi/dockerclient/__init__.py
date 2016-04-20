@@ -3,4 +3,4 @@
 #
 # All rights reserved.
 
-from .docker import Docker  # noqa
+from ._docker import Docker  # noqa

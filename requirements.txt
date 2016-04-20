@@ -4,7 +4,7 @@ flask-restful==0.3.1
 crochet==1.4.0
 
 # Docker
-docker-py==1.5.0
+docker-py==1.8.0
 
 #salt
 salt==2014.7.6

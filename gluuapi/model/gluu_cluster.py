@@ -287,3 +287,18 @@ class GluuCluster(BaseModel):
         if type_:
             condition = (condition) & (db.where("type") == type_)
         return db.count_from_table("nodes", condition)
+
+    def get_container_objects(self, type_="", state=STATE_SUCCESS):
+        """Gets available container objects (models).
+
+        :param state: State of the container (one of SUCCESS, DISABLED,
+                      FAILED, IN_PROGRESS).
+        :param type_: Type of the container.
+        :returns: A list of container objects.
+        """
+        condition = db.where("cluster_id") == self.id
+        if state:
+            condition = (condition) & (db.where("state") == state)
+        if type_:
+            condition = (condition) & (db.where("type") == type_)
+        return db.search_from_table("containers", condition)

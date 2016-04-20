@@ -50,7 +50,8 @@ class GenericProviderReq(BaseProviderReq):
 
     @validates("generic_ip_address")
     def validate_generic_ip_address(self, value):
-        if not HOSTNAME_RE.match(value) and not valid_ip(value):
+        valid = all(HOSTNAME_RE.match(v) for v in value.split("."))
+        if not valid and not valid_ip(value):
             raise ValidationError("invalid ip or hostname")
 
     # forcing user to put key first in path

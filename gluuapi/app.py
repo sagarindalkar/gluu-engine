@@ -96,11 +96,11 @@ def register_resources():
     #restapi.add_resource(ProviderListResource, "/providers",
     #                     endpoint="providerlist")
     restapi.add_resource(ProviderResource,
-                         "/providers/<string:provider_type>/<string:provider_id>",
+                         "/providers/<string:provider_id>",
                          endpoint="provider")
     restapi.add_resource(ProviderListResource,
                          "/providers",
-                         "/providers/<string:provider_type>",
+                         "/filter-providers/<string:provider_type>",
                          endpoint="provider_list")
     restapi.add_resource(CreateProviderResource,
                          "/providers/<string:provider_type>",

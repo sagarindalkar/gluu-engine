@@ -74,11 +74,12 @@ class CreateProviderResource(Resource):
 
         model_cls = self.model_cls[provider_type]
         provider = model_cls(data)
-        db.persist(provider, "{}_providers".format(provider_type))
+        db.persist(provider, "providers")
 
         headers = {
-            "Location": url_for("provider", provider_type=provider_type,
-                                provider_id=provider.id),
+            #"Location": url_for("provider", provider_type=provider_type,
+            #                    provider_id=provider.id),
+            "Location": url_for("provider", provider_id=provider.id),
         }
         return provider.as_dict(), 201, headers
 
@@ -87,15 +88,17 @@ class ProviderListResource(Resource):
     def get(self, provider_type=""):
         if not provider_type:
             # list all providers by type
-            generic_providers = db.all("generic_providers")
-            digitalocean_providers = db.all("digitalocean_providers")
-
-            # TODO: merge all providers
-            providers = generic_providers + digitalocean_providers
+            providers = db.all("providers")
             return [provider.as_dict() for provider in providers]
 
+        if provider_type not in PROVIDER_TYPES:
+            return {
+                "status": 404,
+                "message": "Provider type is not supported"
+            }, 404
+
         # list specific provider types
-        providers = db.all("{}_providers".format(provider_type))
+        providers = db.search_from_table("providers", db.where('driver') == provider_type)
         return [provider.as_dict() for provider in providers]
 
 
@@ -128,26 +131,14 @@ class ProviderResource(Resource):
     # def validate_google(self):
     #     pass
 
-    def get(self, provider_type, provider_id):
-        if provider_type not in PROVIDER_TYPES:
-            return {
-                "status": 404,
-                "message": "Provider type is not supported"
-            }, 404
-
-        provider = db.get(provider_id, "{}_providers".format(provider_type))
+    def get(self, provider_id):
+        provider = db.get(provider_id, "providers")
         if not provider:
             return {"status": 404, "message": "Provider not found"}, 404
         return provider.as_dict()
 
-    def delete(self, provider_type, provider_id):
-        if provider_type not in PROVIDER_TYPES:
-            return {
-                "status": 404,
-                "message": "Provider type is not supported"
-            }, 404
-
-        provider = db.get(provider_id, "{}_providers".format(provider_type))
+    def delete(self, provider_id):
+        provider = db.get(provider_id, "providers")
         if not provider:
             return {"status": 404, "message": "Provider not found"}, 404
 
@@ -156,21 +147,15 @@ class ProviderResource(Resource):
                   deployed using this provider"
             return {"status": 403, "message": msg}, 403
 
-        db.delete(provider_id, "{}_providers".format(provider_type))
+        db.delete(provider_id, 'providers')
         return {}, 204
 
-    def put(self, provider_type, provider_id):
-        if provider_type not in PROVIDER_TYPES:
-            return {
-                "status": 404,
-                "message": "Provider type is not supported"
-            }, 404
-
-        provider = db.get(provider_id, "{}_providers".format(provider_type))
+    def put(self, provider_id):
+        provider = db.get(provider_id, "providers")
         if not provider:
             return {"status": 404, "message": "Provider not found"}, 404
 
-        data, errors = self.validate[provider_type]()
+        data, errors = self.validate[provider.driver]()
         if errors:
             return {
                 "status": 400,
@@ -179,7 +164,7 @@ class ProviderResource(Resource):
             }, 400
 
         provider.populate(data)
-        db.update(provider.id, provider, "{}_providers".format(provider_type))
+        db.update(provider.id, provider, "providers")
         return provider.as_dict()
 
 

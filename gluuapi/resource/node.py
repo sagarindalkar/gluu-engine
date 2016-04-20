@@ -14,7 +14,7 @@ from flask_restful import Resource
 from ..reqparser import NodeReq
 from ..model import Node
 from ..machine import Machine
-from ..docker import Docker
+from ..dockerclient import Docker
 from ..database import db
 
 NODE_TYPES = ['master', 'worker', 'kv'] #TODO: put it in config

@@ -3,30 +3,24 @@
 #
 # All rights reserved.
 
-import re
 import json
-from subprocess import Popen, PIPE
+import re
+
 from docker.tls import TLSConfig
 
-LS_FIELDS = ["Name", "Active", "ActiveHost", "ActiveSwarm", "DriverName", "State", "URL", "Swarm", "Error",
-             "DockerVersion", "ResponseTime"]
+from ..utils import run_in_shell
+
+LS_FIELDS = ["Name", "Active", "ActiveHost", "ActiveSwarm", "DriverName",
+             "State", "URL", "Swarm", "Error", "DockerVersion", "ResponseTime"]
+
 
 class Machine(object):
-
-    def __init__(self, path = '/usr/local/bin/docker-machine'):
+    def __init__(self, path='docker-machine'):
         self.path = path
 
-
     def _run(self, cmd_str, raise_error=True):
-        cmd_list = cmd_str.strip().split()
-        cmd = [self.path] + cmd_list
-        p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
-        stdout, stderr = p.communicate()
-        error_code = p.returncode
-        if raise_error and error_code:
-            raise RuntimeError("return code %s: %s" % (error_code, stderr.strip()))
-        return stdout.strip(), stderr.strip(), error_code
-
+        cmd = "{} {}".format(self.path, cmd_str)
+        return run_in_shell(cmd, raise_error)
 
     def _config(self, cmd, machine_name, docker_friendly):
         stdout, _, _ = self._run(cmd)
@@ -53,17 +47,14 @@ class Machine(object):
             }
         return params
 
-
-    def config(self, machine_name, docker_friendly = True):
+    def config(self, machine_name, docker_friendly=True):
         cmd = 'config {}'.format(machine_name)
         return self._config(cmd, machine_name, docker_friendly)
 
-
     # this method is only for swarm master
-    def swarm_config(self, machine_name, docker_friendly = True):
+    def swarm_config(self, machine_name, docker_friendly=True):
         cmd = 'config --swarm {}'.format(machine_name)
         return self._config(cmd, machine_name, docker_friendly)
-
 
     def _dicovery(self, discovery):
         dlist = []
@@ -71,7 +62,6 @@ class Machine(object):
         dlist.append('--engine-opt="cluster-store=consul://{}:{}"'.format(discovery.ip, discovery.port))
         dlist.append('--engine-opt="cluster-advertise=eth0:2376"')
         return ' '.join(dlist)
-
 
     def _get_generic_cmd(self, discovery, provider, node):
         clist = []
@@ -98,7 +88,6 @@ class Machine(object):
         clist.append('{}'.format(node.name))
         cmd = ' '.join(clist)
         return cmd
-
 
     def _get_aws_cmd(self, discovery, provider, node):
         clist = []
@@ -128,7 +117,6 @@ class Machine(object):
         cmd = ' '.join(clist)
         return cmd
 
-    
     def _get_do_cmd(self, discovery, provider, node):
         clist = []
         clist.append('create')
@@ -152,7 +140,6 @@ class Machine(object):
         clist.append('{}'.format(node.name))
         cmd = ' '.join(clist)
         return cmd
-    
 
     def create(self, node, provider, discovery):
         if provider.driver == 'generic' and provider.used == 'no':
@@ -167,12 +154,10 @@ class Machine(object):
         self._run(cmd)
         return True
 
-
     def inspect(self, machine_name):
         cmd = 'inspect {}'.format(machine_name)
         stdout, _, _ = self._run(cmd)
         return json.loads(stdout.strip())
-
 
     def ip(self, machine_name):
         cmd = 'ip {}'.format(machine_name)
@@ -185,12 +170,10 @@ class Machine(object):
         #else:
         #    return {'error_code': error, 'msg': stderr}
 
-
     def kill(self, machine_name):
         cmd = 'kill {}'.format(machine_name)
         self._run(cmd)
         return True
-
 
     def ls(self):
         seperator = "|"
@@ -203,24 +186,20 @@ class Machine(object):
             machines.append(machine)
         return machines
 
-
     def provision(self, machine_name):
         cmd = 'provision {}'.format(machine_name)
         self._run(cmd)
         return True
-
 
     def regenerate_certs(self, machine_name):
         cmd = 'regenerate-certs -f {}'.format(machine_name)
         self._run(cmd)
         return True
 
-
     def restart(self, machine_name):
         cmd = 'restart {}'.format(machine_name)
         self._run(cmd)
         return True
-
 
     def rm(self, machine_name, force=False):
         f = '-f' if force else ''
@@ -228,13 +207,11 @@ class Machine(object):
         self._run(cmd)
         return True
 
-
     def ssh(self, machine_name, cmd):
         if cmd:
             cmd = 'ssh {} {}'.format(machine_name, cmd)
             stdout, stderr, error = self._run(cmd)
         return stdout.strip()
-
 
     def scp(self, source, destination, recursive=False):
         r = '-r' if recursive else ''
@@ -242,39 +219,32 @@ class Machine(object):
         self._run(cmd)
         return True
 
-
     def status(self, machine_name):
         cmd = 'status {}'.format(machine_name)
         stdout, _, _ = self._run(cmd)
         return stdout.strip() == 'Running'
-
 
     def start(self, machine_name):
         cmd = 'start {}'.format(machine_name)
         self._run(cmd)
         return True
 
-
     def stop(self, machine_name):
         cmd = 'stop {}'.format(machine_name)
         self._run(cmd)
         return True
-
 
     def upgrade(self, machine_name):
         cmd = 'upgrade {}'.format(machine_name)
         self._run(cmd)
         return True
 
-
     def url(self, machine_name):
         cmd = 'url {}'.format(machine_name)
         stdout, _, _ = self._run(cmd)
         return stdout.strip()
 
-
     def version(self):
-        import re
         regexp = "docker-machine version (.+), build (.+)"
         cmd = 'version'
         stdout, _, _ = self._run(cmd)

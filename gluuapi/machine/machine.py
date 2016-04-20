@@ -15,7 +15,7 @@ LS_FIELDS = ["Name", "Active", "ActiveHost", "ActiveSwarm", "DriverName",
 
 
 class Machine(object):
-    def __init__(self, path='/usr/local/bin/docker-machine'):
+    def __init__(self, path='docker-machine'):
         self.path = path
 
     def _run(self, cmd_str, raise_error=True):

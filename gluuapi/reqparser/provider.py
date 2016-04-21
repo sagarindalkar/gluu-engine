@@ -24,7 +24,10 @@ DRIVERS = ['generic', 'amazonec2', 'digitalocean', 'google']
 
 
 def valid_ip(ip):
-    return [0 <= int(x) < 256 for x in re.split('\.', re.match(r'^\d+\.\d+\.\d+\.\d+$', ip).group(0))].count(True) == 4
+    ip_matched = re.match(r'^\d+\.\d+\.\d+\.\d+$', ip)
+    if not ip_matched:
+        return False
+    return [0 <= int(x) < 256 for x in re.split('\.', ip_matched.group(0))].count(True) == 4
 
 
 class BaseProviderReq(ma.Schema):

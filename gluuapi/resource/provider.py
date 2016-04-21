@@ -20,12 +20,12 @@ from ..model import DigitalOceanProvider
 # from ..utils import retrieve_signed_license
 # from ..utils import decode_signed_license
 
-PROVIDER_TYPES = [
+PROVIDER_TYPES = (
     'generic',
     # 'aws',
     'digitalocean',
     # 'google',
-]
+)
 
 
 class CreateProviderResource(Resource):
@@ -108,12 +108,6 @@ class ProviderResource(Resource):
             'generic': self.validate_generic,
             # 'aws': self.validate_aws,
             'digitalocean': self.validate_digitalocean,
-            # 'google': self.validate_google,
-        }
-        self.model_cls = {
-            'generic': GenericProvider,
-            # 'aws': self.validate_aws,
-            'digitalocean': DigitalOceanProvider,
             # 'google': self.validate_google,
         }
 

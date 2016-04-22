@@ -13,9 +13,9 @@ from requests.exceptions import SSLError
 from requests.exceptions import ConnectionError
 from crochet import run_in_reactor
 
-from .docker_helper import DockerHelper
-from .salt_helper import SaltHelper
-from .salt_helper import prepare_minion
+# from .docker_helper import DockerHelper
+# from .salt_helper import SaltHelper
+# from .salt_helper import prepare_minion
 from .provider_helper import distribute_cluster_data
 from .prometheus_helper import PrometheusHelper
 from .weave_helper import WeaveHelper
@@ -33,6 +33,8 @@ from ..setup import NginxSetup
 from ..setup import OxasimbaSetup
 from ..log import create_file_logger
 from ..utils import exc_traceback
+from ..machine import Machine
+from ..dockerclient import Docker
 
 
 class BaseModelHelper(object):
@@ -46,44 +48,49 @@ class BaseModelHelper(object):
 
     @abc.abstractproperty
     def setup_class(self):
-        """Node setup class. Must be overriden in subclass.
+        """container setup class. Must be overriden in subclass.
         """
 
-    def __init__(self, node, app, logpath=None):
-        self.node = node
-        self.cluster = db.get(self.node.cluster_id, "clusters")
-        self.provider = db.get(self.node.provider_id, "providers")
+    def __init__(self, container, app, logpath=None):
+        self.container = container
+        self.cluster = db.get(self.container.cluster_id, "clusters")
+        # self.provider = db.get(self.container.provider_id, "providers")
+        self.node = db.get(self.container.node_id, "nodes")
 
         if logpath:
-            self.logger = create_file_logger(logpath, name=self.node.name)
+            self.logger = create_file_logger(logpath, name=self.container.name)
         else:
             self.logger = logging.getLogger(
                 __name__ + "." + self.__class__.__name__,
             )
 
         self.app = app
-        self.docker = DockerHelper(self.provider, logger=self.logger)
-        self.salt = SaltHelper()
-        self.weave = WeaveHelper(self.provider, self.app, logger=self.logger)
+        # self.docker = DockerHelper(self.provider, logger=self.logger)
+        # self.salt = SaltHelper()
+        mc = Machine()
+        master_node = db.search_from_table("nodes", db.where("type") == "master")[0]  # noqa
+        self.docker = Docker(mc.swarm_config(master_node.name))
+
+        self.weave = WeaveHelper(self.node, self.app, logger=self.logger)
         self.prometheus = PrometheusHelper(self.app, logger=self.logger)
 
     @run_in_reactor
     def setup(self, connect_delay=10, exec_delay=15):
-        """Runs the node setup.
+        """Runs the container setup.
 
         :param connect_delay: Time to wait before start connecting to minion.
         :param exec_delay: Time to wait before start executing remote command.
         """
         try:
-            self.logger.info("{} setup is started".format(self.node.image))
+            self.logger.info("{} setup is started".format(self.container.image))
             start = time.time()
 
             # get docker bridge IP as it's where weavedns runs
             bridge_ip = self.weave.docker_bridge_ip()
 
             container_id = self.docker.setup_container(
-                self.node.name,
-                self.node.image,
+                self.container.name,
+                self.container.image,
                 env={
                     "SALT_MASTER_IPADDR": os.environ.get("SALT_MASTER_IPADDR"),
                 },
@@ -97,63 +104,63 @@ class BaseModelHelper(object):
             # container is not running
             if not container_id:
                 self.logger.error("Failed to start the "
-                                  "{!r} container".format(self.node.name))
+                                  "{!r} container".format(self.container.name))
                 self.on_setup_error()
                 return
 
             # container ID in short format
-            self.node.id = container_id[:12]
-            prepare_minion(
-                self.node.id,
-                connect_delay=connect_delay,
-                exec_delay=exec_delay,
-                logger=self.logger,
-            )
+            self.container.id = container_id[:12]
+            # prepare_minion(
+            #     self.container.id,
+            #     connect_delay=connect_delay,
+            #     exec_delay=exec_delay,
+            #     logger=self.logger,
+            # )
 
-            # minion is not connected
-            if not self.salt.is_minion_registered(self.node.id):
-                self.logger.error("minion {} is "
-                                  "unreachable".format(self.node.id))
-                self.on_setup_error()
-                return
+            # # minion is not connected
+            # if not self.salt.is_minion_registered(self.container.id):
+            #     self.logger.error("minion {} is "
+            #                       "unreachable".format(self.container.id))
+            #     self.on_setup_error()
+            #     return
 
-            self.node.ip = self.docker.get_container_ip(self.node.id)
-            self.node.domain_name = "{}.{}.gluu.local".format(
-                self.node.id, self.node.type,
+            self.container.ip = self.docker.get_container_ip(self.container.id)
+            self.container.domain_name = "{}.{}.gluu.local".format(
+                self.container.id, self.container.type,
             )
             db.update_to_table(
-                "nodes",
-                db.where("name") == self.node.name,
-                self.node,
+                "containers",
+                db.where("name") == self.container.name,
+                self.container,
             )
 
             # attach weave IP to container
-            cidr = "{}/{}".format(self.node.weave_ip,
-                                  self.node.weave_prefixlen)
-            self.weave.attach(cidr, self.node.id)
+            cidr = "{}/{}".format(self.container.weave_ip,
+                                  self.container.weave_prefixlen)
+            self.weave.attach(cidr, self.container.id)
 
             # add DNS record
-            self.weave.dns_add(self.node.id, self.node.domain_name)
+            self.weave.dns_add(self.container.id, self.container.domain_name)
 
-            if self.node.type == "ldap":
-                self.weave.dns_add(self.node.id, "ldap.gluu.local")
+            if self.container.type == "ldap":
+                self.weave.dns_add(self.container.id, "ldap.gluu.local")
 
-            if self.node.type == "nginx":
-                self.weave.dns_add(self.node.id, self.cluster.ox_cluster_hostname)
+            if self.container.type == "nginx":
+                self.weave.dns_add(self.container.id, self.cluster.ox_cluster_hostname)
 
-            setup_obj = self.setup_class(self.node, self.cluster,
+            setup_obj = self.setup_class(self.container, self.cluster,
                                          self.app, logger=self.logger)
             setup_obj.setup()
 
-            # mark node as SUCCESS
-            self.node.state = STATE_SUCCESS
+            # mark container as SUCCESS
+            self.container.state = STATE_SUCCESS
             db.update_to_table(
-                "nodes",
-                db.where("name") == self.node.name,
-                self.node,
+                "containers",
+                db.where("name") == self.container.name,
+                self.container,
             )
 
-            # after_setup must be called after node has been marked
+            # after_setup must be called after container has been marked
             # as SUCCESS
             setup_obj.after_setup()
             setup_obj.remove_build_dir()
@@ -163,20 +170,20 @@ class BaseModelHelper(object):
 
             elapsed = time.time() - start
             self.logger.info("{} setup is finished ({} seconds)".format(
-                self.node.image, elapsed
+                self.container.image, elapsed
             ))
         except Exception:
             self.logger.error(exc_traceback())
             self.on_setup_error()
         finally:
-            # mark NodeLog as finished
-            node_log = db.get(self.node.name, "node_logs")
-            if node_log:
+            # mark containerLog as finished
+            container_log = db.get(self.container.name, "container_logs")
+            if container_log:
                 # avoid concurrent writes, see https://github.com/msiemens/tinydb/issues/91
                 time.sleep(2)
 
-                node_log.state = STATE_SETUP_FINISHED
-                db.update(node_log.id, node_log, "node_logs")
+                container_log.state = STATE_SETUP_FINISHED
+                db.update(container_log.id, container_log, "container_logs")
 
             # distribute recovery data
             distribute_cluster_data(self.app.config["DATABASE_URI"])
@@ -185,10 +192,10 @@ class BaseModelHelper(object):
         """Callback that supposed to be called when error occurs in setup
         process.
         """
-        self.logger.info("stopping node {}".format(self.node.name))
+        self.logger.info("stopping container {}".format(self.container.name))
 
         try:
-            self.docker.stop(self.node.name)
+            self.docker.stop_container(self.container.name)
         except SSLError:
             self.logger.warn("unable to connect to docker API "
                              "due to SSL connection errors")
@@ -199,58 +206,58 @@ class BaseModelHelper(object):
             # in case docker.stop raises 404 error code
             # when docker failed to create container
             self.logger.warn("can't find container {}; likely it's not "
-                             "created yet or missing".format(self.node.name))
+                             "created yet or missing".format(self.container.name))
 
-        self.salt.unregister_minion(self.node.id)
+        # self.salt.unregister_minion(self.container.id)
 
-        # mark node as FAILED
-        self.node.state = STATE_FAILED
+        # mark container as FAILED
+        self.container.state = STATE_FAILED
 
         db.update_to_table(
-            "nodes",
-            db.where("name") == self.node.name,
-            self.node,
+            "containers",
+            db.where("name") == self.container.name,
+            self.container,
         )
 
     @run_in_reactor
     def teardown(self):
-        self.logger.info("{} teardown is started".format(self.node.image))
+        self.logger.info("{} teardown is started".format(self.container.image))
         start = time.time()
 
-        # only do teardown on node with SUCCESS and DISABLED status
+        # only do teardown on container with SUCCESS and DISABLED status
         # to avoid unnecessary ops (e.g. propagating nginx changes,
-        # removing LDAP replication, etc.) on non-deployed nodes
-        if self.node.state in (STATE_SUCCESS, STATE_DISABLED,):
+        # removing LDAP replication, etc.) on non-deployed containers
+        if self.container.state in (STATE_SUCCESS, STATE_DISABLED,):
             setup_obj = self.setup_class(
-                self.node, self.cluster, self.app, logger=self.logger,
+                self.container, self.cluster, self.app, logger=self.logger,
             )
             setup_obj.teardown()
             setup_obj.remove_build_dir()
 
         try:
-            self.docker.remove_container(self.node.name)
+            self.docker.remove_container(self.container.name)
         except SSLError:  # pragma: no cover
             self.logger.warn("unable to connect to docker API "
                              "due to SSL connection errors")
 
-        self.salt.unregister_minion(self.node.id)
+        # self.salt.unregister_minion(self.container.id)
 
         # updating prometheus
         self.prometheus.update()
 
         elapsed = time.time() - start
         self.logger.info("{} teardown is finished ({} seconds)".format(
-            self.node.image, elapsed
+            self.container.image, elapsed
         ))
 
-        # mark NodeLog as finished
-        node_log = db.get(self.node.name, "node_logs")
-        if node_log:
+        # mark containerLog as finished
+        container_log = db.get(self.container.name, "container_logs")
+        if container_log:
             # avoid concurrent writes, see https://github.com/msiemens/tinydb/issues/91
             time.sleep(2)
 
-            node_log.state = STATE_TEARDOWN_FINISHED
-            db.update(node_log.id, node_log, "node_logs")
+            container_log.state = STATE_TEARDOWN_FINISHED
+            db.update(container_log.id, container_log, "container_logs")
 
         # distribute recovery data
         distribute_cluster_data(self.app.config["DATABASE_URI"])
@@ -262,20 +269,20 @@ class LdapModelHelper(BaseModelHelper):
         {"name": "nofile", "soft": 65536, "hard": 131072},
     ]
 
-    def __init__(self, node, app, logpath=None):
-        db_volume = os.path.join(app.config["OPENDJ_VOLUME_DIR"], node.name, "db")
+    def __init__(self, container, app, logpath=None):
+        db_volume = os.path.join(app.config["OPENDJ_VOLUME_DIR"], container.name, "db")
         self.volumes = {
             db_volume: {
                 "bind": "/opt/opendj/db",
             },
         }
-        super(LdapModelHelper, self).__init__(node, app, logpath)
+        super(LdapModelHelper, self).__init__(container, app, logpath)
 
 
 class OxauthModelHelper(BaseModelHelper):
     setup_class = OxauthSetup
 
-    def __init__(self, node, app, logpath=None):
+    def __init__(self, container, app, logpath=None):
         self.volumes = {
             "/var/gluu/webapps/oxauth/pages": {
                 'bind': '/var/gluu/webapps/oxauth/pages',
@@ -287,14 +294,14 @@ class OxauthModelHelper(BaseModelHelper):
                 'bind': '/var/gluu/webapps/oxauth/libs',
             },
         }
-        super(OxauthModelHelper, self).__init__(node, app, logpath)
+        super(OxauthModelHelper, self).__init__(container, app, logpath)
 
 
 class OxtrustModelHelper(BaseModelHelper):
     setup_class = OxtrustSetup
     port_bindings = {8443: ("127.0.0.1", 8443)}
 
-    def __init__(self, node, app, logpath=None):
+    def __init__(self, container, app, logpath=None):
         self.volumes = {
             app.config["OXIDP_OVERRIDE_DIR"]: {
                 "bind": "/opt/idp",
@@ -309,7 +316,7 @@ class OxtrustModelHelper(BaseModelHelper):
                 'bind': '/var/gluu/webapps/oxtrust/libs',
             },
         }
-        super(OxtrustModelHelper, self).__init__(node, app, logpath)
+        super(OxtrustModelHelper, self).__init__(container, app, logpath)
 
 
 class OxidpModelHelper(BaseModelHelper):

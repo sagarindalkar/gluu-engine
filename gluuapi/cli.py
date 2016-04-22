@@ -16,9 +16,9 @@ from .task import LicenseExpirationTask
 from .task import OxidpWatcherTask
 # from .task import OxauthWatcherTask
 # from .task import OxtrustWatcherTask
-from .database import db
-from .helper import SaltHelper
-from .utils import run
+# from .database import db
+# from .helper import SaltHelper
+# from .utils import run
 from .setup.signals import connect_setup_signals
 from .setup.signals import connect_teardown_signals
 
@@ -124,51 +124,51 @@ def runserver():
     run_app(app)
 
 
-@main.command("upgrade-providers")
-def upgrade_providers():
-    """Upgrade providers to use cluster ID.
-    """
-    click.echo("checking providers having empty cluster_id")
+# @main.command("upgrade-providers")
+# def upgrade_providers():
+#     """Upgrade providers to use cluster ID.
+#     """
+#     click.echo("checking providers having empty cluster_id")
 
-    app = create_app()
-    db.app = app
+#     app = create_app()
+#     db.app = app
 
-    providers = db.search_from_table(
-        "providers",
-        (db.where("cluster_id") == "") | (~db.where("cluster_id")),
-    )
-    for provider in providers:
-        cluster_id = click.prompt(
-            "cluster ID for {} provider {}".format(provider.type, provider.id)
-        )
-        cluster_exists = db.count_from_table(
-            "clusters", db.where("id") == cluster_id,
-        )
-        if not cluster_exists:
-            click.echo("cluster ID {} is not found".format(cluster_id))
-        else:
-            click.echo("attaching cluster {} to {} provider {}".format(
-                cluster_id, provider.type, provider.id
-            ))
-            provider.cluster_id = cluster_id
-            db.update(provider.id, provider, "providers")
-            click.echo("cluster {} has been attached to {} provider {}".format(
-                cluster_id, provider.type, provider.id
-            ))
+#     providers = db.search_from_table(
+#         "providers",
+#         (db.where("cluster_id") == "") | (~db.where("cluster_id")),
+#     )
+#     for provider in providers:
+#         cluster_id = click.prompt(
+#             "cluster ID for {} provider {}".format(provider.type, provider.id)
+#         )
+#         cluster_exists = db.count_from_table(
+#             "clusters", db.where("id") == cluster_id,
+#         )
+#         if not cluster_exists:
+#             click.echo("cluster ID {} is not found".format(cluster_id))
+#         else:
+#             click.echo("attaching cluster {} to {} provider {}".format(
+#                 cluster_id, provider.type, provider.id
+#             ))
+#             provider.cluster_id = cluster_id
+#             db.update(provider.id, provider, "providers")
+#             click.echo("cluster {} has been attached to {} provider {}".format(
+#                 cluster_id, provider.type, provider.id
+#             ))
 
 
-@main.command('distribute-payload')
-def distpayload():
-    volume_root = '/var/gluu/webapps/oxauth'
-    check_salt()
-    run('docker restart nginx_sfs')
-    master_ip = os.environ.get("SALT_MASTER_IPADDR")
-    providers = db.all('providers')
-    salt = SaltHelper()
-    cmd = 'wget -r -q -nH -np -R index.html* http://{}:9001 -P {}'.format(master_ip, volume_root)
-    for provider in providers:
-        salt.cmd(provider.hostname, 'cmd.run', cmd)
-    oxauths = db.search_from_table('nodes', ((db.where('type') == 'oxauth') & (db.where('state') == 'SUCCESS')))
-    cmd = "supervisorctl restart tomcat"
-    for oxauth in oxauths:
-        salt.cmd(oxauth.id, 'cmd.run', cmd)
+# @main.command('distribute-payload')
+# def distpayload():
+#     volume_root = '/var/gluu/webapps/oxauth'
+#     check_salt()
+#     run('docker restart nginx_sfs')
+#     master_ip = os.environ.get("SALT_MASTER_IPADDR")
+#     providers = db.all('providers')
+#     salt = SaltHelper()
+#     cmd = 'wget -r -q -nH -np -R index.html* http://{}:9001 -P {}'.format(master_ip, volume_root)
+#     for provider in providers:
+#         salt.cmd(provider.hostname, 'cmd.run', cmd)
+#     oxauths = db.search_from_table('nodes', ((db.where('type') == 'oxauth') & (db.where('state') == 'SUCCESS')))
+#     cmd = "supervisorctl restart tomcat"
+#     for oxauth in oxauths:
+#         salt.cmd(oxauth.id, 'cmd.run', cmd)

@@ -49,18 +49,18 @@ class LdapSetup(BaseSetup):
             fp.write(self.cluster.decrypted_admin_pw)
 
         self.docker.exec_cmd(
-            self.node.id,
-            "mkdir -p {}".format(os.path.dirname(self.node.ldap_pass_fn)),
+            self.container.id,
+            "mkdir -p {}".format(os.path.dirname(self.container.ldap_pass_fn)),
         )
-        self.salt.copy_file(self.node.id, local_dest, self.node.ldap_pass_fn)
+        self.docker.copy_to_container(self.container.id, local_dest, self.container.ldap_pass_fn)
 
     def delete_ldap_pw(self):
         """Removes temporary LDAP password.
         """
         self.logger.info("deleting temporary LDAP password")
         self.docker.exec_cmd(
-            self.node.id,
-            'rm -f {}'.format(self.node.ldap_pass_fn)
+            self.container.id,
+            'rm -f {}'.format(self.container.ldap_pass_fn)
         )
 
     def add_ldap_schema(self):
@@ -70,7 +70,7 @@ class LdapSetup(BaseSetup):
             "inum_org_fn": self.cluster.inum_org_fn,
         }
         src = self.get_template_path("nodes/opendj/schema/100-user.ldif")
-        dest = os.path.join(self.node.schema_folder, "100-user.ldif")
+        dest = os.path.join(self.container.schema_folder, "100-user.ldif")
         self.render_template(src, dest, ctx)
 
     def setup_opendj(self):
@@ -78,31 +78,31 @@ class LdapSetup(BaseSetup):
         in post-installation step.
         """
         src = self.get_template_path("nodes/opendj/opendj-setup.properties")
-        dest = os.path.join(self.node.ldap_base_folder, os.path.basename(src))
+        dest = os.path.join(self.container.ldap_base_folder, os.path.basename(src))
         ctx = {
             "ldap_hostname": "ldap.gluu.local",
-            "ldap_port": self.node.ldap_port,
-            "ldaps_port": self.node.ldaps_port,
-            "ldap_jmx_port": self.node.ldap_jmx_port,
-            "ldap_admin_port": self.node.ldap_admin_port,
-            "ldap_binddn": self.node.ldap_binddn,
-            "ldap_pass_fn": self.node.ldap_pass_fn,
+            "ldap_port": self.container.ldap_port,
+            "ldaps_port": self.container.ldaps_port,
+            "ldap_jmx_port": self.container.ldap_jmx_port,
+            "ldap_admin_port": self.container.ldap_admin_port,
+            "ldap_binddn": self.container.ldap_binddn,
+            "ldap_pass_fn": self.container.ldap_pass_fn,
             "ldap_backend_type": "local-db",  # we're still using OpenDJ 2.6
         }
         self.render_template(src, dest, ctx)
 
         setupCmd = " ".join([
-            self.node.ldap_setup_command,
+            self.container.ldap_setup_command,
             '--no-prompt', '--cli', '--doNotStart', '--acceptLicense',
             '--propertiesFilePath', dest,
         ])
 
         self.logger.info("running opendj setup")
-        self.docker.exec_cmd(self.node.id, setupCmd)
+        self.docker.exec_cmd(self.container.id, setupCmd)
 
         # Use predefined dsjavaproperties
         self.logger.info("running dsjavaproperties")
-        self.docker.exec_cmd(self.node.id, self.node.ldap_ds_java_prop_command)
+        self.docker.exec_cmd(self.container.id, self.container.ldap_ds_java_prop_command)
 
     def configure_opendj(self):
         """Configures OpenDJ.
@@ -121,23 +121,23 @@ class LdapSetup(BaseSetup):
 
         for changes in config_changes:
             dsconfigCmd = " ".join([
-                self.node.ldap_dsconfig_command, '--trustAll', '--no-prompt',
-                '--hostname', self.node.domain_name,
-                '--port', self.node.ldap_admin_port,
-                '--bindDN', "'{}'".format(self.node.ldap_binddn),
-                '--bindPasswordFile', self.node.ldap_pass_fn,
+                self.container.ldap_dsconfig_command, '--trustAll', '--no-prompt',
+                '--hostname', self.container.domain_name,
+                '--port', self.container.ldap_admin_port,
+                '--bindDN', "'{}'".format(self.container.ldap_binddn),
+                '--bindPasswordFile', self.container.ldap_pass_fn,
                 changes,
             ])
             self.logger.info("configuring opendj config changes: {}".format(dsconfigCmd))
 
             dsconfigCmd = '''sh -c "{}"'''.format(dsconfigCmd)
-            self.docker.exec_cmd(self.node.id, dsconfigCmd)
+            self.docker.exec_cmd(self.container.id, dsconfigCmd)
 
     def index_opendj(self, backend):
         """Creates required index in OpenDJ server.
         """
 
-        resp = self.docker.exec_cmd(self.node.id, "cat /opt/opendj/opendj_index.json")  # noqa
+        resp = self.docker.exec_cmd(self.container.id, "cat /opt/opendj/opendj_index.json")  # noqa
         try:
             index_json = json.loads(resp.retval)
         except ValueError:
@@ -158,20 +158,20 @@ class LdapSetup(BaseSetup):
                     )
 
                     index_cmd = " ".join([
-                        self.node.ldap_dsconfig_command,
+                        self.container.ldap_dsconfig_command,
                         'create-local-db-index',
                         '--backend-name', backend,
                         '--type', 'generic',
                         '--index-name', attr_name,
                         '--set', 'index-type:%s' % index_type,
                         '--set', 'index-entry-limit:4000',
-                        '--hostName', self.node.domain_name,
-                        '--port', self.node.ldap_admin_port,
-                        '--bindDN', "'{}'".format(self.node.ldap_binddn),
-                        '-j', self.node.ldap_pass_fn,
+                        '--hostName', self.container.domain_name,
+                        '--port', self.container.ldap_admin_port,
+                        '--bindDN', "'{}'".format(self.container.ldap_binddn),
+                        '-j', self.container.ldap_pass_fn,
                         '--trustAll', '--noPropertiesFile', '--no-prompt',
                     ])
-                    self.docker.exec_cmd(self.node.id, index_cmd)
+                    self.docker.exec_cmd(self.container.id, index_cmd)
 
     def import_ldif(self):
         """Renders and imports predefined ldif files.
@@ -186,8 +186,8 @@ class LdapSetup(BaseSetup):
             "inum_appliance": self.cluster.inum_appliance,
             "hostname": "ldap.gluu.local",
             "ox_cluster_hostname": self.cluster.ox_cluster_hostname,
-            "ldaps_port": self.node.ldaps_port,
-            "ldap_binddn": self.node.ldap_binddn,
+            "ldaps_port": self.container.ldaps_port,
+            "ldap_binddn": self.container.ldap_binddn,
             "inum_org": self.cluster.inum_org,
             "inum_org_fn": self.cluster.inum_org_fn,
             "org_name": self.cluster.org_name,
@@ -195,8 +195,8 @@ class LdapSetup(BaseSetup):
             "oxtrust_hostname": "localhost:8443",
         }
 
-        ldifFolder = '%s/ldif' % self.node.ldap_base_folder
-        self.docker.exec_cmd(self.node.id, "mkdir -p {}".format(ldifFolder))
+        ldifFolder = '%s/ldif' % self.container.ldap_base_folder
+        self.docker.exec_cmd(self.container.id, "mkdir -p {}".format(ldifFolder))
 
         # render templates
         for ldif_file in self.ldif_files:
@@ -216,40 +216,40 @@ class LdapSetup(BaseSetup):
         """Exports OpenDJ public certificate.
         """
         # Load password to acces OpenDJ truststore
-        openDjPinFn = '%s/config/keystore.pin' % self.node.ldap_base_folder
-        openDjTruststoreFn = '%s/config/truststore' % self.node.ldap_base_folder
+        openDjPinFn = '%s/config/keystore.pin' % self.container.ldap_base_folder
+        openDjTruststoreFn = '%s/config/truststore' % self.container.ldap_base_folder
         openDjPin = "`cat {}`".format(openDjPinFn)
 
         self.docker.exec_cmd(
-            self.node.id,
-            "touch {}".format(self.node.opendj_cert_fn),
+            self.container.id,
+            "touch {}".format(self.container.opendj_cert_fn),
         )
 
         # Export public OpenDJ certificate
         self.logger.info("exporting OpenDJ certificate")
         cmd = ' '.join([
-            self.node.keytool_command, '-exportcert',
+            self.container.keytool_command, '-exportcert',
             '-keystore', openDjTruststoreFn,
             '-storepass', openDjPin,
-            '-file', self.node.opendj_cert_fn,
+            '-file', self.container.opendj_cert_fn,
             '-alias', 'server-cert',
             '-rfc',
         ])
         cmd = '''sh -c "{}"'''.format(cmd)
-        self.docker.exec_cmd(self.node.id, cmd)
+        self.docker.exec_cmd(self.container.id, cmd)
 
     def import_opendj_cert(self):
         # Import OpenDJ certificate into java truststore
         self.logger.info("importing OpenDJ certificate into Java truststore")
         cmd = ' '.join([
             "/usr/bin/keytool", "-import", "-trustcacerts",
-            "-alias", self.node.domain_name,
-            "-file", self.node.opendj_cert_fn,
-            "-keystore", self.node.truststore_fn,
+            "-alias", self.container.domain_name,
+            "-file", self.container.opendj_cert_fn,
+            "-keystore", self.container.truststore_fn,
             "-storepass", "changeit", "-noprompt",
         ])
         cmd = '''sh -c "{}"'''.format(cmd)
-        self.docker.exec_cmd(self.node.id, cmd)
+        self.docker.exec_cmd(self.container.id, cmd)
 
     def replicate_from(self, existing_node):
         """Setups a replication between two OpenDJ servers.
@@ -272,23 +272,23 @@ class LdapSetup(BaseSetup):
                 "--host1", existing_node.domain_name,
                 "--port1", existing_node.ldap_admin_port,
                 "--bindDN1", "'{}'".format(existing_node.ldap_binddn),
-                "--bindPasswordFile1", self.node.ldap_pass_fn,
+                "--bindPasswordFile1", self.container.ldap_pass_fn,
                 "--replicationPort1", existing_node.ldap_replication_port,
-                "--host2", self.node.domain_name,
-                "--port2", self.node.ldap_admin_port,
-                "--bindDN2", "'{}'".format(self.node.ldap_binddn),
-                "--bindPasswordFile2", self.node.ldap_pass_fn,
-                "--replicationPort2", self.node.ldap_replication_port,
+                "--host2", self.container.domain_name,
+                "--port2", self.container.ldap_admin_port,
+                "--bindDN2", "'{}'".format(self.container.ldap_binddn),
+                "--bindPasswordFile2", self.container.ldap_pass_fn,
+                "--replicationPort2", self.container.ldap_replication_port,
                 "--adminUID", "admin",
-                "--adminPasswordFile", self.node.ldap_pass_fn,
+                "--adminPasswordFile", self.container.ldap_pass_fn,
                 "--baseDN", "'{}'".format(base_dn),
                 "--secureReplication1", "--secureReplication2",
                 "-X", "-n", "-Q",
             ])
             self.logger.info("enabling {!r} replication between {} and {}".format(
-                base_dn, existing_node.weave_ip, self.node.weave_ip,
+                base_dn, existing_node.weave_ip, self.container.weave_ip,
             ))
-            self.docker.exec_cmd(self.node.id, enable_cmd)
+            self.docker.exec_cmd(self.container.id, enable_cmd)
 
             # wait before initializing the replication to ensure it
             # has been enabled
@@ -298,21 +298,21 @@ class LdapSetup(BaseSetup):
                 "/opt/opendj/bin/dsreplication", "initialize",
                 "--baseDN", "'{}'".format(base_dn),
                 "--adminUID", "admin",
-                "--adminPasswordFile", self.node.ldap_pass_fn,
+                "--adminPasswordFile", self.container.ldap_pass_fn,
                 "--hostSource", existing_node.domain_name,
                 "--portSource", existing_node.ldap_admin_port,
-                "--hostDestination", self.node.domain_name,
-                "--portDestination", self.node.ldap_admin_port,
+                "--hostDestination", self.container.domain_name,
+                "--portDestination", self.container.ldap_admin_port,
                 "-X", "-n", "-Q",
             ])
             self.logger.info("initializing {!r} replication between {} and {}".format(
-                base_dn, existing_node.weave_ip, self.node.weave_ip,
+                base_dn, existing_node.weave_ip, self.container.weave_ip,
             ))
-            self.docker.exec_cmd(self.node.id, init_cmd)
+            self.docker.exec_cmd(self.container.id, init_cmd)
             time.sleep(5)
 
         self.logger.info("see related logs at {}:/tmp directory "
-                         "for replication process".format(self.node.name))
+                         "for replication process".format(self.container.name))
 
         # cleanups temporary password file
         setup_obj.delete_ldap_pw()
@@ -328,7 +328,7 @@ command=/opt/opendj/bin/start-ds --quiet -N
 
         self.logger.info("adding supervisord entry")
         cmd = '''sh -c "echo '{}' >> /etc/supervisor/conf.d/supervisord.conf"'''.format(payload)
-        self.docker.exec_cmd(self.node.id, cmd)
+        self.docker.exec_cmd(self.container.id, cmd)
 
     def setup(self):
         """Runs the actual setup.
@@ -376,7 +376,7 @@ command=/opt/opendj/bin/start-ds --quiet -N
     def after_setup(self):
         """Runs post-setup.
         """
-        if self.node.state == STATE_SUCCESS:
+        if self.container.state == STATE_SUCCESS:
             self.notify_ox()
 
     def teardown(self):
@@ -394,7 +394,7 @@ command=/opt/opendj/bin/start-ds --quiet -N
         # remove password file
         self.delete_ldap_pw()
 
-        if self.node.state == STATE_SUCCESS:
+        if self.container.state == STATE_SUCCESS:
             self.notify_ox()
 
     def import_custom_schema(self):
@@ -405,24 +405,24 @@ command=/opt/opendj/bin/start-ds --quiet -N
             if not os.path.isfile(file_):
                 continue
             basename = os.path.basename(file_)
-            dest = "{}/{}".format(self.node.schema_folder, basename)
+            dest = "{}/{}".format(self.container.schema_folder, basename)
             self.logger.info("copying {}".format(basename))
-            self.salt.copy_file(self.node.id, file_, dest)
+            self.docker.copy_to_container(self.container.id, file_, dest)
 
     def disable_replication(self):
         """Disable replication setup for current node.
         """
-        self.logger.info("disabling replication for {}".format(self.node.weave_ip))
+        self.logger.info("disabling replication for {}".format(self.container.weave_ip))
         disable_repl_cmd = " ".join([
-            "{}/bin/dsreplication".format(self.node.ldap_base_folder),
+            "{}/bin/dsreplication".format(self.container.ldap_base_folder),
             "disable",
-            "--hostname", self.node.domain_name,
-            "--port", self.node.ldap_admin_port,
+            "--hostname", self.container.domain_name,
+            "--port", self.container.ldap_admin_port,
             "--adminUID", "admin",
-            "--adminPasswordFile", self.node.ldap_pass_fn,
+            "--adminPasswordFile", self.container.ldap_pass_fn,
             "-X", "-n", "--disableAll",
         ])
-        self.docker.exec_cmd(self.node.id, disable_repl_cmd)
+        self.docker.exec_cmd(self.container.id, disable_repl_cmd)
 
     def import_base64_config(self):
         """Copies rendered configuration.ldif and imports into LDAP.
@@ -464,7 +464,7 @@ command=/opt/opendj/bin/start-ds --quiet -N
         ])
         classpath = ":".join(jars)
         resp = self.docker.exec_cmd(
-            self.node.id,
+            self.container.id,
             "java -cp {} org.xdi.oxauth.util.KeyGenerator".format(classpath),
         )
         return resp.retval
@@ -513,7 +513,7 @@ command=/opt/opendj/bin/start-ds --quiet -N
             "encoded_ox_ldap_pw": self.cluster.encoded_ox_ldap_pw,
             "oxauth_client_id": self.cluster.oxauth_client_id,
             "oxauth_client_encoded_pw": self.cluster.oxauth_client_encoded_pw,
-            "truststore_fn": self.node.truststore_fn,
+            "truststore_fn": self.container.truststore_fn,
             "ldap_hosts": "ldap.gluu.local:{}".format(self.cluster.ldaps_port),
             "config_generation": "true",
             "scim_rs_client_id": self.cluster.scim_rs_client_id,
@@ -526,7 +526,7 @@ command=/opt/opendj/bin/start-ds --quiet -N
         """
         src = "nodes/oxtrust/oxtrust-cache-refresh.json"
         ctx = {
-            "ldap_binddn": self.node.ldap_binddn,
+            "ldap_binddn": self.container.ldap_binddn,
             "encoded_ox_ldap_pw": self.cluster.encoded_ox_ldap_pw,
             "ldap_hosts": "ldap.gluu.local:{}".format(self.cluster.ldaps_port),
         }
@@ -577,7 +577,7 @@ command=/opt/opendj/bin/start-ds --quiet -N
 
         while retry_attempt < max_retry:
             status_cmd = "supervisorctl status opendj"
-            resp = self.docker.exec_cmd(self.node.id, status_cmd)
+            resp = self.docker.exec_cmd(self.container.id, status_cmd)
 
             if "RUNNING" in resp.retval:
                 break
@@ -609,16 +609,16 @@ command=/opt/opendj/bin/start-ds --quiet -N
     def _run_import_ldif(self, ldif_fn, backend_id):
         file_basename = os.path.basename(ldif_fn)
         importCmd = " ".join([
-            self.node.import_ldif_command,
+            self.container.import_ldif_command,
             '--ldifFile', ldif_fn,
             '--backendID', backend_id,
-            '--hostname', self.node.domain_name,
-            '--port', self.node.ldap_admin_port,
-            '--bindDN', "'{}'".format(self.node.ldap_binddn),
-            '-j', self.node.ldap_pass_fn,
+            '--hostname', self.container.domain_name,
+            '--port', self.container.ldap_admin_port,
+            '--bindDN', "'{}'".format(self.container.ldap_binddn),
+            '-j', self.container.ldap_pass_fn,
             "--rejectFile", "/tmp/rejected-{}".format(file_basename),
             '--append',
             '--trustAll',
         ])
         self.logger.info("importing {}".format(file_basename))
-        self.docker.exec_cmd(self.node.id, importCmd)
+        self.docker.exec_cmd(self.container.id, importCmd)

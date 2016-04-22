@@ -15,27 +15,30 @@ from jinja2 import PackageLoader
 
 from ..database import db
 from ..log import create_file_logger
-from ..helper import SaltHelper
-from ..helper import DockerHelper
 from ..errors import DockerExecError
+from ..machine import Machine
+from ..dockerclient import Docker
 
 
 class BaseSetup(object):
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, node, cluster, app, logger=None):
+    def __init__(self, container, cluster, app, logger=None):
         self.logger = logger or create_file_logger()
         self.build_dir = tempfile.mkdtemp()
-        self.salt = SaltHelper()
-        self.node = node
+        self.container = container
         self.cluster = cluster
-        self.provider = db.get(node.provider_id, "providers")
         self.jinja_env = Environment(
             loader=PackageLoader("gluuapi", "templates")
         )
         self.app = app
         self.template_dir = self.app.config["TEMPLATES_DIR"]
-        self.docker = DockerHelper(self.provider, logger=self.logger)
+        self.machine = Machine()
+
+        ctl_node = db.search_from_table(
+            "nodes", db.where("type") == "master",
+        )[0]
+        self.docker = Docker(self.machine.swarm_config(ctl_node.name))
 
     @abc.abstractmethod
     def setup(self):
@@ -74,7 +77,7 @@ class BaseSetup(object):
             fp.write(rendered_content)
 
         self.logger.info("rendering {}".format(file_basename))
-        self.salt.copy_file(self.node.id, local, dest)
+        self.docker.copy_to_container(self.container.id, local, dest)
 
     def gen_cert(self, suffix, password, user, group, hostname):
         """Generates certificates.
@@ -85,12 +88,11 @@ class BaseSetup(object):
         :param group: Group who owns the certificate.
         :param hostname: Hostname used for CN (Common Name) value.
         """
-        key_with_password = "{}/{}.key.orig".format(self.node.cert_folder, suffix)
-        key = "{}/{}.key".format(self.node.cert_folder, suffix)
-        csr = "{}/{}.csr".format(self.node.cert_folder, suffix)
-        crt = "{}/{}.crt".format(self.node.cert_folder, suffix)
-
         self.logger.info("generating certificates for {}".format(suffix))
+        key_with_password = "{}/{}.key.orig".format(self.container.cert_folder, suffix)
+        key = "{}/{}.key".format(self.container.cert_folder, suffix)
+        csr = "{}/{}.csr".format(self.container.cert_folder, suffix)
+        crt = "{}/{}.crt".format(self.container.cert_folder, suffix)
 
         # command to create key with password file
         keypass_cmd = " ".join([
@@ -99,7 +101,7 @@ class BaseSetup(object):
             "-passout", "pass:'{}'".format(password), "2048",
         ])
         keypass_cmd = '''sh -c "{}"'''.format(keypass_cmd)
-        self.docker.exec_cmd(self.node.id, keypass_cmd)
+        self.docker.exec_cmd(self.container.id, keypass_cmd)
 
         # command to create key file
         key_cmd = " ".join([
@@ -109,7 +111,7 @@ class BaseSetup(object):
             "-out", key,
         ])
         key_cmd = '''sh -c "{}"'''.format(key_cmd)
-        self.docker.exec_cmd(self.node.id, key_cmd)
+        self.docker.exec_cmd(self.container.id, key_cmd)
 
         # command to create csr file
         csr_cmd = " ".join([
@@ -126,7 +128,7 @@ class BaseSetup(object):
             )
         ])
         csr_cmd = '''sh -c "{}"'''.format(csr_cmd)
-        self.docker.exec_cmd(self.node.id, csr_cmd)
+        self.docker.exec_cmd(self.container.id, csr_cmd)
 
         # command to create crt file
         crt_cmd = " ".join([
@@ -137,23 +139,23 @@ class BaseSetup(object):
             "-out", crt,
         ])
         crt_cmd = '''sh -c "{}"'''.format(crt_cmd)
-        self.docker.exec_cmd(self.node.id, crt_cmd)
+        self.docker.exec_cmd(self.container.id, crt_cmd)
 
         self.logger.info("changing access to {} certificates".format(suffix))
         self.docker.exec_cmd(
-            self.node.id,
+            self.container.id,
             "chown {}:{} {}".format(user, group, key_with_password),
         )
         self.docker.exec_cmd(
-            self.node.id,
+            self.container.id,
             "chmod 700 {}".format(key_with_password),
         )
         self.docker.exec_cmd(
-            self.node.id,
+            self.container.id,
             "chown {}:{} {}".format(user, group, key),
         )
         self.docker.exec_cmd(
-            self.node.id,
+            self.container.id,
             "chmod 700 {}".format(key),
         )
 
@@ -163,14 +165,14 @@ class BaseSetup(object):
         :param user: User who owns the certificates.
         :param group: Group who owns the certificates.
         """
-        self.logger.info("changing access to {}".format(self.node.cert_folder))
+        self.logger.info("changing access to {}".format(self.container.cert_folder))
         self.docker.exec_cmd(
-            self.node.id,
-            "chown -R {}:{} {}".format(user, group, self.node.cert_folder),
+            self.container.id,
+            "chown -R {}:{} {}".format(user, group, self.container.cert_folder),
         )
         self.docker.exec_cmd(
-            self.node.id,
-            "chmod -R 500 {}".format(self.node.cert_folder),
+            self.container.id,
+            "chmod -R 500 {}".format(self.container.cert_folder),
         )
 
     def get_template_path(self, path):
@@ -217,14 +219,14 @@ class BaseSetup(object):
             fp.write(rendered_content)
 
         self.logger.info("rendering {}".format(file_basename))
-        self.salt.copy_file(self.node.id, local, dest)
+        self.docker.copy_to_container(self.container.id, local, dest)
 
     def reload_supervisor(self):
         """Reloads supervisor.
         """
         self.logger.info("reloading supervisord; "
                          "this may take 30 seconds or more")
-        self.docker.exec_cmd(self.node.id, "supervisorctl reload")
+        self.docker.exec_cmd(self.container.id, "supervisorctl reload")
         time.sleep(30)
 
 
@@ -238,8 +240,8 @@ class OxSetup(BaseSetup):
         with codecs.open(local_dest, "w", encoding="utf-8") as fp:
             fp.write("encodeSalt = {}".format(self.cluster.passkey))
 
-        remote_dest = os.path.join(self.node.tomcat_conf_dir, "salt")
-        self.salt.copy_file(self.node.id, local_dest, remote_dest)
+        remote_dest = os.path.join(self.container.tomcat_conf_dir, "salt")
+        self.docker.copy_to_container(self.container.id, local_dest, remote_dest)
 
     def gen_keystore(self, suffix, keystore_fn, keystore_pw, in_key,
                      in_cert, user, group, hostname):
@@ -257,7 +259,7 @@ class OxSetup(BaseSetup):
         self.logger.info("Creating keystore %s" % suffix)
 
         # Convert key to pkcs12
-        pkcs_fn = '%s/%s.pkcs12' % (self.node.cert_folder, suffix)
+        pkcs_fn = '%s/%s.pkcs12' % (self.container.cert_folder, suffix)
         export_cmd = " ".join([
             'openssl', 'pkcs12', '-export',
             '-inkey', in_key,
@@ -266,12 +268,12 @@ class OxSetup(BaseSetup):
             '-name', hostname,
             '-passout', 'pass:%s' % keystore_pw,
         ])
-        self.docker.exec_cmd(self.node.id, export_cmd)
+        self.docker.exec_cmd(self.container.id, export_cmd)
 
         # Import p12 to keystore
         import_cmd = " ".join([
             'keytool', '-importkeystore',
-            '-srckeystore', '%s/%s.pkcs12' % (self.node.cert_folder, suffix),
+            '-srckeystore', '%s/%s.pkcs12' % (self.container.cert_folder, suffix),
             '-srcstorepass', keystore_pw,
             '-srcstoretype', 'PKCS12',
             '-destkeystore', keystore_fn,
@@ -280,30 +282,30 @@ class OxSetup(BaseSetup):
             '-keyalg', 'RSA',
             '-noprompt',
         ])
-        self.docker.exec_cmd(self.node.id, import_cmd)
+        self.docker.exec_cmd(self.container.id, import_cmd)
 
         self.logger.info("changing access to keystore file")
         self.docker.exec_cmd(
-            self.node.id, "chown {}:{} {}".format(user, group, pkcs_fn)
+            self.container.id, "chown {}:{} {}".format(user, group, pkcs_fn)
         )
-        self.docker.exec_cmd(self.node.id, "chmod 700 {}".format(pkcs_fn))
+        self.docker.exec_cmd(self.container.id, "chmod 700 {}".format(pkcs_fn))
         self.docker.exec_cmd(
-            self.node.id, "chown {}:{} {}".format(user, group, keystore_fn)
+            self.container.id, "chown {}:{} {}".format(user, group, keystore_fn)
         )
-        self.docker.exec_cmd(self.node.id, "chmod 700 {}".format(keystore_fn))
+        self.docker.exec_cmd(self.container.id, "chmod 700 {}".format(keystore_fn))
 
     def render_ldap_props_template(self):
         """Copies rendered jinja template for LDAP connection.
         """
         src = "nodes/_shared/ox-ldap.properties"
-        dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
+        dest = os.path.join(self.container.tomcat_conf_dir, os.path.basename(src))
 
         ctx = {
-            "ldap_binddn": self.node.ldap_binddn,
+            "ldap_binddn": self.container.ldap_binddn,
             "encoded_ox_ldap_pw": self.cluster.encoded_ox_ldap_pw,
             "ldap_hosts": "ldap.gluu.local:{}".format(self.cluster.ldaps_port),
             "inum_appliance": self.cluster.inum_appliance,
-            "cert_folder": self.node.cert_folder,
+            "cert_folder": self.container.cert_folder,
         }
         self.copy_rendered_jinja_template(src, dest, ctx)
 
@@ -311,38 +313,38 @@ class OxSetup(BaseSetup):
         """Configures Apache2 virtual host.
         """
         a2enmod_cmd = "a2enmod ssl headers proxy proxy_http proxy_ajp"
-        self.docker.exec_cmd(self.node.id, a2enmod_cmd)
+        self.docker.exec_cmd(self.container.id, a2enmod_cmd)
 
         a2dissite_cmd = "a2dissite 000-default"
-        self.docker.exec_cmd(self.node.id, a2dissite_cmd)
+        self.docker.exec_cmd(self.container.id, a2dissite_cmd)
 
         a2ensite_cmd = "a2ensite gluu_httpd"
-        self.docker.exec_cmd(self.node.id, a2ensite_cmd)
+        self.docker.exec_cmd(self.container.id, a2ensite_cmd)
 
     def import_nginx_cert(self):
         """Imports SSL certificate from nginx node.
         """
-        self.logger.info("importing nginx cert to {}".format(self.node.name))
+        self.logger.info("importing nginx cert to {}".format(self.container.name))
 
         # imports nginx cert into oxtrust cacerts to avoid
         # "peer not authenticated" error
         ssl_cert = os.path.join(self.app.config["SSL_CERT_DIR"], "nginx.crt")
-        self.salt.copy_file(self.node.id, ssl_cert, "/etc/certs/nginx.crt")
+        self.docker.copy_to_container(self.container.id, ssl_cert, "/etc/certs/nginx.crt")
 
         der_cmd = "openssl x509 -outform der -in /etc/certs/nginx.crt -out /etc/certs/nginx.der"
-        self.docker.exec_cmd(self.node.id, der_cmd)
+        self.docker.exec_cmd(self.container.id, der_cmd)
 
         import_cmd = " ".join([
             "keytool -importcert -trustcacerts",
             "-alias '{}'".format(self.cluster.ox_cluster_hostname),
             "-file /etc/certs/nginx.der",
-            "-keystore {}".format(self.node.truststore_fn),
+            "-keystore {}".format(self.container.truststore_fn),
             "-storepass changeit -noprompt",
         ])
         import_cmd = '''sh -c "{}"'''.format(import_cmd)
 
         try:
-            self.docker.exec_cmd(self.node.id, import_cmd)
+            self.docker.exec_cmd(self.container.id, import_cmd)
         except DockerExecError as exc:
             if exc.exit_code == 1:
                 # certificate already imported

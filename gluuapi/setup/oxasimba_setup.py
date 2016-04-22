@@ -14,7 +14,7 @@ from .base import OxSetup
 
 class OxasimbaSetup(OxSetup):  # pragma: no cover
     def setup(self):
-        hostname = self.node.domain_name
+        hostname = self.container.domain_name
 
         # render config templates
         self.copy_selector_template()
@@ -38,8 +38,8 @@ class OxasimbaSetup(OxSetup):  # pragma: no cover
             "asimbaIDP",
             self.cluster.asimba_jks_fn,
             self.cluster.decrypted_admin_pw,
-            "{}/asimba.key".format(self.node.cert_folder),
-            "{}/asimba.crt".format(self.node.cert_folder),
+            "{}/asimba.key".format(self.container.cert_folder),
+            "{}/asimba.crt".format(self.container.cert_folder),
             "tomcat",
             "tomcat",
             hostname,
@@ -64,11 +64,11 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
 
         self.logger.info("adding supervisord entry")
         cmd = '''sh -c "echo '{}' >> /etc/supervisor/conf.d/supervisord.conf"'''.format(payload)
-        self.docker.exec_cmd(self.node.id, cmd)
+        self.docker.exec_cmd(self.container.id, cmd)
 
     def render_server_xml_template(self):
         src = "nodes/oxasimba/server.xml"
-        dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
+        dest = os.path.join(self.container.tomcat_conf_dir, os.path.basename(src))
         ctx = {
             "asimba_jks_pass": self.cluster.decrypted_admin_pw,
             "asimba_jks_fn": self.cluster.asimba_jks_fn,
@@ -81,7 +81,7 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
         dest = os.path.join("/etc/apache2/sites-available", file_basename)
 
         ctx = {
-            "hostname": self.node.domain_name,
+            "hostname": self.container.domain_name,
             "httpd_cert_fn": "/etc/certs/httpd.crt",
             "httpd_key_fn": "/etc/certs/httpd.key",
         }
@@ -90,18 +90,18 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
     def unpack_jar(self):
         unpack_cmd = "unzip -qq /opt/tomcat/webapps/oxasimba.war " \
                      "-d /tmp/asimba"
-        self.docker.exec_cmd(self.node.id, unpack_cmd)
+        self.docker.exec_cmd(self.container.id, unpack_cmd)
         time.sleep(5)
 
     def copy_selector_template(self):
         src = self.get_template_path("nodes/oxasimba/asimba-selector.xml")
-        dest = "{}/asimba-selector.xml".format(self.node.tomcat_conf_dir)
-        self.salt.copy_file(self.node.id, src, dest)
+        dest = "{}/asimba-selector.xml".format(self.container.tomcat_conf_dir)
+        self.docker.copy_to_container(self.container.id, src, dest)
 
     def copy_props_template(self):
         src = self.get_template_path("nodes/oxasimba/asimba.properties")
         dest = "/tmp/asimba/WEB-INF/asimba.properties"
-        self.salt.copy_file(self.node.id, src, dest)
+        self.docker.copy_to_container(self.container.id, src, dest)
 
     def render_config_template(self):
         src = self.get_template_path("nodes/oxasimba/asimba.xml")
@@ -120,19 +120,19 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
         # rebuild jar
         jar_cmd = "/usr/bin/jar cmf /tmp/asimba/META-INF/MANIFEST.MF " \
                   "/tmp/asimba.war -C /tmp/asimba ."
-        self.docker.exec_cmd(self.node.id, jar_cmd)
+        self.docker.exec_cmd(self.container.id, jar_cmd)
 
         # remove oxasimba.war
         rm_cmd = "rm /opt/tomcat/webapps/oxasimba.war"
-        self.docker.exec_cmd(self.node.id, rm_cmd)
+        self.docker.exec_cmd(self.container.id, rm_cmd)
 
         # install reconfigured asimba.jar
         mv_cmd = "mv /tmp/asimba.war /opt/tomcat/webapps/asimba.war"
-        self.docker.exec_cmd(self.node.id, mv_cmd)
+        self.docker.exec_cmd(self.container.id, mv_cmd)
 
         # remove temporary asimba
         rm_cmd = "rm -rf /tmp/asimba"
-        self.docker.exec_cmd(self.node.id, rm_cmd)
+        self.docker.exec_cmd(self.container.id, rm_cmd)
 
     def pull_idp_metadata(self):
         files = iglob("{}/metadata/*-idp-metadata.xml".format(
@@ -143,7 +143,7 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
             fn = os.path.basename(src)
             dest = "/opt/idp/metadata/{}".format(fn)
             self.logger.info("copying {}".format(fn))
-            self.salt.copy_file(self.node.id, src, dest)
+            self.docker.copy_to_container(self.container.id, src, dest)
 
     def discover_nginx(self):
         """Discovers nginx node.

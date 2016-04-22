@@ -3,7 +3,6 @@
 #
 # All rights reserved.
 
-# import os
 import logging
 
 from crochet import run_in_reactor
@@ -11,8 +10,6 @@ from twisted.internet import inotify
 from twisted.python import filepath
 
 from ..database import db
-# from ..helper import SaltHelper
-# from ..helper import DockerHelper
 from ..machine import Machine
 from ..dockerclient import Docker
 
@@ -52,7 +49,6 @@ class BaseWatcherTask(object):
             "{}.{}".format(__name__, self.__class__.__name__),
         )
         self.watcher = inotify.INotify()
-        # self.salt = SaltHelper()
         self.machine = Machine()
 
         # cluster object may not be created yet
@@ -155,17 +151,8 @@ class BaseWatcherTask(object):
                 src, container.name, dest,
             ))
 
-            # # create destination directory if not exist
-            # provider = db.get(node.provider_id, "providers")
-            # docker = DockerHelper(provider, logger=self.logger)
-            # docker.exec_cmd(node.id, "mkdir -p {}".format(os.path.dirname(dest)))
-
             # # copy the file to container
-            # self.salt.copy_file(node.id, src, dest)
             dk.copy_to_container(container.id, src, dest)
-
-    # def get_nodes(self):
-    #     return self.cluster.get_node_objects(type_=self.node_type)
 
     def get_containers(self):
         return self.cluster.get_container_objects(type_=self.container_type)
@@ -188,7 +175,7 @@ class OxidpWatcherTask(BaseWatcherTask):
 
 class OxauthWatcherTask(BaseWatcherTask):  # pragma: no cover
     container_type = "oxauth"
-    dest_dir = "/opt/tomcat/webapps/oxauth"
+    dest_dir = "/var/gluu/webapps/oxauth"
 
     @property
     def src_dir(self):
@@ -197,7 +184,7 @@ class OxauthWatcherTask(BaseWatcherTask):  # pragma: no cover
 
 class OxtrustWatcherTask(BaseWatcherTask):  # pragma: no cover
     container_type = "oxtrust"
-    dest_dir = "/opt/tomcat/webapps/identity"
+    dest_dir = "/var/gluu/webapps/oxtrust"
 
     @property
     def src_dir(self):

@@ -15,7 +15,7 @@ class OxauthSetup(OxSetup):
         """Copies rendered Tomcat's server.xml into the node.
         """
         src = "nodes/oxauth/server.xml"
-        dest = os.path.join(self.node.tomcat_conf_dir, os.path.basename(src))
+        dest = os.path.join(self.container.tomcat_conf_dir, os.path.basename(src))
         ctx = {
             "shib_jks_pass": self.cluster.decrypted_admin_pw,
             "shib_jks_fn": self.cluster.shib_jks_fn,
@@ -36,10 +36,10 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
 
         self.logger.info("adding supervisord entry")
         cmd = '''sh -c "echo '{}' >> /etc/supervisor/conf.d/supervisord.conf"'''.format(payload)
-        self.docker.exec_cmd(self.node.id, cmd)
+        self.docker.exec_cmd(self.container.id, cmd)
 
     def setup(self):
-        hostname = self.node.domain_name
+        hostname = self.container.domain_name
 
         # render config templates
         self.render_ldap_props_template()
@@ -59,8 +59,8 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
             "shibIDP",
             self.cluster.shib_jks_fn,
             self.cluster.decrypted_admin_pw,
-            "{}/shibIDP.key".format(self.node.cert_folder),
-            "{}/shibIDP.crt".format(self.node.cert_folder),
+            "{}/shibIDP.key".format(self.container.cert_folder),
+            "{}/shibIDP.crt".format(self.container.cert_folder),
             "tomcat",
             "tomcat",
             hostname,
@@ -92,7 +92,7 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
         dest = os.path.join("/etc/apache2/sites-available", file_basename)
 
         ctx = {
-            "hostname": self.node.domain_name,
+            "hostname": self.container.domain_name,
             "httpd_cert_fn": "/etc/certs/httpd.crt",
             "httpd_key_fn": "/etc/certs/httpd.key",
         }
@@ -115,6 +115,6 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
                 dest = src.replace(self.app.config["OXAUTH_OVERRIDE_DIR"],
                                    "/opt/tomcat/webapps/oxauth")
                 self.logger.info("copying {} to {}:{}".format(
-                    src, self.node.name, dest,
+                    src, self.container.name, dest,
                 ))
-                self.salt.copy_file(self.node.id, src, dest)
+                self.docker.copy_to_container(self.container.id, src, dest)

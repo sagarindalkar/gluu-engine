@@ -3,8 +3,8 @@
 #
 # All rights reserved.
 
-import os
-import uuid
+# import os
+# import uuid
 import time
 
 #from flask import current_app as app
@@ -15,10 +15,11 @@ from flask_restful import Resource
 from ..reqparser import NodeReq
 from ..model import Node
 from ..machine import Machine
-from ..dockerclient import Docker
+# from ..dockerclient import Docker
 from ..database import db
 
-NODE_TYPES = ['master', 'worker', 'kv'] #TODO: put it in config
+# TODO: put it in config
+NODE_TYPES = ('master', 'worker', 'kv',)
 DISCOVERY_PORT = '8500'
 DISCOVERY_NODE_NAME = 'gluu.discovery'
 
@@ -35,61 +36,62 @@ class CreateNodeResource(Resource):
 
     def post(self, node_type):
         if node_type not in NODE_TYPES:
-            return  {
-                    "status": 404,
-                    "message": "Node type is not supported"
-                    }, 404
+            return {
+                "status": 404,
+                "message": "Node type is not supported",
+            }, 404
 
-        if node_type == 'kv' and request.form.get('name','') != DISCOVERY_NODE_NAME:
-            return  {
-                    "status": 404,
-                    "message": "kv node name must be, " + DISCOVERY_NODE_NAME
-                    }, 404
+        if node_type == 'kv' and request.form.get('name', '') != DISCOVERY_NODE_NAME:
+            return {
+                "status": 404,
+                "message": "kv node name must be, " + DISCOVERY_NODE_NAME,
+            }, 404
 
         if node_type == 'kv' and self.is_kv_running():
-            return  {
-                    "status": 404,
-                    "message": "discovery server is already created"
-                    }, 404
+            return {
+                "status": 404,
+                "message": "discovery server is already created",
+            }, 404
 
         if node_type == 'master':
             kv = db.search_from_table('nodes', db.where('type') == 'kv')
             if not kv:
-                return  {
-                        "status": 404,
-                        "message": "master node needs a kv"
-                        }, 404
+                return {
+                    "status": 404,
+                    "message": "master node needs a kv",
+                }, 404
 
         if node_type == 'master':
             master = db.search_from_table('nodes', db.where('type') == 'master')
             if master:
-                return  {
-                        "status": 404,
-                        "message": "master node is already created"
-                        }, 404
+                return {
+                    "status": 404,
+                    "message": "master node is already created",
+                }, 404
 
         if node_type == 'worker':
             master = db.search_from_table('nodes', db.where('type') == 'master')
             if not master:
-                return  {
-                        "status": 404,
-                        "message": "worker node needs a master"
-                        }, 404
+                return {
+                    "status": 404,
+                    "message": "worker node needs a master",
+                }, 404
 
         data, errors = NodeReq().load(request.form)
         if errors:
-            return  {
-                    "status": 400,
-                    "message": "Invalid data",
-                    "params": errors,
-                    }, 400
+            return {
+                "status": 400,
+                "message": "Invalid data",
+                "params": errors,
+            }, 400
 
         data['type'] = node_type
         node = Node(data)
         provider = db.get(node.provider_id, 'providers')
         discovery = None
         if node.type != 'kv':
-            class Discovery(object): pass
+            class Discovery(object):
+                pass
             discovery = Discovery()
             discovery.ip = self.machine.ip(DISCOVERY_NODE_NAME)
             discovery.port = '8500'
@@ -110,10 +112,10 @@ class CreateNodeResource(Resource):
             except RuntimeError as e:
                 self.machine.rm(node.name)
                 msg = str(e)
-                return  {
-                        "status": 500,
-                        "message": msg,
-                        }, 500
+                return {
+                    "status": 500,
+                    "message": msg,
+                }, 500
 
         if node.type == 'master':
             try:
@@ -133,10 +135,10 @@ class CreateNodeResource(Resource):
             except RuntimeError as e:
                 self.machine.rm(node.name)
                 msg = str(e)
-                return  {
-                        "status": 500,
-                        "message": msg,
-                        }, 500
+                return {
+                    "status": 500,
+                    "message": msg,
+                }, 500
 
         if node.type == 'worker':
             try:
@@ -157,10 +159,10 @@ class CreateNodeResource(Resource):
             except RuntimeError as e:
                 self.machine.rm(node.name)
                 msg = str(e)
-                return  {
-                        "status": 500,
-                        "message": msg,
-                        }, 500
+                return {
+                    "status": 500,
+                    "message": msg,
+                }, 500
 
         headers = {
             "Location": url_for("node", node_id=node.id),
@@ -194,25 +196,25 @@ class NodeResource(Resource):
                 "message": "node not found"
             }, 404
 
-        if node.type == 'master' and db.count_from_table('nodes', db.where('type')=='worker'):
+        if node.type == 'master' and db.count_from_table('nodes', db.where('type') == 'worker'):
             return {
                 "status": 404,
                 "message": "there are still worker nodes running"
             }, 404
 
-        if node.type == 'kv' and db.count_from_table('nodes', db.where('type')=='master'):
+        if node.type == 'kv' and db.count_from_table('nodes', db.where('type') == 'master'):
             return {
                 "status": 404,
                 "message": "master node still running"
             }, 404
-        
+
         try:
             self.machine.rm(node.name)
             db.delete(node.id, 'nodes')
         except RuntimeError as e:
-            msg = str(e) #TODO log
-            return  {
-                        "status": 500,
-                        "message": msg,
-                        }, 500
+            msg = str(e)  # TODO log
+            return {
+                "status": 500,
+                "message": msg,
+            }, 500
         return {}, 204

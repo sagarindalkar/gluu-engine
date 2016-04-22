@@ -22,8 +22,7 @@ class NodeReq(ma.Schema):
 
     @validates('provider_id')
     def validate_provider(self, value):
-        found = db.count_from_table('digitalocean_providers',
-                    db.where("id") == value)
+        found = db.count_from_table('providers', db.where("id") == value)
         if not found:
             raise ValidationError("wrong provider id")
 

@@ -10,7 +10,7 @@ from docker import Client
 
 from ..log import create_file_logger
 from ..registry import Registry
-from ..utils import run_in_shell
+from ..utils import po_run
 
 
 class Docker(object):
@@ -148,12 +148,12 @@ class Docker(object):
     def copy_to_container(self, container, src, dest):
         cfg_str = self._machine_conf_str()
         cmd = "docker {} cp {} {}:{}".format(cfg_str, src, container, dest)
-        stdout, stderr, err_code = run_in_shell(cmd)
+        stdout, stderr, err_code = po_run(cmd)
 
     # def copy_from_container(self, container, src, dest):
     #     cfg_str = self._machine_conf_str()
     #     cmd = "docker {} cp {}:{} {}".format(cfg_str, container, src, dest)
-    #     stdout, stderr, err_code = run_in_shell(cmd)
+    #     stdout, stderr, err_code = po_run(cmd)
 
     def _machine_conf_str(self):
         cfg_str = " ".join([

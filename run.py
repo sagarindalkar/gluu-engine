@@ -23,3 +23,6 @@ if __name__ == "__main__":
     #print m.swarm_config('master', False)
 
     #print m.create()
+
+# HOW TO RUN
+# $ DATA_DIR=$(pwd)/data python run.py

@@ -8,7 +8,7 @@ import re
 
 from docker.tls import TLSConfig
 
-from ..utils import run_in_shell
+from ..utils import po_run
 
 LS_FIELDS = ["Name", "Active", "ActiveHost", "ActiveSwarm", "DriverName",
              "State", "URL", "Swarm", "Error", "DockerVersion", "ResponseTime"]
@@ -20,7 +20,7 @@ class Machine(object):
 
     def _run(self, cmd_str, raise_error=True):
         cmd = "{} {}".format(self.path, cmd_str)
-        return run_in_shell(cmd, raise_error)
+        return po_run(cmd, raise_error)
 
     def _config(self, cmd, machine_name, docker_friendly):
         stdout, _, _ = self._run(cmd)
@@ -58,9 +58,9 @@ class Machine(object):
 
     def _dicovery(self, discovery):
         dlist = []
-        dlist.append('--swarm-discovery="consul://{}:{}"'.format(discovery.ip, discovery.port))
-        dlist.append('--engine-opt="cluster-store=consul://{}:{}"'.format(discovery.ip, discovery.port))
-        dlist.append('--engine-opt="cluster-advertise=eth0:2376"')
+        dlist.append('--swarm-discovery=consul://{}:{}'.format(discovery.ip, discovery.port))
+        dlist.append('--engine-opt=cluster-store=consul://{}:{}'.format(discovery.ip, discovery.port))
+        dlist.append('--engine-opt=cluster-advertise=eth0:2376')
         return ' '.join(dlist)
 
     def _get_generic_cmd(self, discovery, provider, node):

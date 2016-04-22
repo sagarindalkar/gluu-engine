@@ -174,7 +174,7 @@ from subprocess import Popen
 from subprocess import PIPE
 
 
-def run_in_shell(cmd_str, raise_error=True):
+def po_run(cmd_str, raise_error=True):
     cmd_list = cmd_str.strip().split()
     p = Popen(cmd_list, stdin=PIPE, stdout=PIPE, stderr=PIPE)
     stdout, stderr = p.communicate()

@@ -74,14 +74,12 @@ def register_resources():
     #name : name (for kv name must be gluu.discovery)
     #provider_id : id
     restapi.add_resource(CreateNodeResource,
-        '/nodes/<string:node_type>',
-        endpoint='create_node')
-    
+                            '/nodes/<string:node_type>',
+                            endpoint='create_node')
     restapi.add_resource(NodeListResource, '/nodes', endpoint='node_list')
-    
     restapi.add_resource(NodeResource,
-        '/nodes/<string:node_id>',
-        endpoint='node')
+                            '/nodes/<string:node_id>',
+                            endpoint='node')
 
     #restapi.add_resource(NodeLogResource, '/node_logs/<id>')
     #restapi.add_resource(NodeLogSetupResource, '/node_logs/<id>/setup')

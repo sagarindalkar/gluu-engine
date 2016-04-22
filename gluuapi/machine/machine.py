@@ -142,7 +142,7 @@ class Machine(object):
         return cmd
 
     def create(self, node, provider, discovery):
-        if provider.driver == 'generic' and provider.used == 'no':
+        if provider.driver == 'generic' and provider.is_in_use() is False:
             cmd = self._get_generic_cmd(discovery, provider, node)
 
         if provider.driver == 'amazonec2':

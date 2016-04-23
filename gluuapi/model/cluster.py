@@ -9,9 +9,9 @@ import itertools
 from netaddr import IPNetwork
 from netaddr import IPSet
 
-from ..database import db
 from .base import BaseModel
 from .base import STATE_SUCCESS
+from ..database import db
 from ..utils import get_quad
 from ..utils import get_random_chars
 from ..utils import encrypt_text

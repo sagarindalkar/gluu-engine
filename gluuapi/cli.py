@@ -4,7 +4,6 @@
 # All rights reserved.
 
 import functools
-import os
 
 import click
 from crochet import setup as crochet_setup
@@ -24,13 +23,6 @@ from .setup.signals import connect_teardown_signals
 
 # global context settings
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
-
-
-def check_salt():
-    if not os.environ.get("SALT_MASTER_IPADDR"):
-        raise SystemExit("Unable to get salt-master IP address. "
-                         "Make sure the SALT_MASTER_IPADDR "
-                         "environment variable is set.")
 
 
 def run_app(app, use_reloader=True):
@@ -107,7 +99,6 @@ def main():
 def daemon(ctx, pidfile, logfile):
     """Manage the daemon.
     """
-    check_salt()
     configure_global_logging(logfile)
     app = create_app()
     ctx.obj["pidfile"] = pidfile
@@ -118,49 +109,14 @@ def daemon(ctx, pidfile, logfile):
 def runserver():
     """Run development server with auto-reloader.
     """
-    #check_salt()
     configure_global_logging()
     app = create_app()
     run_app(app)
 
 
-# @main.command("upgrade-providers")
-# def upgrade_providers():
-#     """Upgrade providers to use cluster ID.
-#     """
-#     click.echo("checking providers having empty cluster_id")
-
-#     app = create_app()
-#     db.app = app
-
-#     providers = db.search_from_table(
-#         "providers",
-#         (db.where("cluster_id") == "") | (~db.where("cluster_id")),
-#     )
-#     for provider in providers:
-#         cluster_id = click.prompt(
-#             "cluster ID for {} provider {}".format(provider.type, provider.id)
-#         )
-#         cluster_exists = db.count_from_table(
-#             "clusters", db.where("id") == cluster_id,
-#         )
-#         if not cluster_exists:
-#             click.echo("cluster ID {} is not found".format(cluster_id))
-#         else:
-#             click.echo("attaching cluster {} to {} provider {}".format(
-#                 cluster_id, provider.type, provider.id
-#             ))
-#             provider.cluster_id = cluster_id
-#             db.update(provider.id, provider, "providers")
-#             click.echo("cluster {} has been attached to {} provider {}".format(
-#                 cluster_id, provider.type, provider.id
-#             ))
-
-
 # @main.command('distribute-payload')
 # def distpayload():
 #     volume_root = '/var/gluu/webapps/oxauth'
-#     check_salt()
 #     run('docker restart nginx_sfs')
 #     master_ip = os.environ.get("SALT_MASTER_IPADDR")
 #     providers = db.all('providers')

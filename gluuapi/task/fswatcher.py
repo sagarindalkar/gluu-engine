@@ -155,7 +155,7 @@ class BaseWatcherTask(object):
             dk.copy_to_container(container.id, src, dest)
 
     def get_containers(self):
-        return self.cluster.get_container_objects(type_=self.container_type)
+        return self.cluster.get_containers(type_=self.container_type)
 
 
 class OxidpWatcherTask(BaseWatcherTask):

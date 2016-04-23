@@ -131,7 +131,7 @@ def test_node_post_invalid_cluster(app, db):
 def test_node_post_ip_unavailable(monkeypatch, app, db, cluster, provider):
     # fills up reserved IP address using fake values
     monkeypatch.setattr(
-        "gluuapi.model.GluuCluster.get_node_addrs",
+        "gluuapi.model.Cluster.get_container_addrs",
         lambda cls: ["10.20.10.{}".format(x) for x in xrange(256)]
     )
 

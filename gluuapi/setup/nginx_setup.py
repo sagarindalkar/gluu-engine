@@ -24,11 +24,11 @@ class NginxSetup(BaseSetup):
             "ox_cluster_hostname": self.cluster.ox_cluster_hostname,
             "cert_file": "/etc/certs/nginx.crt",
             "key_file": "/etc/certs/nginx.key",
-            "oxauth_nodes": self.cluster.get_oxauth_objects(),
-            "oxidp_nodes": self.cluster.get_oxidp_objects(),
-            "oxtrust_nodes": self.cluster.get_oxtrust_objects(),
+            "oxauth_nodes": self.cluster.get_containers(type_="oxauth"),
+            "oxidp_nodes": self.cluster.get_containers(type_="oxidp"),
+            "oxtrust_nodes": self.cluster.get_containers(type_="oxtrust"),
             "session_affinity": self.get_session_affinity(),
-            "oxasimba_nodes": self.cluster.get_oxasimba_objects(),
+            "oxasimba_nodes": self.cluster.get_containers(type_="oxasimba"),
         }
 
         src = "nodes/nginx/gluu_https.conf"

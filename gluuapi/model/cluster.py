@@ -20,7 +20,7 @@ from ..utils import generate_passkey
 from ..utils import ldap_encode
 
 
-class GluuCluster(BaseModel):
+class Cluster(BaseModel):
     resource_fields = dict.fromkeys([
         'id',
         'name',
@@ -44,10 +44,10 @@ class GluuCluster(BaseModel):
     def __init__(self, fields=None):
         fields = fields or {}
 
-        # GluuCluster unique identifier
+        # Cluster unique identifier
         self.id = "{}".format(uuid.uuid4())
 
-        # GluuCluster name
+        # Cluster name
         self.name = fields.get("name")
 
         # Description of cluster
@@ -129,71 +129,6 @@ class GluuCluster(BaseModel):
         """
         return decrypt_text(self.admin_pw, self.passkey)
 
-    def get_ldap_objects(self, state=STATE_SUCCESS):
-        """Get available ldap objects (models).
-
-        :param state: State of the node (one of SUCCESS, DISABLED,
-                      FAILED, IN_PROGRESS).
-        :returns: A list of ldap objects.
-        """
-        return self.get_node_objects(type_="ldap", state=state)
-
-    def get_oxauth_objects(self, state=STATE_SUCCESS):
-        """Get available oxAuth objects (models).
-
-        :param state: State of the node (one of SUCCESS, DISABLED,
-                      FAILED, IN_PROGRESS).
-        :returns: A list of oxauth objects.
-        """
-        return self.get_node_objects(type_="oxauth", state=state)
-
-    def get_oxtrust_objects(self, state=STATE_SUCCESS):
-        """Get available oxTrust objects (models).
-
-        :param state: State of the node (one of SUCCESS, DISABLED,
-                      FAILED, IN_PROGRESS).
-        :returns: A list of oxtrust objects.
-        """
-        return self.get_node_objects(type_="oxtrust", state=state)
-
-    def get_oxidp_objects(self, state=STATE_SUCCESS):
-        """Get available oxidp objects (models).
-
-        :param state: State of the node (one of SUCCESS, DISABLED,
-                      FAILED, IN_PROGRESS).
-        :returns: A list of oxidp objects.
-        """
-        return self.get_node_objects(type_="oxidp", state=state)
-
-    def get_nginx_objects(self, state=STATE_SUCCESS):
-        """Get available nginx objects (models).
-
-        :param state: State of the node (one of SUCCESS, DISABLED,
-                      FAILED, IN_PROGRESS).
-        :returns: A list of nginx objects.
-        """
-        return self.get_node_objects(type_="nginx", state=state)
-
-    def get_oxasimba_objects(self, state=STATE_SUCCESS):
-        """Get available oxasimba objects (models).
-        """
-        return self.get_node_objects(type_="oxasimba", state=state)
-
-    def get_node_objects(self, type_="", state=STATE_SUCCESS):
-        """Gets available node objects (models).
-
-        :param state: State of the node (one of SUCCESS, DISABLED,
-                      FAILED, IN_PROGRESS).
-        :param type_: Type of the node.
-        :returns: A list of node objects.
-        """
-        condition = db.where("cluster_id") == self.id
-        if state:
-            condition = (condition) & (db.where("state") == state)
-        if type_:
-            condition = (condition) & (db.where("type") == type_)
-        return db.search_from_table("nodes", condition)
-
     @property
     def exposed_weave_ip(self):
         """Gets weave IP for forwarding request from outside.
@@ -230,7 +165,7 @@ class GluuCluster(BaseModel):
             pool.broadcast,
             self.exposed_weave_ip[0],
             self.prometheus_weave_ip[0],
-        ] + self.get_node_addrs())
+        ] + self.get_container_addrs())
         maybe_available = IPSet(pool)
         ipset = reserved_addrs ^ maybe_available
 
@@ -261,34 +196,34 @@ class GluuCluster(BaseModel):
         addr = pool.broadcast - 2
         return str(addr), pool.prefixlen
 
-    def get_node_addrs(self):
-        """Collects all weave IP addresses from all nodes belong to
+    def get_container_addrs(self):
+        """Collects all weave IP addresses from all containers belong to
         the cluster.
 
         :returns: A list of weave IP addresses.
         """
-        nodes = db.search_from_table(
-            "nodes",
+        containers = db.search_from_table(
+            "containers",
             db.where("cluster_id") == self.id,
         )
-        return filter(None, [node.weave_ip for node in nodes])
+        return filter(None, [container.weave_ip for container in containers])
 
-    def count_node_objects(self, type_="", state=STATE_SUCCESS):
-        """Counts available node objects (models).
+    def count_containers(self, type_="", state=STATE_SUCCESS):
+        """Counts available containers objects (models).
 
-        :param state: State of the node (one of SUCCESS, DISABLED,
+        :param state: State of the container (one of SUCCESS, DISABLED,
                       FAILED, IN_PROGRESS).
-        :param type_: Type of the node.
-        :returns: A list of node objects.
+        :param type_: Type of the container.
+        :returns: A list of container objects.
         """
         condition = db.where("cluster_id") == self.id
         if state:
             condition = (condition) & (db.where("state") == state)
         if type_:
             condition = (condition) & (db.where("type") == type_)
-        return db.count_from_table("nodes", condition)
+        return db.count_from_table("containers", condition)
 
-    def get_container_objects(self, type_="", state=STATE_SUCCESS):
+    def get_containers(self, type_="", state=STATE_SUCCESS):
         """Gets available container objects (models).
 
         :param state: State of the container (one of SUCCESS, DISABLED,

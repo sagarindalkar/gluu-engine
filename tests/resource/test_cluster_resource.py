@@ -4,7 +4,7 @@ import pytest
 
 
 def test_cluster_post(app, db, patched_salt):
-    from gluuapi.model import GluuCluster
+    from gluuapi.model import Cluster
 
     resp = app.test_client().post(
         "/clusters",
@@ -25,7 +25,7 @@ def test_cluster_post(app, db, patched_salt):
     actual_data = json.loads(resp.data)
 
     assert resp.status_code == 201
-    for field in GluuCluster.resource_fields.keys():
+    for field in Cluster.resource_fields.keys():
         assert field in actual_data
 
 

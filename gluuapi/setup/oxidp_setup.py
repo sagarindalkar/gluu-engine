@@ -60,7 +60,7 @@ class OxidpSetup(OxSetup):
 
         # notify oxidp peers to re-render their nutcracker.yml
         # and restart the daemon
-        for node in self.cluster.get_oxidp_objects():
+        for node in self.cluster.get_containers(type_="oxidp"):
             if node.id == self.container.id:
                 continue
 
@@ -76,7 +76,7 @@ class OxidpSetup(OxSetup):
     def import_ldap_certs(self):
         """Imports all LDAP certificates.
         """
-        for ldap in self.cluster.get_ldap_objects():
+        for ldap in self.cluster.get_containers(type_="ldap"):
             self.logger.info("importing ldap cert from {}".format(ldap.domain_name))
 
             cert_cmd = "echo -n | openssl s_client -connect {0}:{1} | " \
@@ -104,7 +104,7 @@ class OxidpSetup(OxSetup):
         """Copies twemproxy configuration into the node.
         """
         ctx = {
-            "oxidp_nodes": self.cluster.get_oxidp_objects(),
+            "oxidp_nodes": self.cluster.get_containers(type_="oxidp"),
         }
         self.copy_rendered_jinja_template(
             "nodes/oxidp/nutcracker.yml",
@@ -122,7 +122,7 @@ class OxidpSetup(OxSetup):
     def teardown(self):
         """Teardowns the node.
         """
-        for node in self.cluster.get_oxidp_objects():
+        for node in self.cluster.get_containers(type_="oxidp"):
             setup_obj = OxidpSetup(node, self.cluster,
                                    self.app, logger=self.logger)
             setup_obj.render_nutcracker_conf()
@@ -202,7 +202,7 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
 
     def pull_shib_certkey(self):
         try:
-            oxtrust = self.cluster.get_oxtrust_objects()[0]
+            oxtrust = self.cluster.get_containers(type_="oxtrust")[0]
         except IndexError:
             return
 
@@ -228,5 +228,5 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
         """Discovers nginx node.
         """
         self.logger.info("discovering available nginx node")
-        if self.cluster.count_node_objects(type_="nginx"):
+        if self.cluster.count_containers(type_="nginx"):
             self.import_nginx_cert()

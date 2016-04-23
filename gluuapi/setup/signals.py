@@ -25,7 +25,7 @@ def notify_oxtrust(ngx):
 
 
 def notify_oxidp(ngx):
-    for oxidp in ngx.cluster.get_oxidp_objects():
+    for oxidp in ngx.cluster.get_containers(type_="oxidp"):
         setup_obj = OxidpSetup(oxidp, ngx.cluster, ngx.app, ngx.logger)
 
         # wait before telling oxidp to find nginx node
@@ -36,7 +36,7 @@ def notify_oxidp(ngx):
 def notify_nginx(ox):
     """Notifies nginx to re-render virtual host and restart the process.
     """
-    for nginx in ox.cluster.get_nginx_objects():
+    for nginx in ox.cluster.get_containers(type_="nginx"):
         setup_obj = NginxSetup(nginx, ox.cluster, ox.app, ox.logger)
         setup_obj.render_https_conf()
         setup_obj.restart_nginx()

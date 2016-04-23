@@ -149,7 +149,7 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
         """Discovers nginx node.
         """
         self.logger.info("discovering available nginx node")
-        if self.cluster.count_node_objects(type_="nginx"):
+        if self.cluster.count_containers(type_="nginx"):
             self.import_nginx_cert()
 
     def after_setup(self):

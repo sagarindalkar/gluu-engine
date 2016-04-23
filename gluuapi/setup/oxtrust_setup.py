@@ -76,7 +76,7 @@ class OxtrustSetup(OxSetup):
         """Discovers nginx node.
         """
         self.logger.info("discovering available nginx node")
-        if self.cluster.count_node_objects(type_="nginx"):
+        if self.cluster.count_containers(type_="nginx"):
             self.import_nginx_cert()
 
     def after_setup(self):
@@ -114,7 +114,7 @@ environment=CATALINA_PID=/var/run/tomcat.pid
         resp = self.docker.exec_cmd(self.container.id, "cat /etc/certs/shibIDP.key")
         key = resp.retval
 
-        for oxidp in self.cluster.get_oxidp_objects():
+        for oxidp in self.cluster.get_containers(type_="oxidp"):
             # oxidp container might be in another host
             node = db.get(oxidp.node_id, "nodes")
             docker = Docker(self.machine.config(node.name), logger=self.logger)

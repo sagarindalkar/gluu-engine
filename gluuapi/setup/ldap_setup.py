@@ -345,7 +345,7 @@ command=/opt/opendj/bin/start-ds --quiet -N
         self.index_opendj("userRoot")
 
         try:
-            peer_node = self.cluster.get_ldap_objects()[0]
+            peer_node = self.cluster.get_containers(type_="ldap")[0]
             # Initialize data from existing ldap node.
             # To create fully meshed replication, update the other
             # ldap node to use this new ldap node as a master.
@@ -368,7 +368,7 @@ command=/opt/opendj/bin/start-ds --quiet -N
         """
         # import all OpenDJ certficates because oxIdp checks matched
         # certificate
-        for oxidp in self.cluster.get_oxidp_objects():
+        for oxidp in self.cluster.get_containers(type_="oxidp"):
             setup_obj = OxidpSetup(oxidp, self.cluster,
                                    self.app, logger=self.logger)
             setup_obj.import_ldap_certs()
@@ -385,7 +385,7 @@ command=/opt/opendj/bin/start-ds --quiet -N
         self.write_ldap_pw()
 
         # stop the replication agreement
-        ldap_num = len(self.cluster.get_ldap_objects())
+        ldap_num = len(self.cluster.get_containers(type_="ldap"))
         if ldap_num > 0:
             self.disable_replication()
             # wait for process to run in the background

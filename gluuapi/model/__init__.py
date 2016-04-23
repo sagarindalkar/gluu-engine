@@ -3,11 +3,11 @@
 #
 # All rights reserved.
 
-from .node import Node
+from .node import Node  # noqa
 #from .provider import Provider  # noqa
 from .provider import GenericProvider  # noqa
 from .provider import DigitalOceanProvider  # noqa
-from .gluu_cluster import GluuCluster  # noqa
+from .cluster import Cluster  # noqa
 from .license import LicenseKey  # noqa
 
 from .ldap_node import LdapNode  # noqa

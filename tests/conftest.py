@@ -36,9 +36,9 @@ def db(request, app):
 
 @pytest.fixture()
 def cluster():
-    from gluuapi.model import GluuCluster
+    from gluuapi.model import Cluster
 
-    cluster = GluuCluster({
+    cluster = Cluster({
         "ox_cluster_hostname": "ox.example.com",
         "weave_ip_network": "10.20.10.0/24",
     })

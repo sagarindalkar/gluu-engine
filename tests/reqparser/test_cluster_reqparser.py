@@ -40,7 +40,7 @@ def test_validate_name_invalid(name):
     "abc",
     "a-b_c",
     "a0sd9",
-    "GluuClusterTest",
+    "ClusterTest",
     "gluu.example.com",
     "EXAMPLE",
     "1ab",

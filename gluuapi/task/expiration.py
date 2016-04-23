@@ -118,7 +118,7 @@ class LicenseExpirationTask(object):
         """
         weave = WeaveHelper(node, self.app, self.logger)
 
-        containers = node.get_container_objects(type_=type_)
+        containers = node.get_containers(type_=type_)
         for container in containers:
             container.state = STATE_DISABLED
             db.update(container.id, container, "containers")
@@ -138,7 +138,7 @@ class LicenseExpirationTask(object):
         """
         weave = WeaveHelper(node, self.app, self.logger)
 
-        containers = node.get_container_objects(type_=type_, state=STATE_DISABLED)
+        containers = node.get_containers(type_=type_, state=STATE_DISABLED)
         for container in containers:
             container.state = STATE_SUCCESS
             db.update(container.id, container, "containers")

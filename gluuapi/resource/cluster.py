@@ -8,17 +8,17 @@ from flask import url_for
 from flask_restful import Resource
 
 from ..database import db
-from ..model import GluuCluster
+from ..model import Cluster
 from ..reqparser import ClusterReq
 
 
 def format_cluster_resp(cluster):
     item = cluster.as_dict()
-    item["ldap_nodes"] = [node.id for node in cluster.get_ldap_objects()]
-    item["oxauth_nodes"] = [node.id for node in cluster.get_oxauth_objects()]
-    item["oxtrust_nodes"] = [node.id for node in cluster.get_oxtrust_objects()]
-    item["oxidp_nodes"] = [node.id for node in cluster.get_oxidp_objects()]
-    item["nginx_nodes"] = [node.id for node in cluster.get_nginx_objects()]
+    item["ldap_containers"] = [container.id for container in cluster.get_containers(type_="ldap")]
+    item["oxauth_containers"] = [container.id for container in cluster.get_containers(type_="oxauth")]
+    item["oxtrust_containers"] = [container.id for container in cluster.get_containers(type_="oxtrust")]
+    item["oxidp_containers"] = [container.id for container in cluster.get_containers(type_="oxidp")]
+    item["nginx_containers"] = [container.id for container in cluster.get_containers(type_="nginx")]
     return item
 
 
@@ -34,8 +34,8 @@ class ClusterResource(Resource):
         if not cluster:
             return {"status": 404, "message": "Cluster not found"}, 404
 
-        if cluster.count_node_objects(state=""):
-            msg = "Cannot delete cluster while having nodes " \
+        if cluster.count_containers(state=""):
+            msg = "Cannot delete cluster while having containers " \
                   "deployed on this cluster"
             return {"status": 403, "message": msg}, 403
 
@@ -61,7 +61,7 @@ class ClusterListResource(Resource):
                 "params": errors,
             }, 400
 
-        cluster = GluuCluster(fields=data)
+        cluster = Cluster(fields=data)
         db.persist(cluster, "clusters")
 
         headers = {

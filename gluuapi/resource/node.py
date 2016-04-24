@@ -19,7 +19,7 @@ from ..machine import Machine
 from ..database import db
 
 # TODO: put it in config
-NODE_TYPES = ('master', 'worker', 'kv',)
+NODE_TYPES = ('master', 'worker', 'discovery',)
 DISCOVERY_PORT = '8500'
 DISCOVERY_NODE_NAME = 'gluu.discovery'
 
@@ -29,8 +29,8 @@ class CreateNodeResource(Resource):
     def __init__(self):
         self.machine = Machine()
 
-    def is_kv_running(self):
-        if db.count_from_table('nodes', db.where('type') == 'kv'):
+    def is_discovery_running(self):
+        if db.count_from_table('nodes', db.where('type') == 'discovery'):
             return self.machine.status(DISCOVERY_NODE_NAME)
         return False
 
@@ -41,24 +41,24 @@ class CreateNodeResource(Resource):
                 "message": "Node type is not supported",
             }, 404
 
-        if node_type == 'kv' and request.form.get('name', '') != DISCOVERY_NODE_NAME:
+        if node_type == 'discovery' and request.form.get('name', '') != DISCOVERY_NODE_NAME:
             return {
                 "status": 404,
-                "message": "kv node name must be, " + DISCOVERY_NODE_NAME,
+                "message": "discovery node name must be, " + DISCOVERY_NODE_NAME,
             }, 404
 
-        if node_type == 'kv' and self.is_kv_running():
+        if node_type == 'discovery' and self.is_discovery_running():
             return {
                 "status": 404,
                 "message": "discovery server is already created",
             }, 404
 
         if node_type == 'master':
-            kv = db.search_from_table('nodes', db.where('type') == 'kv')
-            if not kv:
+            discovery = db.search_from_table('nodes', db.where('type') == 'discovery')
+            if not discovery:
                 return {
                     "status": 404,
-                    "message": "master node needs a kv",
+                    "message": "master node needs a discovery",
                 }, 404
 
         if node_type == 'master':
@@ -89,14 +89,13 @@ class CreateNodeResource(Resource):
         node = Node(data)
         provider = db.get(node.provider_id, 'providers')
         discovery = None
-        if node.type != 'kv':
-            class Discovery(object):
-                pass
+        if node.type != 'discovery':
+            class Discovery(object): pass
             discovery = Discovery()
             discovery.ip = self.machine.ip(DISCOVERY_NODE_NAME)
             discovery.port = '8500'
 
-        if node.type == 'kv':
+        if node.type == 'discovery':
             #conf = self.machine.config(node.name)
             #docker = Docker(conf)
             #cant understand which docker method can run this
@@ -202,7 +201,7 @@ class NodeResource(Resource):
                 "message": "there are still worker nodes running"
             }, 404
 
-        if node.type == 'kv' and db.count_from_table('nodes', db.where('type') == 'master'):
+        if node.type == 'discovery' and db.count_from_table('nodes', db.where('type') == 'master'):
             return {
                 "status": 404,
                 "message": "master node still running"

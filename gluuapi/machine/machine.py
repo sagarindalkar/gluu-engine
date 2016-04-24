@@ -82,7 +82,7 @@ class Machine(object):
         if node.type == 'worker':
             clist.append('--swarm')
 
-        if node.type != 'kv':
+        if node.type != 'discovery':
             clist.append(self._dicovery(discovery))
 
         clist.append('{}'.format(node.name))
@@ -110,7 +110,7 @@ class Machine(object):
         if node.type == 'worker':
             clist.append('--swarm')
 
-        if node.type != 'kv':
+        if node.type != 'discovery':
             clist.append(self._dicovery(discovery))
 
         clist.append('{}'.format(node.name))
@@ -134,7 +134,7 @@ class Machine(object):
         if node.type == 'worker':
             clist.append('--swarm')
 
-        if node.type != 'kv':
+        if node.type != 'discovery':
             clist.append(self._dicovery(discovery))
 
         clist.append('{}'.format(node.name))
@@ -142,7 +142,7 @@ class Machine(object):
         return cmd
 
     def create(self, node, provider, discovery):
-        if provider.driver == 'generic' and provider.is_in_use() is False:
+        if provider.driver == 'generic':
             cmd = self._get_generic_cmd(discovery, provider, node)
 
         if provider.driver == 'amazonec2':

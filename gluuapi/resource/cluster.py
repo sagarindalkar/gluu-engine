@@ -65,6 +65,6 @@ class ClusterListResource(Resource):
         db.persist(cluster, "clusters")
 
         headers = {
-            "Location": url_for("clusterresource", cluster_id=cluster.id),
+            "Location": url_for("cluster", cluster_id=cluster.id),
         }
         return format_cluster_resp(cluster), 201, headers

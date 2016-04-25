@@ -5,7 +5,7 @@
 
 # import codecs
 # import logging
-# import os
+import os
 # import stat
 
 from crochet import run_in_reactor
@@ -24,23 +24,6 @@ def distribute_cluster_data(filepath):
 
     :param filepath: Path to cluster database file.
     """
-    # dest = src
-    # salt = SaltHelper()
-    # consumer_providers = db.search_from_table(
-    #     "providers", db.where("type") == "consumer"
-    # )
-
-    # for provider in consumer_providers:
-    #     ping = salt.cmd(provider.hostname, "test.ping")
-    #     wake up the minion (if idle)
-    #     if ping.get(provider.hostname):
-    #         salt.cmd(
-    #             provider.hostname,
-    #             "cmd.run",
-    #             ["mkdir -p {}".format(os.path.dirname(dest))]
-    #         )
-    #         salt.copy_file(provider.hostname, src, dest)
-
     mc = Machine()
 
     # find all worker nodes where cluster database will be copied to
@@ -48,7 +31,13 @@ def distribute_cluster_data(filepath):
         "nodes", db.where("type") == "worker",
     )
     for worker_node in worker_nodes:
-        mc.scp(filepath, "{}:{}".format(worker_node.name, filepath))
+        try:
+            mc.ssh(worker_node.name, "mkdir -p {}".format(os.path.dirname(filepath)))
+            mc.scp(filepath, "{}:{}".format(worker_node.name, filepath))
+        except RuntimeError as exc:
+            # TODO: perhaps using logger?
+            print(exc)
+            print("something is wrong while copying {}".format(filepath))
 
 
 class ProviderHelper(object):

@@ -10,3 +10,4 @@ from .provider import DigitalOceanProviderReq  # noqa
 # from .provider import DoProviderReq  # noqa
 # from .provider import EditProviderReq  # noqa
 from .license import LicenseKeyReq  # noqa
+from .container import ContainerReq  # noqa

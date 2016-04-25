@@ -23,10 +23,12 @@ from .resource import ProviderListResource
 from .resource import CreateProviderResource
 from .resource import LicenseKeyListResource
 from .resource import LicenseKeyResource
-#from .resource import NodeLogResource
-#from .resource import NodeLogSetupResource
-#from .resource import NodeLogTeardownResource
-#from .resource import NodeLogListResource
+from .resource import ContainerLogResource
+from .resource import ContainerLogSetupResource
+from .resource import ContainerLogTeardownResource
+from .resource import ContainerLogListResource
+from .resource import ContainerListResource
+from .resource import ContainerResource
 from .database import db
 
 
@@ -74,25 +76,39 @@ def register_resources():
     #name : name (for kv name must be gluu.discovery)
     #provider_id : id
     restapi.add_resource(CreateNodeResource,
-                            '/nodes/<string:node_type>',
-                            endpoint='create_node')
+                         '/nodes/<string:node_type>',
+                         endpoint='create_node')
     restapi.add_resource(NodeListResource, '/nodes', endpoint='node_list')
     restapi.add_resource(NodeResource,
-                            '/nodes/<string:node_id>',
-                            endpoint='node')
+                         '/nodes/<string:node_id>',
+                         endpoint='node')
 
-    #restapi.add_resource(NodeLogResource, '/node_logs/<id>')
-    #restapi.add_resource(NodeLogSetupResource, '/node_logs/<id>/setup')
-    #restapi.add_resource(NodeLogTeardownResource, '/node_logs/<id>/teardown')
-    #restapi.add_resource(NodeLogListResource, '/node_logs')
+    restapi.add_resource(ContainerLogResource,
+                         '/container_logs/<id>',
+                         endpoint="containerlog",
+                         )
+    restapi.add_resource(ContainerLogSetupResource,
+                         '/container_logs/<id>/setup',
+                         endpoint="containerlog_setup",
+                         )
+    restapi.add_resource(ContainerLogTeardownResource,
+                         '/container_logs/<id>/teardown',
+                         endpoint="containerlog_teardown",
+                         )
+    restapi.add_resource(ContainerLogListResource,
+                         '/container_logs',
+                         endpoint="containerlog_list",
+                         )
 
-    restapi.add_resource(ClusterListResource, '/clusters')
-    restapi.add_resource(ClusterResource, '/clusters/<string:cluster_id>')
+    restapi.add_resource(ClusterListResource,
+                         '/clusters',
+                         endpoint="cluster_list",
+                         )
+    restapi.add_resource(ClusterResource,
+                         '/clusters/<string:cluster_id>',
+                         endpoint="cluster",
+                         )
 
-    #restapi.add_resource(ProviderResource, "/providers/<string:provider_id>",
-    #                     endpoint="provider")
-    #restapi.add_resource(ProviderListResource, "/providers",
-    #                     endpoint="providerlist")
     restapi.add_resource(ProviderResource,
                          "/providers/<string:provider_id>",
                          endpoint="provider")
@@ -105,7 +121,15 @@ def register_resources():
                          endpoint="create_provider")
 
     restapi.add_resource(LicenseKeyListResource, "/license_keys",
-                         endpoint="licensekeylist")
+                         endpoint="licensekey_list")
     restapi.add_resource(LicenseKeyResource,
                          "/license_keys/<string:license_key_id>",
                          endpoint="licensekey")
+
+    restapi.add_resource(ContainerListResource,
+                         "/containers",
+                         endpoint="container_list")
+    restapi.add_resource(ContainerResource,
+                         "/containers/<string:id>",
+                         endpoint="container",
+                         )

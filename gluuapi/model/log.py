@@ -7,10 +7,10 @@ from .base import BaseModel
 from ..database import db
 
 
-class NodeLog(BaseModel):
+class ContainerLog(BaseModel):
     resource_fields = dict.fromkeys([
         "id",
-        "node_name",
+        "container_name",
         "setup_log_url",
         "teardown_log_url",
         "state",
@@ -18,7 +18,7 @@ class NodeLog(BaseModel):
 
     def __init__(self):
         self.id = ""
-        self.node_name = ""
+        self.container_name = ""
         self.setup_log = ""
         self.setup_log_url = ""
         self.teardown_log = ""
@@ -26,19 +26,19 @@ class NodeLog(BaseModel):
         self.state = ""
 
     @staticmethod
-    def create_or_get(node):
+    def create_or_get(container):
         try:
             return db.search_from_table(
-                "node_logs",
-                db.where("node_name") == node.name,
+                "container_logs",
+                db.where("container_name") == container.name,
             )[0]
         except IndexError:
             pass
 
-        node_log = NodeLog()
-        node_log.id = node.name
-        node_log.node_name = node.name
-        node_log.setup_log = "{}-setup.log".format(node_log.node_name)
-        node_log.teardown_log = "{}-teardown.log".format(node_log.node_name)
-        db.persist(node_log, "node_logs")
-        return node_log
+        container_log = ContainerLog()
+        container_log.id = container.name
+        container_log.container_name = container.name
+        container_log.setup_log = "{}-setup.log".format(container_log.container_name)
+        container_log.teardown_log = "{}-teardown.log".format(container_log.node_name)
+        db.persist(container_log, "node_logs")
+        return container_log

@@ -9,19 +9,19 @@ from .provider import DigitalOceanProvider  # noqa
 from .cluster import Cluster  # noqa
 from .license import LicenseKey  # noqa
 
-from .ldap_node import LdapNode  # noqa
-from .oxauth_node import OxauthNode  # noqa
-from .oxtrust_node import OxtrustNode  # noqa
-from .oxidp_node import OxidpNode  # noqa
-from .nginx_node import NginxNode  # noqa
-from .oxasimba_node import OxasimbaNode  # noqa
+from .container import LdapContainer  # noqa
+from .container import OxauthContainer  # noqa
+from .container import OxtrustContainer  # noqa
+from .container import OxidpContainer  # noqa
+from .container import NginxContainer  # noqa
+from .container import OxasimbaContainer  # noqa
 
 from .base import STATE_IN_PROGRESS  # noqa
 from .base import STATE_FAILED  # noqa
 from .base import STATE_SUCCESS  # noqa
 from .base import STATE_DISABLED  # noqa
 
-from .log import NodeLog  # noqa
+from .log import ContainerLog  # noqa
 
 from .base import STATE_SETUP_IN_PROGRESS  # noqa
 from .base import STATE_SETUP_FINISHED  # noqa

@@ -14,7 +14,8 @@ import sys
 import traceback
 import time
 import uuid
-from subprocess import CalledProcessError
+from subprocess import Popen
+from subprocess import PIPE
 
 import requests
 from M2Crypto.EVP import Cipher
@@ -105,16 +106,13 @@ def decode_signed_license(signed_license, public_key, public_password, license_p
         "/usr/share/oxd-license-validator/oxd-license-validator.jar",
     )
 
-    try:
-        cmd_output = run("java -jar {} {} {} {} {}".format(
-            validator,
-            signed_license,
-            public_key,
-            public_password,
-            license_password,
-        ), exit_on_error=False)
-    except CalledProcessError as exc:  # pragma: no cover
-        cmd_output = exc.output
+    cmd_output = po_run("java -jar {} {} {} {} {}".format(
+        validator,
+        signed_license,
+        public_key,
+        public_password,
+        license_password,
+    ))
 
     # output example:
     #
@@ -124,13 +122,8 @@ def decode_signed_license(signed_license, public_key, public_password, license_p
     # but we only care about the last line
     meta = cmd_output.splitlines()[-1]
 
-    try:
-        decoded_license = json.loads(meta)
-        return decoded_license
-    except ValueError:
-        # validator may throws exception as the output,
-        # which is not a valid JSON
-        raise ValueError("Error parsing JSON output of {}".format(validator))
+    decoded_license = json.loads(meta)
+    return decoded_license
 
 
 def retrieve_signed_license(code):
@@ -168,10 +161,6 @@ def get_sys_random_chars(size=12, chars=_DEFAULT_CHARS):
     """Generates random characters based on OS.
     """
     return ''.join(random.SystemRandom().choice(chars) for _ in range(size))
-
-
-from subprocess import Popen
-from subprocess import PIPE
 
 
 def po_run(cmd_str, raise_error=True):

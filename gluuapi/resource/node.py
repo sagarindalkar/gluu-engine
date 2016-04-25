@@ -7,7 +7,7 @@
 # import uuid
 import time
 
-#from flask import current_app as app
+from flask import current_app
 from flask import request
 from flask import url_for
 from flask_restful import Resource
@@ -103,10 +103,13 @@ class CreateNodeResource(Resource):
             #implimenting alternative
             try:
                 #TODO make this hole thing side effect free and idempotent
+                current_app.logger.info('creating discovery node')
                 self.machine.create(node, provider, discovery)
                 time.sleep(2)
+                current_app.logger.info('installing consul')
                 self.machine.ssh(node.name, 'sudo docker run -d --name consul -p 8500:8500 -h consul progrium/consul -server -bootstrap')
                 time.sleep(2)
+                current_app.logger.info('saveing node:{} to DB'.format(node.name))
                 db.persist(node, 'nodes')
             except RuntimeError as e:
                 self.machine.rm(node.name)
@@ -119,17 +122,22 @@ class CreateNodeResource(Resource):
         if node.type == 'master':
             try:
                 #TODO make this hole thing side effect free and idempotent
+                current_app.logger.info('creating {} node ({})'.format(node.name, node.type))
                 self.machine.create(node, provider, discovery)
                 time.sleep(2)
                 #TODO if weaveinstall
+                current_app.logger.info('installing weave')
                 self.machine.ssh(node.name, 'sudo curl -L git.io/weave -o /usr/local/bin/weave')
                 time.sleep(2)
                 #TODO if weaveexec
+                current_app.logger.info('set exec permission of weave')
                 self.machine.ssh(node.name, 'sudo chmod +x /usr/local/bin/weave')
                 time.sleep(2)
                 #TODO if weavelaunch
+                current_app.logger.info('launch weave')
                 self.machine.ssh(node.name, 'sudo weave launch')
                 time.sleep(2)
+                current_app.logger.info('saveing node:{} to DB'.format(node.name))
                 db.persist(node, 'nodes')
             except RuntimeError as e:
                 self.machine.rm(node.name)
@@ -142,18 +150,23 @@ class CreateNodeResource(Resource):
         if node.type == 'worker':
             try:
                 #TODO make this hole thing side effect free and idempotent
+                current_app.logger.info('creating {} node ({})'.format(node.name, node.type))
                 self.machine.create(node, provider, discovery)
                 time.sleep(2)
                 #TODO if weaveinstall
+                current_app.logger.info('installing weave')
                 self.machine.ssh(node.name, 'sudo curl -L git.io/weave -o /usr/local/bin/weave')
                 time.sleep(2)
                 #TODO if weaveexec
+                current_app.logger.info('set exec permission of weave')
                 self.machine.ssh(node.name, 'sudo chmod +x /usr/local/bin/weave')
                 time.sleep(2)
                 master = db.search_from_table('nodes', db.where('type') == 'master')[0]
                 ip = self.machine.ip(master.name)
+                current_app.logger.info('launch peer weave')
                 self.machine.ssh(node.name, 'sudo weave launch {}'.format(ip))
                 time.sleep(2)
+                current_app.logger.info('saveing node:{} to DB'.format(node.name))
                 db.persist(node, 'nodes')
             except RuntimeError as e:
                 self.machine.rm(node.name)

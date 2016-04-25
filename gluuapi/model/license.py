@@ -84,12 +84,12 @@ class LicenseKey(BaseModel):
         now = timestamp_millis()
         return now > self.metadata["expiration_date"]
 
-    def get_provider_objects(self):
-        """Gets consumer providers.
+    def get_workers(self):
+        """Gets worker nodes.
 
-        :returns: A list of consumer provider objects (if any).
+        :returns: A list of worker node objects (if any).
         """
-        providers = db.search_from_table(
-            "providers", db.where("type") == "consumer",
+        workers = db.search_from_table(
+            "nodes", db.where("type") == "worker",
         )
-        return providers
+        return workers

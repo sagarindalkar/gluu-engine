@@ -24,6 +24,7 @@ def format_license_key_resp(obj):
     resp["license_password"] = obj.decrypted_license_password
     return resp
 
+
 class LicenseKeyListResource(Resource):
     def post(self):
         if len(db.all("license_keys")):
@@ -83,7 +84,7 @@ class LicenseKeyResource(Resource):
                 license_key.decrypted_public_password,
                 license_key.decrypted_license_password,
             )
-        except ValueError as exc:
+        except RuntimeError as exc:
             current_app.logger.warn("unable to generate metadata; "
                                     "reason={}".format(exc))
             decoded_license = {"valid": False, "metadata": {}}
@@ -92,25 +93,25 @@ class LicenseKeyResource(Resource):
             license_key.metadata = decoded_license["metadata"]
             db.update(license_key.id, license_key, "license_keys")
 
-        # if consumer providers have disabled oxAuth nodes and license
-        # key is not expired, try to re-enable the nodes
+        # if worker nodes have disabled oxAuth containers and license
+        # key is not expired, try to re-enable the containers
         if not license_key.expired:
-            for provider in license_key.get_provider_objects():
+            for worker_node in license_key.get_workers():
                 weave = WeaveHelper(
-                    provider, current_app._get_current_object(),
+                    worker_node, current_app._get_current_object(),
                 )
                 for type_ in ["oxauth", "oxidp"]:
-                    nodes = provider.get_node_objects(
+                    containers = worker_node.get_containers(
                         type_=type_, state=STATE_DISABLED,
                     )
 
-                    for node in nodes:
-                        node.state = STATE_SUCCESS
-                        db.update(node.id, node, "nodes")
-                        cidr = "{}/{}".format(node.weave_ip,
-                                              node.weave_prefixlen)
-                        weave.attach(cidr, node.id)
-                        weave.dns_add(node.id, node.domain_name)
+                    for container in containers:
+                        container.state = STATE_SUCCESS
+                        db.update(container.id, container, "containers")
+                        cidr = "{}/{}".format(container.weave_ip,
+                                              container.weave_prefixlen)
+                        weave.attach(cidr, container.id)
+                        weave.dns_add(container.id, container.domain_name)
 
         distribute_cluster_data(current_app.config["DATABASE_URI"])
         return format_license_key_resp(license_key)
@@ -120,9 +121,8 @@ class LicenseKeyResource(Resource):
         if not license_key:
             return {"status": 404, "message": "License key not found"}, 404
 
-        if len(license_key.get_provider_objects()):
-            msg = "Cannot delete license key while having consumer " \
-                  "providers"
+        if len(license_key.get_workers()):
+            msg = "Cannot delete license key while having worker nodes"
             return {"status": 403, "message": msg}, 403
 
         db.delete(license_key_id, "license_keys")

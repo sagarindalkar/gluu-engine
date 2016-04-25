@@ -39,6 +39,6 @@ class ContainerLog(BaseModel):
         container_log.id = container.name
         container_log.container_name = container.name
         container_log.setup_log = "{}-setup.log".format(container_log.container_name)
-        container_log.teardown_log = "{}-teardown.log".format(container_log.node_name)
-        db.persist(container_log, "node_logs")
+        container_log.teardown_log = "{}-teardown.log".format(container_log.container_name)
+        db.persist(container_log, "container_logs")
         return container_log

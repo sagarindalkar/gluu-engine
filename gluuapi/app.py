@@ -130,6 +130,6 @@ def register_resources():
                          "/containers",
                          endpoint="container_list")
     restapi.add_resource(ContainerResource,
-                         "/containers/<string:id>",
+                         "/containers/<string:container_id>",
                          endpoint="container",
                          )

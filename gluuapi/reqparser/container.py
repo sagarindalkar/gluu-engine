@@ -24,12 +24,7 @@ CONTAINER_CHOICES = [
 class ContainerReq(ma.Schema):
     node_id = ma.Str(required=True)
 
-    node_type = ma.Str(validate=OneOf(CONTAINER_CHOICES), required=True)
-
-    # connect_delay = ma.Int(default=10, missing=10,
-    #                        error="must use numerical value")
-    # exec_delay = ma.Int(default=15, missing=15,
-    #                     error="must use numerical value")
+    container_type = ma.Str(validate=OneOf(CONTAINER_CHOICES), required=True)
 
     @validates("node_id")
     def validate_node(self, value):
@@ -37,17 +32,17 @@ class ContainerReq(ma.Schema):
 
         :param value: ID of the node.
         """
-        node = db.get(value, "node")
+        node = db.get(value, "nodes")
         self.context["node"] = node
 
         if not node:
             raise ValidationError("invalid node ID")
 
-        if node.type == "worker":
-            license_key = db.all("license_keys")[0]
-            if license_key.expired:
-                raise ValidationError("cannot deploy container to "
-                                      "node with expired license")
+        # if node.type == "worker":
+        #     license_key = db.all("license_keys")[0]
+        #     if license_key.expired:
+        #         raise ValidationError("cannot deploy container to "
+        #                               "node with expired license")
 
     @post_load
     def finalize_data(self, data):

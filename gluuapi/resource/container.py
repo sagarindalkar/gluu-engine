@@ -14,8 +14,8 @@ from flask_restful import Resource
 from ..database import db
 from ..reqparser import ContainerReq
 from ..model import STATE_IN_PROGRESS
-from ..model import STATE_SETUP_IN_PROGRESS
-from ..model import STATE_TEARDOWN_IN_PROGRESS
+# from ..model import STATE_SETUP_IN_PROGRESS
+# from ..model import STATE_TEARDOWN_IN_PROGRESS
 from ..helper import LdapModelHelper
 from ..helper import OxauthModelHelper
 from ..helper import OxtrustModelHelper
@@ -28,7 +28,7 @@ from ..model import OxtrustContainer
 from ..model import OxidpContainer
 from ..model import NginxContainer
 from ..model import OxasimbaContainer
-from ..model import ContainerLog
+# from ..model import ContainerLog
 
 
 def get_container(db, container_id):
@@ -60,7 +60,7 @@ class ContainerResource(Resource):
         return container.as_dict()
 
     def delete(self, container_id):
-        app = current_app._get_current_object()
+        # app = current_app._get_current_object()
 
         truthy = ("1", "True", "true", "t",)
         falsy = ("0", "false", "False", "f",)
@@ -92,25 +92,25 @@ class ContainerResource(Resource):
         # unique ``container.name`` instead)
         db.delete_from_table("containers", db.where("name") == container.name)
 
-        # TODO: change it to ContainerLog
-        container_log = ContainerLog.create_or_get(container)
-        container_log.state = STATE_TEARDOWN_IN_PROGRESS
-        container_log.teardown_log_url = url_for(
-            "containerlog_teardown",
-            id=container_log.id,
-            _external=True,
-        )
-        db.update(container_log.id, container_log, "container_logs")
+        # # TODO: change it to ContainerLog
+        # container_log = ContainerLog.create_or_get(container)
+        # container_log.state = STATE_TEARDOWN_IN_PROGRESS
+        # container_log.teardown_log_url = url_for(
+        #     "containerlog_teardown",
+        #     id=container_log.id,
+        #     _external=True,
+        # )
+        # db.update(container_log.id, container_log, "container_logs")
 
-        logpath = os.path.join(app.config["LOG_DIR"], container_log.teardown_log)
+        # logpath = os.path.join(app.config["LOG_DIR"], container_log.teardown_log)
 
-        # run the teardown process
-        helper_class = self.helper_classes[container.type]
-        helper = helper_class(container, app, logpath)
-        helper.teardown()
+        # # run the teardown process
+        # helper_class = self.helper_classes[container.type]
+        # helper = helper_class(container, app, logpath)
+        # helper.teardown()
 
         headers = {
-            "X-Container-Teardown-Log": container_log.teardown_log_url,
+            # "X-Container-Teardown-Log": container_log.teardown_log_url,
         }
         return {}, 204, headers
 
@@ -139,7 +139,7 @@ class ContainerListResource(Resource):
         return [container.as_dict() for container in containers]
 
     def post(self):
-        app = current_app._get_current_object()
+        # app = current_app._get_current_object()
         container_type = request.form.get("container_type", "")
         ctx = {"container_type": container_type}
         data, errors = ContainerReq(context=ctx).load(request.form)
@@ -213,27 +213,33 @@ class ContainerListResource(Resource):
         container.weave_ip = addr
         container.weave_prefixlen = prefixlen
         container.state = STATE_IN_PROGRESS
+
+        # TODO: remove these fake state when we have proper container
+        #       deployment
+        from ..model import STATE_SUCCESS
+        container.state = STATE_SUCCESS
+
         db.persist(container, "containers")
 
-        # log related setup
-        container_log = ContainerLog.create_or_get(container)
-        container_log.state = STATE_SETUP_IN_PROGRESS
-        container_log.setup_log_url = url_for(
-            "containerlog_setup",
-            id=container_log.id,
-            _external=True,
-        )
-        db.update(container_log.id, container_log, "container_logs")
+        # # log related setup
+        # container_log = ContainerLog.create_or_get(container)
+        # container_log.state = STATE_SETUP_IN_PROGRESS
+        # container_log.setup_log_url = url_for(
+        #     "containerlog_setup",
+        #     id=container_log.id,
+        #     _external=True,
+        # )
+        # db.update(container_log.id, container_log, "container_logs")
 
-        logpath = os.path.join(app.config["LOG_DIR"], container_log.setup_log)
+        # logpath = os.path.join(app.config["LOG_DIR"], container_log.setup_log)
 
-        # run the setup process
-        helper_class = self.helper_classes[params["container_type"]]
-        helper = helper_class(container, app, logpath)
-        helper.setup()
+        # # run the setup process
+        # helper_class = self.helper_classes[params["container_type"]]
+        # helper = helper_class(container, app, logpath)
+        # helper.setup()
 
         headers = {
-            "X-Container-Setup-Log": container.setup_log_url,
+            # "X-Container-Setup-Log": container.setup_log_url,
             "Location": url_for("container", container_id=container.name),
         }
         return container.as_dict(), 202, headers

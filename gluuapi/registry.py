@@ -3,4 +3,4 @@
 #
 # All rights reserved.
 
-from .registry import Registry  # noqa
+REGISTRY_BASE_URL = "registry.gluu.org:5000"

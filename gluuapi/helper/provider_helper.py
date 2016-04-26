@@ -4,7 +4,7 @@
 # All rights reserved.
 
 # import codecs
-# import logging
+import logging
 import os
 # import stat
 
@@ -25,6 +25,7 @@ def distribute_cluster_data(filepath):
     :param filepath: Path to cluster database file.
     """
     mc = Machine()
+    logger = logging.getLogger("gluuapi")
 
     # find all worker nodes where cluster database will be copied to
     worker_nodes = db.search_from_table(
@@ -36,8 +37,8 @@ def distribute_cluster_data(filepath):
             mc.scp(filepath, "{}:{}".format(worker_node.name, filepath))
         except RuntimeError as exc:
             # TODO: perhaps using logger?
-            print(exc)
-            print("something is wrong while copying {}".format(filepath))
+            logger.warn(exc)
+            logger.warn("something is wrong while copying {}".format(filepath))
 
 
 class ProviderHelper(object):

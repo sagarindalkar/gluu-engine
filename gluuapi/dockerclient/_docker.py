@@ -11,7 +11,7 @@ from docker import Client
 
 from ..errors import DockerExecError
 from ..log import create_file_logger
-from ..registry import Registry
+from ..registry import REGISTRY_BASE_URL
 from ..utils import po_run
 
 
@@ -23,7 +23,7 @@ class Docker(object):
     def __init__(self, config, logger=None):
         self.logger = logger or create_file_logger()
         self.machine_conf = config
-        self.registry_base_url = Registry().registry_base_url
+        self.registry_base_url = REGISTRY_BASE_URL
         self.docker = Client(base_url=self.machine_conf['base_url'],
                              tls=self.machine_conf['tls'])
 

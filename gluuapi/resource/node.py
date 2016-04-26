@@ -17,11 +17,17 @@ from ..model import Node
 from ..machine import Machine
 # from ..dockerclient import Docker
 from ..database import db
+from ..registry import REGISTRY_BASE_URL
 
 # TODO: put it in config
 NODE_TYPES = ('master', 'worker', 'discovery',)
 DISCOVERY_PORT = '8500'
 DISCOVERY_NODE_NAME = 'gluu.discovery'
+
+
+class Discovery(object):
+    pass
+
 
 #TODO this is very ugly code now, next commit will be much better
 
@@ -90,7 +96,6 @@ class CreateNodeResource(Resource):
         provider = db.get(node.provider_id, 'providers')
         discovery = None
         if node.type != 'discovery':
-            class Discovery(object): pass
             discovery = Discovery()
             discovery.ip = self.machine.ip(DISCOVERY_NODE_NAME)
             discovery.port = '8500'
@@ -105,14 +110,18 @@ class CreateNodeResource(Resource):
                 #TODO make this hole thing side effect free and idempotent
                 current_app.logger.info('creating discovery node')
                 self.machine.create(node, provider, discovery)
+
                 time.sleep(2)
                 current_app.logger.info('installing consul')
                 self.machine.ssh(node.name, 'sudo docker run -d --name consul -p 8500:8500 -h consul progrium/consul -server -bootstrap')
+
                 time.sleep(2)
-                current_app.logger.info('saveing node:{} to DB'.format(node.name))
+                current_app.logger.info('saving node:{} to DB'.format(node.name))
                 db.persist(node, 'nodes')
             except RuntimeError as e:
+                current_app.logger.warn(e)
                 self.machine.rm(node.name)
+
                 msg = str(e)
                 return {
                     "status": 500,
@@ -124,23 +133,42 @@ class CreateNodeResource(Resource):
                 #TODO make this hole thing side effect free and idempotent
                 current_app.logger.info('creating {} node ({})'.format(node.name, node.type))
                 self.machine.create(node, provider, discovery)
+
                 time.sleep(2)
                 #TODO if weaveinstall
                 current_app.logger.info('installing weave')
                 self.machine.ssh(node.name, 'sudo curl -L git.io/weave -o /usr/local/bin/weave')
+
                 time.sleep(2)
                 #TODO if weaveexec
                 current_app.logger.info('set exec permission of weave')
                 self.machine.ssh(node.name, 'sudo chmod +x /usr/local/bin/weave')
+
                 time.sleep(2)
                 #TODO if weavelaunch
                 current_app.logger.info('launch weave')
                 self.machine.ssh(node.name, 'sudo weave launch')
+
                 time.sleep(2)
-                current_app.logger.info('saveing node:{} to DB'.format(node.name))
+                current_app.logger.info("downloading registry certificate")
+                self.machine.ssh(
+                    node.name,
+                    r"sudo mkdir -p /etc/docker/certs.d/{}".format(REGISTRY_BASE_URL),
+                )
+                # self.machine.ssh("|".join([
+                #     "echo -n",
+                #     "openssl s_client -connect {}".format(REGISTRY_BASE_URL),
+                #     "sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p'",
+                #     r"sudo tee /etc/docker/certs.d/{}/ca.crt".format(REGISTRY_BASE_URL),
+                # ]))
+
+                time.sleep(2)
+                current_app.logger.info('saving node:{} to DB'.format(node.name))
                 db.persist(node, 'nodes')
             except RuntimeError as e:
+                current_app.logger.warn(e)
                 self.machine.rm(node.name)
+
                 msg = str(e)
                 return {
                     "status": 500,
@@ -152,24 +180,43 @@ class CreateNodeResource(Resource):
                 #TODO make this hole thing side effect free and idempotent
                 current_app.logger.info('creating {} node ({})'.format(node.name, node.type))
                 self.machine.create(node, provider, discovery)
+
                 time.sleep(2)
                 #TODO if weaveinstall
                 current_app.logger.info('installing weave')
                 self.machine.ssh(node.name, 'sudo curl -L git.io/weave -o /usr/local/bin/weave')
+
                 time.sleep(2)
                 #TODO if weaveexec
                 current_app.logger.info('set exec permission of weave')
                 self.machine.ssh(node.name, 'sudo chmod +x /usr/local/bin/weave')
+
                 time.sleep(2)
                 master = db.search_from_table('nodes', db.where('type') == 'master')[0]
                 ip = self.machine.ip(master.name)
                 current_app.logger.info('launch peer weave')
                 self.machine.ssh(node.name, 'sudo weave launch {}'.format(ip))
+
                 time.sleep(2)
-                current_app.logger.info('saveing node:{} to DB'.format(node.name))
+                current_app.logger.info("downloading registry certificate")
+                self.machine.ssh(
+                    node.name,
+                    "sudo mkdir -p /etc/docker/certs.d/{}".format(REGISTRY_BASE_URL),
+                )
+                # self.machine.ssh("|".join([
+                #     "echo -n",
+                #     "openssl s_client -connect {}".format(REGISTRY_BASE_URL),
+                #     "sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p'",
+                #     "sudo tee /etc/docker/certs.d/{}/ca.crt".format(REGISTRY_BASE_URL),
+                # ]))
+
+                time.sleep(2)
+                current_app.logger.info('saving node:{} to DB'.format(node.name))
                 db.persist(node, 'nodes')
             except RuntimeError as e:
+                current_app.logger.warn(e)
                 self.machine.rm(node.name)
+
                 msg = str(e)
                 return {
                     "status": 500,
@@ -225,6 +272,7 @@ class NodeResource(Resource):
             self.machine.rm(node.name)
             db.delete(node.id, 'nodes')
         except RuntimeError as e:
+            current_app.logger.warn(e)
             msg = str(e)  # TODO log
             return {
                 "status": 500,

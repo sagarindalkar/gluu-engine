@@ -9,6 +9,7 @@ import re
 from docker.tls import TLSConfig
 
 from ..utils import po_run
+from ..registry import REGISTRY_BASE_URL
 
 LS_FIELDS = ["Name", "Active", "ActiveHost", "ActiveSwarm", "DriverName",
              "State", "URL", "Swarm", "Error", "DockerVersion", "ResponseTime"]
@@ -57,100 +58,74 @@ class Machine(object):
         return self._config(cmd, machine_name, docker_friendly)
 
     def _dicovery(self, discovery):
-        dlist = []
-        dlist.append('--swarm-discovery=consul://{}:{}'.format(discovery.ip, discovery.port))
-        dlist.append('--engine-opt=cluster-store=consul://{}:{}'.format(discovery.ip, discovery.port))
-        dlist.append('--engine-opt=cluster-advertise=eth0:2376')
-        return ' '.join(dlist)
-
-    def _get_generic_cmd(self, discovery, provider, node):
-        clist = []
-        clist.append('create')
-        clist.append('--driver {}'.format(provider.driver))
-        clist.append('--generic-ip-address={}'.format(
-            provider.generic_ip_address))
-        clist.append(
-            '--generic-ssh-key={}'.format(provider.generic_ssh_key))
-        clist.append('--generic-ssh-user={}'.format(
-            provider.generic_ssh_user))
-        clist.append('--generic-ssh-port={}'.format(
-            provider.generic_ssh_port))
-
-        if node.type == 'master':
-            clist.append('--swarm --swarm-master')
-
-        if node.type == 'worker':
-            clist.append('--swarm')
-
-        if node.type != 'discovery':
-            clist.append(self._dicovery(discovery))
-
-        clist.append('{}'.format(node.name))
-        cmd = ' '.join(clist)
+        cmd = " ".join([
+            '--swarm-discovery=consul://{}:{}'.format(discovery.ip, discovery.port),
+            '--engine-opt=cluster-store=consul://{}:{}'.format(discovery.ip, discovery.port),
+            '--engine-opt=cluster-advertise=eth0:2376',
+        ])
         return cmd
 
-    def _get_aws_cmd(self, discovery, provider, node):
-        clist = []
-        clist.append('create')
-        clist.append('--driver {}'.format(provider.driver))
-        clist.append('--amazonec2-access-key={}'.format(
-            provider.amazonec2_access_key))
-        clist.append(
-            '--amazonec2-secret-key={}'.format(provider.amazonec2_secret_key))
-        clist.append('--amazonec2-ami={}'.format(
-            provider.amazonec2_ami))
-        clist.append('--amazonec2-instance-type={}'.format(
-            provider.amazonec2_instance_type))
-        clist.append('--amazonec2-region={}'.format(
-            provider.amazonec2_region))
-
-        if node.type == 'master':
-            clist.append('--swarm --swarm-master')
-
-        if node.type == 'worker':
-            clist.append('--swarm')
-
-        if node.type != 'discovery':
-            clist.append(self._dicovery(discovery))
-
-        clist.append('{}'.format(node.name))
-        cmd = ' '.join(clist)
+    def _get_generic_cmd(self, provider):
+        cmd = " ".join([
+            '--generic-ip-address={}'.format(provider.generic_ip_address),
+            '--generic-ssh-key={}'.format(provider.generic_ssh_key),
+            '--generic-ssh-user={}'.format(provider.generic_ssh_user),
+            '--generic-ssh-port={}'.format(provider.generic_ssh_port),
+        ])
         return cmd
 
-    def _get_do_cmd(self, discovery, provider, node):
-        clist = []
-        clist.append('create')
-        clist.append('--driver {}'.format(provider.driver))
-        clist.append('--digitalocean-access-token={}'.format(
-            provider.digitalocean_access_token))
-        clist.append(
-            '--digitalocean-size={}'.format(provider.digitalocean_size))
-        clist.append('--digitalocean-image={}'.format(
-            provider.digitalocean_image))
+    def _get_aws_cmd(self, provider):
+        cmd = " ".join([
+            '--amazonec2-access-key={}'.format(provider.amazonec2_access_key),
+            '--amazonec2-secret-key={}'.format(provider.amazonec2_secret_key),
+            '--amazonec2-ami={}'.format(provider.amazonec2_ami),
+            '--amazonec2-instance-type={}'.format(provider.amazonec2_instance_type),
+            '--amazonec2-region={}'.format(provider.amazonec2_region),
+        ])
+        return cmd
 
-        if node.type == 'master':
-            clist.append('--swarm --swarm-master')
-
-        if node.type == 'worker':
-            clist.append('--swarm')
-
-        if node.type != 'discovery':
-            clist.append(self._dicovery(discovery))
-
-        clist.append('{}'.format(node.name))
-        cmd = ' '.join(clist)
+    def _get_do_cmd(self, provider):
+        cmd = " ".join([
+            '--digitalocean-access-token={}'.format(provider.digitalocean_access_token),
+            '--digitalocean-size={}'.format(provider.digitalocean_size),
+            '--digitalocean-image={}'.format(provider.digitalocean_image),
+            '--digitalocean-region={}'.format(provider.digitalocean_region),
+            '--digitalocean-backup={}'.format(provider.digitalocean_backup),
+            '--digitalocean-private-networking={}'.format(provider.digitalocean_private_networking),
+            '--digitalocean-ipv6={}'.format(provider.digitalocean_ipv6),
+        ])
         return cmd
 
     def create(self, node, provider, discovery):
+        cmd = [
+            "create",
+            "--driver={}".format(provider.driver),
+        ]
+
         if provider.driver == 'generic':
-            cmd = self._get_generic_cmd(discovery, provider, node)
+            cmd.append(self._get_generic_cmd(provider))
 
         if provider.driver == 'amazonec2':
-            cmd = self._get_aws_cmd(discovery, provider, node)
+            cmd = self._get_aws_cmd(provider)
 
         if provider.driver == 'digitalocean':
-            cmd = self._get_do_cmd(discovery, provider, node)
+            cmd = self._get_do_cmd(provider)
 
+        if node.type == 'master':
+            cmd.append('--swarm --swarm-master')
+
+        if node.type == 'worker':
+            cmd.append('--swarm')
+
+        if node.type != 'discovery':
+            cmd.append(self._dicovery(discovery))
+
+        if node.type in ("master", "worker",):
+            cmd.append("--engine-insecure-registry=https://{}".format(REGISTRY_BASE_URL))
+
+        cmd.append(node.name)
+
+        cmd = " ".join(cmd)
         self._run(cmd)
         return True
 
@@ -207,7 +182,7 @@ class Machine(object):
         self._run(cmd)
         return True
 
-    def ssh(self, machine_name, cmd):
+    def ssh(self, machine_name, cmd=""):
         if cmd:
             cmd = 'ssh {} {}'.format(machine_name, cmd)
             stdout, stderr, error = self._run(cmd)

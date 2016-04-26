@@ -42,6 +42,8 @@ class Config(object):
     OXAUTH_MAP_JARS = os.path.join(OXAUTH_VOLUME_DIR, 'jars')
     WEAVE_ENCRYPTION = False
 
+    REGISTRY_CERT_DIR = os.path.join(DATA_DIR, "registry_certs")
+
 
 class ProdConfig(Config):
     """Production configuration.

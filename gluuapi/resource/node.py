@@ -3,7 +3,7 @@
 #
 # All rights reserved.
 
-# import os
+import os
 # import uuid
 import time
 
@@ -18,6 +18,7 @@ from ..machine import Machine
 # from ..dockerclient import Docker
 from ..database import db
 from ..registry import REGISTRY_BASE_URL
+from ..registry import get_registry_cert
 
 # TODO: put it in config
 NODE_TYPES = ('master', 'worker', 'discovery',)
@@ -150,17 +151,21 @@ class CreateNodeResource(Resource):
                 self.machine.ssh(node.name, 'sudo weave launch')
 
                 time.sleep(2)
-                current_app.logger.info("downloading registry certificate")
+                current_app.logger.info("retrieving registry certificate")
                 self.machine.ssh(
                     node.name,
                     r"sudo mkdir -p /etc/docker/certs.d/{}".format(REGISTRY_BASE_URL),
                 )
-                # self.machine.ssh("|".join([
-                #     "echo -n",
-                #     "openssl s_client -connect {}".format(REGISTRY_BASE_URL),
-                #     "sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p'",
-                #     r"sudo tee /etc/docker/certs.d/{}/ca.crt".format(REGISTRY_BASE_URL),
-                # ]))
+                registry_cert = get_registry_cert(
+                    os.path.join(current_app.config["REGISTRY_CERT_DIR"], "ca.crt")
+                )
+                self.machine.scp(
+                    registry_cert,
+                    r"{}:/etc/docker/certs.d/{}/ca.crt".format(
+                        node.name,
+                        REGISTRY_BASE_URL,
+                    ),
+                )
 
                 time.sleep(2)
                 current_app.logger.info('saving node:{} to DB'.format(node.name))
@@ -198,17 +203,21 @@ class CreateNodeResource(Resource):
                 self.machine.ssh(node.name, 'sudo weave launch {}'.format(ip))
 
                 time.sleep(2)
-                current_app.logger.info("downloading registry certificate")
+                current_app.logger.info("retrieving registry certificate")
                 self.machine.ssh(
                     node.name,
-                    "sudo mkdir -p /etc/docker/certs.d/{}".format(REGISTRY_BASE_URL),
+                    r"sudo mkdir -p /etc/docker/certs.d/{}".format(REGISTRY_BASE_URL),
                 )
-                # self.machine.ssh("|".join([
-                #     "echo -n",
-                #     "openssl s_client -connect {}".format(REGISTRY_BASE_URL),
-                #     "sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p'",
-                #     "sudo tee /etc/docker/certs.d/{}/ca.crt".format(REGISTRY_BASE_URL),
-                # ]))
+                registry_cert = get_registry_cert(
+                    os.path.join(current_app.config["REGISTRY_CERT_DIR"], "ca.crt")
+                )
+                self.machine.scp(
+                    registry_cert,
+                    r"{}:/etc/docker/certs.d/{}/ca.crt".format(
+                        node.name,
+                        REGISTRY_BASE_URL,
+                    ),
+                )
 
                 time.sleep(2)
                 current_app.logger.info('saving node:{} to DB'.format(node.name))

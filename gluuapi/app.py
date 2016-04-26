@@ -80,7 +80,7 @@ def register_resources():
                          endpoint='create_node')
     restapi.add_resource(NodeListResource, '/nodes', endpoint='node_list')
     restapi.add_resource(NodeResource,
-                         '/nodes/<string:node_id>',
+                         '/nodes/<string:node_name>',
                          endpoint='node')
 
     restapi.add_resource(ContainerLogResource,

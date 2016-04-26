@@ -177,7 +177,7 @@ class CreateNodeResource(Resource):
                 }, 500
 
         headers = {
-            "Location": url_for("node", node_id=node.id),
+            "Location": url_for("node", node_name=node.name),
         }
         return node.as_dict(), 201, headers
 
@@ -191,15 +191,16 @@ class NodeResource(Resource):
     def __init__(self):
         self.machine = Machine()
 
-    def get(self, node_id):
-        node = db.get(node_id, 'nodes')
-        if not node:
-            return {"status": 404, "message": "Provider not found"}, 404
-        return node.as_dict()
+    def get(self, node_name):
+        nodes = db.search_from_table('nodes', db.where('name') == node_name)
+        if not nodes:
+            return {"status": 404, "message": "node not found"}, 404
+        else:
+            return nodes[0].as_dict()
 
     # here node_id is name TODO: this is about to change to node_name
-    def delete(self, node_id):
-        nodes = db.search_from_table('nodes', db.where('name') == node_id)
+    def delete(self, node_name):
+        nodes = db.search_from_table('nodes', db.where('name') == node_name)
         if nodes:
             node = nodes[0]
         else:

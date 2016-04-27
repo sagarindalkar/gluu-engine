@@ -3,6 +3,7 @@
 #
 # All rights reserved.
 
+from flask import abort
 from flask import request
 from flask import url_for
 # from flask import current_app
@@ -59,10 +60,7 @@ class CreateProviderResource(Resource):
 
     def post(self, provider_type):
         if provider_type not in PROVIDER_TYPES:
-            return {
-                "status": 404,
-                "message": "Provider type is not supported"
-            }, 404
+            abort(404)
 
         data, errors = self.validate[provider_type]()
         if errors:
@@ -92,10 +90,7 @@ class ProviderListResource(Resource):
             return [provider.as_dict() for provider in providers]
 
         if provider_type not in PROVIDER_TYPES:
-            return {
-                "status": 404,
-                "message": "Provider type is not supported"
-            }, 404
+            abort(404)
 
         # list specific provider types
         providers = db.search_from_table("providers", db.where('driver') == provider_type)

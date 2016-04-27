@@ -38,7 +38,7 @@ setup(
         "Flask",
         "crochet",
         "docker-py>=1.8.0",
-        "salt<2015.2",
+        # "salt<2015.2",
         "pyzmq",
         "tinydb",
         "jsonpickle",

@@ -6,25 +6,13 @@
 from marshmallow import post_load
 from marshmallow import validates
 from marshmallow import ValidationError
-from marshmallow.validate import OneOf
 
 from ..database import db
 from ..extensions import ma
 
-#: List of supported container
-CONTAINER_CHOICES = [
-    "ldap",
-    "oxauth",
-    "oxtrust",
-    "oxidp",
-    "nginx",
-    # "oxasimba",
-]
 
 class ContainerReq(ma.Schema):
     node_id = ma.Str(required=True)
-
-    container_type = ma.Str(validate=OneOf(CONTAINER_CHOICES), required=True)
 
     @validates("node_id")
     def validate_node(self, value):

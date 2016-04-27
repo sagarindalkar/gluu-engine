@@ -29,6 +29,7 @@ from .resource import ContainerLogTeardownResource
 from .resource import ContainerLogListResource
 from .resource import ContainerListResource
 from .resource import ContainerResource
+from .resource import NewContainerResource
 from .database import db
 
 
@@ -128,8 +129,14 @@ def register_resources():
 
     restapi.add_resource(ContainerListResource,
                          "/containers",
-                         endpoint="container_list")
+                         "/filter-containers/<string:container_type>",
+                         endpoint="container_list",
+                         )
     restapi.add_resource(ContainerResource,
                          "/containers/<string:container_id>",
                          endpoint="container",
+                         )
+    restapi.add_resource(NewContainerResource,
+                         "/containers/<string:container_type>",
+                         endpoint="new_container",
                          )

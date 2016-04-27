@@ -6,6 +6,7 @@
 import os
 import uuid
 
+from flask import abort
 from flask import current_app
 from flask import request
 from flask import url_for
@@ -29,6 +30,17 @@ from ..model import OxidpContainer
 from ..model import NginxContainer
 from ..model import OxasimbaContainer
 from ..model import ContainerLog
+
+
+#: List of supported container
+CONTAINER_CHOICES = (
+    "ldap",
+    "oxauth",
+    "oxtrust",
+    "oxidp",
+    "nginx",
+    # "oxasimba",
+)
 
 
 def get_container(db, container_id):
@@ -115,6 +127,21 @@ class ContainerResource(Resource):
 
 
 class ContainerListResource(Resource):
+    def get(self, container_type=""):
+        if not container_type:
+            containers = db.all("containers")
+            return [container.as_dict() for container in containers]
+
+        if container_type not in CONTAINER_CHOICES:
+            abort(404)
+
+        containers = db.search_from_table(
+            "containers", db.where("type") == container_type,
+        )
+        return [container.as_dict() for container in containers]
+
+
+class NewContainerResource(Resource):
     helper_classes = {
         "ldap": LdapModelHelper,
         "oxauth": OxauthModelHelper,
@@ -133,15 +160,13 @@ class ContainerListResource(Resource):
         "oxasimba": OxasimbaContainer,
     }
 
-    def get(self):
-        containers = db.all("containers")
-        return [container.as_dict() for container in containers]
-
-    def post(self):
+    def post(self, container_type):
         # app = current_app._get_current_object()
-        container_type = request.form.get("container_type", "")
-        ctx = {"container_type": container_type}
-        data, errors = ContainerReq(context=ctx).load(request.form)
+
+        if container_type not in CONTAINER_CHOICES:
+            abort(404)
+
+        data, errors = ContainerReq().load(request.form)
 
         if errors:
             return {
@@ -159,7 +184,6 @@ class ContainerListResource(Resource):
             }, 403
 
         node = data["context"]["node"]
-        params = data["params"]
 
         # only allow 1 oxtrust per cluster
         if container_type == "oxtrust" and cluster.count_containers(type_="oxtrust"):
@@ -201,7 +225,7 @@ class ContainerListResource(Resource):
             }, 403
 
         # pre-populate the container object
-        container_class = self.container_classes[params["container_type"]]
+        container_class = self.container_classes[container_type]
         container = container_class()
         container.cluster_id = cluster.id
         container.node_id = node.id

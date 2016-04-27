@@ -13,11 +13,8 @@ from requests.exceptions import SSLError
 from requests.exceptions import ConnectionError
 from crochet import run_in_reactor
 
-# from .docker_helper import DockerHelper
-# from .salt_helper import SaltHelper
-# from .salt_helper import prepare_minion
 from .provider_helper import distribute_cluster_data
-from .prometheus_helper import PrometheusHelper
+# from .prometheus_helper import PrometheusHelper
 from .weave_helper import WeaveHelper
 from ..database import db
 from ..model import STATE_SUCCESS
@@ -65,14 +62,12 @@ class BaseModelHelper(object):
             )
 
         self.app = app
-        # self.docker = DockerHelper(self.provider, logger=self.logger)
-        # self.salt = SaltHelper()
         mc = Machine()
         master_node = db.search_from_table("nodes", db.where("type") == "master")[0]  # noqa
-        self.docker = Docker(mc.swarm_config(master_node.name))
+        self.docker = Docker(mc.swarm_config(master_node.name), logger=self.logger)
 
         self.weave = WeaveHelper(self.node, self.app, logger=self.logger)
-        self.prometheus = PrometheusHelper(self.app, logger=self.logger)
+        # self.prometheus = PrometheusHelper(self.app, logger=self.logger)
 
     @run_in_reactor
     def setup(self, connect_delay=10, exec_delay=15):
@@ -86,71 +81,62 @@ class BaseModelHelper(object):
             start = time.time()
 
             # get docker bridge IP as it's where weavedns runs
-            bridge_ip = self.weave.docker_bridge_ip()
+            # bridge_ip = self.weave.docker_bridge_ip()
 
-            container_id = self.docker.setup_container(
-                self.container.name,
-                self.container.image,
-                env={
-                    "SALT_MASTER_IPADDR": os.environ.get("SALT_MASTER_IPADDR"),
-                },
+            # container_id = self.docker.setup_container(
+            cid = self.docker.setup_container(
+                name=self.container.name,
+                image=self.container.image,
+                env=[
+                    "constraint:node=={}".format(self.node.name),
+                ],
                 port_bindings=self.port_bindings,
                 volumes=self.volumes,
-                dns=[bridge_ip],
-                dns_search=["gluu.local"],
+                # dns=[bridge_ip],
+                # dns_search=["gluu.local"],
                 ulimits=self.ulimits,
+                hostname=self.container.hostname,
             )
 
             # container is not running
-            if not container_id:
+            # if not container_id:
+            if not cid:
                 self.logger.error("Failed to start the "
                                   "{!r} container".format(self.container.name))
                 self.on_setup_error()
                 return
 
             # container ID in short format
-            self.container.id = container_id[:12]
-            # prepare_minion(
-            #     self.container.id,
-            #     connect_delay=connect_delay,
-            #     exec_delay=exec_delay,
-            #     logger=self.logger,
+            self.container.cid = cid[:12]
+
+            # self.container.ip = self.docker.get_container_ip(self.container.id)
+            # self.container.domain_name = "{}.{}.gluu.local".format(
+            #     self.container.id, self.container.type,
             # )
-
-            # # minion is not connected
-            # if not self.salt.is_minion_registered(self.container.id):
-            #     self.logger.error("minion {} is "
-            #                       "unreachable".format(self.container.id))
-            #     self.on_setup_error()
-            #     return
-
-            self.container.ip = self.docker.get_container_ip(self.container.id)
-            self.container.domain_name = "{}.{}.gluu.local".format(
-                self.container.id, self.container.type,
-            )
             db.update_to_table(
                 "containers",
                 db.where("name") == self.container.name,
                 self.container,
             )
 
-            # attach weave IP to container
-            cidr = "{}/{}".format(self.container.weave_ip,
-                                  self.container.weave_prefixlen)
-            self.weave.attach(cidr, self.container.id)
+            # # attach weave IP to container
+            # cidr = "{}/{}".format(self.container.weave_ip,
+            #                       self.container.weave_prefixlen)
+            # self.weave.attach(cidr, self.container.id)
 
-            # add DNS record
-            self.weave.dns_add(self.container.id, self.container.domain_name)
+            # # add DNS record
+            # self.weave.dns_add(self.container.id, self.container.domain_name)
 
-            if self.container.type == "ldap":
-                self.weave.dns_add(self.container.id, "ldap.gluu.local")
+            # if self.container.type == "ldap":
+            #     self.weave.dns_add(self.container.id, "ldap.gluu.local")
 
-            if self.container.type == "nginx":
-                self.weave.dns_add(self.container.id, self.cluster.ox_cluster_hostname)
+            # if self.container.type == "nginx":
+            #     # self.weave.dns_add(self.container.id, self.cluster.ox_cluster_hostname)
+            #     self.weave.dns_add(self.container.cid, self.cluster.ox_cluster_hostname)
 
-            setup_obj = self.setup_class(self.container, self.cluster,
-                                         self.app, logger=self.logger)
-            setup_obj.setup()
+            # setup_obj = self.setup_class(self.container, self.cluster,
+            #                              self.app, logger=self.logger)
+            # setup_obj.setup()
 
             # mark container as SUCCESS
             self.container.state = STATE_SUCCESS
@@ -161,12 +147,12 @@ class BaseModelHelper(object):
             )
 
             # after_setup must be called after container has been marked
-            # as SUCCESS
-            setup_obj.after_setup()
-            setup_obj.remove_build_dir()
+            # # as SUCCESS
+            # setup_obj.after_setup()
+            # setup_obj.remove_build_dir()
 
-            # updating prometheus
-            self.prometheus.update()
+            # # updating prometheus
+            # self.prometheus.update()
 
             elapsed = time.time() - start
             self.logger.info("{} setup is finished ({} seconds)".format(
@@ -208,8 +194,6 @@ class BaseModelHelper(object):
             self.logger.warn("can't find container {}; likely it's not "
                              "created yet or missing".format(self.container.name))
 
-        # self.salt.unregister_minion(self.container.id)
-
         # mark container as FAILED
         self.container.state = STATE_FAILED
 
@@ -240,10 +224,8 @@ class BaseModelHelper(object):
             self.logger.warn("unable to connect to docker API "
                              "due to SSL connection errors")
 
-        # self.salt.unregister_minion(self.container.id)
-
-        # updating prometheus
-        self.prometheus.update()
+        # # updating prometheus
+        # self.prometheus.update()
 
         elapsed = time.time() - start
         self.logger.info("{} teardown is finished ({} seconds)".format(

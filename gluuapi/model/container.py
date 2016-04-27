@@ -3,6 +3,8 @@
 #
 # All rights reserved.
 
+import uuid
+
 from .base import BaseModel
 
 
@@ -238,15 +240,19 @@ class NginxContainer(BaseModel):
         "cluster_id",
         "node_id",
         "ip",
+        "cid",
         "weave_ip",
         "name",
         "type",
         "state",
-        "domain_name",
+        # "domain_name",
+        "hostname",
     ])
 
     def __init__(self):
-        self.id = ""
+        # self.id = ""
+        self.id = str(uuid.uuid4())
+        self.cid = ""
         self.name = ""
         self.ip = ""
         self.weave_ip = ""
@@ -257,10 +263,9 @@ class NginxContainer(BaseModel):
         self.image = "gluunginx"
         self.state = ""
         self.setup_logpath = ""
-        self.domain_name = ""
-
-        self.domain_name = ""
+        # self.domain_name = ""
         self.cert_folder = "/etc/certs"
+        self.hostname = ""
 
     @property
     def recovery_priority(self):

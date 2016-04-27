@@ -37,18 +37,26 @@ class Docker(object):
         return True if images else False
 
     def setup_container(self, name, image, env=None, port_bindings=None,
-                        volumes=None, dns=None, dns_search=None, ulimits=None):
+                        volumes=None, dns=None, dns_search=None, ulimits=None,
+                        hostname=None):
         self.logger.info("creating container {!r}".format(name))
 
         image = "{}/{}".format(self.registry_base_url, image)
 
-        # pull the image first if not exist
-        if not self.image_exists(image):
-            self.pull_image(image)
+        # # pull the image first if not exist
+        # if not self.image_exists(image):
+        #     self.pull_image(image)
 
         return self.run_container(
-            name, image, env, port_bindings, volumes, dns,
-            dns_search, ulimits,
+            name=name,
+            image=image,
+            env=env,
+            port_bindings=port_bindings,
+            volumes=volumes,
+            dns=dns,
+            dns_search=dns_search,
+            ulimits=ulimits,
+            hostname=hostname,
         )
 
     def get_container_ip(self, container_id):
@@ -85,7 +93,7 @@ class Docker(object):
         """
         self.docker.stop(container_id)
 
-    def pull_image(self, image):
+    def pull_image(self, image):  # pragma: no cover
         resp = self.docker.pull(repository=image, stream=True)
         output = ""
 
@@ -103,7 +111,7 @@ class Docker(object):
 
     def run_container(self, name, image, env=None, port_bindings=None,
                       volumes=None, dns=None, dns_search=None,
-                      ulimits=None):
+                      ulimits=None, hostname=None):
         """Runs a docker container in detached mode.
 
         This is a two-steps operation:
@@ -140,7 +148,9 @@ class Docker(object):
                 dns=dns,
                 dns_search=dns_search,
                 ulimits=ulimits,
+                network_mode="weave",
             ),
+            hostname=hostname,
         )
         container_id = container["Id"]
         self.logger.info("container {!r} has been created".format(name))

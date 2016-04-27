@@ -161,7 +161,7 @@ class NewContainerResource(Resource):
     }
 
     def post(self, container_type):
-        # app = current_app._get_current_object()
+        app = current_app._get_current_object()
 
         if container_type not in CONTAINER_CHOICES:
             abort(404)
@@ -217,12 +217,12 @@ class NewContainerResource(Resource):
                            "to specified node",
             }, 403
 
-        addr, prefixlen = cluster.reserve_ip_addr()
-        if not addr:
-            return {
-                "status": 403,
-                "message": "cluster is running out of weave IP",
-            }, 403
+        # addr, prefixlen = cluster.reserve_ip_addr()
+        # if not addr:
+        #     return {
+        #         "status": 403,
+        #         "message": "cluster is running out of weave IP",
+        #     }, 403
 
         # pre-populate the container object
         container_class = self.container_classes[container_type]
@@ -230,17 +230,13 @@ class NewContainerResource(Resource):
         container.cluster_id = cluster.id
         container.node_id = node.id
         container.name = "{}_{}".format(container.image, uuid.uuid4())
+        container.hostname = "{}.weave.local".format(container_type)
 
         # set the weave IP immediately to prevent race condition
         # when containers are requested concurrently
-        container.weave_ip = addr
-        container.weave_prefixlen = prefixlen
+        # container.weave_ip = addr
+        # container.weave_prefixlen = prefixlen
         container.state = STATE_IN_PROGRESS
-
-        # TODO: remove these fake state when we have proper container
-        #       deployment
-        from ..model import STATE_SUCCESS
-        container.state = STATE_SUCCESS
 
         db.persist(container, "containers")
 
@@ -254,12 +250,12 @@ class NewContainerResource(Resource):
         )
         db.update(container_log.id, container_log, "container_logs")
 
-        # logpath = os.path.join(app.config["LOG_DIR"], container_log.setup_log)
+        logpath = os.path.join(app.config["LOG_DIR"], container_log.setup_log)
 
-        # # run the setup process
-        # helper_class = self.helper_classes[params["container_type"]]
-        # helper = helper_class(container, app, logpath)
-        # helper.setup()
+        # run the setup process
+        helper_class = self.helper_classes[container_type]
+        helper = helper_class(container, app, logpath)
+        helper.setup()
 
         headers = {
             "X-Container-Setup-Log": container_log.setup_log_url,

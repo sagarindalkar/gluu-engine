@@ -43,9 +43,9 @@ class Docker(object):
 
         image = "{}/{}".format(self.registry_base_url, image)
 
-        # # pull the image first if not exist
-        # if not self.image_exists(image):
-        #     self.pull_image(image)
+        # pull the image first if not exist
+        if not self.image_exists(image):
+            self.pull_image(image)
 
         return self.run_container(
             name=name,
@@ -93,7 +93,7 @@ class Docker(object):
         """
         self.docker.stop(container_id)
 
-    def pull_image(self, image):  # pragma: no cover
+    def pull_image(self, image):
         resp = self.docker.pull(repository=image, stream=True)
         output = ""
 

@@ -10,12 +10,12 @@ from crochet import run_in_reactor
 from twisted.internet.task import LoopingCall
 
 from ..database import db
-from ..helper import WeaveHelper
 from ..helper import distribute_cluster_data
 from ..model import STATE_DISABLED
 from ..model import STATE_SUCCESS
 from ..utils import retrieve_signed_license
 from ..utils import decode_signed_license
+from ..weave import Weave
 
 # Default interval when running periodic task (set to 1 day)
 _DEFAULT_INTERVAL = 60 * 60 * 24
@@ -116,7 +116,7 @@ class LicenseExpirationTask(object):
         :param node: Node object.
         :param type_: Type of the container.
         """
-        weave = WeaveHelper(node, self.app, self.logger)
+        weave = Weave(node, self.app, self.logger)
 
         containers = node.get_containers(type_=type_)
         for container in containers:
@@ -136,7 +136,7 @@ class LicenseExpirationTask(object):
         :param node: Node object.
         :param type_: Type of the container.
         """
-        weave = WeaveHelper(node, self.app, self.logger)
+        weave = Weave(node, self.app, self.logger)
 
         containers = node.get_containers(type_=type_, state=STATE_DISABLED)
         for container in containers:

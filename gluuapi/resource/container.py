@@ -72,7 +72,7 @@ class ContainerResource(Resource):
         return container.as_dict()
 
     def delete(self, container_id):
-        # app = current_app._get_current_object()
+        app = current_app._get_current_object()
 
         truthy = ("1", "True", "true", "t",)
         falsy = ("0", "false", "False", "f",)
@@ -113,12 +113,12 @@ class ContainerResource(Resource):
         )
         db.update(container_log.id, container_log, "container_logs")
 
-        # logpath = os.path.join(app.config["LOG_DIR"], container_log.teardown_log)
+        logpath = os.path.join(app.config["LOG_DIR"], container_log.teardown_log)
 
-        # # run the teardown process
-        # helper_class = self.helper_classes[container.type]
-        # helper = helper_class(container, app, logpath)
-        # helper.teardown()
+        # run the teardown process
+        helper_class = self.helper_classes[container.type]
+        helper = helper_class(container, app, logpath)
+        helper.teardown()
 
         headers = {
             "X-Container-Teardown-Log": container_log.teardown_log_url,

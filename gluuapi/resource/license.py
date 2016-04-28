@@ -13,9 +13,9 @@ from ..model import LicenseKey
 from ..reqparser import LicenseKeyReq
 from ..model import STATE_DISABLED
 from ..model import STATE_SUCCESS
-from ..helper import WeaveHelper
 from ..helper import distribute_cluster_data
 from ..utils import decode_signed_license
+from ..weave import Weave
 
 def format_license_key_resp(obj):
     resp = obj.as_dict()
@@ -97,7 +97,7 @@ class LicenseKeyResource(Resource):
         # key is not expired, try to re-enable the containers
         if not license_key.expired:
             for worker_node in license_key.get_workers():
-                weave = WeaveHelper(
+                weave = Weave(
                     worker_node, current_app._get_current_object(),
                 )
                 for type_ in ["oxauth", "oxidp"]:

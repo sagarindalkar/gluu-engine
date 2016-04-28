@@ -23,12 +23,12 @@ class LdapContainer(BaseModel):
         "name",
         "weave_ip",
         "state",
-        "domain_name",
+        "hostname",
     ])
 
     def __init__(self):
         # Node unique identifier
-        self.id = ''
+        self.id = str(uuid.uuid4())
         self.cluster_id = ""
         self.node_id = ""
         self.name = ''
@@ -40,7 +40,7 @@ class LdapContainer(BaseModel):
         self.image = "gluuopendj"
         self.state = ""
         self.setup_logpath = ""
-        self.domain_name = ""
+        self.hostname = ""
 
         # Filesystem path to Java truststore
         self.truststore_fn = '/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/security/cacerts'
@@ -114,7 +114,7 @@ class OxauthContainer(BaseModel):
         "node_id",
         "weave_ip",
         "state",
-        "domain_name",
+        "hostname",
     ])
 
     def __init__(self):
@@ -129,7 +129,7 @@ class OxauthContainer(BaseModel):
         self.image = "gluuoxauth"
         self.state = ""
         self.setup_logpath = ""
-        self.domain_name = ""
+        self.hostname = ""
 
         self.truststore_fn = '/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/security/cacerts'
         self.ldap_binddn = 'cn=directory manager'
@@ -158,7 +158,7 @@ class OxtrustContainer(BaseModel):
         "node_id",
         "weave_ip",
         "state",
-        "domain_name",
+        "hostname",
     ])
 
     def __init__(self):
@@ -174,7 +174,7 @@ class OxtrustContainer(BaseModel):
         self.image = "gluuoxtrust"
         self.state = ""
         self.setup_logpath = ""
-        self.domain_name = ""
+        self.hostname = ""
 
         self.ldap_binddn = 'cn=directory manager'
         self.cert_folder = "/etc/certs"
@@ -202,7 +202,7 @@ class OxidpContainer(BaseModel):
         "weave_ip",
         "state",
         "saml_type",
-        "domain_name",
+        "hostname",
     ])
 
     def __init__(self):
@@ -217,7 +217,7 @@ class OxidpContainer(BaseModel):
         self.image = "gluuoxidp"
         self.state = ""
         self.setup_logpath = ""
-        self.domain_name = ""
+        self.hostname = ""
 
         self.cert_folder = "/etc/certs"
         self.tomcat_home = "/opt/tomcat"
@@ -282,7 +282,7 @@ class OxasimbaContainer(BaseModel):
         "weave_ip",
         "state",
         "saml_type",
-        "domain_name",
+        "hostname",
     ])
 
     def __init__(self):
@@ -296,7 +296,7 @@ class OxasimbaContainer(BaseModel):
         self.image = "gluuoxasimba"
         self.state = ""
         self.setup_logpath = ""
-        self.domain_name = ""
+        self.hostname = ""
 
         self.cert_folder = "/etc/certs"
         self.tomcat_home = "/opt/tomcat"

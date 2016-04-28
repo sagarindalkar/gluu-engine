@@ -18,7 +18,7 @@ from .node_helper import distribute_cluster_data
 from ..database import db
 from ..model import STATE_SUCCESS
 from ..model import STATE_FAILED
-# from ..model import STATE_DISABLED
+from ..model import STATE_DISABLED
 from ..model import STATE_SETUP_FINISHED
 from ..model import STATE_TEARDOWN_FINISHED
 from ..setup import LdapSetup
@@ -51,7 +51,6 @@ class BaseContainerHelper(object):
     def __init__(self, container, app, logpath=None):
         self.container = container
         self.cluster = db.get(self.container.cluster_id, "clusters")
-        # self.provider = db.get(self.container.provider_id, "providers")
         self.node = db.get(self.container.node_id, "nodes")
 
         if logpath:
@@ -210,14 +209,14 @@ class BaseContainerHelper(object):
         start = time.time()
 
         # only do teardown on container with SUCCESS and DISABLED status
-        # # to avoid unnecessary ops (e.g. propagating nginx changes,
-        # # removing LDAP replication, etc.) on non-deployed containers
-        # if self.container.state in (STATE_SUCCESS, STATE_DISABLED,):
-        #     setup_obj = self.setup_class(
-        #         self.container, self.cluster, self.app, logger=self.logger,
-        #     )
-        #     setup_obj.teardown()
-        #     setup_obj.remove_build_dir()
+        # to avoid unnecessary ops (e.g. propagating nginx changes,
+        # removing LDAP replication, etc.) on non-deployed containers
+        if self.container.state in (STATE_SUCCESS, STATE_DISABLED,):
+            setup_obj = self.setup_class(
+                self.container, self.cluster, self.app, logger=self.logger,
+            )
+            setup_obj.teardown()
+            setup_obj.remove_build_dir()
 
         try:
             self.docker.remove_container(self.container.name)

@@ -3,13 +3,12 @@
 #
 # All rights reserved.
 
-from .model_helper import LdapModelHelper  # noqa
-from .model_helper import OxauthModelHelper  # noqa
-from .model_helper import OxtrustModelHelper  # noqa
-from .model_helper import OxidpModelHelper  # noqa
-from .model_helper import NginxModelHelper  # noqa
-from .model_helper import OxasimbaModelHelper  # noqa
+from .container_helper import LdapContainerHelper  # noqa
+from .container_helper import OxauthContainerHelper  # noqa
+from .container_helper import OxtrustContainerHelper  # noqa
+from .container_helper import OxidpContainerHelper  # noqa
+from .container_helper import NginxContainerHelper  # noqa
+from .container_helper import OxasimbaContainerHelper  # noqa
 
 from .prometheus_helper import PrometheusHelper  # noqa
-from .provider_helper import distribute_cluster_data  # noqa
-from .provider_helper import ProviderHelper  # noqa
+from .node_helper import distribute_cluster_data  # noqa

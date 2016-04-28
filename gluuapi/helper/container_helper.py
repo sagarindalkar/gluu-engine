@@ -13,7 +13,7 @@ from requests.exceptions import SSLError
 from requests.exceptions import ConnectionError
 from crochet import run_in_reactor
 
-from .provider_helper import distribute_cluster_data
+from .node_helper import distribute_cluster_data
 # from .prometheus_helper import PrometheusHelper
 from ..database import db
 from ..model import STATE_SUCCESS
@@ -34,7 +34,7 @@ from ..dockerclient import Docker
 from ..weave import Weave
 
 
-class BaseModelHelper(object):
+class BaseContainerHelper(object):
     __metaclass__ = abc.ABCMeta
 
     port_bindings = {}
@@ -249,7 +249,7 @@ class BaseModelHelper(object):
         distribute_cluster_data(self.app.config["DATABASE_URI"])
 
 
-class LdapModelHelper(BaseModelHelper):
+class LdapContainerHelper(BaseContainerHelper):
     setup_class = LdapSetup
     ulimits = [
         {"name": "nofile", "soft": 65536, "hard": 131072},
@@ -262,10 +262,10 @@ class LdapModelHelper(BaseModelHelper):
                 "bind": "/opt/opendj/db",
             },
         }
-        super(LdapModelHelper, self).__init__(container, app, logpath)
+        super(LdapContainerHelper, self).__init__(container, app, logpath)
 
 
-class OxauthModelHelper(BaseModelHelper):
+class OxauthContainerHelper(BaseContainerHelper):
     setup_class = OxauthSetup
 
     def __init__(self, container, app, logpath=None):
@@ -280,10 +280,10 @@ class OxauthModelHelper(BaseModelHelper):
                 'bind': '/var/gluu/webapps/oxauth/libs',
             },
         }
-        super(OxauthModelHelper, self).__init__(container, app, logpath)
+        super(OxauthContainerHelper, self).__init__(container, app, logpath)
 
 
-class OxtrustModelHelper(BaseModelHelper):
+class OxtrustContainerHelper(BaseContainerHelper):
     setup_class = OxtrustSetup
     port_bindings = {8443: ("127.0.0.1", 8443)}
 
@@ -302,17 +302,17 @@ class OxtrustModelHelper(BaseModelHelper):
                 'bind': '/var/gluu/webapps/oxtrust/libs',
             },
         }
-        super(OxtrustModelHelper, self).__init__(container, app, logpath)
+        super(OxtrustContainerHelper, self).__init__(container, app, logpath)
 
 
-class OxidpModelHelper(BaseModelHelper):
+class OxidpContainerHelper(BaseContainerHelper):
     setup_class = OxidpSetup
 
 
-class NginxModelHelper(BaseModelHelper):
+class NginxContainerHelper(BaseContainerHelper):
     setup_class = NginxSetup
     # port_bindings = {80: ("0.0.0.0", 80), 443: ("0.0.0.0", 443)}
 
 
-class OxasimbaModelHelper(BaseModelHelper):
+class OxasimbaContainerHelper(BaseContainerHelper):
     setup_class = OxasimbaSetup

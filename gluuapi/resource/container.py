@@ -17,12 +17,12 @@ from ..reqparser import ContainerReq
 from ..model import STATE_IN_PROGRESS
 from ..model import STATE_SETUP_IN_PROGRESS
 from ..model import STATE_TEARDOWN_IN_PROGRESS
-from ..helper import LdapModelHelper
-from ..helper import OxauthModelHelper
-from ..helper import OxtrustModelHelper
-from ..helper import OxidpModelHelper
-from ..helper import NginxModelHelper
-from ..helper import OxasimbaModelHelper
+from ..helper import LdapContainerHelper
+from ..helper import OxauthContainerHelper
+from ..helper import OxtrustContainerHelper
+from ..helper import OxidpContainerHelper
+from ..helper import NginxContainerHelper
+from ..helper import OxasimbaContainerHelper
 from ..model import LdapContainer
 from ..model import OxauthContainer
 from ..model import OxtrustContainer
@@ -56,12 +56,12 @@ def get_container(db, container_id):
 
 class ContainerResource(Resource):
     helper_classes = {
-        "ldap": LdapModelHelper,
-        "oxauth": OxauthModelHelper,
-        "oxtrust": OxtrustModelHelper,
-        "oxidp": OxidpModelHelper,
-        "nginx": NginxModelHelper,
-        "oxasimba": OxasimbaModelHelper,
+        "ldap": LdapContainerHelper,
+        "oxauth": OxauthContainerHelper,
+        "oxtrust": OxtrustContainerHelper,
+        "oxidp": OxidpContainerHelper,
+        "nginx": NginxContainerHelper,
+        "oxasimba": OxasimbaContainerHelper,
     }
 
     def get(self, container_id):
@@ -143,12 +143,12 @@ class ContainerListResource(Resource):
 
 class NewContainerResource(Resource):
     helper_classes = {
-        "ldap": LdapModelHelper,
-        "oxauth": OxauthModelHelper,
-        "oxtrust": OxtrustModelHelper,
-        "oxidp": OxidpModelHelper,
-        "nginx": NginxModelHelper,
-        "oxasimba": OxasimbaModelHelper,
+        "ldap": LdapContainerHelper,
+        "oxauth": OxauthContainerHelper,
+        "oxtrust": OxtrustContainerHelper,
+        "oxidp": OxidpContainerHelper,
+        "nginx": NginxContainerHelper,
+        "oxasimba": OxasimbaContainerHelper,
     }
 
     container_classes = {

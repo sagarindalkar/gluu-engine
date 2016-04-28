@@ -15,11 +15,10 @@ from crochet import run_in_reactor
 
 from .provider_helper import distribute_cluster_data
 # from .prometheus_helper import PrometheusHelper
-from .weave_helper import WeaveHelper
 from ..database import db
 from ..model import STATE_SUCCESS
 from ..model import STATE_FAILED
-from ..model import STATE_DISABLED
+# from ..model import STATE_DISABLED
 from ..model import STATE_SETUP_FINISHED
 from ..model import STATE_TEARDOWN_FINISHED
 from ..setup import LdapSetup
@@ -32,6 +31,7 @@ from ..log import create_file_logger
 from ..utils import exc_traceback
 from ..machine import Machine
 from ..dockerclient import Docker
+from ..weave import Weave
 
 
 class BaseModelHelper(object):
@@ -66,7 +66,7 @@ class BaseModelHelper(object):
         master_node = db.search_from_table("nodes", db.where("type") == "master")[0]  # noqa
         self.docker = Docker(mc.swarm_config(master_node.name), logger=self.logger)
 
-        self.weave = WeaveHelper(self.node, self.app, logger=self.logger)
+        self.weave = Weave(self.node, self.app, logger=self.logger)
         # self.prometheus = PrometheusHelper(self.app, logger=self.logger)
 
     @run_in_reactor
@@ -130,9 +130,13 @@ class BaseModelHelper(object):
             # if self.container.type == "ldap":
             #     self.weave.dns_add(self.container.id, "ldap.gluu.local")
 
-            # if self.container.type == "nginx":
-            #     # self.weave.dns_add(self.container.id, self.cluster.ox_cluster_hostname)
-            #     self.weave.dns_add(self.container.cid, self.cluster.ox_cluster_hostname)
+            #     # useful for replication, so each ldap container recognized
+            #     # by its unique hostname
+            #     self.weave.dns_add(self.container.cid,
+            #                        "{}.ldap.gluu.local".format(self.container.cid))
+
+            if self.container.type == "nginx":
+                self.weave.dns_add(self.container.cid, self.cluster.ox_cluster_hostname)
 
             # setup_obj = self.setup_class(self.container, self.cluster,
             #                              self.app, logger=self.logger)
@@ -209,14 +213,14 @@ class BaseModelHelper(object):
         start = time.time()
 
         # only do teardown on container with SUCCESS and DISABLED status
-        # to avoid unnecessary ops (e.g. propagating nginx changes,
-        # removing LDAP replication, etc.) on non-deployed containers
-        if self.container.state in (STATE_SUCCESS, STATE_DISABLED,):
-            setup_obj = self.setup_class(
-                self.container, self.cluster, self.app, logger=self.logger,
-            )
-            setup_obj.teardown()
-            setup_obj.remove_build_dir()
+        # # to avoid unnecessary ops (e.g. propagating nginx changes,
+        # # removing LDAP replication, etc.) on non-deployed containers
+        # if self.container.state in (STATE_SUCCESS, STATE_DISABLED,):
+        #     setup_obj = self.setup_class(
+        #         self.container, self.cluster, self.app, logger=self.logger,
+        #     )
+        #     setup_obj.teardown()
+        #     setup_obj.remove_build_dir()
 
         try:
             self.docker.remove_container(self.container.name)
@@ -307,7 +311,7 @@ class OxidpModelHelper(BaseModelHelper):
 
 class NginxModelHelper(BaseModelHelper):
     setup_class = NginxSetup
-    port_bindings = {80: ("0.0.0.0", 80), 443: ("0.0.0.0", 443)}
+    # port_bindings = {80: ("0.0.0.0", 80), 443: ("0.0.0.0", 443)}
 
 
 class OxasimbaModelHelper(BaseModelHelper):

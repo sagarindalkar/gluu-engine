@@ -9,7 +9,7 @@ from docker import Client
 from jinja2 import Environment
 from jinja2 import PackageLoader
 
-from .weave_helper import WeaveHelper
+from ..weave import Weave
 from ..database import db
 
 
@@ -37,7 +37,7 @@ class PrometheusHelper(object):
         self.logger = logger or logging.getLogger(
             __name__ + "." + self.__class__.__name__,
         )
-        self.weave = WeaveHelper(self.provider, self.app, logger=self.logger)
+        self.weave = Weave(self.provider, self.app, logger=self.logger)
 
     def __render(self):
         """Copies rendered jinja template.

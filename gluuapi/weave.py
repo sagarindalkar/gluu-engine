@@ -4,12 +4,15 @@
 # All rights reserved.
 
 import logging
+import re
 import time
 
 from crochet import run_in_reactor
 
 from .database import db
 from .machine import Machine
+
+DNS_ARGS_RE = re.compile(r"--dns (.+) --dns-search=(.+)")
 
 
 class Weave(object):
@@ -126,5 +129,18 @@ class Weave(object):
     def docker_bridge_ip(self):
         """Gets IP of docker bridge (docker0) interface.
         """
-        stdout, _, _ = self.machine.ssh(self.node.name, "sudo weave docker-bridge-ip")
-        return stdout.strip()
+        return self.machine.ssh(self.node.name, "sudo weave docker-bridge-ip")
+
+    def dns_args(self):
+        """Gets DNS arguments.
+
+        :returns: A tuple consists of docker bridge IP and DNS search
+        """
+        bridge_ip = None
+        dns_search = None
+        output = self.machine.ssh(self.node.name, "sudo weave dns-args")
+
+        rgx = DNS_ARGS_RE.match(output)
+        if rgx:
+            bridge_ip, dns_search = rgx.groups()
+        return bridge_ip, dns_search

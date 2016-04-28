@@ -23,10 +23,13 @@ from ..dockerclient import Docker
 class BaseSetup(object):
     __metaclass__ = abc.ABCMeta
 
+    supervisor_reload_delay = 10
+
     def __init__(self, container, cluster, app, logger=None):
         self.logger = logger or create_file_logger()
         self.build_dir = tempfile.mkdtemp()
         self.container = container
+        self.node = db.get(self.container.node_id, "nodes")
         self.cluster = cluster
         self.jinja_env = Environment(
             loader=PackageLoader("gluuapi", "templates")
@@ -77,7 +80,7 @@ class BaseSetup(object):
             fp.write(rendered_content)
 
         self.logger.info("rendering {}".format(file_basename))
-        self.docker.copy_to_container(self.container.id, local, dest)
+        self.docker.copy_to_container(self.container.cid, local, dest)
 
     def gen_cert(self, suffix, password, user, group, hostname):
         """Generates certificates.
@@ -101,7 +104,7 @@ class BaseSetup(object):
             "-passout", "pass:'{}'".format(password), "2048",
         ])
         keypass_cmd = '''sh -c "{}"'''.format(keypass_cmd)
-        self.docker.exec_cmd(self.container.id, keypass_cmd)
+        self.docker.exec_cmd(self.container.cid, keypass_cmd)
 
         # command to create key file
         key_cmd = " ".join([
@@ -111,7 +114,7 @@ class BaseSetup(object):
             "-out", key,
         ])
         key_cmd = '''sh -c "{}"'''.format(key_cmd)
-        self.docker.exec_cmd(self.container.id, key_cmd)
+        self.docker.exec_cmd(self.container.cid, key_cmd)
 
         # command to create csr file
         csr_cmd = " ".join([
@@ -128,7 +131,7 @@ class BaseSetup(object):
             )
         ])
         csr_cmd = '''sh -c "{}"'''.format(csr_cmd)
-        self.docker.exec_cmd(self.container.id, csr_cmd)
+        self.docker.exec_cmd(self.container.cid, csr_cmd)
 
         # command to create crt file
         crt_cmd = " ".join([
@@ -139,23 +142,23 @@ class BaseSetup(object):
             "-out", crt,
         ])
         crt_cmd = '''sh -c "{}"'''.format(crt_cmd)
-        self.docker.exec_cmd(self.container.id, crt_cmd)
+        self.docker.exec_cmd(self.container.cid, crt_cmd)
 
         self.logger.info("changing access to {} certificates".format(suffix))
         self.docker.exec_cmd(
-            self.container.id,
+            self.container.cid,
             "chown {}:{} {}".format(user, group, key_with_password),
         )
         self.docker.exec_cmd(
-            self.container.id,
+            self.container.cid,
             "chmod 700 {}".format(key_with_password),
         )
         self.docker.exec_cmd(
-            self.container.id,
+            self.container.cid,
             "chown {}:{} {}".format(user, group, key),
         )
         self.docker.exec_cmd(
-            self.container.id,
+            self.container.cid,
             "chmod 700 {}".format(key),
         )
 
@@ -167,11 +170,11 @@ class BaseSetup(object):
         """
         self.logger.info("changing access to {}".format(self.container.cert_folder))
         self.docker.exec_cmd(
-            self.container.id,
+            self.container.cid,
             "chown -R {}:{} {}".format(user, group, self.container.cert_folder),
         )
         self.docker.exec_cmd(
-            self.container.id,
+            self.container.cid,
             "chmod -R 500 {}".format(self.container.cert_folder),
         )
 
@@ -219,15 +222,17 @@ class BaseSetup(object):
             fp.write(rendered_content)
 
         self.logger.info("rendering {}".format(file_basename))
-        self.docker.copy_to_container(self.container.id, local, dest)
+        self.docker.copy_to_container(self.container.cid, local, dest)
 
     def reload_supervisor(self):
         """Reloads supervisor.
         """
-        self.logger.info("reloading supervisord; "
-                         "this may take 30 seconds or more")
-        self.docker.exec_cmd(self.container.id, "supervisorctl reload")
-        time.sleep(30)
+        self.logger.info(
+            "reloading supervisord; this may take "
+            "{} seconds or more".format(self.supervisor_reload_delay)
+        )
+        self.docker.exec_cmd(self.container.cid, "supervisorctl reload")
+        time.sleep(self.supervisor_reload_delay)
 
 
 class OxSetup(BaseSetup):
@@ -241,7 +246,7 @@ class OxSetup(BaseSetup):
             fp.write("encodeSalt = {}".format(self.cluster.passkey))
 
         remote_dest = os.path.join(self.container.tomcat_conf_dir, "salt")
-        self.docker.copy_to_container(self.container.id, local_dest, remote_dest)
+        self.docker.copy_to_container(self.container.cid, local_dest, remote_dest)
 
     def gen_keystore(self, suffix, keystore_fn, keystore_pw, in_key,
                      in_cert, user, group, hostname):
@@ -268,7 +273,7 @@ class OxSetup(BaseSetup):
             '-name', hostname,
             '-passout', 'pass:%s' % keystore_pw,
         ])
-        self.docker.exec_cmd(self.container.id, export_cmd)
+        self.docker.exec_cmd(self.container.cid, export_cmd)
 
         # Import p12 to keystore
         import_cmd = " ".join([
@@ -282,17 +287,17 @@ class OxSetup(BaseSetup):
             '-keyalg', 'RSA',
             '-noprompt',
         ])
-        self.docker.exec_cmd(self.container.id, import_cmd)
+        self.docker.exec_cmd(self.container.cid, import_cmd)
 
         self.logger.info("changing access to keystore file")
         self.docker.exec_cmd(
-            self.container.id, "chown {}:{} {}".format(user, group, pkcs_fn)
+            self.container.cid, "chown {}:{} {}".format(user, group, pkcs_fn)
         )
-        self.docker.exec_cmd(self.container.id, "chmod 700 {}".format(pkcs_fn))
+        self.docker.exec_cmd(self.container.cid, "chmod 700 {}".format(pkcs_fn))
         self.docker.exec_cmd(
-            self.container.id, "chown {}:{} {}".format(user, group, keystore_fn)
+            self.container.cid, "chown {}:{} {}".format(user, group, keystore_fn)
         )
-        self.docker.exec_cmd(self.container.id, "chmod 700 {}".format(keystore_fn))
+        self.docker.exec_cmd(self.container.cid, "chmod 700 {}".format(keystore_fn))
 
     def render_ldap_props_template(self):
         """Copies rendered jinja template for LDAP connection.
@@ -313,13 +318,13 @@ class OxSetup(BaseSetup):
         """Configures Apache2 virtual host.
         """
         a2enmod_cmd = "a2enmod ssl headers proxy proxy_http proxy_ajp"
-        self.docker.exec_cmd(self.container.id, a2enmod_cmd)
+        self.docker.exec_cmd(self.container.cid, a2enmod_cmd)
 
         a2dissite_cmd = "a2dissite 000-default"
-        self.docker.exec_cmd(self.container.id, a2dissite_cmd)
+        self.docker.exec_cmd(self.container.cid, a2dissite_cmd)
 
         a2ensite_cmd = "a2ensite gluu_httpd"
-        self.docker.exec_cmd(self.container.id, a2ensite_cmd)
+        self.docker.exec_cmd(self.container.cid, a2ensite_cmd)
 
     def import_nginx_cert(self):
         """Imports SSL certificate from nginx node.
@@ -329,10 +334,10 @@ class OxSetup(BaseSetup):
         # imports nginx cert into oxtrust cacerts to avoid
         # "peer not authenticated" error
         ssl_cert = os.path.join(self.app.config["SSL_CERT_DIR"], "nginx.crt")
-        self.docker.copy_to_container(self.container.id, ssl_cert, "/etc/certs/nginx.crt")
+        self.docker.copy_to_container(self.container.cid, ssl_cert, "/etc/certs/nginx.crt")
 
         der_cmd = "openssl x509 -outform der -in /etc/certs/nginx.crt -out /etc/certs/nginx.der"
-        self.docker.exec_cmd(self.container.id, der_cmd)
+        self.docker.exec_cmd(self.container.cid, der_cmd)
 
         import_cmd = " ".join([
             "keytool -importcert -trustcacerts",
@@ -344,7 +349,7 @@ class OxSetup(BaseSetup):
         import_cmd = '''sh -c "{}"'''.format(import_cmd)
 
         try:
-            self.docker.exec_cmd(self.container.id, import_cmd)
+            self.docker.exec_cmd(self.container.cid, import_cmd)
         except DockerExecError as exc:
             if exc.exit_code == 1:
                 # certificate already imported

@@ -230,7 +230,6 @@ class NewContainerResource(Resource):
         container.cluster_id = cluster.id
         container.node_id = node.id
         container.name = "{}_{}".format(container.image, uuid.uuid4())
-        container.hostname = "{}.weave.local".format(container_type)
 
         # set the weave IP immediately to prevent race condition
         # when containers are requested concurrently

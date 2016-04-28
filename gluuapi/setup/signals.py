@@ -14,7 +14,7 @@ from .nginx_setup import NginxSetup
 
 def notify_oxtrust(ngx):
     try:
-        oxtrust = ngx.provider.get_node_objects(type_="oxtrust")[0]
+        oxtrust = ngx.node.get_containers(type_="oxtrust")[0]
         setup_obj = OxtrustSetup(oxtrust, ngx.cluster, ngx.app, ngx.logger)
 
         # wait before telling oxtrust to find nginx node

@@ -81,9 +81,8 @@ class BaseContainerHelper(object):
             start = time.time()
 
             # get docker bridge IP as it's where weavedns runs
-            # bridge_ip = self.weave.docker_bridge_ip()
+            bridge_ip, dns_search = self.weave.dns_args()
 
-            # container_id = self.docker.setup_container(
             cid = self.docker.setup_container(
                 name=self.container.name,
                 image=self.container.image,
@@ -92,27 +91,26 @@ class BaseContainerHelper(object):
                 ],
                 port_bindings=self.port_bindings,
                 volumes=self.volumes,
-                # dns=[bridge_ip],
-                # dns_search=["gluu.local"],
+                dns=[bridge_ip],
+                dns_search=[dns_search],
                 ulimits=self.ulimits,
-                hostname=self.container.hostname,
+                # hostname=self.container.hostname,
             )
 
             # container is not running
-            # if not container_id:
             if not cid:
                 self.logger.error("Failed to start the "
                                   "{!r} container".format(self.container.name))
                 self.on_setup_error()
                 return
 
-            # container ID in short format
+            # container.cid in short format
             self.container.cid = cid[:12]
+            # self.container.ip = self.docker.get_container_ip(self.container.cid)
+            self.container.hostname = "{}.{}.{}".format(
+                self.container.cid, self.container.type, dns_search.rstrip("."),
+            )
 
-            # self.container.ip = self.docker.get_container_ip(self.container.id)
-            # self.container.domain_name = "{}.{}.gluu.local".format(
-            #     self.container.id, self.container.type,
-            # )
             db.update_to_table(
                 "containers",
                 db.where("name") == self.container.name,
@@ -122,25 +120,24 @@ class BaseContainerHelper(object):
             # # attach weave IP to container
             # cidr = "{}/{}".format(self.container.weave_ip,
             #                       self.container.weave_prefixlen)
-            # self.weave.attach(cidr, self.container.id)
+            # self.weave.attach(cidr, self.container.cid)
 
-            # # add DNS record
-            # self.weave.dns_add(self.container.id, self.container.domain_name)
+            # add DNS record
+            self.weave.dns_add(self.container.cid, self.container.hostname)
 
-            # if self.container.type == "ldap":
-            #     self.weave.dns_add(self.container.id, "ldap.gluu.local")
-
-            #     # useful for replication, so each ldap container recognized
-            #     # by its unique hostname
-            #     self.weave.dns_add(self.container.cid,
-            #                        "{}.ldap.gluu.local".format(self.container.cid))
+            if self.container.type == "ldap":
+                # useful for failover in ox apps
+                self.weave.dns_add(
+                    self.container.cid,
+                    "{}.{}".format(self.container.type, dns_search.rstrip(".")),
+                )
 
             if self.container.type == "nginx":
                 self.weave.dns_add(self.container.cid, self.cluster.ox_cluster_hostname)
 
-            # setup_obj = self.setup_class(self.container, self.cluster,
-            #                              self.app, logger=self.logger)
-            # setup_obj.setup()
+            setup_obj = self.setup_class(self.container, self.cluster,
+                                         self.app, logger=self.logger)
+            setup_obj.setup()
 
             # mark container as SUCCESS
             self.container.state = STATE_SUCCESS
@@ -151,9 +148,9 @@ class BaseContainerHelper(object):
             )
 
             # after_setup must be called after container has been marked
-            # # as SUCCESS
-            # setup_obj.after_setup()
-            # setup_obj.remove_build_dir()
+            # as SUCCESS
+            setup_obj.after_setup()
+            setup_obj.remove_build_dir()
 
             # # updating prometheus
             # self.prometheus.update()
@@ -311,7 +308,7 @@ class OxidpContainerHelper(BaseContainerHelper):
 
 class NginxContainerHelper(BaseContainerHelper):
     setup_class = NginxSetup
-    # port_bindings = {80: ("0.0.0.0", 80), 443: ("0.0.0.0", 443)}
+    port_bindings = {80: ("0.0.0.0", 80), 443: ("0.0.0.0", 443)}
 
 
 class OxasimbaContainerHelper(BaseContainerHelper):

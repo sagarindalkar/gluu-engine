@@ -245,12 +245,10 @@ class NginxContainer(BaseModel):
         "name",
         "type",
         "state",
-        # "domain_name",
         "hostname",
     ])
 
     def __init__(self):
-        # self.id = ""
         self.id = str(uuid.uuid4())
         self.cid = ""
         self.name = ""
@@ -263,7 +261,6 @@ class NginxContainer(BaseModel):
         self.image = "gluunginx"
         self.state = ""
         self.setup_logpath = ""
-        # self.domain_name = ""
         self.cert_folder = "/etc/certs"
         self.hostname = ""
 

@@ -82,7 +82,7 @@ class LdapSetup(BaseSetup):
         src = self.get_template_path("opendj/opendj-setup.properties")
         dest = os.path.join(self.container.ldap_base_folder, os.path.basename(src))
         ctx = {
-            "ldap_hostname": "ldap.gluu.local",
+            "ldap_hostname": self.ldap_failover_hostname(),
             "ldap_port": self.container.ldap_port,
             "ldaps_port": self.container.ldaps_port,
             "ldap_jmx_port": self.container.ldap_jmx_port,
@@ -188,7 +188,7 @@ class LdapSetup(BaseSetup):
             "encoded_ldap_pw": self.cluster.encoded_ldap_pw,
             "encoded_ox_ldap_pw": self.cluster.encoded_ox_ldap_pw,
             "inum_appliance": self.cluster.inum_appliance,
-            "hostname": "ldap.gluu.local",
+            "hostname": self.ldap_failover_hostname(),
             "ox_cluster_hostname": self.cluster.ox_cluster_hostname,
             "ldaps_port": self.container.ldaps_port,
             "ldap_binddn": self.container.ldap_binddn,
@@ -518,7 +518,7 @@ command=/opt/opendj/bin/start-ds --quiet -N
             "oxauth_client_id": self.cluster.oxauth_client_id,
             "oxauth_client_encoded_pw": self.cluster.oxauth_client_encoded_pw,
             "truststore_fn": self.container.truststore_fn,
-            "ldap_hosts": "ldap.gluu.local:{}".format(self.cluster.ldaps_port),
+            "ldap_hosts": "{}:{}".format(self.ldap_failover_hostname(), self.cluster.ldaps_port),
             "config_generation": "true",
             "scim_rs_client_id": self.cluster.scim_rs_client_id,
             "oxtrust_hostname": "localhost:8443",
@@ -532,7 +532,7 @@ command=/opt/opendj/bin/start-ds --quiet -N
         ctx = {
             "ldap_binddn": self.container.ldap_binddn,
             "encoded_ox_ldap_pw": self.cluster.encoded_ox_ldap_pw,
-            "ldap_hosts": "ldap.gluu.local:{}".format(self.cluster.ldaps_port),
+            "ldap_hosts": "{}:{}".format(self.ldap_failover_hostname(), self.cluster.ldaps_port),
         }
         return self.render_jinja_template(src, ctx)
 

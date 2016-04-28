@@ -12,9 +12,9 @@ from .base import OxSetup
 
 class OxauthSetup(OxSetup):
     def render_server_xml_template(self):
-        """Copies rendered Tomcat's server.xml into the node.
+        """Copies rendered Tomcat's server.xml into the container.
         """
-        src = "nodes/oxauth/server.xml"
+        src = "oxauth/server.xml"
         dest = os.path.join(self.container.tomcat_conf_dir, os.path.basename(src))
         ctx = {
             "shib_jks_pass": self.cluster.decrypted_admin_pw,
@@ -36,10 +36,10 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
 
         self.logger.info("adding supervisord entry")
         cmd = '''sh -c "echo '{}' >> /etc/supervisor/conf.d/supervisord.conf"'''.format(payload)
-        self.docker.exec_cmd(self.container.id, cmd)
+        self.docker.exec_cmd(self.container.cid, cmd)
 
     def setup(self):
-        hostname = self.container.domain_name
+        hostname = self.container.hostname
 
         # render config templates
         self.render_ldap_props_template()
@@ -73,7 +73,7 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
         return True
 
     def teardown(self):
-        """Teardowns the node.
+        """Teardowns the container.
         """
         complete_sgn = signal("ox_teardown_completed")
         complete_sgn.send(self)
@@ -85,14 +85,14 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
         complete_sgn.send(self)
 
     def render_httpd_conf(self):
-        """Copies rendered Apache2's virtual host into the node.
+        """Copies rendered Apache2's virtual host into the container.
         """
-        src = "nodes/oxauth/gluu_httpd.conf"
+        src = "oxauth/gluu_httpd.conf"
         file_basename = os.path.basename(src)
         dest = os.path.join("/etc/apache2/sites-available", file_basename)
 
         ctx = {
-            "hostname": self.container.domain_name,
+            "hostname": self.container.hostname,
             "httpd_cert_fn": "/etc/certs/httpd.crt",
             "httpd_key_fn": "/etc/certs/httpd.key",
         }
@@ -101,7 +101,7 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
     def render_oxauth_context(self):
         """Renders oxAuth context file for Tomcat.
         """
-        src = "nodes/oxauth/oxauth.xml"
+        src = "oxauth/oxauth.xml"
         dest = "/opt/tomcat/conf/Catalina/localhost/oxauth.xml"
         ctx = {
             "oxauth_jsf_salt": os.urandom(16).encode("hex"),
@@ -117,4 +117,4 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
                 self.logger.info("copying {} to {}:{}".format(
                     src, self.container.name, dest,
                 ))
-                self.docker.copy_to_container(self.container.id, src, dest)
+                self.docker.copy_to_container(self.container.cid, src, dest)

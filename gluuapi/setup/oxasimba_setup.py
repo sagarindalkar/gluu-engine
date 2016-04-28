@@ -146,9 +146,9 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
             self.docker.copy_to_container(self.container.cid, src, dest)
 
     def discover_nginx(self):
-        """Discovers nginx node.
+        """Discovers nginx container.
         """
-        self.logger.info("discovering available nginx node")
+        self.logger.info("discovering available nginx container")
         if self.cluster.count_containers(type_="nginx"):
             self.import_nginx_cert()
 
@@ -161,7 +161,7 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
         complete_sgn.send(self)
 
     def teardown(self):
-        """Teardowns the node.
+        """Teardowns the container.
         """
         complete_sgn = signal("ox_teardown_completed")
         complete_sgn.send(self)

@@ -18,6 +18,7 @@ from ..log import create_file_logger
 from ..errors import DockerExecError
 from ..machine import Machine
 from ..dockerclient import Docker
+from ..weave import Weave
 
 
 class BaseSetup(object):
@@ -188,7 +189,7 @@ class BaseSetup(object):
         return template_path
 
     def teardown(self):
-        """Teardown the node.
+        """Teardown the container.
         """
 
     def after_teardown(self):
@@ -233,6 +234,13 @@ class BaseSetup(object):
         )
         self.docker.exec_cmd(self.container.cid, "supervisorctl reload")
         time.sleep(self.supervisor_reload_delay)
+
+    def ldap_failover_hostname(self):
+        # get hostname for ldap failover
+        weave = Weave(self.node, self.app, logger=self.logger)
+        _, dns_search = weave.dns_args()
+        hostname = "ldap.{}".format(dns_search.rstrip("."))
+        return hostname
 
 
 class OxSetup(BaseSetup):
@@ -302,13 +310,14 @@ class OxSetup(BaseSetup):
     def render_ldap_props_template(self):
         """Copies rendered jinja template for LDAP connection.
         """
-        src = "nodes/_shared/ox-ldap.properties"
+
+        src = "_shared/ox-ldap.properties"
         dest = os.path.join(self.container.tomcat_conf_dir, os.path.basename(src))
 
         ctx = {
             "ldap_binddn": self.container.ldap_binddn,
             "encoded_ox_ldap_pw": self.cluster.encoded_ox_ldap_pw,
-            "ldap_hosts": "ldap.gluu.local:{}".format(self.cluster.ldaps_port),
+            "ldap_hosts": "{}:{}".format(self.ldap_failover_hostname(), self.cluster.ldaps_port),
             "inum_appliance": self.cluster.inum_appliance,
             "cert_folder": self.container.cert_folder,
         }
@@ -327,7 +336,7 @@ class OxSetup(BaseSetup):
         self.docker.exec_cmd(self.container.cid, a2ensite_cmd)
 
     def import_nginx_cert(self):
-        """Imports SSL certificate from nginx node.
+        """Imports SSL certificate from nginx container.
         """
         self.logger.info("importing nginx cert to {}".format(self.container.name))
 

@@ -27,7 +27,7 @@ class Config(object):
     CUSTOM_LDAP_SCHEMA_DIR = os.path.join(
         DATA_DIR, "custom", "opendj", "schema",
     )
-    #SSL_CERT_DIR = os.path.join(DATA_DIR, "ssl_certs")
+    SSL_CERT_DIR = os.path.join(DATA_DIR, "ssl_certs")
 
     # container override directories
     OXAUTH_OVERRIDE_DIR = os.path.join(DATA_DIR, "override", "oxauth")

@@ -39,10 +39,18 @@ class BaseSetup(object):
         self.template_dir = self.app.config["TEMPLATES_DIR"]
         self.machine = Machine()
 
-        ctl_node = db.search_from_table(
-            "nodes", db.where("type") == "master",
-        )[0]
-        self.docker = Docker(self.machine.swarm_config(ctl_node.name))
+        try:
+            master_node = db.search_from_table(
+                "nodes", db.where("type") == "master",
+            )[0]
+        except IndexError:
+            master_node = self.node
+
+        self.docker = Docker(
+            self.machine.config(self.node.name),
+            self.machine.swarm_config(master_node.name),
+            logger=self.logger,
+        )
 
     @abc.abstractmethod
     def setup(self):

@@ -5,6 +5,7 @@
 
 import json
 from collections import namedtuple
+from contextlib import contextmanager
 
 import docker.errors
 from docker import Client
@@ -20,12 +21,12 @@ DockerExecResult = namedtuple("DockerExecResult",
 
 
 class Docker(object):
-    def __init__(self, config, logger=None):
+    def __init__(self, config, swarm_config, logger=None):
+        self.config = config
+        self.swarm_config = swarm_config
+
         self.logger = logger or create_file_logger()
-        self.machine_conf = config
         self.registry_base_url = REGISTRY_BASE_URL
-        self.docker = Client(base_url=self.machine_conf['base_url'],
-                             tls=self.machine_conf['tls'])
 
     def image_exists(self, name):
         """Checks whether a docker image exists.
@@ -33,8 +34,9 @@ class Docker(object):
         :param name: Image name
         :returns: ``True`` if image exists, otherwise ``False``
         """
-        images = self.docker.images(name)
-        return True if images else False
+        with self._get_client(use_swarm=False) as client:
+            images = client.images(name, quiet=True)
+            return True if images else False
 
     def setup_container(self, name, image, env=None, port_bindings=None,
                         volumes=None, dns=None, dns_search=None, ulimits=None,
@@ -65,49 +67,54 @@ class Docker(object):
         :param container_id: ID or name of the container.
         :returns: Container's IP address.
         """
-        info = self.docker.inspect_container(container_id)
-        return info["NetworkSettings"]["IPAddress"]
+        with self._get_client() as client:
+            info = client.inspect_container(container_id)
+            return info["NetworkSettings"]["IPAddress"]
 
     def remove_container(self, container_id):
         """Removes container.
 
         :param container_id: ID or name of the container.
         """
-        try:
-            return self.docker.remove_container(container_id, force=True)
-        except docker.errors.APIError as exc:
-            err_code = exc.response.status_code
-            if err_code == 404:
-                self.logger.warn(
-                    "container {!r} does not exist".format(container_id))
+        with self._get_client() as client:
+            try:
+                return client.remove_container(container_id, force=True)
+            except docker.errors.APIError as exc:
+                err_code = exc.response.status_code
+                if err_code == 404:
+                    self.logger.warn(
+                        "container {!r} does not exist".format(container_id))
 
     def inspect_container(self, container_id):
         """Inspects given container.
 
         :param container_id: ID or name of the container.
         """
-        return self.docker.inspect_container(container_id)
+        with self._get_client() as client:
+            return client.inspect_container(container_id)
 
     def stop_container(self, container_id):  # pragma: no cover
         """Stops given container.
         """
-        self.docker.stop(container_id)
+        with self._get_client() as client:
+            client.stop(container_id)
 
     def pull_image(self, image):
-        resp = self.docker.pull(repository=image, stream=True)
-        output = ""
+        with self._get_client(use_swarm=False) as client:
+            resp = client.pull(repository=image, stream=True)
+            output = ""
 
-        while True:
-            try:
-                output = resp.next()
-                self.logger.info(output)
-            except StopIteration:
-                break
+            while True:
+                try:
+                    output = resp.next()
+                    self.logger.info(output)
+                except StopIteration:
+                    break
 
-        result = json.loads(output)
-        if "errorDetail" in result:
-            return False
-        return True
+            result = json.loads(output)
+            if "errorDetail" in result:
+                return False
+            return True
 
     def run_container(self, name, image, env=None, port_bindings=None,
                       volumes=None, dns=None, dns_search=None,
@@ -137,62 +144,81 @@ class Docker(object):
         dns_search = dns_search or []
         ulimits = ulimits or []
 
-        container = self.docker.create_container(
-            image=image,
-            name=name,
-            detach=True,
-            environment=env,
-            host_config=self.docker.create_host_config(
-                port_bindings=port_bindings,
-                binds=volumes,
-                dns=dns,
-                dns_search=dns_search,
-                ulimits=ulimits,
-                network_mode="weave",
-            ),
-            hostname=hostname,
-        )
-        container_id = container["Id"]
-        self.logger.info("container {!r} has been created".format(name))
+        with self._get_client() as client:
+            container = client.create_container(
+                image=image,
+                name=name,
+                detach=True,
+                environment=env,
+                host_config=client.create_host_config(
+                    port_bindings=port_bindings,
+                    binds=volumes,
+                    dns=dns,
+                    dns_search=dns_search,
+                    ulimits=ulimits,
+                    network_mode="weave",
+                    restart_policy={
+                        "Name": "unless-stopped",
+                        "MaximumRetryCount": 10,
+                    },
+                ),
+                hostname=hostname,
+            )
+            container_id = container["Id"]
+            self.logger.info("container {!r} has been created".format(name))
 
-        if container_id:
-            self.docker.start(container=container_id)
-            self.logger.info("container {!r} with ID {!r} "
-                             "has been started".format(name, container_id))
-        return container_id
+            if container_id:
+                client.start(container=container_id)
+                self.logger.info("container {!r} with ID {!r} "
+                                 "has been started".format(name, container_id))
+            return container_id
 
     def copy_to_container(self, container, src, dest):
-        cfg_str = self._machine_conf_str()
+        cfg_str = self._swarm_conf_str()
         cmd = "docker {} cp {} {}:{}".format(cfg_str, src, container, dest)
         stdout, stderr, err_code = po_run(cmd)
 
     # def copy_from_container(self, container, src, dest):
-    #     cfg_str = self._machine_conf_str()
+    #     cfg_str = self._swarm_conf_str()
     #     cmd = "docker {} cp {}:{} {}".format(cfg_str, container, src, dest)
     #     stdout, stderr, err_code = po_run(cmd)
 
-    def _machine_conf_str(self):
+    def _swarm_conf_str(self):
         cfg_str = " ".join([
             "--tlsverify",
-            "--tlscacert={}".format(self.machine_conf["tls"].ca_cert),
-            "--tlscert={}".format(self.machine_conf["tls"].cert[0]),
-            "--tlskey={}".format(self.machine_conf["tls"].cert[1]),
-            "-H={}".format(self.machine_conf["base_url"].replace("https", "tcp")),
+            "--tlscacert={}".format(self.swarm_config["tls"].ca_cert),
+            "--tlscert={}".format(self.swarm_config["tls"].cert[0]),
+            "--tlskey={}".format(self.swarm_config["tls"].cert[1]),
+            "-H={}".format(self.swarm_config["base_url"].replace("https", "tcp")),
         ])
         return cfg_str
 
     def exec_cmd(self, container, cmd):
-        exec_cmd = self.docker.exec_create(container, cmd=cmd)
-        retval = self.docker.exec_start(exec_cmd)
-        inspect = self.docker.exec_inspect(exec_cmd)
+        with self._get_client() as client:
+            exec_cmd = client.exec_create(container, cmd=cmd)
+            retval = client.exec_start(exec_cmd)
+            inspect = client.exec_inspect(exec_cmd)
 
-        if inspect["ExitCode"] != 0:
-            raise DockerExecError(
-                "error while running docker exec",
-                retval,
-                inspect["ExitCode"],
-            )
+            if inspect["ExitCode"] != 0:
+                raise DockerExecError(
+                    "error while running docker exec",
+                    retval,
+                    inspect["ExitCode"],
+                )
 
-        result = DockerExecResult(cmd=cmd, exit_code=inspect["ExitCode"],
-                                  retval=retval.strip())
-        return result
+            result = DockerExecResult(cmd=cmd, exit_code=inspect["ExitCode"],
+                                      retval=retval.strip())
+            return result
+
+    @contextmanager
+    def _get_client(self, use_swarm=True):
+        if use_swarm:
+            cfg = self.swarm_config
+        else:
+            cfg = self.config
+
+        client = Client(base_url=cfg.get("base_url"), tls=cfg.get("tls"))
+        try:
+            yield client
+        finally:
+            client.close()

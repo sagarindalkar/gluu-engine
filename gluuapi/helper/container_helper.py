@@ -60,11 +60,22 @@ class BaseContainerHelper(object):
                 __name__ + "." + self.__class__.__name__,
             )
 
-        self.app = app
         mc = Machine()
-        master_node = db.search_from_table("nodes", db.where("type") == "master")[0]  # noqa
-        self.docker = Docker(mc.swarm_config(master_node.name), logger=self.logger)
 
+        try:
+            master_node = db.search_from_table(
+                "nodes", db.where("type") == "master",
+            )[0]
+        except IndexError:
+            master_node = self.node
+
+        self.docker = Docker(
+            mc.config(self.node.name),
+            mc.swarm_config(master_node.name),
+            logger=self.logger,
+        )
+
+        self.app = app
         self.weave = Weave(self.node, self.app, logger=self.logger)
         # self.prometheus = PrometheusHelper(self.app, logger=self.logger)
 

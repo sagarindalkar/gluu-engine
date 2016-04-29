@@ -140,19 +140,22 @@ class BaseWatcherTask(object):
             self.logger.warn("unable to find master node")
             return
 
-        dk = Docker(self.machine.swarm_config(master_node.name))
+        dk = Docker(
+            self.machine.config(master_node.name),
+            self.machine.swarm_config(master_node.name),
+        )
 
         for container in self.get_containers():
             self.logger.info(
                 "Found existing {} container with ID {}".format(
-                    self.container_type, container.id))
+                    self.container_type, container.cid))
 
             self.logger.info("copying {} to {}:{}".format(
                 src, container.name, dest,
             ))
 
             # # copy the file to container
-            dk.copy_to_container(container.id, src, dest)
+            dk.copy_to_container(container.cid, src, dest)
 
     def get_containers(self):
         return self.cluster.get_containers(type_=self.container_type)

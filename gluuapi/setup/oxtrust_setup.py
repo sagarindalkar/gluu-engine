@@ -3,25 +3,23 @@
 #
 # All rights reserved.
 
-import os.path
-import time
+import tempfile
+import os
 
 from blinker import signal
 
 from .base import OxSetup
-from ..database import db
-from ..dockerclient import Docker
 
 
 class OxtrustSetup(OxSetup):
     def render_check_ssl_template(self):
         """Renders check_ssl script into the node.
         """
-        src = self.get_template_path("nodes/oxtrust/check_ssl")
+        src = self.get_template_path("oxtrust/check_ssl")
         dest = "/usr/bin/{}".format(os.path.basename(src))
         ctx = {"ox_cluster_hostname": self.cluster.ox_cluster_hostname}
         self.render_template(src, dest, ctx)
-        self.docker.exec_cmd(self.container.id, "chmod +x {}".format(dest))
+        self.docker.exec_cmd(self.container.cid, "chmod +x {}".format(dest))
 
     def setup(self):
         """Runs the actual setup.
@@ -64,7 +62,7 @@ class OxtrustSetup(OxSetup):
     def render_server_xml_template(self):
         """Copies rendered Tomcat's server.xml into the node.
         """
-        src = "nodes/oxtrust/server.xml"
+        src = "oxtrust/server.xml"
         dest = os.path.join(self.container.tomcat_conf_dir, os.path.basename(src))
         ctx = {
             "shib_jks_pass": self.cluster.decrypted_admin_pw,
@@ -98,55 +96,41 @@ environment=CATALINA_PID=/var/run/tomcat.pid
 
         self.logger.info("adding supervisord entry")
         cmd = '''sh -c "echo '{}' >> /etc/supervisor/conf.d/supervisord.conf"'''.format(payload)
-        self.docker.exec_cmd(self.container.id, cmd)
+        self.docker.exec_cmd(self.container.cid, cmd)
 
     def restart_tomcat(self):
         """Restarts Tomcat via supervisorctl.
         """
         self.logger.info("restarting tomcat")
         restart_cmd = "supervisorctl restart tomcat"
-        self.docker.exec_cmd(self.container.id, restart_cmd)
+        self.docker.exec_cmd(self.container.cid, restart_cmd)
 
     def push_shib_certkey(self):
-        resp = self.docker.exec_cmd(self.container.id, "cat /etc/certs/shibIDP.crt")
-        crt = resp.retval
-
-        resp = self.docker.exec_cmd(self.container.id, "cat /etc/certs/shibIDP.key")
-        key = resp.retval
+        _, crt = tempfile.mkstemp()
+        self.docker.copy_from_container(
+            self.container.cid, "/etc/certs/shibIDP.crt", crt,
+        )
+        _, key = tempfile.mkstemp()
+        self.docker.copy_from_container(
+            self.container.cid, "/etc/certs/shibIDP.key", key,
+        )
 
         for oxidp in self.cluster.get_containers(type_="oxidp"):
-            # oxidp container might be in another host
-            node = db.get(oxidp.node_id, "nodes")
-            docker = Docker(self.machine.config(node.name), logger=self.logger)
+            self.docker.copy_to_container(
+                oxidp.cid, crt, "/etc/certs/shibIDP.crt",
+            )
+            self.docker.copy_to_container(
+                oxidp.cid, key, "/etc/certs/shibIDP.key",
+            )
 
-            if crt:
-                time.sleep(5)
-                path = "/etc/certs/shibIDP.crt"
-                self.logger.info(
-                    "copying {0}:{1} to {2}:{1}".format(
-                        self.container.name,
-                        path,
-                        oxidp.name,
-                    )
-                )
-                echo_cmd = '''sh -c "echo '{}' > {}"'''.format(crt, path)
-                docker.exec_cmd(oxidp.id, echo_cmd)
-
-            if key:
-                time.sleep(5)
-                path = "/etc/certs/shibIDP.key"
-                self.logger.info(
-                    "copying {0}:{1} to {2}:{1}".format(
-                        self.container.name,
-                        path,
-                        oxidp.name,
-                    )
-                )
-                echo_cmd = '''sh -c "echo '{}' > {}"'''.format(key, path)
-                docker.exec_cmd(oxidp.id, echo_cmd)
+        for fn in (crt, key,):
+            try:
+                os.unlink(fn)
+            except OSError:
+                pass
 
     def pull_oxtrust_override(self):  # pragma: no cover
-        for root, dirs, files in os.walk(self.app.config["OXTRUST_OVERRIDE_DIR"]):
+        for root, _, files in os.walk(self.app.config["OXTRUST_OVERRIDE_DIR"]):
             for fn in files:
                 src = os.path.join(root, fn)
                 dest = src.replace(self.app.config["OXTRUST_OVERRIDE_DIR"],
@@ -154,4 +138,4 @@ environment=CATALINA_PID=/var/run/tomcat.pid
                 self.logger.info("copying {} to {}:{}".format(
                     src, self.container.name, dest,
                 ))
-                self.docker.copy_to_container(self.container.id, src, dest)
+                self.docker.copy_to_container(self.container.cid, src, dest)

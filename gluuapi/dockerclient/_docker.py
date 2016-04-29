@@ -178,10 +178,10 @@ class Docker(object):
         cmd = "docker {} cp {} {}:{}".format(cfg_str, src, container, dest)
         stdout, stderr, err_code = po_run(cmd)
 
-    # def copy_from_container(self, container, src, dest):
-    #     cfg_str = self._swarm_conf_str()
-    #     cmd = "docker {} cp {}:{} {}".format(cfg_str, container, src, dest)
-    #     stdout, stderr, err_code = po_run(cmd)
+    def copy_from_container(self, container, src, dest):
+        cfg_str = self._swarm_conf_str()
+        cmd = "docker {} cp {}:{} {}".format(cfg_str, container, src, dest)
+        stdout, stderr, err_code = po_run(cmd)
 
     def _swarm_conf_str(self):
         cfg_str = " ".join([

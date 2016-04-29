@@ -12,7 +12,7 @@ from daemonocle import Daemon
 from .app import create_app
 from .log import configure_global_logging
 from .task import LicenseExpirationTask
-from .task import OxidpWatcherTask
+# from .task import OxidpWatcherTask
 # from .task import OxauthWatcherTask
 # from .task import OxtrustWatcherTask
 # from .database import db
@@ -31,7 +31,10 @@ def run_app(app, use_reloader=True):
     if not app.debug:
         LicenseExpirationTask(app).perform_job()
 
-    OxidpWatcherTask(app).perform_job()
+    # FIXME: new oxtrust container setup doesn't put generated
+    #        SAML config in same host where this app lives
+    # OxidpWatcherTask(app).perform_job()
+
     # OxauthWatcherTask(app).perform_job()
     # OxtrustWatcherTask(app).perform_job()
 

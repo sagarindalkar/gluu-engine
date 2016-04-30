@@ -4,6 +4,6 @@ oxidp:
   hash: fnv1a_64
   auto_eject_hosts: false
   servers:
-{%- for node in oxidp_nodes %}
-    - {{ node.weave_ip }}:11211:1
+{%- for container in oxidp_containers %}
+    - {{ container.hostname }}:11211:1
 {%- endfor %}

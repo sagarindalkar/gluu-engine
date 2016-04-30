@@ -3,22 +3,20 @@
 #
 # All rights reserved.
 
-import os.path
-import time
+import os
+import tempfile
 
 from blinker import signal
 
 from .base import OxSetup
 from ..errors import DockerExecError
-from ..database import db
-from ..dockerclient import Docker
 
 
 class OxidpSetup(OxSetup):
     def setup(self):
         """Runs the actual setup.
         """
-        hostname = self.container.domain_name
+        hostname = self.container.hostname
 
         # render config templates
         self.render_server_xml_template()
@@ -60,11 +58,11 @@ class OxidpSetup(OxSetup):
 
         # notify oxidp peers to re-render their nutcracker.yml
         # and restart the daemon
-        for node in self.cluster.get_containers(type_="oxidp"):
-            if node.id == self.container.id:
+        for container in self.cluster.get_containers(type_="oxidp"):
+            if container.cid == self.container.cid:
                 continue
 
-            setup_obj = OxidpSetup(node, self.cluster,
+            setup_obj = OxidpSetup(container, self.cluster,
                                    self.app, logger=self.logger)
             setup_obj.render_nutcracker_conf()
             setup_obj.restart_nutcracker()
@@ -77,37 +75,37 @@ class OxidpSetup(OxSetup):
         """Imports all LDAP certificates.
         """
         for ldap in self.cluster.get_containers(type_="ldap"):
-            self.logger.info("importing ldap cert from {}".format(ldap.domain_name))
+            self.logger.info("importing ldap cert from {}".format(ldap.hostname))
 
             cert_cmd = "echo -n | openssl s_client -connect {0}:{1} | " \
                        "sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' " \
-                       "> /etc/certs/{0}.crt".format(ldap.domain_name, ldap.ldaps_port)
+                       "> /etc/certs/{0}.crt".format(ldap.hostname, ldap.ldaps_port)
             cert_cmd = '''sh -c "{}"'''.format(cert_cmd)
-            self.docker.exec_cmd(self.container.id, cert_cmd)
+            self.docker.exec_cmd(self.container.cid, cert_cmd)
 
             import_cmd = " ".join([
                 "keytool -importcert -trustcacerts",
-                "-alias '{}'".format(ldap.domain_name),
-                "-file /etc/certs/{}.crt".format(ldap.domain_name),
+                "-alias '{}'".format(ldap.hostname),
+                "-file /etc/certs/{}.crt".format(ldap.hostname),
                 "-keystore {}".format(self.container.truststore_fn),
                 "-storepass changeit -noprompt",
             ])
             import_cmd = '''sh -c "{}"'''.format(import_cmd)
 
             try:
-                self.docker.exec_cmd(self.container.id, import_cmd)
+                self.docker.exec_cmd(self.container.cid, import_cmd)
             except DockerExecError as exc:
                 if exc.exit_code == 1:
                     pass
 
     def render_nutcracker_conf(self):
-        """Copies twemproxy configuration into the node.
+        """Copies twemproxy configuration into the container.
         """
         ctx = {
-            "oxidp_nodes": self.cluster.get_containers(type_="oxidp"),
+            "oxidp_containers": self.cluster.get_containers(type_="oxidp"),
         }
         self.copy_rendered_jinja_template(
-            "nodes/oxidp/nutcracker.yml",
+            "oxidp/nutcracker.yml",
             "/etc/nutcracker.yml",
             ctx,
         )
@@ -117,13 +115,13 @@ class OxidpSetup(OxSetup):
         """
         self.logger.info("restarting twemproxy in {}".format(self.container.name))
         restart_cmd = "supervisorctl restart nutcracker"
-        self.docker.exec_cmd(self.container.id, restart_cmd)
+        self.docker.exec_cmd(self.container.cid, restart_cmd)
 
     def teardown(self):
-        """Teardowns the node.
+        """Teardowns the container.
         """
-        for node in self.cluster.get_containers(type_="oxidp"):
-            setup_obj = OxidpSetup(node, self.cluster,
+        for container in self.cluster.get_containers(type_="oxidp"):
+            setup_obj = OxidpSetup(container, self.cluster,
                                    self.app, logger=self.logger)
             setup_obj.render_nutcracker_conf()
             setup_obj.restart_nutcracker()
@@ -149,7 +147,7 @@ class OxidpSetup(OxSetup):
                 self.logger.info("copying {} to {}:{}".format(
                     src, self.container.name, dest,
                 ))
-                self.docker.copy_to_container(self.container.id, src, dest)
+                self.docker.copy_to_container(self.container.cid, src, dest)
 
     def add_auto_startup_entry(self):
         """Adds supervisor program for auto-startup.
@@ -173,12 +171,12 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
 
         self.logger.info("adding supervisord entry")
         cmd = '''sh -c "echo '{}' >> /etc/supervisor/conf.d/supervisord.conf"'''.format(payload)
-        self.docker.exec_cmd(self.container.id, cmd)
+        self.docker.exec_cmd(self.container.cid, cmd)
 
     def render_server_xml_template(self):
-        """Copies rendered Tomcat's server.xml into the node.
+        """Copies rendered Tomcat's server.xml into the container.
         """
-        src = "nodes/oxidp/server.xml"
+        src = "oxidp/server.xml"
         dest = os.path.join(self.container.tomcat_conf_dir, os.path.basename(src))
         ctx = {
             "shib_jks_pass": self.cluster.decrypted_admin_pw,
@@ -187,14 +185,14 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
         self.copy_rendered_jinja_template(src, dest, ctx)
 
     def render_httpd_conf(self):
-        """Copies rendered Apache2's virtual host into the node.
+        """Copies rendered Apache2's virtual host into the container.
         """
-        src = "nodes/oxidp/gluu_httpd.conf"
+        src = "oxidp/gluu_httpd.conf"
         file_basename = os.path.basename(src)
         dest = os.path.join("/etc/apache2/sites-available", file_basename)
 
         ctx = {
-            "hostname": self.container.domain_name,
+            "hostname": self.container.hostname,
             "httpd_cert_fn": "/etc/certs/httpd.crt",
             "httpd_key_fn": "/etc/certs/httpd.key",
         }
@@ -204,29 +202,30 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
         try:
             oxtrust = self.cluster.get_containers(type_="oxtrust")[0]
         except IndexError:
+            oxtrust = None
+
+        if not oxtrust:
             return
 
-        # oxtrust container might be in another host
-        node = db.get(oxtrust.node_id, "nodes")
-        docker = Docker(self.machine.config(node.name), logger=self.logger)
+        _, crt = tempfile.mkstemp()
+        self.docker.copy_from_container(
+            self.container.cid, "/etc/certs/shibIDP.crt", crt,
+        )
+        _, key = tempfile.mkstemp()
+        self.docker.copy_from_container(
+            self.container.cid, "/etc/certs/shibIDP.key", key,
+        )
 
-        for fn in ["shibIDP.crt", "shibIDP.key"]:
-            path = "/etc/certs/{}".format(fn)
-            cat_cmd = "cat {}".format(path)
-            resp = docker.exec_cmd(oxtrust.id, cat_cmd)
-
-            if resp.retval:
-                time.sleep(5)
-                self.logger.info(
-                    "copying {0}:{1} to {2}:{1}".format(oxtrust.name, path,
-                                                        self.container.name)
-                )
-                echo_cmd = '''sh -c "echo '{}' > {}"'''.format(resp.retval, path)
-                self.docker.exec_cmd(self.container.id, echo_cmd)
+        self.docker.copy_to_container(
+            self.container.cid, crt, "/etc/certs/shibIDP.crt",
+        )
+        self.docker.copy_to_container(
+            self.container.cid, key, "/etc/certs/shibIDP.key",
+        )
 
     def discover_nginx(self):
         """Discovers nginx node.
         """
-        self.logger.info("discovering available nginx node")
+        self.logger.info("discovering available nginx container")
         if self.cluster.count_containers(type_="nginx"):
             self.import_nginx_cert()

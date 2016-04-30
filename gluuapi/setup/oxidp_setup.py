@@ -223,6 +223,12 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
             self.container.cid, key, "/etc/certs/shibIDP.key",
         )
 
+        for fn in (crt, key,):
+            try:
+                os.unlink(fn)
+            except OSError:
+                pass
+
     def discover_nginx(self):
         """Discovers nginx node.
         """

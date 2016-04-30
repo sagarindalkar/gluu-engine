@@ -24,11 +24,11 @@ class NginxSetup(BaseSetup):
             "ox_cluster_hostname": self.cluster.ox_cluster_hostname,
             "cert_file": "/etc/certs/nginx.crt",
             "key_file": "/etc/certs/nginx.key",
-            "oxauth_nodes": self.cluster.get_containers(type_="oxauth"),
-            "oxidp_nodes": self.cluster.get_containers(type_="oxidp"),
-            "oxtrust_nodes": self.cluster.get_containers(type_="oxtrust"),
+            "oxauth_containers": self.cluster.get_containers(type_="oxauth"),
+            "oxidp_containers": self.cluster.get_containers(type_="oxidp"),
+            "oxtrust_containers": self.cluster.get_containers(type_="oxtrust"),
             "session_affinity": self.get_session_affinity(),
-            "oxasimba_nodes": self.cluster.get_containers(type_="oxasimba"),
+            "oxasimba_containers": self.cluster.get_containers(type_="oxasimba"),
         }
 
         src = "nginx/gluu_https.conf"
@@ -114,7 +114,7 @@ command=/usr/sbin/nginx -g \\"daemon off;\\"
         complete_sgn.send(self)
 
     def teardown(self):
-        """Teardowns the node.
+        """Teardowns the container.
         """
         complete_sgn = signal("nginx_teardown_completed")
         complete_sgn.send(self)

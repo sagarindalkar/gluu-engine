@@ -13,7 +13,7 @@ from .base import OxSetup
 
 class OxtrustSetup(OxSetup):
     def render_check_ssl_template(self):
-        """Renders check_ssl script into the node.
+        """Renders check_ssl script into the container.
         """
         src = self.get_template_path("oxtrust/check_ssl")
         dest = "/usr/bin/{}".format(os.path.basename(src))
@@ -54,13 +54,13 @@ class OxtrustSetup(OxSetup):
         return True
 
     def teardown(self):
-        """Teardowns the node.
+        """Teardowns the container.
         """
         complete_sgn = signal("ox_teardown_completed")
         complete_sgn.send(self)
 
     def render_server_xml_template(self):
-        """Copies rendered Tomcat's server.xml into the node.
+        """Copies rendered Tomcat's server.xml into the container.
         """
         src = "oxtrust/server.xml"
         dest = os.path.join(self.container.tomcat_conf_dir, os.path.basename(src))
@@ -71,9 +71,9 @@ class OxtrustSetup(OxSetup):
         self.copy_rendered_jinja_template(src, dest, ctx)
 
     def discover_nginx(self):
-        """Discovers nginx node.
+        """Discovers nginx container.
         """
-        self.logger.info("discovering available nginx node")
+        self.logger.info("discovering available nginx container")
         if self.cluster.count_containers(type_="nginx"):
             self.import_nginx_cert()
 

@@ -17,7 +17,7 @@ def notify_oxtrust(ngx):
         oxtrust = ngx.node.get_containers(type_="oxtrust")[0]
         setup_obj = OxtrustSetup(oxtrust, ngx.cluster, ngx.app, ngx.logger)
 
-        # wait before telling oxtrust to find nginx node
+        # wait before telling oxtrust to find nginx container
         time.sleep(2)
         setup_obj.discover_nginx()
     except IndexError:
@@ -28,7 +28,7 @@ def notify_oxidp(ngx):
     for oxidp in ngx.cluster.get_containers(type_="oxidp"):
         setup_obj = OxidpSetup(oxidp, ngx.cluster, ngx.app, ngx.logger)
 
-        # wait before telling oxidp to find nginx node
+        # wait before telling oxidp to find nginx container
         time.sleep(2)
         setup_obj.discover_nginx()
 

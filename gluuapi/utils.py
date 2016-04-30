@@ -9,7 +9,6 @@ import json
 import os
 import random
 import string
-import subprocess
 import sys
 import traceback
 import time
@@ -24,17 +23,6 @@ from M2Crypto.EVP import Cipher
 _DEFAULT_CHARS = "".join([string.ascii_uppercase,
                           string.digits,
                           string.lowercase])
-
-
-def run(command, exit_on_error=True, cwd=None):
-    try:
-        return subprocess.check_output(command, stderr=subprocess.STDOUT,
-                                       shell=True, cwd=cwd)
-    except subprocess.CalledProcessError, e:
-        if exit_on_error:
-            sys.exit(e.returncode)
-        else:
-            raise
 
 
 def get_random_chars(size=12, chars=_DEFAULT_CHARS):
@@ -106,7 +94,7 @@ def decode_signed_license(signed_license, public_key, public_password, license_p
         "/usr/share/oxd-license-validator/oxd-license-validator.jar",
     )
 
-    cmd_output = po_run("java -jar {} {} {} {} {}".format(
+    stdout, _, _ = po_run("java -jar {} {} {} {} {}".format(
         validator,
         signed_license,
         public_key,
@@ -120,7 +108,7 @@ def decode_signed_license(signed_license, public_key, public_password, license_p
     #   {"valid":true,"metadata":{}}
     #
     # but we only care about the last line
-    meta = cmd_output.splitlines()[-1]
+    meta = stdout.splitlines()[-1]
 
     decoded_license = json.loads(meta)
     return decoded_license

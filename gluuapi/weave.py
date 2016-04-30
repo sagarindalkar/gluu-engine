@@ -126,7 +126,7 @@ class Weave(object):
         self.logger.info("adding {} to local DNS server".format(hostname))
         self.machine.ssh(self.node.name, dns_cmd)
 
-    def docker_bridge_ip(self):
+    def docker_bridge_ip(self):  # pragma: no cover
         """Gets IP of docker bridge (docker0) interface.
         """
         return self.machine.ssh(self.node.name, "sudo weave docker-bridge-ip")

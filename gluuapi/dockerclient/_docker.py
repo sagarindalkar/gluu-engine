@@ -4,6 +4,7 @@
 # All rights reserved.
 
 import json
+import logging
 from collections import namedtuple
 from contextlib import contextmanager
 
@@ -11,7 +12,6 @@ import docker.errors
 from docker import Client
 
 from ..errors import DockerExecError
-from ..log import create_file_logger
 from ..registry import REGISTRY_BASE_URL
 from ..utils import po_run
 
@@ -24,8 +24,9 @@ class Docker(object):
     def __init__(self, config, swarm_config, logger=None):
         self.config = config
         self.swarm_config = swarm_config
-
-        self.logger = logger or create_file_logger()
+        self.logger = logger or logging.getLogger(
+            "{}.{}".format(__name__, self.__class__.__name__),
+        )
         self.registry_base_url = REGISTRY_BASE_URL
 
     def image_exists(self, name):

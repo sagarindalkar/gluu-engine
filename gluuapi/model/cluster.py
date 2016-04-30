@@ -4,10 +4,10 @@
 # All rights reserved.
 
 import uuid
-import itertools
+# import itertools
 
-from netaddr import IPNetwork
-from netaddr import IPSet
+# from netaddr import IPNetwork
+# from netaddr import IPSet
 
 from .base import BaseModel
 from .base import STATE_SUCCESS
@@ -38,7 +38,7 @@ class Cluster(BaseModel):
         'inum_org_fn',
         'inum_appliance',
         'inum_appliance_fn',
-        'weave_ip_network',
+        # 'weave_ip_network',
     ])
 
     def __init__(self, fields=None):
@@ -120,8 +120,8 @@ class Cluster(BaseModel):
         self.encoded_asimba_jks_pw = self.admin_pw
         self.asimba_jks_fn = "/etc/certs/asimbaIDP.jks"
 
-        # Weave IP network
-        self.weave_ip_network = fields.get("weave_ip_network", "10.2.1.0/24")
+        # # Weave IP network
+        # self.weave_ip_network = fields.get("weave_ip_network", "10.2.1.0/24")
 
     @property
     def decrypted_admin_pw(self):
@@ -129,84 +129,84 @@ class Cluster(BaseModel):
         """
         return decrypt_text(self.admin_pw, self.passkey)
 
-    @property
-    def exposed_weave_ip(self):
-        """Gets weave IP for forwarding request from outside.
+    # @property
+    # def exposed_weave_ip(self):
+    #     """Gets weave IP for forwarding request from outside.
 
-        For convenience, the IP address is always set to the last 2nd IP of
-        possible addresses from the network. For example, given an IP network
-        10.10.10.0/24, two last addresses would be:
+    #     For convenience, the IP address is always set to the last 2nd IP of
+    #     possible addresses from the network. For example, given an IP network
+    #     10.10.10.0/24, two last addresses would be:
 
-        1. 10.10.10.255 (broadcast address; we cannot use it)
-        2. 10.10.10.254 (used by weave network to forward request from outside)
+    #     1. 10.10.10.255 (broadcast address; we cannot use it)
+    #     2. 10.10.10.254 (used by weave network to forward request from outside)
 
-        :returns: A 2-elements tuple consists of IP address and prefix length,
-                  e.g. ``("10.10.10.253", 24)``.
-        """
+    #     :returns: A 2-elements tuple consists of IP address and prefix length,
+    #               e.g. ``("10.10.10.253", 24)``.
+    #     """
 
-        pool = IPNetwork(self.weave_ip_network)
-        # as the last element of pool is a broadcast address, we cannot use it;
-        # hence we fetch the last 2nd element of the pool
-        addr = pool.broadcast - 1
-        return str(addr), pool.prefixlen
+    #     pool = IPNetwork(self.weave_ip_network)
+    #     # as the last element of pool is a broadcast address, we cannot use it;
+    #     # hence we fetch the last 2nd element of the pool
+    #     addr = pool.broadcast - 1
+    #     return str(addr), pool.prefixlen
 
-    def reserve_ip_addr(self):
-        """Picks available IP address from weave network.
+    # def reserve_ip_addr(self):
+    #     """Picks available IP address from weave network.
 
-        :returns: A 2-elements tuple consists of IP address and CIDR,
-                  e.g. ``("10.10.10.1", 24)``. If there's no available
-                  IP address anymore, this returns ``(None, 24)``.
-        """
-        # represents a pool of IP addresses
-        pool = IPNetwork(self.weave_ip_network)
+    #     :returns: A 2-elements tuple consists of IP address and CIDR,
+    #               e.g. ``("10.10.10.1", 24)``. If there's no available
+    #               IP address anymore, this returns ``(None, 24)``.
+    #     """
+    #     # represents a pool of IP addresses
+    #     pool = IPNetwork(self.weave_ip_network)
 
-        reserved_addrs = IPSet([
-            pool.network,
-            pool.broadcast,
-            self.exposed_weave_ip[0],
-            self.prometheus_weave_ip[0],
-        ] + self.get_container_addrs())
-        maybe_available = IPSet(pool)
-        ipset = reserved_addrs ^ maybe_available
+    #     reserved_addrs = IPSet([
+    #         pool.network,
+    #         pool.broadcast,
+    #         self.exposed_weave_ip[0],
+    #         self.prometheus_weave_ip[0],
+    #     ] + self.get_container_addrs())
+    #     maybe_available = IPSet(pool)
+    #     ipset = reserved_addrs ^ maybe_available
 
-        try:
-            addr = list(itertools.islice(ipset, 1))[0]
-        except IndexError:
-            addr = ""
-        return str(addr), pool.prefixlen
+    #     try:
+    #         addr = list(itertools.islice(ipset, 1))[0]
+    #     except IndexError:
+    #         addr = ""
+    #     return str(addr), pool.prefixlen
 
-    @property
-    def prometheus_weave_ip(self):
-        """Gets weave IP of prometheus container.
+    # @property
+    # def prometheus_weave_ip(self):
+    #     """Gets weave IP of prometheus container.
 
-        For convenience, the IP address is always set to the last 3rd IP of
-        possible addresses from the network. For example, given an IP network
-        10.10.10.0/24, three last addresses would be:
+    #     For convenience, the IP address is always set to the last 3rd IP of
+    #     possible addresses from the network. For example, given an IP network
+    #     10.10.10.0/24, three last addresses would be:
 
-        1. 10.10.10.255 (broadcast address; we cannot use it)
-        2. 10.10.10.254 (used by weave network to forward request from outside)
-        2. 10.10.10.253 (prometheus weave IP)
+    #     1. 10.10.10.255 (broadcast address; we cannot use it)
+    #     2. 10.10.10.254 (used by weave network to forward request from outside)
+    #     2. 10.10.10.253 (prometheus weave IP)
 
-        :returns: A 2-elements tuple consists of IP address and prefix length,
-                  e.g. ``("10.10.10.253", 24)``.
-        """
-        pool = IPNetwork(self.weave_ip_network)
-        # as the last element of pool is a broadcast address, we cannot use it;
-        # hence we fetch the last 3rd element of the pool
-        addr = pool.broadcast - 2
-        return str(addr), pool.prefixlen
+    #     :returns: A 2-elements tuple consists of IP address and prefix length,
+    #               e.g. ``("10.10.10.253", 24)``.
+    #     """
+    #     pool = IPNetwork(self.weave_ip_network)
+    #     # as the last element of pool is a broadcast address, we cannot use it;
+    #     # hence we fetch the last 3rd element of the pool
+    #     addr = pool.broadcast - 2
+    #     return str(addr), pool.prefixlen
 
-    def get_container_addrs(self):
-        """Collects all weave IP addresses from all containers belong to
-        the cluster.
+    # def get_container_addrs(self):
+    #     """Collects all weave IP addresses from all containers belong to
+    #     the cluster.
 
-        :returns: A list of weave IP addresses.
-        """
-        containers = db.search_from_table(
-            "containers",
-            db.where("cluster_id") == self.id,
-        )
-        return filter(None, [container.weave_ip for container in containers])
+    #     :returns: A list of weave IP addresses.
+    #     """
+    #     containers = db.search_from_table(
+    #         "containers",
+    #         db.where("cluster_id") == self.id,
+    #     )
+    #     return filter(None, [container.weave_ip for container in containers])
 
     def count_containers(self, type_="", state=STATE_SUCCESS):
         """Counts available containers objects (models).

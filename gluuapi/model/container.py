@@ -14,16 +14,17 @@ class LdapContainer(BaseModel):
         'type',
         'cluster_id',
         'node_id',
-        'ip',
+        # 'ip',
         'ldap_binddn',
         'ldap_port',
         'ldaps_port',
         'ldap_admin_port',
         'ldap_jmx_port',
         "name",
-        "weave_ip",
+        # "weave_ip",
         "state",
         "hostname",
+        "cid",
     ])
 
     def __init__(self):
@@ -41,6 +42,7 @@ class LdapContainer(BaseModel):
         self.state = ""
         self.setup_logpath = ""
         self.hostname = ""
+        self.cid = ""
 
         # Filesystem path to Java truststore
         self.truststore_fn = '/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/security/cacerts'
@@ -109,16 +111,17 @@ class OxauthContainer(BaseModel):
         "id",
         "name",
         "type",
-        "ip",
+        # "ip",
         "cluster_id",
         "node_id",
-        "weave_ip",
+        # "weave_ip",
         "state",
         "hostname",
+        "cid",
     ])
 
     def __init__(self):
-        self.id = ""
+        self.id = str(uuid.uuid4())
         self.cluster_id = ""
         self.node_id = ""
         self.name = ""
@@ -130,6 +133,7 @@ class OxauthContainer(BaseModel):
         self.state = ""
         self.setup_logpath = ""
         self.hostname = ""
+        self.cid = ""
 
         self.truststore_fn = '/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/security/cacerts'
         self.ldap_binddn = 'cn=directory manager'
@@ -153,16 +157,17 @@ class OxtrustContainer(BaseModel):
         "id",
         "name",
         "type",
-        "ip",
+        # "ip",
         "cluster_id",
         "node_id",
-        "weave_ip",
+        # "weave_ip",
         "state",
         "hostname",
+        "cid",
     ])
 
     def __init__(self):
-        self.id = ""
+        self.id = str(uuid.uuid4())
         self.cluster_id = ""
         self.node_id = ""
         self.name = ""
@@ -175,6 +180,7 @@ class OxtrustContainer(BaseModel):
         self.state = ""
         self.setup_logpath = ""
         self.hostname = ""
+        self.cid = ""
 
         self.ldap_binddn = 'cn=directory manager'
         self.cert_folder = "/etc/certs"
@@ -197,16 +203,17 @@ class OxidpContainer(BaseModel):
         "type",
         "cluster_id",
         "node_id",
-        "ip",
+        # "ip",
         "name",
-        "weave_ip",
+        # "weave_ip",
         "state",
         "saml_type",
         "hostname",
+        "cid",
     ])
 
     def __init__(self):
-        self.id = ""
+        self.id = str(uuid.uuid4())
         self.cluster_id = ""
         self.node_id = ""
         self.name = ""
@@ -216,8 +223,9 @@ class OxidpContainer(BaseModel):
         self.type = "oxidp"
         self.image = "gluuoxidp"
         self.state = ""
-        self.setup_logpath = ""
+        # self.setup_logpath = ""
         self.hostname = ""
+        self.cid = ""
 
         self.cert_folder = "/etc/certs"
         self.tomcat_home = "/opt/tomcat"
@@ -239,9 +247,9 @@ class NginxContainer(BaseModel):
         "id",
         "cluster_id",
         "node_id",
-        "ip",
+        # "ip",
         "cid",
-        "weave_ip",
+        # "weave_ip",
         "name",
         "type",
         "state",
@@ -263,6 +271,7 @@ class NginxContainer(BaseModel):
         self.setup_logpath = ""
         self.cert_folder = "/etc/certs"
         self.hostname = ""
+        self.cid = ""
 
     @property
     def recovery_priority(self):
@@ -277,16 +286,17 @@ class OxasimbaContainer(BaseModel):
         "type",
         "cluster_id",
         "node_id",
-        "ip",
+        # "ip",
         "name",
-        "weave_ip",
+        # "weave_ip",
         "state",
         "saml_type",
         "hostname",
+        "cid",
     ])
 
     def __init__(self):
-        self.id = ""
+        self.id = str(uuid.uuid4())
         self.cluster_id = ""
         self.node_id = ""
         self.ip = ""
@@ -297,6 +307,7 @@ class OxasimbaContainer(BaseModel):
         self.state = ""
         self.setup_logpath = ""
         self.hostname = ""
+        self.cid = ""
 
         self.cert_folder = "/etc/certs"
         self.tomcat_home = "/opt/tomcat"

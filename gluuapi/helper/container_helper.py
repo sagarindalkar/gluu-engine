@@ -296,7 +296,7 @@ class OxtrustContainerHelper(BaseContainerHelper):
 
     def __init__(self, container, app, logpath=None):
         self.volumes = {
-            app.config["OXIDP_OVERRIDE_DIR"]: {
+            "/opt/idp": {
                 "bind": "/opt/idp",
             },
             "/var/gluu/webapps/oxtrust/pages": {

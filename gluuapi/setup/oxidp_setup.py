@@ -4,6 +4,7 @@
 # All rights reserved.
 
 import os
+import shutil
 import tempfile
 
 from blinker import signal
@@ -132,22 +133,32 @@ class OxidpSetup(OxSetup):
     def pull_shib_config(self):
         """Copies all existing oxIdp config and metadata files.
         """
-        allowed_extensions = (".xml", ".dtd", ".config", ".xsd",)
+        try:
+            oxtrust = self.cluster.get_containers(type_="oxtrust")[0]
+        except IndexError:
+            oxtrust = None
 
-        for root, dirs, files in os.walk(self.app.config["OXIDP_OVERRIDE_DIR"]):
-            fn_list = [
-                file_ for file_ in files
-                if os.path.splitext(file_)[-1] in allowed_extensions
-            ]
+        if not oxtrust:
+            return
 
-            for fn in fn_list:
-                src = os.path.join(root, fn)
-                dest = src.replace(self.app.config["OXIDP_OVERRIDE_DIR"],
-                                   "/opt/idp")
-                self.logger.info("copying {} to {}:{}".format(
-                    src, self.container.name, dest,
-                ))
-                self.docker.copy_to_container(self.container.cid, src, dest)
+        # a placeholder for generated SAML config pulled from oxtrust container
+        tmp = tempfile.mkdtemp()
+
+        # this will put copied directory to local `<tmp>/idp` directory
+        self.docker.copy_from_container(oxtrust.cid, "/opt/idp", tmp)
+
+        # copy local `<tmp>/idp` to `/opt` inside container
+        self.logger.info("copying {}:/opt/idp to {}:/opt/idp".format(
+            oxtrust.name, self.container.name,
+        ))
+        self.docker.copy_to_container(
+            self.container.cid, os.path.join(tmp, "idp"), "/opt",
+        )
+
+        try:
+            shutil.rmtree(tmp)
+        except OSError:
+            pass
 
     def add_auto_startup_entry(self):
         """Adds supervisor program for auto-startup.

@@ -13,7 +13,7 @@ from ..machine import Machine
 
 
 @run_in_reactor
-def distribute_cluster_data(filepath):
+def distribute_shared_database(filepath):
     """Distributes cluster data to all consumer providers.
 
     :param filepath: Path to cluster database file.
@@ -21,14 +21,19 @@ def distribute_cluster_data(filepath):
     mc = Machine()
     logger = logging.getLogger("gluuapi")
 
-    # find all worker nodes where cluster database will be copied to
-    worker_nodes = db.search_from_table(
-        "nodes", db.where("type") == "worker",
-    )
-    for worker_node in worker_nodes:
+    dest = os.path.join(os.path.dirname(filepath), "shared.json")
+
+    # find all nodes where shared database will be copied to
+    nodes = db.all("nodes")
+    for node in nodes:
         try:
-            mc.ssh(worker_node.name, "mkdir -p {}".format(os.path.dirname(filepath)))
-            mc.scp(filepath, "{}:{}".format(worker_node.name, filepath))
+            mc.ssh(node.name,
+                   "mkdir -p {}".format(os.path.dirname(dest)))
+            mc.scp(filepath, "{}:{}".format(node.name, dest))
         except RuntimeError as exc:
             logger.warn(exc)
             logger.warn("something is wrong while copying {}".format(filepath))
+
+
+# backward-compat
+distribute_cluster_data = distribute_shared_database

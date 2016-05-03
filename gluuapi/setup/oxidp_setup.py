@@ -220,16 +220,26 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
 
         _, crt = tempfile.mkstemp()
         self.docker.copy_from_container(
-            self.container.cid, "/etc/certs/shibIDP.crt", crt,
+            oxtrust.cid, "/etc/certs/shibIDP.crt", crt,
         )
+
         _, key = tempfile.mkstemp()
         self.docker.copy_from_container(
-            self.container.cid, "/etc/certs/shibIDP.key", key,
+            oxtrust.cid, "/etc/certs/shibIDP.key", key,
         )
+
+        self.logger.info("copying {}:/etc/certs/shibIDP.crt "
+                         "to {}:/etc/certs/shibIDP.crt".format(
+                             oxtrust.cid, self.container.cid))
 
         self.docker.copy_to_container(
             self.container.cid, crt, "/etc/certs/shibIDP.crt",
         )
+
+        self.logger.info("copying {}:/etc/certs/shibIDP.key "
+                         "to {}:/etc/certs/shibIDP.key".format(
+                             oxtrust.cid, self.container.cid))
+
         self.docker.copy_to_container(
             self.container.cid, key, "/etc/certs/shibIDP.key",
         )

@@ -194,7 +194,7 @@ class OxtrustContainer(BaseModel):
     def recovery_priority(self):
         """Gets recovery priority number used by recovery script.
         """
-        return 6
+        return 3
 
 
 class OxidpContainer(BaseModel):
@@ -277,7 +277,7 @@ class NginxContainer(BaseModel):
     def recovery_priority(self):
         """Gets recovery priority number used by recovery script.
         """
-        return 3
+        return 5
 
 
 class OxasimbaContainer(BaseModel):
@@ -318,4 +318,4 @@ class OxasimbaContainer(BaseModel):
 
     @property
     def recovery_priority(self):
-        return 5
+        return 6

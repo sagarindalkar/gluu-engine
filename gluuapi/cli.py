@@ -12,12 +12,8 @@ from daemonocle import Daemon
 from .app import create_app
 from .log import configure_global_logging
 from .task import LicenseExpirationTask
-# from .task import OxidpWatcherTask
-# from .task import OxauthWatcherTask
-# from .task import OxtrustWatcherTask
-# from .database import db
-# from .helper import SaltHelper
-# from .utils import run
+from .task import OxauthWatcherTask
+from .task import OxtrustWatcherTask
 from .setup.signals import connect_setup_signals
 from .setup.signals import connect_teardown_signals
 
@@ -31,12 +27,8 @@ def run_app(app, use_reloader=True):
     if not app.debug:
         LicenseExpirationTask(app).perform_job()
 
-    # FIXME: new oxtrust container setup doesn't put generated
-    #        SAML config in same host where this app lives
-    # OxidpWatcherTask(app).perform_job()
-
-    # OxauthWatcherTask(app).perform_job()
-    # OxtrustWatcherTask(app).perform_job()
+    OxauthWatcherTask(app).perform_job()
+    OxtrustWatcherTask(app).perform_job()
 
     connect_setup_signals()
     connect_teardown_signals()
@@ -115,19 +107,3 @@ def runserver():
     configure_global_logging()
     app = create_app()
     run_app(app)
-
-
-# @main.command('distribute-payload')
-# def distpayload():
-#     volume_root = '/var/gluu/webapps/oxauth'
-#     run('docker restart nginx_sfs')
-#     master_ip = os.environ.get("SALT_MASTER_IPADDR")
-#     providers = db.all('providers')
-#     salt = SaltHelper()
-#     cmd = 'wget -r -q -nH -np -R index.html* http://{}:9001 -P {}'.format(master_ip, volume_root)
-#     for provider in providers:
-#         salt.cmd(provider.hostname, 'cmd.run', cmd)
-#     oxauths = db.search_from_table('nodes', ((db.where('type') == 'oxauth') & (db.where('state') == 'SUCCESS')))
-#     cmd = "supervisorctl restart tomcat"
-#     for oxauth in oxauths:
-#         salt.cmd(oxauth.id, 'cmd.run', cmd)

@@ -131,7 +131,7 @@ class BaseWatcherTask(object):
         # get swarm master node
         try:
             master_node = db.search_from_table(
-                "node", db.where("type") == "master",
+                "nodes", db.where("type") == "master",
             )[0]
         except IndexError:
             master_node = None
@@ -151,29 +151,19 @@ class BaseWatcherTask(object):
                     self.container_type, container.cid))
 
             self.logger.info("copying {} to {}:{}".format(
-                src, container.name, dest,
+                src, container.cid, dest,
             ))
 
-            # # copy the file to container
-            dk.copy_to_container(container.cid, src, dest)
+            # copy the file to container
+            try:
+                dk.copy_to_container(container.cid, src, dest)
+            except RuntimeError as exc:
+                self.logger.error("unable to copy {} to {}:{}; reason={}".format(
+                    src, container.cid, dest, exc,
+                ))
 
     def get_containers(self):
         return self.cluster.get_containers(type_=self.container_type)
-
-
-class OxidpWatcherTask(BaseWatcherTask):
-    container_type = "oxidp"
-    allowed_extensions = (
-        ".xml",
-        ".config",
-        ".xsd",
-        ".dtd",
-    )
-    dest_dir = "/opt/idp"
-
-    @property
-    def src_dir(self):
-        return self.app.config["OXIDP_OVERRIDE_DIR"]
 
 
 class OxauthWatcherTask(BaseWatcherTask):  # pragma: no cover

@@ -4,6 +4,5 @@
 # All rights reserved.
 
 from .expiration import LicenseExpirationTask  # noqa
-from .fswatcher import OxidpWatcherTask  # noqa
 from .fswatcher import OxauthWatcherTask  # noqa
 from .fswatcher import OxtrustWatcherTask  # noqa

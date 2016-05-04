@@ -47,7 +47,7 @@ class OxtrustSetup(OxSetup):
             hostname,
         )
 
-        # self.pull_oxtrust_override()
+        self.pull_oxtrust_override()
         self.add_auto_startup_entry()
         self.change_cert_access("tomcat", "tomcat")
         self.reload_supervisor()
@@ -129,12 +129,12 @@ environment=CATALINA_PID=/var/run/tomcat.pid
             except OSError:
                 pass
 
-    def pull_oxtrust_override(self):  # pragma: no cover
+    def pull_oxtrust_override(self):
         for root, _, files in os.walk(self.app.config["OXTRUST_OVERRIDE_DIR"]):
             for fn in files:
                 src = os.path.join(root, fn)
                 dest = src.replace(self.app.config["OXTRUST_OVERRIDE_DIR"],
-                                   "/opt/tomcat/webapps/identity")
+                                   "/var/gluu/webapps/identity")
                 self.logger.info("copying {} to {}:{}".format(
                     src, self.container.name, dest,
                 ))

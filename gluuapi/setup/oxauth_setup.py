@@ -66,7 +66,7 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
             hostname,
         )
 
-        # self.pull_oxauth_override()
+        self.pull_oxauth_override()
         self.add_auto_startup_entry()
         self.change_cert_access("tomcat", "tomcat")
         self.reload_supervisor()
@@ -108,12 +108,12 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
         }
         self.copy_rendered_jinja_template(src, dest, ctx)
 
-    def pull_oxauth_override(self):  # pragma: no cover
-        for root, dirs, files in os.walk(self.app.config["OXAUTH_OVERRIDE_DIR"]):
+    def pull_oxauth_override(self):
+        for root, _, files in os.walk(self.app.config["OXAUTH_OVERRIDE_DIR"]):
             for fn in files:
                 src = os.path.join(root, fn)
                 dest = src.replace(self.app.config["OXAUTH_OVERRIDE_DIR"],
-                                   "/opt/tomcat/webapps/oxauth")
+                                   "/var/gluu/webapps/oxauth")
                 self.logger.info("copying {} to {}:{}".format(
                     src, self.container.name, dest,
                 ))

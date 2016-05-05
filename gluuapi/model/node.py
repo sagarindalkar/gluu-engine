@@ -71,3 +71,13 @@ class Node(BaseModel):
         if type_:
             condition = (condition) & (db.where("type") == type_)
         return db.search_from_table("containers", condition)
+
+
+class Discovery(Node):
+    pass
+
+class Master(Node):
+    pass
+
+class Worker(Node):
+    pass

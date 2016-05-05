@@ -24,14 +24,13 @@ from ..registry import get_registry_cert
 NODE_TYPES = ('master', 'worker', 'discovery',)
 DISCOVERY_PORT = '8500'
 DISCOVERY_NODE_NAME = 'gluu.discovery'
-
+REMOTE_DOCKER_CERT_DIR = "/opt/gluu/docker/certs"
+CERT_FILES = ['ca.pem', 'cert.pem', 'key.pem']
 
 class Discovery(object):
     pass
 
-
 #TODO this is very ugly code now, next commit will be much better
-
 class CreateNodeResource(Resource):
     def __init__(self):
         self.machine = Machine()
@@ -114,7 +113,7 @@ class CreateNodeResource(Resource):
 
                 time.sleep(2)
                 current_app.logger.info('installing consul')
-                self.machine.ssh(node.name, 'sudo docker run -d --name consul -p 8500:8500 -h consul progrium/consul -server -bootstrap')
+                self.machine.ssh(node.name, 'sudo docker run -d --name=consul -p 8500:8500 -h consul --restart=always -v /opt/data:/data progrium/consul -server -bootstrap')
 
                 time.sleep(2)
                 current_app.logger.info('saving node:{} to DB'.format(node.name))
@@ -166,6 +165,12 @@ class CreateNodeResource(Resource):
                         REGISTRY_BASE_URL,
                     ),
                 )
+                #pushing docker client cert
+                current_app.logger.info("pushing docker client cert into master node")
+                local_cert_path = os.path.join(os.getenv('HOME'), '.docker/machine/certs')
+                self.machine.ssh(node.name, 'sudo mkdir -p {}'.format(REMOTE_DOCKER_CERT_DIR))
+                for cf in CERT_FILES:
+                    self.machine.scp(os.path.join(local_cert_path, cf), REMOTE_DOCKER_CERT_DIR)
 
                 time.sleep(2)
                 current_app.logger.info('saving node:{} to DB'.format(node.name))

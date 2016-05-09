@@ -2,10 +2,6 @@
 # API environment set as production mode
 API_ENV=prod
 
-# IP address where salt-master listens to. Override the value with IP address from eth0
-# or any internet-facing IP address
-SALT_MASTER_IPADDR=0.0.0.0
-
 # Address where app is bind
 HOST=127.0.0.1
 

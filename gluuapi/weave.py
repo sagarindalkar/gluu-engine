@@ -20,6 +20,13 @@ class Weave(object):
         self.node = node
 
         try:
+            self.master_node = db.search_from_table(
+                "nodes", db.where("type") == "master"
+            )[0]
+        except IndexError:
+            self.master_node = None
+
+        try:
             self.cluster = db.all("clusters")[0]
         except IndexError:
             self.cluster = None
@@ -87,7 +94,7 @@ class Weave(object):
     #     ctx = {
     #         "password": ('--password ' + self.cluster.decrypted_admin_pw) if self.weave_encryption else '',
     #         "ipnet": self.cluster.weave_ip_network,
-    #         "master_ipaddr": self.app.config["SALT_MASTER_IPADDR"],
+    #         "master_ipaddr": self.machine.ip(self.master_node.name),
     #     }
     #     launch_cmd = "sudo weave launch-router {password} " \
     #                  "--dns-domain gluu.local " \

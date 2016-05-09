@@ -18,11 +18,9 @@ class Config(object):
 
     DATA_DIR = os.environ.get("DATA_DIR", "/var/lib/gluu-cluster")
     DATABASE_URI = os.path.join(DATA_DIR, "db", "db.json")
-    #SALT_MASTER_IPADDR = os.environ.get("SALT_MASTER_IPADDR", "")
     TEMPLATES_DIR = os.path.join(APP_DIR, "templates")
     LOG_DIR = os.environ.get("LOG_DIR", "/var/log/gluu")
     INSTANCE_DIR = os.path.join(DATA_DIR, "instance")
-    #DOCKER_CERT_DIR = os.path.join(DATA_DIR, "docker_certs")
 
     CUSTOM_LDAP_SCHEMA_DIR = os.path.join(
         DATA_DIR, "custom", "opendj", "schema",

@@ -20,13 +20,6 @@ sudo apt-get install -y gluu-master python-pip python-dev swig libsasl2-dev libl
 
 Note: `gluu-master` is a meta package that installs all required packages.
 
-### Get Registry Certificate
-
-```
-mkdir -p /etc/docker/certs.d/registry.gluu.org:5000
-echo -n | openssl s_client -connect registry.gluu.org:5000 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > /etc/docker/certs.d/registry.gluu.org:5000/ca.crt
-```
-
 ## Deployment
 
 ### Install pip and virtualenv
@@ -48,29 +41,13 @@ $ pip install -r requirements.txt
 $ python setup.py install
 ```
 
-## Configure External Components
-
-`gluu-flask` relies on the following external components:
-
-* weave
-* prometheus
-
-Download `postinstall.py` script and run it.
-
-```
-wget https://raw.githubusercontent.com/GluuFederation/gluu-cluster-postinstall/master/postinstall.py
-python postinstall.py
-```
-
 ## Run
 
-To run the application in foreground, type the following command in the shell,
-and make sure `SALT_MASTER_IPADDR` environment variable is set and
-pointed to salt-master IP address.
+To run the application in foreground, type the following command in the shell:
 
 ```
 $ source env/bin/activate
-$ SALT_MASTER_IPADDR=xxx.xxx.xxx.xxx gluuapi runserver
+$ gluuapi runserver
 ```
 
 Or, if you have `make` installed
@@ -86,7 +63,7 @@ To run `gluuapi` in background (daemon mode):
 
 ```
 $ source env/bin/activate
-$ SALT_MASTER_IPADDR=xxx.xxx.xxx.xxx gluuapi daemon --pidfile /path/to/pidfile --logfile /path/to/logfile start
+$ gluuapi daemon --pidfile /path/to/pidfile --logfile /path/to/logfile start
 ```
 
 The daemon has `start`, `stop`, `restart`, and `status` commands.
@@ -94,6 +71,8 @@ It's worth noting that `--pidfile` and `--logfile` must be pointed to accessible
 By default they are pointed to `/var/run/gluuapi.pid` and `/var/log/gluuapi.log` respectively.
 
 ## Testing
+
+__WARNING__: currently testcases are broken as we are restructuring the project.
 
 Testcases are running using ``pytest`` executed by ``tox``.
 

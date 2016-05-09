@@ -170,7 +170,10 @@ class CreateNodeResource(Resource):
                 local_cert_path = os.path.join(os.getenv('HOME'), '.docker/machine/certs')
                 self.machine.ssh(node.name, 'sudo mkdir -p {}'.format(REMOTE_DOCKER_CERT_DIR))
                 for cf in CERT_FILES:
-                    self.machine.scp(os.path.join(local_cert_path, cf), REMOTE_DOCKER_CERT_DIR)
+                    self.machine.scp(
+                        os.path.join(local_cert_path, cf),
+                        "{}:{}".format(node.name, REMOTE_DOCKER_CERT_DIR),
+                    )
 
                 #install fswatcher
                 #fswatcher_url = 'https://raw.githubusercontent.com/GluuFederation/cluster-tools/master/fswatcher.py'

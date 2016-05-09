@@ -113,7 +113,7 @@ class CreateNodeResource(Resource):
 
                 time.sleep(2)
                 current_app.logger.info('installing consul')
-                self.machine.ssh(node.name, 'sudo docker run -d --name=consul -p 8500:8500 -h consul --restart=always -v /opt/data:/data progrium/consul -server -bootstrap')
+                self.machine.ssh(node.name, 'sudo docker run -d --name=consul -p 8500:8500 -h consul --restart=always -v /opt/gluu/consul/data:/data progrium/consul -server -bootstrap')
 
                 time.sleep(2)
                 current_app.logger.info('saving node:{} to DB'.format(node.name))
@@ -171,6 +171,19 @@ class CreateNodeResource(Resource):
                 self.machine.ssh(node.name, 'sudo mkdir -p {}'.format(REMOTE_DOCKER_CERT_DIR))
                 for cf in CERT_FILES:
                     self.machine.scp(os.path.join(local_cert_path, cf), REMOTE_DOCKER_CERT_DIR)
+
+                #install fswatcher
+                #fswatcher_url = 'https://raw.githubusercontent.com/GluuFederation/cluster-tools/master/fswatcher.py'
+                #self.machine.ssh(node.name, 'sudo curl -sSL {} > /usr/bin/{}'.format(fswatcher_url, fswatcher_url.split('/')[-1] ))
+                #self.machine.ssh(node.name, 'sudo apt-get -qq update && sudo apt-get -qq install -y supervisor python-pip')
+                #self.machine.ssh(node.name, 'sudo pip -q install --upgrade pip && sudo pip -q install virtualenv')
+                #self.machine.ssh(node.name, 'sudo virtualenv /root/.virtualenvs/fswatcher && sudo /root/.virtualenvs/fswatcher/bin/pip -q install watchdog')
+                #TODO push fswatcher conf in /etc/supervisor/conf.d
+
+                #install recovery
+                #recovery_url = 'https://raw.githubusercontent.com/GluuFederation/cluster-tools/master/recovery.py'
+                #self.machine.ssh(node.name, 'sudo curl -sSL {} > /usr/bin/{}'.format(recovery_url, recovery_url.split('/')[-1] ))
+                #TODO push recovery conf in /etc/supervisor/conf.d
 
                 time.sleep(2)
                 current_app.logger.info('saving node:{} to DB'.format(node.name))

@@ -113,12 +113,15 @@ class Machine(object):
 
         if node.type == 'master':
             cmd.append('--swarm --swarm-master')
+            cmd.append('--engine-label=org.gluu.node-type={}'.format(node.type))
 
         if node.type == 'worker':
             cmd.append('--swarm')
+            cmd.append('--engine-label=org.gluu.node-type={}'.format(node.type))
 
         if node.type != 'discovery':
             cmd.append(self._dicovery(discovery))
+            cmd.append('--engine-label=org.gluu.node-type={}'.format(node.type))
 
         if node.type in ("master", "worker",):
             cmd.append("--engine-insecure-registry=https://{}".format(REGISTRY_BASE_URL))

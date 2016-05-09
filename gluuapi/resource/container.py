@@ -30,6 +30,7 @@ from ..model import OxidpContainer
 from ..model import NginxContainer
 from ..model import OxasimbaContainer
 from ..model import ContainerLog
+from ..machine import Machine
 
 
 #: List of supported container
@@ -52,6 +53,32 @@ def get_container(db, container_id):
     except IndexError:
         container = None
     return container
+
+
+def target_node_reachable(node_name):
+    return Machine().status(node_name)
+
+
+def master_node_reachable():
+    try:
+        node = db.search_from_table(
+            "nodes", db.where("type") == "master"
+        )[0]
+    except IndexError:
+        return False
+    else:
+        return Machine().status(node.name)
+
+
+def discovery_node_reachable():
+    try:
+        node = db.search_from_table(
+            "nodes", db.where("type") == "discovery"
+        )[0]
+    except IndexError:
+        return False
+    else:
+        return Machine().status(node.name)
 
 
 class ContainerResource(Resource):
@@ -98,6 +125,30 @@ class ContainerResource(Resource):
             return {
                 "status": 403,
                 "message": "cannot delete container while still in deployment",
+            }, 403
+
+        node = db.get(container.node_id, "nodes")
+
+        # reject request if target node is unreachable
+        if not target_node_reachable(node.name):
+            return {
+                "status": 403,
+                "message": "access denied due to target node being unreachable",
+            }, 403
+
+        # reject request if master node is unreachable
+        if not master_node_reachable():
+            return {
+                "status": 403,
+                "message": "access denied due to master node being unreachable",
+            }, 403
+
+        # reject request if discovery node is unreachable, otherwise docker
+        # connection will be stuck
+        if not discovery_node_reachable():
+            return {
+                "status": 403,
+                "message": "access denied due to discovery node being unreachable",
             }, 403
 
         # remove container (``container.id`` may empty, hence we're using
@@ -184,6 +235,28 @@ class NewContainerResource(Resource):
             }, 403
 
         node = data["context"]["node"]
+
+        # reject request if target node is unreachable
+        if not target_node_reachable(node.name):
+            return {
+                "status": 403,
+                "message": "access denied due to target node being unreachable",
+            }, 403
+
+        # reject request if master node is unreachable
+        if not master_node_reachable():
+            return {
+                "status": 403,
+                "message": "access denied due to master node being unreachable",
+            }, 403
+
+        # reject request if discovery node is unreachable, otherwise docker
+        # connection will be stuck
+        if not discovery_node_reachable():
+            return {
+                "status": 403,
+                "message": "access denied due to discovery node being unreachable",
+            }, 403
 
         # only allow 1 oxtrust per cluster
         if container_type == "oxtrust" and cluster.count_containers(type_="oxtrust"):

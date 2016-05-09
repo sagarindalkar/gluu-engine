@@ -26,6 +26,9 @@ class ContainerReq(ma.Schema):
         if not node:
             raise ValidationError("invalid node ID")
 
+        if node.type not in ("master", "worker",):
+            raise ValidationError("cannot use non master or worker node")
+
         # if node.type == "worker":
         #     license_key = db.all("license_keys")[0]
         #     if license_key.expired:

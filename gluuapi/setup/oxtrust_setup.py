@@ -138,4 +138,8 @@ environment=CATALINA_PID=/var/run/tomcat.pid
                 self.logger.info("copying {} to {}:{}".format(
                     src, self.container.name, dest,
                 ))
+                self.docker.exec_cmd(
+                    self.container.cid,
+                    "mkdir -p {}".format(os.path.dirname(dest)),
+                )
                 self.docker.copy_to_container(self.container.cid, src, dest)

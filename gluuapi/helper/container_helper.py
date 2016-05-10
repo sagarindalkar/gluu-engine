@@ -277,15 +277,15 @@ class OxauthContainerHelper(BaseContainerHelper):
 
     def __init__(self, container, app, logpath=None):
         self.volumes = {
-            "/var/gluu/webapps/oxauth/pages": {
-                'bind': '/var/gluu/webapps/oxauth/pages',
-            },
-            "/var/gluu/webapps/oxauth/resources": {
-                'bind': '/var/gluu/webapps/oxauth/resources',
-            },
-            "/var/gluu/webapps/oxauth/libs": {
-                'bind': '/var/gluu/webapps/oxauth/libs',
-            },
+            # "/var/gluu/webapps/oxauth/pages": {
+            #     'bind': '/var/gluu/webapps/oxauth/pages',
+            # },
+            # "/var/gluu/webapps/oxauth/resources": {
+            #     'bind': '/var/gluu/webapps/oxauth/resources',
+            # },
+            # "/var/gluu/webapps/oxauth/libs": {
+            #     'bind': '/var/gluu/webapps/oxauth/libs',
+            # },
         }
         super(OxauthContainerHelper, self).__init__(container, app, logpath)
 
@@ -299,15 +299,15 @@ class OxtrustContainerHelper(BaseContainerHelper):
             "/opt/idp": {
                 "bind": "/opt/idp",
             },
-            "/var/gluu/webapps/oxtrust/pages": {
-                'bind': '/var/gluu/webapps/oxtrust/pages',
-            },
-            "/var/gluu/webapps/oxtrust/resources": {
-                'bind': '/var/gluu/webapps/oxtrust/resources',
-            },
-            "/var/gluu/webapps/oxtrust/libs": {
-                'bind': '/var/gluu/webapps/oxtrust/libs',
-            },
+            # "/var/gluu/webapps/oxtrust/pages": {
+            #     'bind': '/var/gluu/webapps/oxtrust/pages',
+            # },
+            # "/var/gluu/webapps/oxtrust/resources": {
+            #     'bind': '/var/gluu/webapps/oxtrust/resources',
+            # },
+            # "/var/gluu/webapps/oxtrust/libs": {
+            #     'bind': '/var/gluu/webapps/oxtrust/libs',
+            # },
         }
         super(OxtrustContainerHelper, self).__init__(container, app, logpath)
 

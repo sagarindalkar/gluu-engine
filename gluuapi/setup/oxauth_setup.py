@@ -117,4 +117,8 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
                 self.logger.info("copying {} to {}:{}".format(
                     src, self.container.name, dest,
                 ))
+                self.docker.exec_cmd(
+                    self.container.cid,
+                    "mkdir -p {}".format(os.path.dirname(dest)),
+                )
                 self.docker.copy_to_container(self.container.cid, src, dest)

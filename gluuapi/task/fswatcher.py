@@ -4,6 +4,7 @@
 # All rights reserved.
 
 import logging
+import os
 
 from crochet import run_in_reactor
 from twisted.internet import inotify
@@ -156,6 +157,9 @@ class BaseWatcherTask(object):
 
             # copy the file to container
             try:
+                dk.exec_cmd(container.cid, "mkdir -p {}".format(
+                    os.path.dirname(dest)
+                ))
                 dk.copy_to_container(container.cid, src, dest)
             except RuntimeError as exc:
                 self.logger.error("unable to copy {} to {}:{}; reason={}".format(

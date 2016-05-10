@@ -134,7 +134,7 @@ environment=CATALINA_PID=/var/run/tomcat.pid
             for fn in files:
                 src = os.path.join(root, fn)
                 dest = src.replace(self.app.config["OXTRUST_OVERRIDE_DIR"],
-                                   "/var/gluu/webapps/identity")
+                                   "/var/gluu/webapps/oxtrust")
                 self.logger.info("copying {} to {}:{}".format(
                     src, self.container.name, dest,
                 ))

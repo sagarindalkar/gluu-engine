@@ -29,11 +29,11 @@ class ContainerReq(ma.Schema):
         if node.type not in ("master", "worker",):
             raise ValidationError("cannot use non master or worker node")
 
-        # if node.type == "worker":
-        #     license_key = db.all("license_keys")[0]
-        #     if license_key.expired:
-        #         raise ValidationError("cannot deploy container to "
-        #                               "node with expired license")
+        if node.type == "worker":
+            license_key = db.all("license_keys")[0]
+            if license_key.expired:
+                raise ValidationError("cannot deploy container to "
+                                      "node with expired license")
 
     @post_load
     def finalize_data(self, data):

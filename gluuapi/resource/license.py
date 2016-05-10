@@ -93,7 +93,7 @@ class LicenseKeyResource(Resource):
             license_key.metadata = decoded_license["metadata"]
             db.update(license_key.id, license_key, "license_keys")
 
-        # if worker nodes have disabled oxAuth containers and license
+        # if worker nodes have disabled oxAuth and oxIdp containers and license
         # key is not expired, try to re-enable the containers
         if not license_key.expired:
             for worker_node in license_key.get_workers():
@@ -108,10 +108,8 @@ class LicenseKeyResource(Resource):
                     for container in containers:
                         container.state = STATE_SUCCESS
                         db.update(container.id, container, "containers")
-                        cidr = "{}/{}".format(container.weave_ip,
-                                              container.weave_prefixlen)
-                        weave.attach(cidr, container.id)
-                        weave.dns_add(container.id, container.domain_name)
+                        weave.attach(container.cid)
+                        weave.dns_add(container.cid, container.hostname)
 
         distribute_cluster_data(current_app.config["DATABASE_URI"])
         return format_license_key_resp(license_key)

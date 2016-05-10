@@ -103,33 +103,31 @@ class Weave(object):
     #                  "{master_ipaddr}".format(**ctx)
     #     self.machine.ssh(self.node.name, launch_cmd)
 
-    def attach(self, cidr, node_id):
+    def attach(self, container_id, cidr=""):
         """Adds container into weave network.
 
         :param cidr: CIDR, e.g. ``10.2.1.1/24``.
         :param node_id: ID of the node/container.
         """
-        attach_cmd = "sudo weave attach {} {}".format(cidr, node_id)
-        self.logger.info("attaching weave IP address {}".format(cidr))
+        attach_cmd = "sudo weave attach {} {}".format(cidr, container_id)
         self.machine.ssh(self.node.name, attach_cmd)
 
-    def detach(self, cidr, node_id):
+    def detach(self, container_id, cidr=""):
         """Removes container from weave network.
 
         :param cidr: CIDR, e.g. ``10.2.1.1/24``.
         :param node_id: ID of the node/container.
         """
-        detach_cmd = "sudo weave detach {} {}".format(cidr, node_id)
-        self.logger.info("detaching weave IP address {}".format(cidr))
+        detach_cmd = "sudo weave detach {} {}".format(cidr, container_id)
         self.machine.ssh(self.node.name, detach_cmd)
 
-    def dns_add(self, node_id, hostname):
+    def dns_add(self, container_id, hostname):
         """Adds entry to weave DNS.
 
         :param node_id: ID of the container/node.
         :param domain_name: Local domain name.
         """
-        dns_cmd = "sudo weave dns-add {} -h {}".format(node_id, hostname)
+        dns_cmd = "sudo weave dns-add {} -h {}".format(container_id, hostname)
         self.logger.info("adding {} to local DNS server".format(hostname))
         self.machine.ssh(self.node.name, dns_cmd)
 

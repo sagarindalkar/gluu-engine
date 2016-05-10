@@ -19,6 +19,8 @@ from ..machine import Machine
 from ..database import db
 from ..registry import REGISTRY_BASE_URL
 from ..registry import get_registry_cert
+from ..utils import retrieve_signed_license
+from ..utils import decode_signed_license
 
 # TODO: put it in config
 NODE_TYPES = ('master', 'worker', 'discovery',)
@@ -203,6 +205,29 @@ class CreateNodeResource(Resource):
 
         if node.type == 'worker':
             try:
+                license_key = db.all("license_keys")[0]
+            except IndexError:
+                license_key = None
+
+            if not license_key:
+                return {
+                    "status": 403,
+                    "message": "creating worker node requires a license key",
+                }, 403
+
+            # check if license metadata is already populated; if it's not,
+            # download signed license and populate the metadata;
+            # subsequent request will not be needed as we are
+            # removing the license count limitation
+            if not license_key.metadata:
+                _, err = self.populate_license(license_key)
+                if err:
+                    return {
+                        "status": 422,
+                        "message": "unable to retrieve license; reason={}".format(err),
+                    }, 422
+
+            try:
                 #TODO make this hole thing side effect free and idempotent
                 current_app.logger.info('creating {} node ({})'.format(node.name, node.type))
                 self.machine.create(node, provider, discovery)
@@ -257,6 +282,40 @@ class CreateNodeResource(Resource):
             "Location": url_for("node", node_name=node.name),
         }
         return node.as_dict(), 201, headers
+
+    def populate_license(self, license_key):
+        # download signed license from license server
+        current_app.logger.info("downloading signed license")
+
+        sl_resp = retrieve_signed_license(license_key.code)
+        if not sl_resp.ok:
+            err_msg = "unable to retrieve license from " \
+                      "https://license.gluu.org; code={} reason={}"
+            current_app.logger.warn(err_msg.format(
+                sl_resp.status_code,
+                sl_resp.text,
+            ))
+            return license_key, err_msg
+
+        signed_license = sl_resp.json()["license"]
+        try:
+            # generate metadata
+            decoded_license = decode_signed_license(
+                signed_license,
+                license_key.decrypted_public_key,
+                license_key.decrypted_public_password,
+                license_key.decrypted_license_password,
+            )
+        except ValueError as exc:
+            current_app.logger.warn("unable to generate metadata; "
+                                    "reason={}".format(exc))
+            decoded_license = {"valid": False, "metadata": {}}
+        finally:
+            license_key.valid = decoded_license["valid"]
+            license_key.metadata = decoded_license["metadata"]
+            license_key.signed_license = signed_license
+            db.update(license_key.id, license_key, "license_keys")
+            return license_key, err_msg
 
 
 class NodeListResource(Resource):

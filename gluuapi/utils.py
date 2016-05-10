@@ -122,6 +122,7 @@ def retrieve_signed_license(code):
     resp = requests.post(
         "https://license.gluu.org/oxLicense/rest/generate",
         data={"licenseId": code},
+        verify=False,
     )
     return resp
 

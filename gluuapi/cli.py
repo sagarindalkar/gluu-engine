@@ -10,7 +10,10 @@ from crochet import setup as crochet_setup
 from daemonocle import Daemon
 
 from .app import create_app
+from .database import db
+from .dockerclient import Docker
 from .log import configure_global_logging
+from .machine import Machine
 from .task import LicenseExpirationTask
 from .task import OxauthWatcherTask
 from .task import OxtrustWatcherTask
@@ -107,3 +110,59 @@ def runserver():
     configure_global_logging()
     app = create_app()
     run_app(app)
+
+
+def _restart_ox(type_):
+    assert type_ in ("oxauth", "oxtrust",), "unsupported ox app"
+
+    # initialize Flask context
+    create_app()
+
+    try:
+        master_node = db.search_from_table(
+            "nodes", db.where("type") == "master"
+        )[0]
+    except IndexError:
+        master_node = None
+
+    if not master_node:
+        click.echo("master node is not found")
+
+    mc = Machine()
+
+    containers = db.search_from_table(
+        "containers",
+        ((db.where("type") == type_) & (db.where("state") == "SUCCESS")),
+    )
+    for container in containers:
+        node = db.get(container.node_id, "nodes")
+        dk = Docker(mc.config(node.name), mc.swarm_config(master_node.name))
+
+        click.echo("restarting tomcat process in "
+                   "{} container {}".format(type_, container.name))
+
+        if dk.inspect_container(container.cid)["State"]["Running"] is not True:
+            click.echo("{} container {} is not running; "
+                       "skipping ...".format(type_, container.name))
+            continue
+
+        resp = dk.exec_cmd(container.cid, "supervisorctl restart tomcat")
+        if resp.exit_code != 0:
+            click.echo(
+                "unable to restart tomcat process in {} container {}; "
+                "reason={}".format(type_, container.name, resp.retval)
+            )
+
+
+@main.command("restart-oxauth")
+def restart_oxauth():
+    """Restart process of oxAuth containers.
+    """
+    _restart_ox("oxauth")
+
+
+@main.command("restart-oxtrust")
+def restart_oxtrust():
+    """Restart process of oxTrust containers.
+    """
+    _restart_ox("oxtrust")

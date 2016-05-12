@@ -16,6 +16,8 @@ from ..model import STATE_SUCCESS
 from ..helper import distribute_cluster_data
 from ..utils import decode_signed_license
 from ..weave import Weave
+from ..machine import Machine
+
 
 def format_license_key_resp(obj):
     resp = obj.as_dict()
@@ -96,6 +98,8 @@ class LicenseKeyResource(Resource):
         # if worker nodes have disabled oxAuth and oxIdp containers and license
         # key is not expired, try to re-enable the containers
         if not license_key.expired:
+            mc = Machine()
+
             for worker_node in license_key.get_workers():
                 weave = Weave(
                     worker_node, current_app._get_current_object(),
@@ -108,7 +112,7 @@ class LicenseKeyResource(Resource):
                     for container in containers:
                         container.state = STATE_SUCCESS
                         db.update(container.id, container, "containers")
-                        weave.attach(container.cid)
+                        mc.ssh(worker_node.name, "docker restart {}".format(container.cid))
                         weave.dns_add(container.cid, container.hostname)
 
         distribute_cluster_data(current_app.config["DATABASE_URI"])

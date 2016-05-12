@@ -14,7 +14,7 @@ from .database import db
 from .dockerclient import Docker
 from .log import configure_global_logging
 from .machine import Machine
-from .task import LicenseExpirationTask
+from .task import LicenseWatcherTask
 from .task import OxauthWatcherTask
 from .task import OxtrustWatcherTask
 from .setup.signals import connect_setup_signals
@@ -28,7 +28,7 @@ def run_app(app, use_reloader=True):
     crochet_setup()
 
     if not app.debug:
-        LicenseExpirationTask(app).perform_job()
+        LicenseWatcherTask(app).perform_job()
 
     OxauthWatcherTask(app).perform_job()
     OxtrustWatcherTask(app).perform_job()

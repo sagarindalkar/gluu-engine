@@ -16,17 +16,19 @@ from ..model import STATE_SUCCESS
 from ..utils import retrieve_signed_license
 from ..utils import decode_signed_license
 from ..weave import Weave
+from ..machine import Machine
 
 # Default interval when running periodic task (set to 1 day)
 _DEFAULT_INTERVAL = 60 * 60 * 24
 
 
-class LicenseExpirationTask(object):
+class LicenseWatcherTask(object):
     def __init__(self, app):
         self.logger = logging.getLogger(
             __name__ + "." + self.__class__.__name__,
         )
         self.app = app
+        self.machine = Machine()
 
     @run_in_reactor
     def perform_job(self):
@@ -55,7 +57,10 @@ class LicenseExpirationTask(object):
             self.logger.info("trying to retrieve license update")
             new_license_key = self.update_license_key(license_key)
 
-            worker_nodes = db.all("nodes", db.where("type") == "worker")
+            worker_nodes = db.search_from_table(
+                "nodes",
+                db.where("type") == "worker",
+            )
             for node in worker_nodes:
                 if new_license_key.expired:
                     # unable to do license_key renewal, hence we're going to
@@ -116,17 +121,14 @@ class LicenseExpirationTask(object):
         :param node: Node object.
         :param type_: Type of the container.
         """
-        weave = Weave(node, self.app, self.logger)
-
         containers = node.get_containers(type_=type_)
         for container in containers:
             container.state = STATE_DISABLED
             db.update(container.id, container, "containers")
 
-            cidr = "{}/{}".format(container.weave_ip, container.weave_prefixlen)
-            weave.detach(cidr, container.id)
+            self.machine.ssh(node.name, "docker stop {}".format(container.cid))
             self.logger.info("{} container {} has been "
-                             "disabled".format(type_, container.id))
+                             "disabled".format(type_, container.name))
 
     def enable_containers(self, node, type_):
         """Enables containers with certain type.
@@ -143,8 +145,7 @@ class LicenseExpirationTask(object):
             container.state = STATE_SUCCESS
             db.update(container.id, container, "containers")
 
-            cidr = "{}/{}".format(container.weave_ip, container.weave_prefixlen)
-            weave.attach(cidr, container.id)
-            weave.dns_add(container.id, container.domain_name)
+            self.machine.ssh(node.name, "docker restart {}".format(container.cid))
+            weave.dns_add(container.cid, container.hostname)
             self.logger.info("{} container {} has been "
                              "enabled".format(type_, container.id))

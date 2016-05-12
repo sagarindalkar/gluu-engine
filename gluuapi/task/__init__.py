@@ -3,6 +3,6 @@
 #
 # All rights reserved.
 
-from .expiration import LicenseExpirationTask  # noqa
+from .licensewatcher import LicenseWatcherTask  # noqa
 from .fswatcher import OxauthWatcherTask  # noqa
 from .fswatcher import OxtrustWatcherTask  # noqa

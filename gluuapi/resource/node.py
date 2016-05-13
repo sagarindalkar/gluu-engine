@@ -28,6 +28,10 @@ DISCOVERY_PORT = '8500'
 DISCOVERY_NODE_NAME = 'gluu.discovery'
 REMOTE_DOCKER_CERT_DIR = "/opt/gluu/docker/certs"
 CERT_FILES = ['ca.pem', 'cert.pem', 'key.pem']
+FSWATCHER_SCRIPT = "https://github.com/GluuFederation/cluster-tools/raw/master/fswatcher/fswatcher.py"
+FSWATCHER_CONF = "https://github.com/GluuFederation/cluster-tools/raw/master/fswatcher/fswatcher.conf"
+RECOVERY_SCRIPT = "https://github.com/GluuFederation/cluster-tools/raw/master/recovery/recovery.py"
+RECOVERY_CONF = "https://github.com/GluuFederation/cluster-tools/raw/master/recovery/recovery.conf"
 
 class Discovery(object):
     pass
@@ -143,12 +147,12 @@ class CreateNodeResource(Resource):
 
                 time.sleep(2)
                 #TODO if weaveexec
-                current_app.logger.info('set exec permission of weave')
+                current_app.logger.info('adding exec permission of weave')
                 self.machine.ssh(node.name, 'sudo chmod +x /usr/local/bin/weave')
 
                 time.sleep(2)
                 #TODO if weavelaunch
-                current_app.logger.info('launch weave')
+                current_app.logger.info('launching weave')
                 self.machine.ssh(node.name, 'sudo weave launch')
 
                 time.sleep(2)
@@ -177,18 +181,31 @@ class CreateNodeResource(Resource):
                         "{}:{}".format(node.name, REMOTE_DOCKER_CERT_DIR),
                     )
 
-                #install fswatcher
-                #fswatcher_url = 'https://raw.githubusercontent.com/GluuFederation/cluster-tools/master/fswatcher.py'
-                #self.machine.ssh(node.name, 'sudo curl -sSL {} > /usr/bin/{}'.format(fswatcher_url, fswatcher_url.split('/')[-1] ))
-                #self.machine.ssh(node.name, 'sudo apt-get -qq update && sudo apt-get -qq install -y supervisor python-pip')
-                #self.machine.ssh(node.name, 'sudo pip -q install --upgrade pip && sudo pip -q install virtualenv')
-                #self.machine.ssh(node.name, 'sudo virtualenv /root/.virtualenvs/fswatcher && sudo /root/.virtualenvs/fswatcher/bin/pip -q install watchdog')
-                #TODO push fswatcher conf in /etc/supervisor/conf.d
+                # install fswatcher
+                current_app.logger.info("installing fswatcher script in {} node".format(node.name))
+                self.machine.ssh(node.name, "sudo wget {} -P /usr/bin".format(FSWATCHER_SCRIPT))
+                self.machine.ssh(node.name, "sudo chmod +x /usr/bin/fswatcher.py")
+                self.machine.ssh(node.name, "sudo apt-get -qq install -y --force-yes supervisor python-pip")
+                self.machine.ssh(node.name, "sudo pip -q install --upgrade pip")
+                self.machine.ssh(node.name, "sudo pip -q install virtualenv")
+                self.machine.ssh(node.name, "sudo mkdir -p /root/.virtualenvs")
+                self.machine.ssh(node.name, "sudo virtualenv /root/.virtualenvs/fswatcher")
+                self.machine.ssh(node.name, "sudo /root/.virtualenvs/fswatcher/bin/pip -q install watchdog")
 
-                #install recovery
-                #recovery_url = 'https://raw.githubusercontent.com/GluuFederation/cluster-tools/master/recovery.py'
-                #self.machine.ssh(node.name, 'sudo curl -sSL {} > /usr/bin/{}'.format(recovery_url, recovery_url.split('/')[-1] ))
-                #TODO push recovery conf in /etc/supervisor/conf.d
+                # put fswatcher conf in /etc/supervisor/conf.d
+                current_app.logger.info("configuring fswatcher daemon in {} node".format(node.name))
+                self.machine.ssh(node.name, "sudo wget {} -P /etc/supervisor/conf.d".format(FSWATCHER_CONF))
+                self.machine.ssh(node.name, "sudo supervisorctl reload")
+
+                # install recovery
+                current_app.logger.info("installing recovery script in {} node".format(node.name))
+                self.machine.ssh(node.name, "sudo wget {} -P /usr/bin".format(RECOVERY_SCRIPT))
+                self.machine.ssh(node.name, "sudo chmod +x /usr/bin/recovery.py")
+
+                # put recovery conf in /etc/supervisor/conf.d
+                current_app.logger.info("configuring recovery daemon in {} node".format(node.name))
+                self.machine.ssh(node.name, "sudo wget {} -P /etc/supervisor/conf.d".format(RECOVERY_CONF))
+                self.machine.ssh(node.name, "sudo supervisorctl reload")
 
                 time.sleep(2)
                 current_app.logger.info('saving node:{} to DB'.format(node.name))
@@ -239,13 +256,13 @@ class CreateNodeResource(Resource):
 
                 time.sleep(2)
                 #TODO if weaveexec
-                current_app.logger.info('set exec permission of weave')
+                current_app.logger.info('adding exec permission of weave')
                 self.machine.ssh(node.name, 'sudo chmod +x /usr/local/bin/weave')
 
                 time.sleep(2)
                 master = db.search_from_table('nodes', db.where('type') == 'master')[0]
                 ip = self.machine.ip(master.name)
-                current_app.logger.info('launch peer weave')
+                current_app.logger.info('launching weave')
                 self.machine.ssh(node.name, 'sudo weave launch {}'.format(ip))
 
                 time.sleep(2)
@@ -264,6 +281,17 @@ class CreateNodeResource(Resource):
                         REGISTRY_BASE_URL,
                     ),
                 )
+
+                # install recovery
+                current_app.logger.info("installing recovery script in {} node".format(node.name))
+                self.machine.ssh(node.name, "sudo wget {} -P /usr/bin".format(RECOVERY_SCRIPT))
+                self.machine.ssh(node.name, "sudo chmod +x /usr/bin/recovery.py")
+                self.machine.ssh(node.name, "sudo apt-get -qq install -y --force-yes supervisor")
+
+                # put recovery conf in /etc/supervisor/conf.d
+                current_app.logger.info("configuring recovery daemon in {} node".format(node.name))
+                self.machine.ssh(node.name, "sudo wget {} -P /etc/supervisor/conf.d".format(RECOVERY_CONF))
+                self.machine.ssh(node.name, "sudo supervisorctl reload")
 
                 time.sleep(2)
                 current_app.logger.info('saving node:{} to DB'.format(node.name))

@@ -79,13 +79,14 @@ DO_REGION_CHOICES = (
     "nyc1",  # New York 1
     "nyc2",  # New York 2
     "nyc3",  # New York 3
-    "ams1",  # Amsterdam 1
+    # "ams1",  # Amsterdam 1
     "ams2",  # Amsterdam 2
     "ams3",  # Amsterdam 3
     "sgp1",  # Singapore 1
     "lon1",  # London 1
     "sfo1",  # San Fransisco 1
     "tor1",  # Toronto 1
+    "fra1",  # Frankfurt 1
 )
 
 #: List of all DigitalOcean sizes.

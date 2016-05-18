@@ -14,9 +14,10 @@ from ..reqparser import LicenseKeyReq
 from ..model import STATE_DISABLED
 from ..model import STATE_SUCCESS
 from ..helper import distribute_cluster_data
-from ..utils import decode_signed_license
 from ..weave import Weave
 from ..machine import Machine
+from ..utils import retrieve_signed_license
+from ..utils import decode_signed_license
 
 
 def format_license_key_resp(obj):
@@ -42,7 +43,15 @@ class LicenseKeyListResource(Resource):
                 "message": "Invalid data",
                 "params": errors,
             }, 400
+
         license_key = LicenseKey(fields=data)
+        license_key, err = self.populate_license(license_key)
+        if err:
+            return {
+                "status": 422,
+                "message": "unable to retrieve license; reason={}".format(err),
+            }, 422
+
         db.persist(license_key, "license_keys")
         distribute_cluster_data(current_app.config["DATABASE_URI"])
 
@@ -55,6 +64,42 @@ class LicenseKeyListResource(Resource):
         license_keys = db.all("license_keys")
         return [format_license_key_resp(license_key)
                 for license_key in license_keys]
+
+    def populate_license(self, license_key):
+        err_msg = ""
+
+        # download signed license from license server
+        current_app.logger.info("downloading signed license")
+
+        sl_resp = retrieve_signed_license(license_key.code)
+        if not sl_resp.ok:
+            err_msg = "unable to retrieve license from " \
+                      "https://license.gluu.org; code={} reason={}"
+            current_app.logger.warn(err_msg.format(
+                sl_resp.status_code,
+                sl_resp.text,
+            ))
+            return license_key, err_msg
+
+        signed_license = sl_resp.json()["license"]
+        try:
+            # generate metadata
+            decoded_license = decode_signed_license(
+                signed_license,
+                license_key.decrypted_public_key,
+                license_key.decrypted_public_password,
+                license_key.decrypted_license_password,
+            )
+        except ValueError as exc:
+            current_app.logger.warn("unable to generate metadata; "
+                                    "reason={}".format(exc))
+            decoded_license = {"valid": False, "metadata": {}}
+        finally:
+            license_key.valid = decoded_license["valid"]
+            license_key.metadata = decoded_license["metadata"]
+            license_key.signed_license = signed_license
+            db.update(license_key.id, license_key, "license_keys")
+            return license_key, err_msg
 
 
 class LicenseKeyResource(Resource):

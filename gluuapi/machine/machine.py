@@ -90,7 +90,7 @@ class Machine(object):
             '--digitalocean-size={}'.format(provider.digitalocean_size),
             '--digitalocean-image={}'.format(provider.digitalocean_image),
             '--digitalocean-region={}'.format(provider.digitalocean_region),
-            '--digitalocean-backup={}'.format(provider.digitalocean_backup),
+            '--digitalocean-backups={}'.format(provider.digitalocean_backups),
             '--digitalocean-private-networking={}'.format(provider.digitalocean_private_networking),
             '--digitalocean-ipv6={}'.format(provider.digitalocean_ipv6),
         ])
@@ -106,10 +106,10 @@ class Machine(object):
             cmd.append(self._get_generic_cmd(provider))
 
         if provider.driver == 'amazonec2':
-            cmd = self._get_aws_cmd(provider)
+            cmd.append(self._get_aws_cmd(provider))
 
         if provider.driver == 'digitalocean':
-            cmd = self._get_do_cmd(provider)
+            cmd.append(self._get_do_cmd(provider))
 
         if node.type == 'master':
             cmd.append('--swarm --swarm-master')

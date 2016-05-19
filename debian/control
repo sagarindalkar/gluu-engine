@@ -10,7 +10,6 @@ Build-Depends: debhelper (>= 9.0.0),
 		python-tox,
 	 	swig,
 		libssl-dev,
-		libzmq3-dev
 XS-Python-Version: >=2.7
 Standards-Version: 3.9.5
 Homepage: http://www.gluu.org
@@ -23,20 +22,16 @@ Depends: ${misc:Depends},
 		python-netaddr,
 		python-crochet,
 		python-flask,
-		python-zmq,
 		python-jsonpickle,
 		python-docker-py,
 		tinydb,
 		python-flask-restful,
-		python-flask-restful-swagger,
-		libzmq3-dev,
 		openjdk-7-jre-headless,
 		oxd-license-validator,
 		python-daemonocle,
 		python-flask-marshmallow,
-		python-ldap
 Description: Gluu Server Flask Management API Server
- The goal is to use Salt, Docker, and Flask to build
+ The goal is to use Docker Engine, Docker Machine, and Flask to build
  a new cluster recipe for the Gluu Server that will
  enable central administration of nodes, including
  provisioning, de-provisioning, and reporting.

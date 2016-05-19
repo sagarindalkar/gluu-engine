@@ -6,10 +6,6 @@ crochet==1.4.0
 # Docker
 docker-py==1.8.0
 
-#salt
-#salt==2014.7.6
-#pyzmq==14.6.0
-
 #storage
 tinydb==3.0.0
 jsonpickle==0.9.0

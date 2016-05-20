@@ -16,11 +16,15 @@
 # All rights reserved.
 
 import uuid
+import time
 
 from .base import BaseModel
 from .base import STATE_SUCCESS
 from ..database import db
 
+from crochet import run_in_reactor
+from ..machine import Machine
+from ..log import create_file_logger
 
 class Node(BaseModel):
     resource_fields = dict.fromkeys([
@@ -73,11 +77,86 @@ class Node(BaseModel):
         return db.search_from_table("containers", condition)
 
 
-class Discovery(Node):
-    pass
+class DiscoveryNode(Node):
+    state_fields = dict.fromkeys([
+        'state_node_create',
+        'state_install_consul',
+        'state_complete'
+    ])
 
-class Master(Node):
-    pass
+    def __init__(self, fields=None):
+        self.id = str(uuid.uuid4())
+        self.state_node_create = False
+        self.state_install_consul = False
+        self.state_complete = False
+        self.populate(fields)
+        self.resource_fields = dict(self.resource_fields.items() + self.state_fields.items())
 
-class Worker(Node):
-    pass
+    def populate(self, fields=None):
+        fields = fields or {}
+        self.name = 'gluu.discovery'
+        self.type = fields.get('type', '')
+        self.provider_id = fields.get('provider_id', '')
+
+
+class MasterNode(Node):
+    state_fields = dict.fromkeys([
+        'state_node_create',
+        'state_install_weave',
+        'state_weave_permission',
+        'state_weave_launch',
+        'state_registry_cert',
+        'state_docker_cert',
+        'state_fswatcher',
+        'state_recovery',
+        'state_complete'
+    ])
+
+    def __init__(self, fields=None):
+        self.id = str(uuid.uuid4())
+        self.state_node_create = False
+        self.state_install_weave = False
+        self.state_weave_permission = False
+        self.state_weave_launch = False
+        self.state_registry_cert = False
+        self.state_docker_cert = False
+        self.state_fswatcher = False
+        self.state_recovery = False
+        self.state_complete = False
+        self.populate(fields)
+        self.resource_fields = dict(self.resource_fields.items() + self.state_fields.items())
+
+    def populate(self, fields=None):
+        fields = fields or {}
+        self.name = fields.get('name', '')
+        self.type = fields.get('type', '')
+        self.provider_id = fields.get('provider_id', '')
+
+class WorkerNode(Node):
+    state_fields = dict.fromkeys([
+        'state_node_create',
+        'state_install_weave',
+        'state_weave_permission',
+        'state_weave_launch',
+        'state_registry_cert',
+        'state_recovery',
+        'state_complete'
+    ])
+
+    def __init__(self, fields=None):
+        self.id = str(uuid.uuid4())
+        self.state_node_create = False
+        self.state_install_weave = False
+        self.state_weave_permission = False
+        self.state_weave_launch = False
+        self.state_registry_cert = False
+        self.state_recovery = False
+        self.state_complete = False
+        self.populate(fields)
+        self.resource_fields = dict(self.resource_fields.items() + self.state_fields.items())
+
+    def populate(self, fields=None):
+        fields = fields or {}
+        self.name = fields.get('name', '')
+        self.type = fields.get('type', '')
+        self.provider_id = fields.get('provider_id', '')

@@ -31,6 +31,10 @@ from gluuapi.cli import runserver
 # gunicorn run
 #app = get_app_for_gunicorn()
 if __name__ == "__main__":
+    # m = Machine()
+    # data = m.is_running('keyval')
+    # print type(data)
+    # print data
     runserver()
     # gunicorn run
     #app.run()

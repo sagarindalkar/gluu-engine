@@ -231,3 +231,9 @@ class Machine(object):
         if not match:
             raise RuntimeError("can't parse output (\"%s\")" % version_str)
         return match.group(1)
+
+    def is_running(self, machine_name):
+        cmd = 'ls -f {{.Name}} --filter state=running'
+        stdout, _, _ = self._run(cmd)
+        node_list = stdout.split('\n')
+        return True if machine_name in node_list else False

@@ -352,18 +352,20 @@ class NodeResource(Resource):
                 "status": 404,
                 "message": "master node still running"
             }, 404
-
-        try:
-            #TODO: if machine.search is true then remove it otherewise only remove from db
-            self.machine.rm(node.name)
+        running = self.machine.is_running(node.name)
+        if running:
+            try:
+                self.machine.rm(node.name)
+                db.delete(node.id, 'nodes')
+            except RuntimeError as e:
+                current_app.logger.warn(e)
+                msg = str(e)  # TODO log
+                return {
+                    "status": 500,
+                    "message": msg,
+                }, 500
+        else:
             db.delete(node.id, 'nodes')
-        except RuntimeError as e:
-            current_app.logger.warn(e)
-            msg = str(e)  # TODO log
-            return {
-                "status": 500,
-                "message": msg,
-            }, 500
         return {}, 204
 
     def put(self, node_name):

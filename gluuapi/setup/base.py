@@ -3,7 +3,6 @@
 #
 # All rights reserved.
 
-import abc
 import codecs
 import os.path
 import shutil
@@ -22,8 +21,6 @@ from ..weave import Weave
 
 
 class BaseSetup(object):
-    __metaclass__ = abc.ABCMeta
-
     supervisor_reload_delay = 10
 
     def __init__(self, container, cluster, app, logger=None):
@@ -43,7 +40,7 @@ class BaseSetup(object):
             master_node = db.search_from_table(
                 "nodes", db.where("type") == "master",
             )[0]
-        except IndexError:
+        except IndexError:  # pragma: no cover
             master_node = self.node
 
         self.docker = Docker(
@@ -52,10 +49,10 @@ class BaseSetup(object):
             logger=self.logger,
         )
 
-    @abc.abstractmethod
-    def setup(self):
+    def setup(self):  # pragma: no cover
         """Runs the actual setup. Must be overriden by subclass.
         """
+        raise NotImplementedError("setup method must be overriden")
 
     def after_setup(self):
         """Callback executed after ``setup`` taking place.
@@ -68,7 +65,7 @@ class BaseSetup(object):
                          "directory {}".format(self.build_dir))
         try:
             shutil.rmtree(self.build_dir)
-        except OSError:
+        except OSError:  # pragma: no cover
             pass
 
     def render_template(self, src, dest, ctx=None):
@@ -367,7 +364,7 @@ class OxSetup(BaseSetup):
 
         try:
             self.docker.exec_cmd(self.container.cid, import_cmd)
-        except DockerExecError as exc:
+        except DockerExecError as exc:  # pragma: no cover
             if exc.exit_code == 1:
                 # certificate already imported
                 pass

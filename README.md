@@ -72,7 +72,7 @@ By default they are pointed to `/var/run/gluuapi.pid` and `/var/log/gluuapi.log`
 
 ## Testing
 
-__WARNING__: currently testcases are broken as we are restructuring the project.
+__WARNING__: some testcases are skipped as we need to rewrite the tests to conform to the new codebase.
 
 Testcases are running using ``pytest`` executed by ``tox``.
 

@@ -30,5 +30,4 @@ def test_prod_config():
     assert cfg.DATA_DIR == "/var/lib/gluu-cluster"
     assert cfg.DATABASE_URI == "/var/lib/gluu-cluster/db/db.json"
     assert cfg.INSTANCE_DIR == "/var/lib/gluu-cluster/instance"
-    assert cfg.DOCKER_CERT_DIR == "/var/lib/gluu-cluster/docker_certs"
     assert cfg.CUSTOM_LDAP_SCHEMA_DIR == "/var/lib/gluu-cluster/custom/opendj/schema"

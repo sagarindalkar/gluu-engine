@@ -1,6 +1,9 @@
 import os.path
 
+import pytest
 
+
+@pytest.mark.skip(reason="rewrite needed")
 def test_remove_build_dir(ldap_node, cluster, app, db, provider):
     from gluuapi.setup.base import BaseSetup
 
@@ -17,6 +20,7 @@ def test_remove_build_dir(ldap_node, cluster, app, db, provider):
     assert os.path.exists(fake_setup.build_dir) is False
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_render_template(monkeypatch, ldap_node, cluster, app, db, provider):
     from gluuapi.setup.base import BaseSetup
 

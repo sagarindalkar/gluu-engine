@@ -5,6 +5,7 @@ import shutil
 import pytest
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_node_get(app, cluster, db, ldap_node):
     db.persist(ldap_node, "nodes")
     db.persist(cluster, "clusters")
@@ -18,6 +19,7 @@ def test_node_get(app, cluster, db, ldap_node):
         assert field in actual_data
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_node_get_invalid_id(app):
     resp = app.test_client().get("/nodes/random-invalid-id")
     actual_data = json.loads(resp.data)
@@ -25,6 +27,7 @@ def test_node_get_invalid_id(app):
     assert "message" in actual_data
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_node_get_list(app, db, cluster, ldap_node):
     db.persist(ldap_node, "nodes")
     db.persist(cluster, "clusters")
@@ -41,6 +44,7 @@ def test_node_get_list(app, db, cluster, ldap_node):
             assert field in item
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_node_get_list_empty(app):
     resp = app.test_client().get("/nodes")
     actual_data = json.loads(resp.data)
@@ -50,6 +54,7 @@ def test_node_get_list_empty(app):
     assert actual_data == []
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_node_delete_ldap(monkeypatch, app, db, cluster, provider, ldap_node):
     db.persist(provider, "providers")
     ldap_node.provider_id = provider.id
@@ -75,11 +80,13 @@ def test_node_delete_ldap(monkeypatch, app, db, cluster, provider, ldap_node):
     assert resp.status_code == 204
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_node_delete_failed(app):
     resp = app.test_client().delete("/nodes/random-invalid-id")
     assert resp.status_code == 404
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_node_delete_in_progress(app, db, ldap_node):
     ldap_node.state = "IN_PROGRESS"
     db.persist(ldap_node, "nodes")
@@ -87,6 +94,7 @@ def test_node_delete_in_progress(app, db, ldap_node):
     assert resp.status_code == 403
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_node_post_invalid_connect_delay(app, db, cluster, provider):
     db.persist(cluster, "clusters")
     db.persist(provider, "providers")
@@ -102,6 +110,7 @@ def test_node_post_invalid_connect_delay(app, db, cluster, provider):
     assert resp.status_code == 400
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_node_post_invalid_exec_delay(app, db, cluster, provider):
     db.persist(cluster, "clusters")
     db.persist(provider, "providers")
@@ -117,6 +126,7 @@ def test_node_post_invalid_exec_delay(app, db, cluster, provider):
     assert resp.status_code == 400
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_node_post_invalid_cluster(app, db):
     resp = app.test_client().post(
         "/nodes",
@@ -128,6 +138,7 @@ def test_node_post_invalid_cluster(app, db):
     assert resp.status_code == 400
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_node_post_ip_unavailable(monkeypatch, app, db, cluster, provider):
     # fills up reserved IP address using fake values
     monkeypatch.setattr(
@@ -148,6 +159,7 @@ def test_node_post_ip_unavailable(monkeypatch, app, db, cluster, provider):
     assert resp.status_code == 403
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_node_post_invalid_provider(app, db, cluster):
     db.persist(cluster, "clusters")
     resp = app.test_client().post(
@@ -160,6 +172,7 @@ def test_node_post_invalid_provider(app, db, cluster):
     assert resp.status_code == 400
 
 
+@pytest.mark.skip(reason="rewrite needed")
 @pytest.mark.parametrize("node_type, helper_class", [
     ("ldap", "LdapModelHelper"),
     ("oxauth", "OxauthModelHelper"),
@@ -183,6 +196,7 @@ def test_node_post(monkeypatch, app, db, cluster, provider,
     assert resp.status_code == 202
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_node_post_duplicate_oxtrust(monkeypatch, app, db, cluster,
                                      provider, oxtrust_node):
     db.persist(cluster, "clusters")
@@ -203,6 +217,7 @@ def test_node_post_duplicate_oxtrust(monkeypatch, app, db, cluster,
     assert resp.status_code == 403
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_node_post_nonmaster_oxtrust(monkeypatch, app, db, cluster,
                                      provider, license_key):
     db.persist(cluster, "clusters")
@@ -225,6 +240,7 @@ def test_node_post_nonmaster_oxtrust(monkeypatch, app, db, cluster,
     assert resp.status_code == 403
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_node_post_expired_license(app, db, provider, cluster, license_key):
     db.persist(cluster, "clusters")
     license_key.valid = False
@@ -242,6 +258,7 @@ def test_node_post_expired_license(app, db, provider, cluster, license_key):
     assert resp.status_code == 400
 
 
+@pytest.mark.skip(reason="rewrite needed")
 @pytest.mark.parametrize("force_delete, status_code", [
     (0, 403),
     ("false", 403),
@@ -285,6 +302,7 @@ def test_node_delete_force(monkeypatch, app, db, ldap_node, cluster,
     assert resp.status_code == status_code
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_node_duplicated_nginx(app, db, cluster, provider, nginx_node):
     db.persist(cluster, "clusters")
     db.persist(provider, "providers")
@@ -303,6 +321,7 @@ def test_node_duplicated_nginx(app, db, cluster, provider, nginx_node):
     assert resp.status_code == 403
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_node_ldap_max_exceeded(app, db, cluster, provider, ldap_node):
     db.persist(cluster, "clusters")
     db.persist(provider, "providers")
@@ -323,6 +342,7 @@ def test_node_ldap_max_exceeded(app, db, cluster, provider, ldap_node):
     assert resp.status_code == 403
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_list_node_log(app, db, node_log):
     db.persist(node_log, "node_logs")
 
@@ -330,6 +350,7 @@ def test_list_node_log(app, db, node_log):
     assert resp.status_code == 200
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_get_node_log(app, db, node_log):
     db.persist(node_log, "node_logs")
 
@@ -337,11 +358,13 @@ def test_get_node_log(app, db, node_log):
     assert resp.status_code == 200
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_get_node_log_not_found(app):
     resp = app.test_client().get("/node_logs/random")
     assert resp.status_code == 404
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_get_node_setup_log(app, db, node_log):
     dummy_log_src = os.path.join(os.path.dirname(__file__), "setup.log")
     dummy_log_dest = os.path.join(app.config["LOG_DIR"], node_log.setup_log)
@@ -358,11 +381,13 @@ def test_get_node_setup_log(app, db, node_log):
     assert resp.status_code == 200
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_get_node_setup_log_invalid_node(app, node_log):
     resp = app.test_client().get("/node_logs/{}/setup".format(node_log.id))
     assert resp.status_code == 404
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_get_node_teardown_log_not_found(app, db, node_log):
     db.persist(node_log, "node_logs")
 
@@ -370,6 +395,7 @@ def test_get_node_teardown_log_not_found(app, db, node_log):
     assert resp.status_code == 404
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_get_node_teardown_log(app, db, node_log):
     dummy_log_src = os.path.join(os.path.dirname(__file__), "teardown.log")
     dummy_log_dest = os.path.join(app.config["LOG_DIR"], node_log.teardown_log)
@@ -386,11 +412,13 @@ def test_get_node_teardown_log(app, db, node_log):
     assert resp.status_code == 200
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_get_node_teardown_log_invalid_node(app, node_log):
     resp = app.test_client().get("/node_logs/{}/teardown".format(node_log.id))
     assert resp.status_code == 404
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_get_node_setup_log_not_found(app, db, node_log):
     db.persist(node_log, "node_logs")
 
@@ -398,6 +426,7 @@ def test_get_node_setup_log_not_found(app, db, node_log):
     assert resp.status_code == 404
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_delete_node_log(app, db, node_log):
     db.persist(node_log, "node_logs")
 
@@ -405,6 +434,7 @@ def test_delete_node_log(app, db, node_log):
     assert resp.status_code == 204
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_delete_node_log_not_found(app):
     resp = app.test_client().delete("/node_logs/random")
     assert resp.status_code == 404

@@ -1,6 +1,7 @@
 import pytest
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_weave_launch_master(app, db, provider, cluster,
                              patched_salt, patched_sleep):
     from gluuapi.helper import WeaveHelper
@@ -10,6 +11,7 @@ def test_weave_launch_master(app, db, provider, cluster,
     weave.launch_master()
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_weave_launch_consumer(app, db, provider, cluster,
                                patched_salt, patched_sleep):
     from gluuapi.helper import WeaveHelper
@@ -19,6 +21,7 @@ def test_weave_launch_consumer(app, db, provider, cluster,
     weave.launch_consumer()
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_weave_expose_network(app, db, provider, cluster,
                               patched_salt, patched_sleep):
     from gluuapi.helper import WeaveHelper
@@ -28,6 +31,7 @@ def test_weave_expose_network(app, db, provider, cluster,
     weave.expose_network()
 
 
+@pytest.mark.skip(reason="rewrite needed")
 @pytest.mark.parametrize("type_", [
     "master",
     "consumer",
@@ -42,6 +46,7 @@ def test_weave_launch(app, db, provider, cluster, type_,
     weave.launch()
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_weave_docker_bridge_ip(app, db, provider, cluster,
                                 monkeypatch):
     from gluuapi.helper import WeaveHelper

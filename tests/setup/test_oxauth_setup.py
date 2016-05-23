@@ -1,3 +1,7 @@
+import pytest
+
+
+@pytest.mark.skip(reason="rewrite needed")
 def test_setup(oxauth_setup, ldap_node, cluster, db,
                patched_sleep, patched_exec_cmd, patched_run):
     db.persist(cluster, "clusters")
@@ -7,5 +11,6 @@ def test_setup(oxauth_setup, ldap_node, cluster, db,
     oxauth_setup.setup()
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_teardown(oxauth_setup, patched_exec_cmd):
     oxauth_setup.teardown()

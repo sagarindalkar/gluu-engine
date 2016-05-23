@@ -1,3 +1,7 @@
+import pytest
+
+
+@pytest.mark.skip(reason="rewrite needed")
 def test_license_not_expired(
         db, license_key, provider, app,
         oxd_resp_ok, validator_ok):
@@ -12,6 +16,7 @@ def test_license_not_expired(
         let.monitor_license()
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_disable_nodes(db, license_key, provider,
                        oxauth_node, oxidp_node, app,
                        oxd_resp_err, patched_salt,
@@ -43,6 +48,7 @@ def test_disable_nodes(db, license_key, provider,
         assert db.get(oxauth_node.id, "nodes").state == "DISABLED"
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_enable_nodes(db, license_key, provider, app,
                       oxauth_node, oxidp_node,
                       oxd_resp_ok, validator_ok,

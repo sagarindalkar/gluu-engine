@@ -3,6 +3,7 @@ import json
 import pytest
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_cluster_post(app, db, patched_salt):
     from gluuapi.model import Cluster
 
@@ -29,12 +30,14 @@ def test_cluster_post(app, db, patched_salt):
         assert field in actual_data
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_cluster_get(app, config, cluster, db):
     db.persist(cluster, "clusters")
     resp = app.test_client().get("/clusters/{}".format(cluster.id))
     assert resp.status_code == 200
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_cluster_get_invalid_id(app):
     resp = app.test_client().get("/clusters/random-invalid-id")
     actual_data = json.loads(resp.data)
@@ -42,6 +45,7 @@ def test_cluster_get_invalid_id(app):
     assert "message" in actual_data
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_cluster_get_list(app, db, cluster):
     db.persist(cluster, "clusters")
     resp = app.test_client().get("/clusters")
@@ -51,6 +55,7 @@ def test_cluster_get_list(app, db, cluster):
     assert len(actual_data) == 1
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_cluster_get_list_empty(app):
     resp = app.test_client().get("/clusters")
     actual_data = json.loads(resp.data)
@@ -60,17 +65,20 @@ def test_cluster_get_list_empty(app):
     assert actual_data == []
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_cluster_delete(app, db, cluster):
     db.persist(cluster, "clusters")
     resp = app.test_client().delete("/clusters/{}".format(cluster.id))
     assert resp.status_code == 204
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_cluster_delete_failed(app):
     resp = app.test_client().delete("/clusters/random-invalid-id")
     assert resp.status_code == 404
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_cluster_delete_nodes_exist(app, db, cluster, ldap_node):
     db.persist(cluster, "clusters")
     ldap_node.state = "SUCCESS"
@@ -80,6 +88,7 @@ def test_cluster_delete_nodes_exist(app, db, cluster, ldap_node):
     assert resp.status_code == 403
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_cluster_post_max_cluster_reached(app, db, cluster):
     db.persist(cluster, "clusters")
 
@@ -102,6 +111,7 @@ def test_cluster_post_max_cluster_reached(app, db, cluster):
     assert resp.status_code == 403
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_cluster_post_invalid_country_code(app, db, patched_salt):
     resp = app.test_client().post(
         "/clusters",
@@ -122,6 +132,7 @@ def test_cluster_post_invalid_country_code(app, db, patched_salt):
     assert resp.status_code == 400
 
 
+@pytest.mark.skip(reason="rewrite needed")
 @pytest.mark.parametrize("weave_ip_network", [
     "abc",
     "10.20.10.0",

@@ -251,17 +251,20 @@ def license_key():
 #     )
 
 
-# @pytest.fixture()
-# def docker_helper(request, app, provider):
-#     from gluuapi.helper.docker_helper import DockerHelper
+@pytest.fixture()
+def dockerclient(request):
+    from collections import namedtuple
+    from gluuapi.dockerclient import Docker
 
-#     helper = DockerHelper(provider=provider)
+    FakeTLS = namedtuple("TLS", ["ca_cert", "cert"])
 
-#     def teardown():
-#         helper.docker.close()
-
-#     request.addfinalizer(teardown)
-#     return helper
+    config = {}
+    swarm_config = {
+        "tls": FakeTLS(ca_cert="ca.pem", cert=("cert.pem", "key.pem",)),
+        "base_url": "https://10.10.10.10:3376",
+    }
+    client = Docker(config, swarm_config)
+    return client
 
 
 # @pytest.fixture()

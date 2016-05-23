@@ -8,7 +8,6 @@ import logging
 from collections import namedtuple
 from contextlib import contextmanager
 
-import docker.errors
 from docker import Client
 
 from ..errors import DockerExecError
@@ -62,15 +61,15 @@ class Docker(object):
             hostname=hostname,
         )
 
-    def get_container_ip(self, container_id):
-        """Gets container IP.
+    # def get_container_ip(self, container_id):
+    #     """Gets container IP.
 
-        :param container_id: ID or name of the container.
-        :returns: Container's IP address.
-        """
-        with self._get_client() as client:
-            info = client.inspect_container(container_id)
-            return info["NetworkSettings"]["IPAddress"]
+    #     :param container_id: ID or name of the container.
+    #     :returns: Container's IP address.
+    #     """
+    #     with self._get_client() as client:
+    #         info = client.inspect_container(container_id)
+    #         return info["NetworkSettings"]["IPAddress"]
 
     def remove_container(self, container_id):
         """Removes container.
@@ -78,13 +77,7 @@ class Docker(object):
         :param container_id: ID or name of the container.
         """
         with self._get_client() as client:
-            try:
-                return client.remove_container(container_id, force=True)
-            except docker.errors.APIError as exc:
-                err_code = exc.response.status_code
-                if err_code == 404:
-                    self.logger.warn(
-                        "container {!r} does not exist".format(container_id))
+            return client.remove_container(container_id, force=True)
 
     def inspect_container(self, container_id):
         """Inspects given container.

@@ -234,6 +234,12 @@ class BaseContainerHelper(object):
         except SSLError:  # pragma: no cover
             self.logger.warn("unable to connect to docker API "
                              "due to SSL connection errors")
+        except docker.errors.APIError as exc:
+            err_code = exc.response.status_code
+            if err_code == 404:
+                self.logger.warn(
+                    "container {!r} does not exist".format(self.container.name)
+                )
 
         # # updating prometheus
         # self.prometheus.update()

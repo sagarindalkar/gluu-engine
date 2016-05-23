@@ -51,3 +51,19 @@ def test_validate_name_valid(name):
 
     req = ClusterReq()
     req.validate_name(name)
+
+
+def test_validate_country_code():
+    from gluuapi.reqparser import ClusterReq
+
+    req = ClusterReq()
+    req.validate_country_code("US")
+
+
+def test_validate_invalid_country_code():
+    from gluuapi.reqparser import ClusterReq
+    from marshmallow import ValidationError
+
+    req = ClusterReq()
+    with pytest.raises(ValidationError):
+        req.validate_country_code("USA")

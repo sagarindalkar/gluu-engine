@@ -12,9 +12,9 @@ from marshmallow import ValidationError
 
 from ..extensions import ma
 
-WEAVE_NETWORK_RE = re.compile(
-    r"[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/[0-9]{1,2}"
-)
+# WEAVE_NETWORK_RE = re.compile(
+#     r"[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/[0-9]{1,2}"
+# )
 
 # cluster name
 #

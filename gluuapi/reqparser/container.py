@@ -30,7 +30,12 @@ class ContainerReq(ma.Schema):
             raise ValidationError("cannot use non master or worker node")
 
         if node.type == "worker":
-            license_key = db.all("license_keys")[0]
+            try:
+                license_key = db.all("license_keys")[0]
+            except IndexError:
+                raise ValidationError("cannot deploy container to worker node "
+                                      "due to missing license")
+
             if license_key.expired:
                 raise ValidationError("cannot deploy container to "
                                       "node with expired license")

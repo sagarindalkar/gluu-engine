@@ -14,7 +14,9 @@ from ..database import db
 from ..extensions import ma
 
 #PROVIDER_TYPES = ['generic', 'aws', 'digitalocean', 'google'] #TODO: put it in config
+
 NAME_RE = re.compile('^[a-zA-Z0-9.-]+$')
+
 
 class NodeReq(ma.Schema):
     name = ma.Str(required=True)
@@ -22,16 +24,13 @@ class NodeReq(ma.Schema):
 
     @validates('provider_id')
     def validate_provider(self, value):
-        #found = db.count_from_table('providers', db.where("id") == value)
         providers = db.search_from_table('providers', db.where('id') == value)
-        #if not found:
-        #    raise ValidationError("wrong provider id")
         if not providers:
             raise ValidationError('wrong provider id')
+
         provider = providers[0]
         if provider.driver == 'generic' and provider.is_in_use():
             raise ValidationError('a generic provider cant be used for more than one node')
-
 
     @validates('name')
     def validate_name(self, value):

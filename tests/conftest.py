@@ -165,9 +165,9 @@ def digitalocean_provider(cluster):
     return provider
 
 
-# @pytest.fixture
-# def patched_sleep(monkeypatch):
-#     monkeypatch.setattr("time.sleep", lambda num: None)
+@pytest.fixture
+def patched_sleep(monkeypatch):
+    monkeypatch.setattr("time.sleep", lambda num: None)
 
 
 @pytest.fixture()
@@ -252,17 +252,24 @@ def license_key():
 
 
 @pytest.fixture()
-def dockerclient(request):
+def swarm_config():
     from collections import namedtuple
-    from gluuapi.dockerclient import Docker
 
     FakeTLS = namedtuple("TLS", ["ca_cert", "cert"])
 
-    config = {}
     swarm_config = {
         "tls": FakeTLS(ca_cert="ca.pem", cert=("cert.pem", "key.pem",)),
         "base_url": "https://10.10.10.10:3376",
     }
+    return swarm_config
+
+
+@pytest.fixture()
+def dockerclient(swarm_config):
+    from gluuapi.dockerclient import Docker
+
+    config = {}
+    swarm_config = swarm_config
     client = Docker(config, swarm_config)
     return client
 
@@ -337,12 +344,12 @@ def dockerclient(request):
 #     return setup_obj
 
 
-# @pytest.fixture()
-# def patched_run(monkeypatch):
-#     monkeypatch.setattr(
-#         "subprocess.check_output",
-#         lambda cmd, stderr, shell, cwd: "",
-#     )
+@pytest.fixture()
+def patched_po_run(monkeypatch):
+    monkeypatch.setattr(
+        "subprocess.Popen.communicate",
+        lambda cls: ("", "",),
+    )
 
 
 @pytest.fixture()
@@ -355,11 +362,51 @@ def container_log():
     return log
 
 
-# @pytest.fixture()
-# def patched_exec_cmd(monkeypatch):
-#     from gluuapi.helper.docker_helper import DockerExecResult
+@pytest.fixture()
+def patched_exec_cmd(monkeypatch):
+    from gluuapi.dockerclient._docker import DockerExecResult
 
-#     monkeypatch.setattr(
-#         "gluuapi.helper.DockerHelper.exec_cmd",
-#         lambda cls, container, cmd: DockerExecResult(cmd, 0, ""),
-#     )
+    monkeypatch.setattr(
+        "gluuapi.dockerclient.Docker.exec_cmd",
+        lambda cls, container, cmd: DockerExecResult(cmd, 0, ""),
+    )
+
+
+@pytest.fixture()
+def base_setup(monkeypatch, app, db, swarm_config,
+               cluster, ldap_container, master_node):
+    from gluuapi.setup.base import BaseSetup
+
+    class FakeBaseSetup(BaseSetup):
+        def setup(self):
+            pass
+
+    monkeypatch.setattr(
+        "gluuapi.machine.Machine.config",
+        lambda cls, name: {},
+    )
+    monkeypatch.setattr(
+        "gluuapi.machine.Machine.swarm_config",
+        lambda cls, name: swarm_config,
+    )
+
+    db.persist(master_node, "nodes")
+    return FakeBaseSetup(ldap_container, cluster, app)
+
+
+@pytest.fixture()
+def ox_setup(monkeypatch, app, db, swarm_config,
+             cluster, oxauth_container, master_node):
+    from gluuapi.setup.base import OxSetup
+
+    monkeypatch.setattr(
+        "gluuapi.machine.Machine.config",
+        lambda cls, name: {},
+    )
+    monkeypatch.setattr(
+        "gluuapi.machine.Machine.swarm_config",
+        lambda cls, name: swarm_config,
+    )
+
+    db.persist(master_node, "nodes")
+    return OxSetup(oxauth_container, cluster, app)

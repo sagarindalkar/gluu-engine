@@ -48,6 +48,7 @@ class LdapContainer(BaseModel):
         self.truststore_fn = '/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/security/cacerts'
 
         # Filesystem path of the public certificate for OpenDJ
+        self.cert_folder = "/etc/certs"
         self.opendj_cert_fn = '/etc/certs/opendj.crt'
 
         self.ldap_binddn = 'cn=directory manager'

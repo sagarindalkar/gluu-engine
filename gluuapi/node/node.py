@@ -56,8 +56,7 @@ class DeployDiscoveryNode(object):
             self.logger.info('creating discovery node')
             self.machine.create(self.node, self.provider, None)
             self.node.state_node_create = True
-            db.persist(self.node, 'nodes')
-            #db.update(self.node.id, self.node, 'nodes')
+            db.update(self.node.id, self.node, 'nodes')
         except RuntimeError as e:
             self.logger.error('failed to create node')
             self.logger.error(e)
@@ -96,27 +95,28 @@ class DeployMasterNode(object):
         if not self.node.state_node_create:
             self._node_create()
             time.sleep(1)
-        if self.node.state_node_create and not self.node.state_install_weave:
-            self._install_weave()
-            time.sleep(1)
-        if self.node.state_node_create and not self.node.state_weave_permission:
-            self._weave_permission()
-            time.sleep(1)
-        if self.node.state_node_create and not self.node.state_weave_launch:
-            self._weave_launch()
-            time.sleep(1)
-        if self.node.state_node_create and not self.node.state_registry_cert:
-            self._registry_cert()
-            time.sleep(1)
-        if self.node.state_node_create and not self.node.state_docker_cert:
-            self._docker_cert()
-            time.sleep(1)
-        if self.node.state_node_create and not self.node.state_fswatcher:
-            self._fswatcher()
-            time.sleep(1)
-        if self.node.state_node_create and not self.node.state_recovery:
-            self._recovery()
-            time.sleep(1)
+        if self.node.state_node_create:
+            if not self.node.state_install_weave:
+                self._install_weave()
+                time.sleep(1)
+            if not self.node.state_weave_permission:
+                self._weave_permission()
+                time.sleep(1)
+            if not self.node.state_weave_launch:
+                self._weave_launch()
+                time.sleep(1)
+            if not self.node.state_registry_cert:
+                self._registry_cert()
+                time.sleep(1)
+            if not self.node.state_docker_cert:
+                self._docker_cert()
+                time.sleep(1)
+            if not self.node.state_fswatcher:
+                self._fswatcher()
+                time.sleep(1)
+            if not self.node.state_recovery:
+                self._recovery()
+                time.sleep(1)
         self._is_completed()
 
 
@@ -138,7 +138,7 @@ class DeployMasterNode(object):
             self.logger.info('creating {} node ({})'.format(self.node.name, self.node.type))
             self.machine.create(self.node, self.provider, self.discovery)
             self.node.state_node_create = True
-            db.persist(self.node, 'nodes')
+            db.update(self.node.id, self.node, 'nodes')
         except RuntimeError as e:
             self.logger.error('failed to create node')
             self.logger.error(e)
@@ -274,21 +274,22 @@ class DeployWorkerNode(object):
         if not self.node.state_node_create:
             self._node_create()
             time.sleep(1)
-        if self.node.state_node_create and not self.node.state_install_weave:
-            self._install_weave()
-            time.sleep(1)
-        if self.node.state_node_create and not self.node.state_weave_permission:
-            self._weave_permission()
-            time.sleep(1)
-        if self.node.state_node_create and not self.node.state_weave_launch:
-            self._weave_launch()
-            time.sleep(1)
-        if self.node.state_node_create and not self.node.state_registry_cert:
-            self._registry_cert()
-            time.sleep(1)
-        if self.node.state_node_create and not self.node.state_recovery:
-            self._recovery()
-            time.sleep(1)
+        if self.node.state_node_create:
+            if not self.node.state_install_weave:
+                self._install_weave()
+                time.sleep(1)
+            if not self.node.state_weave_permission:
+                self._weave_permission()
+                time.sleep(1)
+            if not self.node.state_weave_launch:
+                self._weave_launch()
+                time.sleep(1)
+            if not self.node.state_registry_cert:
+                self._registry_cert()
+                time.sleep(1)
+            if not self.node.state_recovery:
+                self._recovery()
+                time.sleep(1)
         self._is_completed()
 
 
@@ -309,7 +310,7 @@ class DeployWorkerNode(object):
             self.logger.info('creating {} node ({})'.format(self.node.name, self.node.type))
             self.machine.create(self.node, self.provider, self.discovery)
             self.node.state_node_create = True
-            db.persist(self.node, 'nodes')
+            db.update(self.node.id, self.node, 'nodes')
         except RuntimeError as e:
             self.logger.error('failed to create node')
             self.logger.error(e)

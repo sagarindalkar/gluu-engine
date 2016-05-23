@@ -3,17 +3,12 @@
 #
 # All rights reserved.
 
-import os
-# import uuid
-import time
-
 from flask import current_app
 from flask import request
 from flask import url_for
 from flask_restful import Resource
 
 from ..reqparser import NodeReq
-from ..model import Node
 from ..model import DiscoveryNode
 from ..model import MasterNode
 from ..model import WorkerNode
@@ -23,8 +18,6 @@ from ..node import DeployWorkerNode
 from ..machine import Machine
 # from ..dockerclient import Docker
 from ..database import db
-from ..registry import REGISTRY_BASE_URL
-from ..registry import get_registry_cert
 
 # TODO: put it in config
 NODE_TYPES = ('master', 'worker', 'discovery',)
@@ -102,9 +95,6 @@ class CreateNodeResource(Resource):
             }, 400
 
         data['type'] = node_type
-
-        #node = Node(data)
-        #provider = db.get(node.provider_id, 'providers')
         
         discovery = None
         if node_type != 'discovery':
@@ -137,6 +127,7 @@ class CreateNodeResource(Resource):
 
             #make discovery object
             node = DiscoveryNode(data)
+            db.persist(node, 'nodes')
             ddn = DeployDiscoveryNode(node)
             ddn.deploy()
 
@@ -227,6 +218,7 @@ class CreateNodeResource(Resource):
             #     }, 500
 
             node = MasterNode(data)
+            db.persist(node, 'nodes')
             dmn = DeployMasterNode(node, discovery, current_app._get_current_object())
             dmn.deploy()
 
@@ -311,6 +303,7 @@ class CreateNodeResource(Resource):
             #         "message": msg,
             #     }, 500
             node = WorkerNode(data)
+            db.persist(node, 'nodes')
             dwn = DeployWorkerNode(node, discovery, current_app._get_current_object())
             dwn.deploy()
 
@@ -361,6 +354,7 @@ class NodeResource(Resource):
             }, 404
 
         try:
+            #TODO: if machine.search is true then remove it otherewise only remove from db
             self.machine.rm(node.name)
             db.delete(node.id, 'nodes')
         except RuntimeError as e:

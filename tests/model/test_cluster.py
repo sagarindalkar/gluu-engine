@@ -15,47 +15,28 @@ def test_decrypted_admin_pw():
     assert cluster.decrypted_admin_pw == "secret"
 
 
-def test_reserve_ip_addr(cluster):
-    assert cluster.reserve_ip_addr() == tuple(["10.20.10.1", 24])
-
-
-def test_get_containers(db, cluster, ldap_node, oxauth_node,
-                        oxtrust_node):
-    # saves all nodes
-    db.persist(ldap_node, "nodes")
-    db.persist(oxauth_node, "nodes")
-    db.persist(oxtrust_node, "nodes")
+def test_get_containers(db, cluster, ldap_container):
+    db.persist(ldap_container, "containers")
     data = cluster.get_containers(state=None)
 
     for item in data:
         assert item.cluster_id == cluster.id
-    assert len(data) == 3
 
 
-def test_exposed_weave_ip():
-    from gluuapi.model import Cluster
-
-    cluster = Cluster()
-    cluster.weave_ip_network = "10.20.10.0/24"
-
-    addr, prefixlen = cluster.exposed_weave_ip
-    assert addr == "10.20.10.254"
-    assert prefixlen == 24
-
-
-def test_get_nodes_by_state(db, cluster, ldap_node):
+def test_get_containers_by_state(db, cluster, ldap_container):
     db.persist(cluster, "clusters")
-    ldap_node.state = "FAILED"
-    db.persist(ldap_node, "nodes")
+    ldap_container.state = "FAILED"
+    db.persist(ldap_container, "containers")
     assert cluster.get_containers(type_="ldap", state="FAILED")
 
 
-def test_prometheus_weave_ip():
-    from gluuapi.model import Cluster
+def test_count_containers(db, cluster, ldap_container):
+    db.persist(ldap_container, "containers")
+    assert cluster.count_containers(state=None) == 1
 
-    cluster = Cluster()
-    cluster.weave_ip_network = "10.20.10.0/24"
 
-    addr, prefixlen = cluster.prometheus_weave_ip
-    assert addr == "10.20.10.253"
-    assert prefixlen == 24
+def test_count_containers_by_state(db, cluster, ldap_container):
+    db.persist(cluster, "clusters")
+    ldap_container.state = "FAILED"
+    db.persist(ldap_container, "containers")
+    assert cluster.count_containers(type_="ldap", state="FAILED") == 1

@@ -10,21 +10,12 @@
 #    "type": "<master|worker|keystore>",
 #}
 
-# -*- coding: utf-8 -*-
-# Copyright (c) 2015 Gluu
-#
-# All rights reserved.
-
 import uuid
-import time
 
 from .base import BaseModel
 from .base import STATE_SUCCESS
 from ..database import db
 
-from crochet import run_in_reactor
-from ..machine import Machine
-from ..log import create_file_logger
 
 class Node(BaseModel):
     resource_fields = dict.fromkeys([
@@ -35,11 +26,11 @@ class Node(BaseModel):
         #'provider_type'
     ])
 
-    def __init__(self, fields=None):
+    def __init__(self, fields=None):  # pragma: no cover
         self.id = str(uuid.uuid4())
         self.populate(fields)
 
-    def populate(self, fields=None):
+    def populate(self, fields=None):  # pragma: no cover
         fields = fields or {}
         self.name = fields.get('name', '')
         self.type = fields.get('type', '')

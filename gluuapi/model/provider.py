@@ -61,6 +61,8 @@ class DigitalOceanProvider(BaseProvider):
     def __init__(self, fields=None):
         self.id = str(uuid.uuid4())
         self.driver = "digitalocean"
+        self.digitalocean_image = "ubuntu-14-04-x64"
+        self.digitalocean_ipv6 = False
         self.populate(fields)
 
     def populate(self, fields=None):
@@ -75,14 +77,14 @@ class DigitalOceanProvider(BaseProvider):
             "digitalocean_backups",
             False,
         )
-        self.digitalocean_image = fields.get(
-            "digitalocean_image",
-            "ubuntu-14-04-x64",
-        )
-        self.digitalocean_ipv6 = fields.get(
-            "digitalocean_ipv6",
-            False,
-        )
+        # self.digitalocean_image = fields.get(
+        #     "digitalocean_image",
+        #     "ubuntu-14-04-x64",
+        # )
+        # self.digitalocean_ipv6 = fields.get(
+        #     "digitalocean_ipv6",
+        #     False,
+        # )
         self.digitalocean_private_networking = fields.get(
             "digitalocean_private_networking",
             False,

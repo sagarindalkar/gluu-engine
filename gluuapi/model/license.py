@@ -73,7 +73,8 @@ class LicenseKey(BaseModel):
     def expired(self):
         """Gets expiration status.
         """
-        if not self.valid or not self.metadata:
+        # metadata is not generated yet
+        if not self.metadata:
             return True
 
         # ``expiration_date`` is set to null
@@ -93,3 +94,13 @@ class LicenseKey(BaseModel):
             "nodes", db.where("type") == "worker",
         )
         return workers
+
+    def count_workers(self):
+        """Counts worker nodes.
+
+        :returns: Total number of worker node objects (if any).
+        """
+        counter = db.count_from_table(
+            "nodes", db.where("type") == "worker",
+        )
+        return counter

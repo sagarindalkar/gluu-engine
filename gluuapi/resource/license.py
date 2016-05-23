@@ -168,7 +168,7 @@ class LicenseKeyResource(Resource):
         if not license_key:
             return {"status": 404, "message": "License key not found"}, 404
 
-        if len(license_key.get_workers()):
+        if license_key.count_workers():
             msg = "Cannot delete license key while having worker nodes"
             return {"status": 403, "message": msg}, 403
 

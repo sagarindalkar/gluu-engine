@@ -8,22 +8,20 @@ def test_get_random_chars():
     assert len(random_chars) == 12
 
 
-def test_run():
-    from gluuapi.utils import run
+def test_po_run():
+    from gluuapi.utils import po_run
 
-    result = run("echo gluu")
-    assert result.strip() == "gluu"
+    stdout, stderr, err_code = po_run("echo gluu")
+    assert stdout == "gluu"
+    assert stderr == ""
+    assert err_code == 0
 
 
-def test_run_error():
-    import subprocess
-    from gluuapi.utils import run
+def test_po_run_error():
+    from gluuapi.utils import po_run
 
-    with pytest.raises(SystemExit):
-        run("random-command")
-
-    with pytest.raises(subprocess.CalledProcessError):
-        run("random-command", exit_on_error=False)
+    with pytest.raises(RuntimeError):
+        po_run("random-command")
 
 
 def test_ldap_encode():

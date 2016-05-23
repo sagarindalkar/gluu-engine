@@ -154,10 +154,14 @@ def get_sys_random_chars(size=12, chars=_DEFAULT_CHARS):
 
 def po_run(cmd_str, raise_error=True):
     cmd_list = cmd_str.strip().split()
-    p = Popen(cmd_list, stdin=PIPE, stdout=PIPE, stderr=PIPE)
-    stdout, stderr = p.communicate()
-    error_code = p.returncode
 
-    if raise_error and error_code:
-        raise RuntimeError("return code %s: %s" % (error_code, stderr.strip()))
-    return stdout.strip(), stderr.strip(), error_code
+    try:
+        p = Popen(cmd_list, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+        stdout, stderr = p.communicate()
+        error_code = p.returncode
+
+        if raise_error and error_code:
+            raise RuntimeError("return code {}: {}".format(error_code, stderr.strip()))
+        return stdout.strip(), stderr.strip(), error_code
+    except OSError as exc:
+        raise RuntimeError("return code {}: {}".format(exc.errno, exc.strerror))

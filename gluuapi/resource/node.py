@@ -352,6 +352,7 @@ class NodeResource(Resource):
                 "status": 404,
                 "message": "master node still running"
             }, 404
+        
         running = self.machine.is_running(node.name)
         if running:
             try:
@@ -368,5 +369,34 @@ class NodeResource(Resource):
             db.delete(node.id, 'nodes')
         return {}, 204
 
+
     def put(self, node_name):
-        pass
+        nodes = db.search_from_table('nodes', db.where('name') == node_name)
+        if nodes:
+            node = nodes[0]
+        else:
+            return {
+                "status": 404,
+                "message": "node not found"
+            }, 404
+
+        discovery = None
+        if node.type != 'discovery':
+            discovery = Discovery()
+            discovery.ip = self.machine.ip(DISCOVERY_NODE_NAME)
+            discovery.port = DISCOVERY_PORT
+
+        if node.type == 'discovery':
+            dn = DeployDiscoveryNode(node)
+        if node.type == 'master':
+            dn = DeployMasterNode(node, discovery, current_app._get_current_object())
+        if node.type == 'worker':
+            dn = DeployWorkerNode(node, discovery, current_app._get_current_object())
+
+        dn.deploy()
+        headers = {
+            "Location": url_for("node", node_name=node.name),
+        }
+        return node.as_dict(), 202, headers
+
+        

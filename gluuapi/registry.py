@@ -57,9 +57,10 @@ def get_registry_cert(cert_fn):
             raise RuntimeError("Failed to retrieve registry certificate; "
                                "reason={}".format(stderr.strip()))
 
+        parent_dir = os.path.dirname(cert_fn)
+        if not os.path.exists(parent_dir):
+            os.makedirs(parent_dir)
+
         with open(cert_fn, "w") as fn:
-            parent_dir = os.path.dirname(cert_fn)
-            if not os.path.exists(parent_dir):
-                os.makedirs(parent_dir)
             fn.write(stdout.strip())
     return cert_fn

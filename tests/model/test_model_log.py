@@ -1,5 +1,5 @@
 def test_create_log(db, container_log, ldap_container):
-    from gluuapi.model import ContainerLog
+    from gluuengine.model import ContainerLog
 
     ldap_container.name = "ldap-123"
     db.persist(ldap_container, "containers")
@@ -9,7 +9,7 @@ def test_create_log(db, container_log, ldap_container):
 
 
 def test_get_log(db, container_log, ldap_container):
-    from gluuapi.model import ContainerLog
+    from gluuengine.model import ContainerLog
 
     ldap_container.name = "ldap-123"
     db.persist(ldap_container, "containers")

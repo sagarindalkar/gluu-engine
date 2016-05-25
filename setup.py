@@ -1,8 +1,8 @@
 """
-Gluu API
---------
+Gluu Engine
+-----------
 
-Gluu cluster management API.
+Gluu Server Docker Edition REST API .
 """
 import codecs
 import os
@@ -23,13 +23,13 @@ def find_version(*file_paths):
 
 
 setup(
-    name="gluuapi",
-    version=find_version("gluuapi", "__init__.py"),
-    url="https://github.com/GluuFederation/gluu-flask",
+    name="gluuengine",
+    version=find_version("gluuengine", "__init__.py"),
+    url="https://github.com/GluuFederation/gluu-engine",
     license="Gluu",
     author="Gluu",
     author_email="info@gluu.org",
-    description="Gluu cluster management API",
+    description="Gluu Server Docker Edition REST API ",
     long_description=__doc__,
     packages=find_packages(),
     zip_safe=False,
@@ -67,6 +67,6 @@ setup(
     ],
     include_package_data=True,
     entry_points={
-        "console_scripts": ["gluuapi=gluuapi.cli:main"],
+        "console_scripts": ["gluuengine=gluuengine.cli:main"],
     },
 )

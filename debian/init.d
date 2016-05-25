@@ -1,6 +1,6 @@
 #!/bin/sh
 ### BEGIN INIT INFO
-# Provides:          gluuapi
+# Provides:          gluuengine
 # Required-Start:    $local_fs $network $remote_fs $syslog
 # Required-Stop:     $local_fs $network $remote_fs $syslog
 # Default-Start:     2 3 4 5
@@ -17,9 +17,9 @@
 
 # PATH should only include /usr/ * if it runs after the mountnfs.sh script
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
-DESC="gluuapi"
-NAME=gluuapi
-DAEMON=/usr/bin/gluuapi
+DESC="gluuengine"
+NAME=gluuengine
+DAEMON=/usr/bin/gluuengine
 DAEMON_ARGS=""
 PIDFILE=/var/run/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME

@@ -79,19 +79,19 @@ def main():
 @main.command(cls=GluuDaemonCLI)
 @click.option(
     "--pidfile",
-    default="/var/run/gluuapi.pid",
+    default="/var/run/gluuengine.pid",
     metavar="<pidfile>",
     type=click.Path(resolve_path=True, file_okay=True, dir_okay=True,
                     writable=True, readable=True),
-    help="Path to PID file (default to /var/run/gluuapi.pid).",
+    help="Path to PID file (default to /var/run/gluuengine.pid).",
 )
 @click.option(
     "--logfile",
-    default="/var/log/gluuapi.log",
+    default="/var/log/gluuengine.log",
     metavar="<logfile>",
     type=click.Path(resolve_path=True, file_okay=True, dir_okay=True,
                     writable=True, readable=True),
-    help="Path to log file (default to /var/log/gluuapi.log).",
+    help="Path to log file (default to /var/log/gluuengine.log).",
 )
 @click.pass_context
 def daemon(ctx, pidfile, logfile):

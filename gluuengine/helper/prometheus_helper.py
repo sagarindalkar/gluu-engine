@@ -31,7 +31,7 @@ class PrometheusHelper(object):
         self.target_path = '/etc/gluu/prometheus/prometheus.yml'
         self.docker = Client("unix:///var/run/docker.sock")
         self.jinja_env = Environment(
-            loader=PackageLoader("gluuapi", "templates")
+            loader=PackageLoader("gluuengine", "templates")
         )
         self.app = app
         self.logger = logger or logging.getLogger(

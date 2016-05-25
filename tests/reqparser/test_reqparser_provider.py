@@ -6,7 +6,7 @@ import pytest
     "gluu.example.com",
 ])
 def test_validate_generic_ip_address(addr):
-    from gluuapi.reqparser import GenericProviderReq
+    from gluuengine.reqparser import GenericProviderReq
 
     req = GenericProviderReq()
     assert req.validate_generic_ip_address(addr) is None
@@ -16,7 +16,7 @@ def test_validate_generic_ip_address(addr):
     "-a",
 ])
 def test_validate_invalid_generic_ip_address(addr):
-    from gluuapi.reqparser import GenericProviderReq
+    from gluuengine.reqparser import GenericProviderReq
     from marshmallow import ValidationError
 
     req = GenericProviderReq()
@@ -30,7 +30,7 @@ def test_validate_invalid_generic_ip_address(addr):
 ])
 def test_validate_invalid_name(name):
     from marshmallow import ValidationError
-    from gluuapi.reqparser import GenericProviderReq
+    from gluuengine.reqparser import GenericProviderReq
 
     req = GenericProviderReq()
 
@@ -40,7 +40,7 @@ def test_validate_invalid_name(name):
 
 def test_validate_invalid_generic_ssh_key():
     from marshmallow import ValidationError
-    from gluuapi.reqparser import GenericProviderReq
+    from gluuengine.reqparser import GenericProviderReq
 
     req = GenericProviderReq()
 
@@ -54,7 +54,7 @@ def test_validate_invalid_generic_ssh_key():
 ])
 def test_validate_invalid_generic_ssh_user(user):
     from marshmallow import ValidationError
-    from gluuapi.reqparser import GenericProviderReq
+    from gluuengine.reqparser import GenericProviderReq
 
     req = GenericProviderReq()
 
@@ -68,7 +68,7 @@ def test_validate_invalid_generic_ssh_user(user):
 ])
 def test_validate_invalid_generic_ssh_port(port):
     from marshmallow import ValidationError
-    from gluuapi.reqparser import GenericProviderReq
+    from gluuengine.reqparser import GenericProviderReq
 
     req = GenericProviderReq()
 

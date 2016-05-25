@@ -62,12 +62,12 @@ def test_node_delete_ldap(monkeypatch, app, db, cluster, provider, ldap_node):
     db.persist(cluster, "clusters")
 
     monkeypatch.setattr(
-        "gluuapi.setup.LdapSetup.teardown",
+        "gluuengine.setup.LdapSetup.teardown",
         lambda cls: None,
     )
 
     monkeypatch.setattr(
-        "gluuapi.helper.PrometheusHelper.update",
+        "gluuengine.helper.PrometheusHelper.update",
         lambda cls: None,
     )
 
@@ -142,7 +142,7 @@ def test_node_post_invalid_cluster(app, db):
 def test_node_post_ip_unavailable(monkeypatch, app, db, cluster, provider):
     # fills up reserved IP address using fake values
     monkeypatch.setattr(
-        "gluuapi.model.Cluster.get_container_addrs",
+        "gluuengine.model.Cluster.get_container_addrs",
         lambda cls: ["10.20.10.{}".format(x) for x in xrange(256)]
     )
 
@@ -185,7 +185,7 @@ def test_node_post(monkeypatch, app, db, cluster, provider,
     db.persist(oxauth_node, "nodes")
 
     monkeypatch.setattr(
-        "gluuapi.helper.{}.setup".format(helper_class),
+        "gluuengine.helper.{}.setup".format(helper_class),
         lambda cls, connect_delay, exec_delay: None,
     )
     data = {
@@ -205,7 +205,7 @@ def test_node_post_duplicate_oxtrust(monkeypatch, app, db, cluster,
     db.persist(oxtrust_node, "nodes")
 
     monkeypatch.setattr(
-        "gluuapi.helper.OxtrustModelHelper.setup",
+        "gluuengine.helper.OxtrustModelHelper.setup",
         lambda cls, connect_delay, exec_delay: None,
     )
     data = {
@@ -228,7 +228,7 @@ def test_node_post_nonmaster_oxtrust(monkeypatch, app, db, cluster,
     db.persist(license_key, "license_keys")
 
     monkeypatch.setattr(
-        "gluuapi.helper.OxtrustModelHelper.setup",
+        "gluuengine.helper.OxtrustModelHelper.setup",
         lambda cls, connect_delay, exec_delay: None,
     )
     data = {
@@ -272,12 +272,12 @@ def test_node_post_expired_license(app, db, provider, cluster, license_key):
 def test_node_delete_force(monkeypatch, app, db, ldap_node, cluster,
                            provider, force_delete, status_code):
     monkeypatch.setattr(
-        "gluuapi.setup.LdapSetup.teardown",
+        "gluuengine.setup.LdapSetup.teardown",
         lambda cls: None,
     )
 
     monkeypatch.setattr(
-        "gluuapi.helper.PrometheusHelper.update",
+        "gluuengine.helper.PrometheusHelper.update",
         lambda cls: None,
     )
 

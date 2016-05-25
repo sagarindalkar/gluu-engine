@@ -30,7 +30,7 @@ class BaseSetup(object):
         self.node = db.get(self.container.node_id, "nodes")
         self.cluster = cluster
         self.jinja_env = Environment(
-            loader=PackageLoader("gluuapi", "templates")
+            loader=PackageLoader("gluuengine", "templates")
         )
         self.app = app
         self.template_dir = self.app.config["TEMPLATES_DIR"]

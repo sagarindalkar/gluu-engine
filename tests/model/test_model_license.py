@@ -4,7 +4,7 @@ def test_no_metadata(license_key):
 
 
 def test_expired_date(license_key):
-    from gluuapi.utils import timestamp_millis
+    from gluuengine.utils import timestamp_millis
 
     ts = timestamp_millis() - (60 * 60 * 24 * 1000)
     license_key.metadata["expiration_date"] = ts

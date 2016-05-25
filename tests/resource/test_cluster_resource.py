@@ -5,7 +5,7 @@ import pytest
 
 @pytest.mark.skip(reason="rewrite needed")
 def test_cluster_post(app, db, patched_salt):
-    from gluuapi.model import Cluster
+    from gluuengine.model import Cluster
 
     resp = app.test_client().post(
         "/clusters",

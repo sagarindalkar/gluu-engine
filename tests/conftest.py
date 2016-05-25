@@ -6,13 +6,13 @@ import pytest
 
 @pytest.fixture(scope="session")
 def config():
-    from gluuapi.settings import TestConfig
+    from gluuengine.settings import TestConfig
     return TestConfig
 
 
 @pytest.fixture(scope="session")
 def app(request):
-    from gluuapi.app import create_app
+    from gluuengine.app import create_app
     from crochet import no_setup
 
     os.environ["API_ENV"] = "test"
@@ -23,7 +23,7 @@ def app(request):
 
 @pytest.fixture()
 def db(request, app):
-    from gluuapi.database import db
+    from gluuengine.database import db
 
     db.init_app(app)
 
@@ -39,7 +39,7 @@ def db(request, app):
 
 @pytest.fixture()
 def cluster():
-    from gluuapi.model import Cluster
+    from gluuengine.model import Cluster
 
     cluster = Cluster({
         "ox_cluster_hostname": "ox.example.com",
@@ -49,7 +49,7 @@ def cluster():
 
 @pytest.fixture()
 def master_node():
-    from gluuapi.model import MasterNode
+    from gluuengine.model import MasterNode
 
     node = MasterNode()
     node.populate({
@@ -61,7 +61,7 @@ def master_node():
 
 @pytest.fixture()
 def worker_node():
-    from gluuapi.model import WorkerNode
+    from gluuengine.model import WorkerNode
 
     node = WorkerNode()
     node.populate({
@@ -73,7 +73,7 @@ def worker_node():
 
 @pytest.fixture()
 def discovery_node():
-    from gluuapi.model import DiscoveryNode
+    from gluuengine.model import DiscoveryNode
 
     node = DiscoveryNode()
     node.populate({
@@ -85,7 +85,7 @@ def discovery_node():
 
 @pytest.fixture()
 def ldap_container(cluster, master_node):
-    from gluuapi.model import LdapContainer
+    from gluuengine.model import LdapContainer
 
     ctr = LdapContainer()
     ctr.cluster_id = cluster.id
@@ -96,7 +96,7 @@ def ldap_container(cluster, master_node):
 
 @pytest.fixture()
 def oxauth_container(cluster, master_node):
-    from gluuapi.model import OxauthContainer
+    from gluuengine.model import OxauthContainer
 
     ctr = OxauthContainer()
     ctr.cluster_id = cluster.id
@@ -106,7 +106,7 @@ def oxauth_container(cluster, master_node):
 
 @pytest.fixture()
 def oxtrust_container(cluster, master_node):
-    from gluuapi.model import OxtrustContainer
+    from gluuengine.model import OxtrustContainer
 
     ctr = OxtrustContainer()
     ctr.cluster_id = cluster.id
@@ -116,7 +116,7 @@ def oxtrust_container(cluster, master_node):
 
 @pytest.fixture()
 def oxidp_container(cluster, master_node):
-    from gluuapi.model import OxidpContainer
+    from gluuengine.model import OxidpContainer
 
     ctr = OxidpContainer()
     ctr.cluster_id = cluster.id
@@ -126,7 +126,7 @@ def oxidp_container(cluster, master_node):
 
 @pytest.fixture()
 def nginx_container(cluster, master_node):
-    from gluuapi.model import NginxContainer
+    from gluuengine.model import NginxContainer
 
     ctr = NginxContainer()
     ctr.cluster_id = cluster.id
@@ -136,7 +136,7 @@ def nginx_container(cluster, master_node):
 
 @pytest.fixture()
 def oxasimba_container(cluster, master_node):
-    from gluuapi.model import OxasimbaContainer
+    from gluuengine.model import OxasimbaContainer
 
     ctr = OxasimbaContainer()
     ctr.cluster_id = cluster.id
@@ -146,7 +146,7 @@ def oxasimba_container(cluster, master_node):
 
 @pytest.fixture()
 def generic_provider(cluster):
-    from gluuapi.model import GenericProvider
+    from gluuengine.model import GenericProvider
 
     provider = GenericProvider()
     provider.populate({
@@ -156,7 +156,7 @@ def generic_provider(cluster):
 
 @pytest.fixture()
 def digitalocean_provider(cluster):
-    from gluuapi.model import DigitalOceanProvider
+    from gluuengine.model import DigitalOceanProvider
 
     provider = DigitalOceanProvider()
     provider.populate({
@@ -172,7 +172,7 @@ def patched_sleep(monkeypatch):
 
 @pytest.fixture()
 def license_key():
-    from gluuapi.model import LicenseKey
+    from gluuengine.model import LicenseKey
 
     key = LicenseKey()
     key.populate({
@@ -214,11 +214,11 @@ def license_key():
 #     with codecs.open("tests/resource/validator_ok.txt", encoding="utf-8") as f:
 #         patch_output = f.read()
 
-#     # cannot monkeypatch ``gluuapi.utils.run`` function wrapped in
+#     # cannot monkeypatch ``gluuengine.utils.run`` function wrapped in
 #     # ``decode_signed_license`` function,
-#     # hence we're monkeypatching ``gluuapi.utils.run`` directly
+#     # hence we're monkeypatching ``gluuengine.utils.run`` directly
 #     monkeypatch.setattr(
-#         "gluuapi.utils.run",
+#         "gluuengine.utils.run",
 #         lambda cmd, exit_on_error: patch_output,
 #     )
 
@@ -228,24 +228,24 @@ def license_key():
 #     with codecs.open("tests/resource/validator_err.txt", encoding="utf-8") as f:
 #         patch_output = f.read()
 
-#     # cannot monkeypatch ``gluuapi.utils.run`` function wrapped in
+#     # cannot monkeypatch ``gluuengine.utils.run`` function wrapped in
 #     # ``decode_signed_license`` function,
-#     # hence we're monkeypatching ``gluuapi.utils.run`` directly
+#     # hence we're monkeypatching ``gluuengine.utils.run`` directly
 #     monkeypatch.setattr(
-#         "gluuapi.utils.run",
+#         "gluuengine.utils.run",
 #         lambda cmd, exit_on_error: patch_output,
 #     )
 
 
 # @pytest.fixture
 # def validator_expired(monkeypatch):
-#     from gluuapi.utils import timestamp_millis
+#     from gluuengine.utils import timestamp_millis
 
-#     # cannot monkeypatch ``gluuapi.utils.run`` function wrapped in
+#     # cannot monkeypatch ``gluuengine.utils.run`` function wrapped in
 #     # ``decode_signed_license`` function,
-#     # hence we're monkeypatching ``gluuapi.utils.run`` directly
+#     # hence we're monkeypatching ``gluuengine.utils.run`` directly
 #     monkeypatch.setattr(
-#         "gluuapi.utils.run",
+#         "gluuengine.utils.run",
 #         lambda cmd, exit_on_error: """Random line
 # {"valid":true,"metadata":{"expiration_date":{}}}""".format(timestamp_millis() - 1000000),
 #     )
@@ -266,7 +266,7 @@ def swarm_config():
 
 @pytest.fixture()
 def dockerclient(swarm_config):
-    from gluuapi.dockerclient import Docker
+    from gluuengine.dockerclient import Docker
 
     config = {}
     swarm_config = swarm_config
@@ -276,7 +276,7 @@ def dockerclient(swarm_config):
 
 # @pytest.fixture()
 # def ldap_setup(request, app, ldap_node, cluster, db, provider):
-#     from gluuapi.setup import LdapSetup
+#     from gluuengine.setup import LdapSetup
 
 #     db.persist(provider, "providers")
 #     setup_obj = LdapSetup(ldap_node, cluster, app)
@@ -290,7 +290,7 @@ def dockerclient(swarm_config):
 
 # @pytest.fixture()
 # def oxauth_setup(request, app, oxauth_node, cluster, db, provider):
-#     from gluuapi.setup import OxauthSetup
+#     from gluuengine.setup import OxauthSetup
 
 #     db.persist(provider, "providers")
 #     setup_obj = OxauthSetup(oxauth_node, cluster, app)
@@ -304,7 +304,7 @@ def dockerclient(swarm_config):
 
 # @pytest.fixture()
 # def oxtrust_setup(request, app, oxtrust_node, cluster, db, provider):
-#     from gluuapi.setup import OxtrustSetup
+#     from gluuengine.setup import OxtrustSetup
 
 #     db.persist(provider, "providers")
 #     setup_obj = OxtrustSetup(oxtrust_node, cluster, app)
@@ -318,7 +318,7 @@ def dockerclient(swarm_config):
 
 # @pytest.fixture()
 # def oxidp_setup(request, app, oxidp_node, cluster, db, provider):
-#     from gluuapi.setup import OxidpSetup
+#     from gluuengine.setup import OxidpSetup
 
 #     db.persist(provider, "providers")
 #     setup_obj = OxidpSetup(oxidp_node, cluster, app)
@@ -332,7 +332,7 @@ def dockerclient(swarm_config):
 
 # @pytest.fixture()
 # def nginx_setup(request, app, nginx_node, cluster, db, provider):
-#     from gluuapi.setup import NginxSetup
+#     from gluuengine.setup import NginxSetup
 
 #     db.persist(provider, "providers")
 #     setup_obj = NginxSetup(nginx_node, cluster, app)
@@ -354,7 +354,7 @@ def patched_po_run(monkeypatch):
 
 @pytest.fixture()
 def container_log():
-    from gluuapi.model import ContainerLog
+    from gluuengine.model import ContainerLog
 
     log = ContainerLog()
     log.setup_log = log.id + "-setup.log"
@@ -364,10 +364,10 @@ def container_log():
 
 @pytest.fixture()
 def patched_exec_cmd(monkeypatch):
-    from gluuapi.dockerclient._docker import DockerExecResult
+    from gluuengine.dockerclient._docker import DockerExecResult
 
     monkeypatch.setattr(
-        "gluuapi.dockerclient.Docker.exec_cmd",
+        "gluuengine.dockerclient.Docker.exec_cmd",
         lambda cls, container, cmd: DockerExecResult(cmd, 0, ""),
     )
 
@@ -375,18 +375,18 @@ def patched_exec_cmd(monkeypatch):
 @pytest.fixture()
 def base_setup(monkeypatch, app, db, swarm_config,
                cluster, ldap_container, master_node):
-    from gluuapi.setup.base import BaseSetup
+    from gluuengine.setup.base import BaseSetup
 
     class FakeBaseSetup(BaseSetup):
         def setup(self):
             pass
 
     monkeypatch.setattr(
-        "gluuapi.machine.Machine.config",
+        "gluuengine.machine.Machine.config",
         lambda cls, name: {},
     )
     monkeypatch.setattr(
-        "gluuapi.machine.Machine.swarm_config",
+        "gluuengine.machine.Machine.swarm_config",
         lambda cls, name: swarm_config,
     )
 
@@ -397,14 +397,14 @@ def base_setup(monkeypatch, app, db, swarm_config,
 @pytest.fixture()
 def ox_setup(monkeypatch, app, db, swarm_config,
              cluster, oxauth_container, master_node):
-    from gluuapi.setup.base import OxSetup
+    from gluuengine.setup.base import OxSetup
 
     monkeypatch.setattr(
-        "gluuapi.machine.Machine.config",
+        "gluuengine.machine.Machine.config",
         lambda cls, name: {},
     )
     monkeypatch.setattr(
-        "gluuapi.machine.Machine.swarm_config",
+        "gluuengine.machine.Machine.swarm_config",
         lambda cls, name: swarm_config,
     )
 

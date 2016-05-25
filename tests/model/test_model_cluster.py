@@ -1,5 +1,5 @@
 def test_cluster_as_dict():
-    from gluuapi.model import Cluster
+    from gluuengine.model import Cluster
 
     cluster = Cluster()
     actual = cluster.as_dict()
@@ -9,7 +9,7 @@ def test_cluster_as_dict():
 
 
 def test_decrypted_admin_pw():
-    from gluuapi.model import Cluster
+    from gluuengine.model import Cluster
 
     cluster = Cluster({"admin_pw": "secret"})
     assert cluster.decrypted_admin_pw == "secret"

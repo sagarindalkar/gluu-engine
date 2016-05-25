@@ -68,15 +68,15 @@ def test_pull_image(monkeypatch, dockerclient, stream_output, pulled):
 
 def test_setup_container(monkeypatch, dockerclient):
     monkeypatch.setattr(
-        "gluuapi.dockerclient.Docker.image_exists",
+        "gluuengine.dockerclient.Docker.image_exists",
         lambda cls, image: False,
     )
     monkeypatch.setattr(
-        "gluuapi.dockerclient.Docker.pull_image",
+        "gluuengine.dockerclient.Docker.pull_image",
         lambda cls, image: True,
     )
     monkeypatch.setattr(
-        "gluuapi.dockerclient.Docker.run_container",
+        "gluuengine.dockerclient.Docker.run_container",
         lambda cls, name, image, env, port_bindings, volumes, dns, dns_search, ulimits, hostname: "123",
     )
     assert dockerclient.setup_container("gluuopendj_123", "gluuopendj") == "123"

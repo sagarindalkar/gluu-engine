@@ -3,7 +3,7 @@ import pytest
 
 def test_validate_invalid_provider(db):
     from marshmallow import ValidationError
-    from gluuapi.reqparser import NodeReq
+    from gluuengine.reqparser import NodeReq
 
     req = NodeReq()
 
@@ -13,7 +13,7 @@ def test_validate_invalid_provider(db):
 
 def test_validate_invalid_reused_provider(db, generic_provider, master_node):
     from marshmallow import ValidationError
-    from gluuapi.reqparser import NodeReq
+    from gluuengine.reqparser import NodeReq
 
     master_node.provider_id = generic_provider.id
     db.persist(generic_provider, "providers")
@@ -31,7 +31,7 @@ def test_validate_invalid_reused_provider(db, generic_provider, master_node):
 ])
 def test_validate_invalid_regex_name(name):
     from marshmallow import ValidationError
-    from gluuapi.reqparser import NodeReq
+    from gluuengine.reqparser import NodeReq
 
     req = NodeReq()
 
@@ -41,7 +41,7 @@ def test_validate_invalid_regex_name(name):
 
 def test_validate_reused_name(db, master_node):
     from marshmallow import ValidationError
-    from gluuapi.reqparser import NodeReq
+    from gluuengine.reqparser import NodeReq
 
     db.persist(master_node, "nodes")
 

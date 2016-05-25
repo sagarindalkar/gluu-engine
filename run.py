@@ -1,17 +1,17 @@
 # gunicorn run
-from crochet import setup as crochet_setup
-from gluuapi.app import create_app
-from gluuapi.log import configure_global_logging
+# from crochet import setup as crochet_setup
+# from gluuengine.app import create_app
+# from gluuengine.log import configure_global_logging
 
 # gunicorn run
-# from gluuapi.task import LicenseExpirationTask
-# from gluuapi.task import OxidpWatcherTask
-# from gluuapi.setup.signals import connect_setup_signals
-# from gluuapi.setup.signals import connect_teardown_signals
+# from gluuengine.task import LicenseExpirationTask
+# from gluuengine.task import OxidpWatcherTask
+# from gluuengine.setup.signals import connect_setup_signals
+# from gluuengine.setup.signals import connect_teardown_signals
 
-# normal run 
-from gluuapi.cli import runserver
-#from gluuapi.machine import Machine
+# normal run
+from gluuengine.cli import runserver
+#from gluuengine.machine import Machine
 
 
 # def get_app_for_gunicorn():

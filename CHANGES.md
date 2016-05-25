@@ -27,7 +27,7 @@ WARNING: this release is a non-backward compatible with older releases.
 *   Speed up image downloads/updates by pulling them from Gluu's private registry.
 *   Removed `X-Deploy-Log` header from Container API response in favor of `X-Container-Setup-Log`
 *   Introduced `X-Container-Teardown-Log` header.
-*   Removed unused `gluuapi distribute-data` and `gluuapi populate-node-logs` commands.
+*   Removed unused `gluuengine distribute-data` and `gluuengine populate-node-logs` commands.
 
 ## Version 0.4.4
 

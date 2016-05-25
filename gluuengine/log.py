@@ -70,7 +70,7 @@ def configure_global_logging(logfile=None):  # pragma: no cover
         },
         "handlers": handlers,
         "loggers": {
-            "gluuapi": {
+            "gluuengine": {
                 "handlers": handlers.keys(),
                 "propagate": True,
                 "level": "INFO",

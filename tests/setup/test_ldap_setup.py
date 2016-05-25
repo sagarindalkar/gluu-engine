@@ -13,8 +13,8 @@ def test_setup(ldap_setup, db, provider, patched_run,
 def test_setup_with_replication(ldap_setup, db, cluster, provider,
                                 patched_sleep, patched_exec_cmd,
                                 patched_run):
-    from gluuapi.model import LdapNode
-    from gluuapi.model import STATE_SUCCESS
+    from gluuengine.model import LdapNode
+    from gluuengine.model import STATE_SUCCESS
 
     db.persist(provider, "providers")
 
@@ -32,10 +32,10 @@ def test_setup_with_replication(ldap_setup, db, cluster, provider,
 @pytest.mark.skip(reason="rewrite needed")
 def test_after_setup(cluster, ldap_setup, provider, db,
                      patched_sleep, patched_exec_cmd):
-    from gluuapi.model import OxauthNode
-    from gluuapi.model import OxtrustNode
-    from gluuapi.model import OxidpNode
-    from gluuapi.model import STATE_SUCCESS
+    from gluuengine.model import OxauthNode
+    from gluuengine.model import OxtrustNode
+    from gluuengine.model import OxidpNode
+    from gluuengine.model import STATE_SUCCESS
 
     db.persist(cluster, "clusters")
     db.persist(provider, "providers")
@@ -80,8 +80,8 @@ def test_teardown(ldap_setup, cluster, provider, oxauth_node, db,
 @pytest.mark.skip(reason="rewrite needed")
 def test_teardown_with_replication(ldap_setup, cluster, db, patched_run,
                                    patched_sleep, patched_exec_cmd):
-    from gluuapi.model import LdapNode
-    from gluuapi.model import STATE_SUCCESS
+    from gluuengine.model import LdapNode
+    from gluuengine.model import STATE_SUCCESS
 
     node1 = LdapNode()
     node1.id = "ldap-123"
@@ -102,8 +102,8 @@ def test_teardown_with_replication(ldap_setup, cluster, db, patched_run,
 @pytest.mark.skip(reason="rewrite needed")
 def test_replicate_from(ldap_setup, db, provider, patched_run,
                         patched_sleep, patched_exec_cmd):
-    from gluuapi.model import LdapNode
-    from gluuapi.model import STATE_SUCCESS
+    from gluuengine.model import LdapNode
+    from gluuengine.model import STATE_SUCCESS
 
     db.persist(provider, "providers")
     peer_node = LdapNode()
@@ -119,7 +119,7 @@ def test_replicate_from(ldap_setup, db, provider, patched_run,
 @pytest.mark.skip(reason="rewrite needed")
 def test_notify_ox(ldap_setup, db, oxidp_node,
                    patched_sleep, patched_exec_cmd):
-    from gluuapi.model import STATE_SUCCESS
+    from gluuengine.model import STATE_SUCCESS
 
     oxidp_node.state = STATE_SUCCESS
     db.persist(oxidp_node, "nodes")
@@ -129,9 +129,9 @@ def test_notify_ox(ldap_setup, db, oxidp_node,
 @pytest.mark.skip(reason="rewrite needed")
 def test_after_setup_modify_config(cluster, ldap_setup,
                                    patched_sleep, patched_exec_cmd):
-    from gluuapi.database import db
-    from gluuapi.model import LdapNode
-    from gluuapi.model import STATE_SUCCESS
+    from gluuengine.database import db
+    from gluuengine.model import LdapNode
+    from gluuengine.model import STATE_SUCCESS
 
     db.persist(cluster, "clusters")
 

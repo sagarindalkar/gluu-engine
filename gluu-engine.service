@@ -1,0 +1,13 @@
+[Unit]
+Description=Gluu Flask Daemon
+After=network.target
+
+[Service]
+Type=simple
+EnvironmentFile=-/etc/sysconfig/gluu-engine
+ExecStart=/bin/sh -c "API_ENV=$API_ENV HOST=$HOST PORT=$PORT /usr/bin/gluuengine daemon start"
+ExecStop=/bin/sh -c "API_ENV=$API_ENV HOST=$HOST PORT=$PORT /usr/bin/gluuengine daemon stop"
+ExecReload=/bin/sh -c "API_ENV=$API_ENV HOST=$HOST PORT=$PORT /usr/bin/gluuengine daemon restart"
+
+[Install]
+WantedBy=multi-user.target

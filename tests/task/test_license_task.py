@@ -5,7 +5,7 @@ import pytest
 def test_license_not_expired(
         db, license_key, provider, app,
         oxd_resp_ok, validator_ok):
-    from gluuapi.task import LicenseExpirationTask
+    from gluuengine.task import LicenseExpirationTask
 
     license_key.valid = True
     license_key.metadata["expiration_date"] = None
@@ -21,7 +21,7 @@ def test_disable_nodes(db, license_key, provider,
                        oxauth_node, oxidp_node, app,
                        oxd_resp_err, patched_salt,
                        salt_event_ok, patched_sleep):
-    from gluuapi.task import LicenseExpirationTask
+    from gluuengine.task import LicenseExpirationTask
 
     # license with expired timestamp
     license_key.valid = False
@@ -54,7 +54,7 @@ def test_enable_nodes(db, license_key, provider, app,
                       oxd_resp_ok, validator_ok,
                       patched_salt, salt_event_ok,
                       patched_sleep):
-    from gluuapi.task import LicenseExpirationTask
+    from gluuengine.task import LicenseExpirationTask
 
     # license with expired timestamp
     license_key.valid = False

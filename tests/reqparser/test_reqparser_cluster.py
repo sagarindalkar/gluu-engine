@@ -2,7 +2,7 @@ import pytest
 
 
 def test_validate_admin_pw():
-    from gluuapi.reqparser import ClusterReq
+    from gluuengine.reqparser import ClusterReq
     from marshmallow import ValidationError
 
     req = ClusterReq()
@@ -28,7 +28,7 @@ def test_validate_admin_pw():
     "ab.",
 ])
 def test_validate_name_invalid(name):
-    from gluuapi.reqparser import ClusterReq
+    from gluuengine.reqparser import ClusterReq
     from marshmallow import ValidationError
 
     req = ClusterReq()
@@ -47,21 +47,21 @@ def test_validate_name_invalid(name):
     "ab1",
 ])
 def test_validate_name_valid(name):
-    from gluuapi.reqparser import ClusterReq
+    from gluuengine.reqparser import ClusterReq
 
     req = ClusterReq()
     req.validate_name(name)
 
 
 def test_validate_country_code():
-    from gluuapi.reqparser import ClusterReq
+    from gluuengine.reqparser import ClusterReq
 
     req = ClusterReq()
     req.validate_country_code("US")
 
 
 def test_validate_invalid_country_code():
-    from gluuapi.reqparser import ClusterReq
+    from gluuengine.reqparser import ClusterReq
     from marshmallow import ValidationError
 
     req = ClusterReq()

@@ -1,5 +1,5 @@
 def test_dev_config():
-    from gluuapi.settings import DevConfig
+    from gluuengine.settings import DevConfig
 
     cfg = DevConfig()
 
@@ -9,7 +9,7 @@ def test_dev_config():
 
 
 def test_test_config():
-    from gluuapi.settings import TestConfig
+    from gluuengine.settings import TestConfig
 
     cfg = TestConfig()
 
@@ -20,7 +20,7 @@ def test_test_config():
 
 
 def test_prod_config():
-    from gluuapi.settings import ProdConfig
+    from gluuengine.settings import ProdConfig
 
     cfg = ProdConfig()
 

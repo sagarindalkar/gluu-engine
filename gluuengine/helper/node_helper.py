@@ -19,7 +19,7 @@ def distribute_shared_database(filepath):
     :param filepath: Path to cluster database file.
     """
     mc = Machine()
-    logger = logging.getLogger("gluuapi")
+    logger = logging.getLogger("gluuengine")
 
     dest = os.path.join(os.path.dirname(filepath), "shared.json")
 

@@ -53,7 +53,7 @@ To run the application in foreground, type the following command in the shell:
 
 ```
 $ source env/bin/activate
-$ gluuapi runserver
+$ gluuengine runserver
 ```
 
 Or, if you have `make` installed
@@ -65,16 +65,16 @@ $ make run
 
 ## Daemon Mode
 
-To run `gluuapi` in background (daemon mode):
+To run `gluuengine` in background (daemon mode):
 
 ```
 $ source env/bin/activate
-$ gluuapi daemon --pidfile /path/to/pidfile --logfile /path/to/logfile start
+$ gluuengine daemon --pidfile /path/to/pidfile --logfile /path/to/logfile start
 ```
 
 The daemon has `start`, `stop`, `restart`, and `status` commands.
 It's worth noting that `--pidfile` and `--logfile` must be pointed to accessible (writable and readable) path by user who runs the daemon.
-By default they are pointed to `/var/run/gluuapi.pid` and `/var/log/gluuapi.log` respectively.
+By default they are pointed to `/var/run/gluuengine.pid` and `/var/log/gluuengine.log` respectively.
 
 ## Testing
 

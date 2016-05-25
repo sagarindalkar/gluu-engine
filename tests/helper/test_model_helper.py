@@ -3,8 +3,8 @@ import pytest
 
 @pytest.mark.skip(reason="rewrite needed")
 def test_ldap_model_helper(monkeypatch, app, cluster, provider, db, ldap_node):
-    from gluuapi.helper.model_helper import LdapModelHelper
-    from gluuapi.setup import LdapSetup
+    from gluuengine.helper.model_helper import LdapModelHelper
+    from gluuengine.setup import LdapSetup
 
     db.persist(cluster, "clusters")
     db.persist(provider, "providers")
@@ -28,8 +28,8 @@ def test_ldap_model_helper(monkeypatch, app, cluster, provider, db, ldap_node):
 @pytest.mark.skip(reason="rewrite needed")
 def test_oxauth_model_helper(monkeypatch, app, cluster, provider,
                              oxauth_node, db):
-    from gluuapi.helper import OxauthModelHelper
-    from gluuapi.setup import OxauthSetup
+    from gluuengine.helper import OxauthModelHelper
+    from gluuengine.setup import OxauthSetup
 
     db.persist(cluster, "clusters")
     db.persist(provider, "providers")
@@ -53,8 +53,8 @@ def test_oxauth_model_helper(monkeypatch, app, cluster, provider,
 @pytest.mark.skip(reason="rewrite needed")
 def test_oxtrust_model_helper(monkeypatch, app, cluster, provider,
                               oxtrust_node, db):
-    from gluuapi.helper import OxtrustModelHelper
-    from gluuapi.setup import OxtrustSetup
+    from gluuengine.helper import OxtrustModelHelper
+    from gluuengine.setup import OxtrustSetup
 
     db.persist(cluster, "clusters")
     db.persist(provider, "providers")

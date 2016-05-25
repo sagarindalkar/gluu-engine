@@ -1,8 +1,8 @@
 def test_get_config_object():
-    from gluuapi.settings import ProdConfig
-    from gluuapi.settings import DevConfig
-    from gluuapi.settings import TestConfig
-    from gluuapi.app import _get_config_object
+    from gluuengine.settings import ProdConfig
+    from gluuengine.settings import DevConfig
+    from gluuengine.settings import TestConfig
+    from gluuengine.app import _get_config_object
 
     data = [
         ("prod", ProdConfig),

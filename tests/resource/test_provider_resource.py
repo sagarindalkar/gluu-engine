@@ -20,7 +20,7 @@ def test_provider_invalid_cluster(app, cluster):
 def test_provider_list_post_master(monkeypatch, app, db, cluster,
                                    patched_salt, patched_sleep):
     monkeypatch.setattr(
-        "gluuapi.helper.WeaveHelper.launch",
+        "gluuengine.helper.WeaveHelper.launch",
         lambda cls: None,
     )
     db.persist(cluster, "clusters")
@@ -242,7 +242,7 @@ def test_provider_put_missing_params(app, db, provider):
 def test_provider_put_updated(app, db, provider, oxauth_node,
                               patched_salt, license_key,
                               validator_ok, cluster, patched_sleep):
-    from gluuapi.model import STATE_DISABLED
+    from gluuengine.model import STATE_DISABLED
 
     db.persist(cluster, "clusters")
     license_key.metadata = {"expiration_date": None}

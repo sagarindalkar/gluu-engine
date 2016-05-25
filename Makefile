@@ -1,5 +1,5 @@
 run:
-	@gluuapi runserver
+	@gluuengine runserver
 
 test:
 	@tox

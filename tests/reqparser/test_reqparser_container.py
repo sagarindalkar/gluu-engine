@@ -3,7 +3,7 @@ import pytest
 
 def test_validate_invalid_node_id(db):
     from marshmallow import ValidationError
-    from gluuapi.reqparser import ContainerReq
+    from gluuengine.reqparser import ContainerReq
 
     req = ContainerReq()
 
@@ -13,7 +13,7 @@ def test_validate_invalid_node_id(db):
 
 def test_validate_invalid_node_type(db, discovery_node):
     from marshmallow import ValidationError
-    from gluuapi.reqparser import ContainerReq
+    from gluuengine.reqparser import ContainerReq
 
     db.persist(discovery_node, "nodes")
 
@@ -25,7 +25,7 @@ def test_validate_invalid_node_type(db, discovery_node):
 
 def test_validate_node_missing_license(db, worker_node):
     from marshmallow import ValidationError
-    from gluuapi.reqparser import ContainerReq
+    from gluuengine.reqparser import ContainerReq
 
     db.persist(worker_node, "nodes")
 
@@ -37,7 +37,7 @@ def test_validate_node_missing_license(db, worker_node):
 
 def test_validate_node_expired_license(db, worker_node, license_key):
     from marshmallow import ValidationError
-    from gluuapi.reqparser import ContainerReq
+    from gluuengine.reqparser import ContainerReq
 
     db.persist(worker_node, "nodes")
     license_key.metadata = {}
@@ -50,7 +50,7 @@ def test_validate_node_expired_license(db, worker_node, license_key):
 
 
 def test_finalize_data():
-    from gluuapi.reqparser import ContainerReq
+    from gluuengine.reqparser import ContainerReq
 
     req = ContainerReq()
     final_data = req.finalize_data({})

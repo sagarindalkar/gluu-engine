@@ -4,7 +4,7 @@ import pytest
 @pytest.mark.skip(reason="rewrite needed")
 def test_weave_launch_master(app, db, provider, cluster,
                              patched_salt, patched_sleep):
-    from gluuapi.helper import WeaveHelper
+    from gluuengine.helper import WeaveHelper
 
     db.persist(cluster, "clusters")
     weave = WeaveHelper(provider, app)
@@ -14,7 +14,7 @@ def test_weave_launch_master(app, db, provider, cluster,
 @pytest.mark.skip(reason="rewrite needed")
 def test_weave_launch_consumer(app, db, provider, cluster,
                                patched_salt, patched_sleep):
-    from gluuapi.helper import WeaveHelper
+    from gluuengine.helper import WeaveHelper
 
     db.persist(cluster, "clusters")
     weave = WeaveHelper(provider, app)
@@ -24,7 +24,7 @@ def test_weave_launch_consumer(app, db, provider, cluster,
 @pytest.mark.skip(reason="rewrite needed")
 def test_weave_expose_network(app, db, provider, cluster,
                               patched_salt, patched_sleep):
-    from gluuapi.helper import WeaveHelper
+    from gluuengine.helper import WeaveHelper
 
     db.persist(cluster, "clusters")
     weave = WeaveHelper(provider, app)
@@ -38,7 +38,7 @@ def test_weave_expose_network(app, db, provider, cluster,
 ])
 def test_weave_launch(app, db, provider, cluster, type_,
                       patched_salt, patched_sleep):
-    from gluuapi.helper import WeaveHelper
+    from gluuengine.helper import WeaveHelper
 
     db.persist(cluster, "clusters")
     provider.type = type_
@@ -49,7 +49,7 @@ def test_weave_launch(app, db, provider, cluster, type_,
 @pytest.mark.skip(reason="rewrite needed")
 def test_weave_docker_bridge_ip(app, db, provider, cluster,
                                 monkeypatch):
-    from gluuapi.helper import WeaveHelper
+    from gluuengine.helper import WeaveHelper
 
     monkeypatch.setattr(
         "salt.utils.event.MasterEvent.get_event",

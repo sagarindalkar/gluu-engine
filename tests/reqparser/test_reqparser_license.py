@@ -8,7 +8,7 @@ import pytest
     ("a+ b/ c=", "a++b/+c="),
 ])
 def test_sanitize_public_key(pubkey_in, pubkey_out):
-    from gluuapi.reqparser import LicenseKeyReq
+    from gluuengine.reqparser import LicenseKeyReq
 
     req = LicenseKeyReq().load({
         "public_key": pubkey_in,

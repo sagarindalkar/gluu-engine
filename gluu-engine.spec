@@ -1,4 +1,4 @@
-Name:           gluu-flask
+Name:           gluu-engine
 Version:        0.1
 Release:        1%{?dist}
 Summary:        Flask Management API Server
@@ -10,7 +10,7 @@ Requires:       openssl, python
 BuildArch:      noarch
 
 %description
-Gluu Server Flask Management API Server
+Gluu Server Docker Edition REST API
 The goal is to use Salt, Docker, and Flask to build
 a new cluster recipe for the Gluu Server that will
 enable central administration of nodes, including

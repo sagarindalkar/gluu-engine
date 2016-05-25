@@ -166,7 +166,7 @@ class NodeResource(Resource):
             }, 404
 
         # reject request if node has containers
-        if node.count_workers():
+        if node.count_containers():
             return {
                 "status": 403,
                 "message": "cannot delete node when it has containers",

@@ -2,25 +2,32 @@
 
 Here you can see the full list of changes between each gluu-flask release.
 
-## Version 0.5.0
+## Version 0.5.0 (beta2)
 
 Release date to be announced later.
 
-* Fixed error when stopping failed node deployment.
-* Speed up node teardown by skipping provisioning in failed node.
-* Node's deployment log are deleted after node teardown.
-* Set max. file descriptor in `ldap` node.
-* `httpd` node is completely removed from cluster.
-* `weave` is upgraded to v1.4.4.
-* `docker` is upgraded to v1.1.0.
-* `gluuoxauth` image is upgraded to v2.4.2.
-* `gluuoxtrust` image is upgraded to v2.4.2.
-* `gluuoxidp` image is upgraded to v2.4.2.
-* Cluster ID is now attached as provider attribute. Refer to migration guide for upgrading existing providers.
-* Speed up image downloads/updates by pulling them from Gluu's private registry. Refer to migration guide for upgrading images.
-* Removed `X-Deploy-Log` header from Node API response.
-* Removed unused `gluuapi distribute-data` command.
-* Removed unused `gluuapi populate-node-logs` command.
+WARNING: this release is a non-backward compatible with older releases.
+
+*   New terms are introduced and some old terms are modified:
+
+    * Cluster and LicenseKey remain intact.
+    * The old Provider is renamed to Node; the new Provider refers to cloud/service name.
+    * The old Node is renamed to Container; the new Node refers to actual machine/server.
+    * The old NodeLog is renamed to ContainerLog
+
+*   Fixed error when stopping failed container deployment.
+*   Speed up container teardown by skipping provisioning in failed container.
+*   Container's deployment log are deleted after container teardown.
+*   Set maximum file descriptor in `ldap` container.
+*   `httpd` container is completely removed from cluster.
+*   `gluuoxauth` image is upgraded to v2.4.3.
+*   `gluuoxtrust` image is upgraded to v2.4.3.
+*   `gluuoxidp` image is upgraded to v2.4.3.
+*   Docker Engine is upgraded to v1.11.1.
+*   Speed up image downloads/updates by pulling them from Gluu's private registry.
+*   Removed `X-Deploy-Log` header from Container API response in favor of `X-Container-Setup-Log`
+*   Introduced `X-Container-Teardown-Log` header.
+*   Removed unused `gluuapi distribute-data` and `gluuapi populate-node-logs` commands.
 
 ## Version 0.4.4
 

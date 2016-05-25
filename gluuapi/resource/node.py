@@ -155,7 +155,6 @@ class NodeResource(Resource):
         else:
             return nodes[0].as_dict()
 
-
     def delete(self, node_name):
         nodes = db.search_from_table('nodes', db.where('name') == node_name)
         if nodes:
@@ -165,6 +164,13 @@ class NodeResource(Resource):
                 "status": 404,
                 "message": "node not found"
             }, 404
+
+        # reject request if node has containers
+        if node.count_workers():
+            return {
+                "status": 403,
+                "message": "cannot delete node when it has containers",
+            }, 403
 
         if node.type == 'master' and db.count_from_table('nodes', db.where('type') == 'worker'):
             return {
@@ -177,7 +183,7 @@ class NodeResource(Resource):
                 "status": 404,
                 "message": "master node still running"
             }, 404
-        
+
         running = self.machine.is_running(node.name)
         if running:
             try:
@@ -193,7 +199,6 @@ class NodeResource(Resource):
         else:
             db.delete(node.id, 'nodes')
         return {}, 204
-
 
     def put(self, node_name):
         nodes = db.search_from_table('nodes', db.where('name') == node_name)
@@ -223,5 +228,3 @@ class NodeResource(Resource):
             "Location": url_for("node", node_name=node.name),
         }
         return node.as_dict(), 202, headers
-
-        

@@ -26,16 +26,16 @@ class Node(BaseModel):
         #'provider_type'
     ])
 
-    def __init__(self, fields=None):  # pragma: no cover
-        self.id = str(uuid.uuid4())
-        self.populate(fields)
+    # def __init__(self, fields=None):  # pragma: no cover
+    #     self.id = str(uuid.uuid4())
+    #     self.populate(fields)
 
-    def populate(self, fields=None):  # pragma: no cover
-        fields = fields or {}
-        self.name = fields.get('name', '')
-        self.type = fields.get('type', '')
-        self.provider_id = fields.get('provider_id', '')
-        #self.provider_type = fields.get('provider_type', '')
+    # def populate(self, fields=None):  # pragma: no cover
+    #     fields = fields or {}
+    #     self.name = fields.get('name', '')
+    #     self.type = fields.get('type', '')
+    #     self.provider_id = fields.get('provider_id', '')
+    #     #self.provider_type = fields.get('provider_type', '')
 
     def count_containers(self, type_="", state=STATE_SUCCESS):
         """Counts available containers objects (models).
@@ -80,13 +80,14 @@ class DiscoveryNode(Node):
         self.state_node_create = False
         self.state_install_consul = False
         self.state_complete = False
+        self.type = 'discovery'
         self.populate(fields)
         self.resource_fields = dict(self.resource_fields.items() + self.state_fields.items())
 
     def populate(self, fields=None):
         fields = fields or {}
         self.name = 'gluu.discovery'
-        self.type = fields.get('type', '')
+        #self.type = fields.get('type', '')
         self.provider_id = fields.get('provider_id', '')
 
 
@@ -114,13 +115,14 @@ class MasterNode(Node):
         self.state_fswatcher = False
         self.state_recovery = False
         self.state_complete = False
+        self.type = 'master'
         self.populate(fields)
         self.resource_fields = dict(self.resource_fields.items() + self.state_fields.items())
 
     def populate(self, fields=None):
         fields = fields or {}
         self.name = fields.get('name', '')
-        self.type = fields.get('type', '')
+        #self.type = fields.get('type', '')
         self.provider_id = fields.get('provider_id', '')
 
 class WorkerNode(Node):
@@ -143,11 +145,12 @@ class WorkerNode(Node):
         self.state_registry_cert = False
         self.state_recovery = False
         self.state_complete = False
+        self.type = 'worker'
         self.populate(fields)
         self.resource_fields = dict(self.resource_fields.items() + self.state_fields.items())
 
     def populate(self, fields=None):
         fields = fields or {}
         self.name = fields.get('name', '')
-        self.type = fields.get('type', '')
+        #self.type = fields.get('type', '')
         self.provider_id = fields.get('provider_id', '')

@@ -22,11 +22,11 @@ from ..database import db
 NODE_TYPES = ('master', 'worker', 'discovery',)
 DISCOVERY_PORT = '8500'
 DISCOVERY_NODE_NAME = 'gluu.discovery'
-RECOVERY_SCRIPT = "https://github.com/GluuFederation/cluster-tools/raw/master/recovery/recovery.py"
-RECOVERY_CONF = "https://github.com/GluuFederation/cluster-tools/raw/master/recovery/recovery.conf"
+
 
 class Discovery(object):
     pass
+
 
 #TODO this is very ugly code now
 class CreateNodeResource(Resource):
@@ -174,15 +174,15 @@ class NodeResource(Resource):
 
         if node.type == 'master' and db.count_from_table('nodes', db.where('type') == 'worker'):
             return {
-                "status": 404,
+                "status": 403,
                 "message": "there are still worker nodes running"
-            }, 404
+            }, 403
 
         if node.type == 'discovery' and db.count_from_table('nodes', db.where('type') == 'master'):
             return {
-                "status": 404,
+                "status": 403,
                 "message": "master node still running"
-            }, 404
+            }, 403
 
         running = self.machine.is_running(node.name)
         if running:

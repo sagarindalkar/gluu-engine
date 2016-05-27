@@ -41,6 +41,7 @@ class Config(object):
     WEAVE_ENCRYPTION = False
 
     REGISTRY_CERT_DIR = os.path.join(DATA_DIR, "registry_certs")
+    NODE_LOG_PATH = os.path.join(LOG_DIR, "node.log")
 
 
 class ProdConfig(Config):

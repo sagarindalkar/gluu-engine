@@ -40,7 +40,7 @@ if __name__ == "__main__":
     #app.run()
 
 # HOW TO RUN
-# $ DATA_DIR=$(pwd)/data python run.py
+# $ LOG_DIR=/tmp DATA_DIR=$(pwd)/data python run.py
 
 # run using gunicorn
 # $ DATA_DIR=$(pwd)/data gunicorn run:app -b localhost:8080

@@ -14,8 +14,6 @@ from ..log import create_file_logger
 from ..registry import REGISTRY_BASE_URL
 from ..registry import get_registry_cert
 
-#LOGPATH = '/var/log/gluu/node.log'
-LOGPATH = '/tmp/node.log'
 REMOTE_DOCKER_CERT_DIR = "/opt/gluu/docker/certs"
 CERT_FILES = ['ca.pem', 'cert.pem', 'key.pem']
 
@@ -34,9 +32,9 @@ RECOVERY_CONF = "https://github.com/GluuFederation/cluster-tools/raw/master/reco
 #         self.discovery = discovery
 
 class DeployDiscoveryNode(object):
-    def __init__(self, node_model_obj):
+    def __init__(self, node_model_obj, app):
         self.node = node_model_obj
-        self.logger = create_file_logger(LOGPATH, name=self.node.name)
+        self.logger = create_file_logger(app.config['NODE_LOG_PATH'], name=self.node.name)
         self.machine = Machine()
         self.provider = db.get(self.node.provider_id, 'providers')
 
@@ -83,7 +81,7 @@ class DeployDiscoveryNode(object):
 class DeployMasterNode(object):
     def __init__(self, node_model_obj, discovery, app):
         self.node = node_model_obj
-        self.logger = create_file_logger(LOGPATH, name=self.node.name)
+        self.logger = create_file_logger(app.config['NODE_LOG_PATH'], name=self.node.name)
         self.machine = Machine()
         self.provider = db.get(self.node.provider_id, 'providers')
         self.discovery = discovery
@@ -263,7 +261,7 @@ class DeployMasterNode(object):
 class DeployWorkerNode(object):
     def __init__(self, node_model_obj, discovery, app):
         self.node = node_model_obj
-        self.logger = create_file_logger(LOGPATH, name=self.node.name)
+        self.logger = create_file_logger(app.config['NODE_LOG_PATH'], name=self.node.name)
         self.machine = Machine()
         self.provider = db.get(self.node.provider_id, 'providers')
         self.discovery = discovery

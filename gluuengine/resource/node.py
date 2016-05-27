@@ -99,7 +99,7 @@ class CreateNodeResource(Resource):
         if node_type == 'discovery':
             node = DiscoveryNode(data)
             db.persist(node, 'nodes')
-            ddn = DeployDiscoveryNode(node)
+            ddn = DeployDiscoveryNode(node, current_app._get_current_object())
             ddn.deploy()
 
         if node_type == 'master':

@@ -221,8 +221,11 @@ class BaseContainerHelper(object):
 
         # only do teardown on container with SUCCESS and DISABLED status
         # to avoid unnecessary ops (e.g. propagating nginx changes,
-        # removing LDAP replication, etc.) on non-deployed containers
-        if self.container.state in (STATE_SUCCESS, STATE_DISABLED,):
+        # removing LDAP replication, etc.) on non-deployed containers;
+        # also, initiate the teardown only if node is exist in database
+        # (node data may be deleted in other thread)
+        if (self.container.state in (STATE_SUCCESS, STATE_DISABLED,)
+                and self.node):
             setup_obj = self.setup_class(
                 self.container, self.cluster, self.app, logger=self.logger,
             )

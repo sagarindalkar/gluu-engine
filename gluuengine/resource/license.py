@@ -53,7 +53,8 @@ class LicenseKeyListResource(Resource):
             }, 422
 
         db.persist(license_key, "license_keys")
-        distribute_cluster_data(current_app.config["DATABASE_URI"])
+        # distribute_cluster_data(current_app.config["DATABASE_URI"])
+        distribute_cluster_data(current_app.config["SHARED_DATABASE_URI"])
 
         headers = {
             "Location": url_for("licensekey", license_key_id=license_key.id),
@@ -160,7 +161,8 @@ class LicenseKeyResource(Resource):
                         mc.ssh(worker_node.name, "docker restart {}".format(container.cid))
                         weave.dns_add(container.cid, container.hostname)
 
-        distribute_cluster_data(current_app.config["DATABASE_URI"])
+        # distribute_cluster_data(current_app.config["DATABASE_URI"])
+        distribute_cluster_data(current_app.config["SHARED_DATABASE_URI"])
         return format_license_key_resp(license_key)
 
     def delete(self, license_key_id):
@@ -173,5 +175,6 @@ class LicenseKeyResource(Resource):
             return {"status": 403, "message": msg}, 403
 
         db.delete(license_key_id, "license_keys")
-        distribute_cluster_data(current_app.config["DATABASE_URI"])
+        # distribute_cluster_data(current_app.config["DATABASE_URI"])
+        distribute_cluster_data(current_app.config["SHARED_DATABASE_URI"])
         return {}, 204

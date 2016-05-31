@@ -3,12 +3,59 @@
 #
 # All rights reserved.
 
+from collections import defaultdict
 import json
 import os
 
 import jsonpickle
+import redis
 import tinydb
 from werkzeug.utils import import_string
+
+
+class RedisStorage(tinydb.Storage):
+    def __init__(self, uri):
+        self.uri = uri
+        self.prefix = "gluu-engine"
+        self._conn = None
+
+    @property
+    def conn(self):
+        if not self._conn:
+            self._conn = redis.from_url(self.uri)
+        return self._conn
+
+    def read(self):
+        data = defaultdict(dict)
+
+        keys = self.conn.keys("{}:*".format(self.prefix))
+        for key in keys:
+            _, tbl, idx = key.split(":")
+            item = json.loads(self.conn.get(key))
+            data[tbl].update({int(idx): item})
+        return dict(data)
+
+    def write(self, data):
+        for tbl, item in data.iteritems():
+            for k, v in item.iteritems():
+                self.conn.set(
+                    "{}:{}:{}".format(self.prefix, tbl, k),
+                    json.dumps(v),
+                )
+
+    def close(self):
+        pass
+
+
+class RedisTable(tinydb.database.Table):
+    def remove(self, cond=None, eids=None):
+        def process(data, eid):
+            key = "{}:{}:{}".format(
+                self._storage._storage.prefix, self._storage._table_name, eid,
+            )
+            self._storage._storage.conn.delete(key)
+            data.pop(eid)
+        self.process_elements(process, cond, eids)
 
 
 class Database(object):
@@ -34,14 +81,20 @@ class Database(object):
                          "application. Ensure you have called init_app first."
 
         if not self._db:
-            if not os.path.exists(self.app.config["DATABASE_URI"]):
-                try:
-                    os.makedirs(
-                        os.path.dirname(self.app.config["DATABASE_URI"])
-                    )
-                except OSError:
-                    pass
-            self._db = tinydb.TinyDB(self.app.config["DATABASE_URI"])
+            # if not os.path.exists(self.app.config["DATABASE_URI"]):
+            #     try:
+            #         os.makedirs(
+            #             os.path.dirname(self.app.config["DATABASE_URI"])
+            #         )
+            #     except OSError:
+            #         pass
+            # self._db = tinydb.TinyDB(self.app.config["DATABASE_URI"])
+
+            self._db = tinydb.TinyDB(
+                self.app.config["DATABASE_URI"],
+                storage=RedisStorage,
+            )
+            self._db.table_class = RedisTable
         return self._db
 
     def _load_pyobject(self, data):
@@ -119,6 +172,17 @@ class Database(object):
     def delete_from_table(self, table_name, condition):
         table = self.db.table(table_name)
         table.remove(condition)
+
+    def export_as_json(self, path):
+        data = self.db._storage.read()
+
+        parent_dir = os.path.dirname(path)
+        if not os.path.exists(parent_dir):
+            os.makedirs(parent_dir)
+
+        with open(path, "w") as fd:
+            json.dump(data, fd)
+        return path
 
 
 # shortcut to database object

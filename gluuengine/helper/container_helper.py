@@ -121,6 +121,7 @@ class BaseContainerHelper(object):
                 self.container.cid, self.container.type, dns_search.rstrip("."),
             )
 
+            time.sleep(2)
             db.update_to_table(
                 "containers",
                 db.where("name") == self.container.name,
@@ -151,6 +152,8 @@ class BaseContainerHelper(object):
 
             # mark container as SUCCESS
             self.container.state = STATE_SUCCESS
+
+            time.sleep(2)
             db.update_to_table(
                 "containers",
                 db.where("name") == self.container.name,
@@ -183,7 +186,8 @@ class BaseContainerHelper(object):
                 db.update(container_log.id, container_log, "container_logs")
 
             # distribute recovery data
-            distribute_cluster_data(self.app.config["DATABASE_URI"])
+            # distribute_cluster_data(self.app.config["DATABASE_URI"])
+            distribute_cluster_data(self.app.config["SHARED_DATABASE_URI"])
 
     def on_setup_error(self):
         """Callback that supposed to be called when error occurs in setup
@@ -208,6 +212,7 @@ class BaseContainerHelper(object):
         # mark container as FAILED
         self.container.state = STATE_FAILED
 
+        time.sleep(2)
         db.update_to_table(
             "containers",
             db.where("name") == self.container.name,
@@ -262,7 +267,8 @@ class BaseContainerHelper(object):
             db.update(container_log.id, container_log, "container_logs")
 
         # distribute recovery data
-        distribute_cluster_data(self.app.config["DATABASE_URI"])
+        # distribute_cluster_data(self.app.config["DATABASE_URI"])
+        distribute_cluster_data(self.app.config["SHARED_DATABASE_URI"])
 
 
 class LdapContainerHelper(BaseContainerHelper):

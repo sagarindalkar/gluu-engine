@@ -17,7 +17,12 @@ class Config(object):
     PORT = os.environ.get("PORT", 8080)
 
     DATA_DIR = os.environ.get("DATA_DIR", "/var/lib/gluu-cluster")
-    DATABASE_URI = os.path.join(DATA_DIR, "db", "db.json")
+    # DATABASE_URI = os.path.join(DATA_DIR, "db", "db.json")
+    DATABASE_URI = os.environ.get("DATABASE_URI", "redis://localhost:6379/0")
+    SHARED_DATABASE_URI = os.environ.get(
+        "SHARED_DATABASE_URI",
+        os.path.join(DATA_DIR, "db", "shared.json"),
+    )
     TEMPLATES_DIR = os.path.join(APP_DIR, "templates")
     LOG_DIR = os.environ.get("LOG_DIR", "/var/log/gluu")
     INSTANCE_DIR = os.path.join(DATA_DIR, "instance")
@@ -55,10 +60,12 @@ class DevConfig(Config):
     DEBUG = True
     # DATA_DIR = Config.APP_DIR + '/data'
     # DATABASE_URI = os.path.join(DATA_DIR, "db", "db_dev.json")
-    DATABASE_URI = os.path.join(Config.DATA_DIR, "db", "db_dev.json")
+    # DATABASE_URI = os.path.join(Config.DATA_DIR, "db", "db_dev.json")
+    DATABASE_URI = os.environ.get("DATABASE_URI", "redis://localhost:6379/1")
 
 
 class TestConfig(Config):
     TESTING = True
     DEBUG = True
-    DATABASE_URI = os.path.join(Config.DATA_DIR, "db", "db_test.json")
+    # DATABASE_URI = os.path.join(Config.DATA_DIR, "db", "db_test.json")
+    DATABASE_URI = os.environ.get("DATABASE_URI", "redis://localhost:6379/2")

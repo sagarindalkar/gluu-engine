@@ -189,6 +189,10 @@ class BaseContainerHelper(object):
             # distribute_cluster_data(self.app.config["DATABASE_URI"])
             distribute_cluster_data(self.app.config["SHARED_DATABASE_URI"])
 
+            for handler in self.logger.handlers:
+                handler.close()
+                self.logger.removeHandler(handler)
+
     def on_setup_error(self):
         """Callback that supposed to be called when error occurs in setup
         process.
@@ -269,6 +273,10 @@ class BaseContainerHelper(object):
         # distribute recovery data
         # distribute_cluster_data(self.app.config["DATABASE_URI"])
         distribute_cluster_data(self.app.config["SHARED_DATABASE_URI"])
+
+        for handler in self.logger.handlers:
+            handler.close()
+            self.logger.removeHandler(handler)
 
 
 class LdapContainerHelper(BaseContainerHelper):

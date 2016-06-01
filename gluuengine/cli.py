@@ -104,12 +104,17 @@ def daemon(ctx, pidfile, logfile):
 
 
 @main.command()
-def runserver():
-    """Run development server with auto-reloader.
+@click.option(
+    "--auto-reload",
+    is_flag=True,
+    help="Enable/disable auto-reload feature",
+)
+def runserver(auto_reload):
+    """Run development server with/without auto-reloader.
     """
     configure_global_logging()
     app = create_app()
-    run_app(app)
+    run_app(app, use_reloader=auto_reload)
 
 
 def _restart_ox(type_):

@@ -7,6 +7,7 @@ from gluuengine.machine import Machine
 from subprocess import Popen
 from subprocess import PIPE
 from distutils.dir_util import mkpath
+from gluuengine.app import create_app
 from gluuengine.database import db
 import requests
 
@@ -42,7 +43,7 @@ if __name__ == '__main__':
     python_path = sys.argv[1]
     if not (os.path.exists(python_path) and os.path.isfile(python_path)):
         print 'bad python path'
-        sys.exit(0)   
+        sys.exit(0)
 
     run_script_path = sys.argv[2]
     if not (os.path.exists(run_script_path) and os.path.isfile(run_script_path)):
@@ -77,14 +78,18 @@ if __name__ == '__main__':
         cmd = '{} {}'.format(python_path, run_script_path)
         env['PORT'] = str(port)
         run(cmd_str=cmd, env=env)
-    
+
     #get node ids of running nodes from DB
     running_nodes = get_running_nodes()
     running_nodes_ids = []
+
+    # prepare Flask context
+    create_app()
+
     nodes = db.search_from_table('nodes', ( (db.where("type") == 'master') | (db.where("type") == 'worker') ) )
     for node in nodes:
         running_nodes_ids.append(node.id)
-    
+
     #start deploying container
     port_gen = (i for i in xrange(9080, 9080+deploy_size))
     node_id_pool = cycle(running_nodes_ids)

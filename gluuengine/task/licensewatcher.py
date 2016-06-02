@@ -77,7 +77,8 @@ class LicenseWatcherTask(object):
             if worker_nodes:
                 # delay before distributing the data to worker nodes
                 time.sleep(5)
-                distribute_cluster_data(self.app.config["DATABASE_URI"])
+                # distribute_cluster_data(self.app.config["DATABASE_URI"])
+                distribute_cluster_data(self.app.config["SHARED_DATABASE_URI"])
 
     def update_license_key(self, license_key):
         """Retrieves new license and update the database.

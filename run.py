@@ -10,7 +10,7 @@
 # from gluuengine.setup.signals import connect_teardown_signals
 
 # normal run
-from gluuengine.cli import runserver
+from gluuengine.cli import runserver2
 #from gluuengine.machine import Machine
 
 
@@ -35,7 +35,7 @@ if __name__ == "__main__":
     # data = m.is_running('keyval')
     # print type(data)
     # print data
-    runserver()
+    runserver2()
     # gunicorn run
     #app.run()
 

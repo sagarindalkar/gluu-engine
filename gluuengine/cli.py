@@ -30,8 +30,8 @@ def run_app(app, use_reloader=True):
     if not app.debug:
         LicenseWatcherTask(app).perform_job()
 
-    OxauthWatcherTask(app).perform_job()
-    OxtrustWatcherTask(app).perform_job()
+    #OxauthWatcherTask(app).perform_job()
+    #OxtrustWatcherTask(app).perform_job()
 
     connect_setup_signals()
     connect_teardown_signals()
@@ -110,6 +110,14 @@ def runserver():
     configure_global_logging()
     app = create_app()
     run_app(app)
+
+@main.command()
+def runserver2():
+    """Run development server with auto-reloader.
+    """
+    configure_global_logging()
+    app = create_app()
+    run_app(app=app, use_reloader=False)
 
 
 def _restart_ox(type_):

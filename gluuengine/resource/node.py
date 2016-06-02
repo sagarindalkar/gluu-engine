@@ -109,23 +109,23 @@ class CreateNodeResource(Resource):
             dmn.deploy()
 
         if node_type == 'worker':
-            try:
-                license_key = db.all("license_keys")[0]
-            except IndexError:
-                license_key = None
+            # try:
+            #     license_key = db.all("license_keys")[0]
+            # except IndexError:
+            #     license_key = None
 
-            if not license_key:
-                return {
-                    "status": 403,
-                    "message": "creating worker node requires a license key",
-                }, 403
+            # if not license_key:
+            #     return {
+            #         "status": 403,
+            #         "message": "creating worker node requires a license key",
+            #     }, 403
 
-            # we have license key, but it's expired
-            if license_key.expired:
-                return {
-                    "status": 403,
-                    "message": "creating worker node requires a non-expired license key",
-                }, 403
+            # # we have license key, but it's expired
+            # if license_key.expired:
+            #     return {
+            #         "status": 403,
+            #         "message": "creating worker node requires a non-expired license key",
+            #     }, 403
 
             node = WorkerNode(data)
             db.persist(node, 'nodes')
@@ -217,7 +217,7 @@ class NodeResource(Resource):
             discovery.port = DISCOVERY_PORT
 
         if node.type == 'discovery':
-            dn = DeployDiscoveryNode(node)
+            dn = DeployDiscoveryNode(node, current_app._get_current_object())
         if node.type == 'master':
             dn = DeployMasterNode(node, discovery, current_app._get_current_object())
         if node.type == 'worker':

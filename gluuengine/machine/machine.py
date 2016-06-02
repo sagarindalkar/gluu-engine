@@ -237,3 +237,9 @@ class Machine(object):
         stdout, _, _ = self._run(cmd)
         node_list = stdout.split('\n')
         return True if machine_name in node_list else False
+
+    def list(self, state):
+        cmd = 'ls -f {{.Name}} --filter state=%s' % state
+        stdout, _, _ = self._run(cmd)
+        node_list = stdout.split('\n')
+        return node_list

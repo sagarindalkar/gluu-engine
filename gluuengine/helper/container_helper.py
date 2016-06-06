@@ -121,7 +121,7 @@ class BaseContainerHelper(object):
                 self.container.cid, self.container.type, dns_search.rstrip("."),
             )
 
-            time.sleep(2)
+            time.sleep(1)
             db.update_to_table(
                 "containers",
                 db.where("name") == self.container.name,
@@ -153,7 +153,7 @@ class BaseContainerHelper(object):
             # mark container as SUCCESS
             self.container.state = STATE_SUCCESS
 
-            time.sleep(2)
+            time.sleep(1)
             db.update_to_table(
                 "containers",
                 db.where("name") == self.container.name,
@@ -180,7 +180,7 @@ class BaseContainerHelper(object):
             container_log = db.get(self.container.name, "container_logs")
             if container_log:
                 # avoid concurrent writes, see https://github.com/msiemens/tinydb/issues/91
-                time.sleep(2)
+                time.sleep(1)
 
                 container_log.state = STATE_SETUP_FINISHED
                 db.update(container_log.id, container_log, "container_logs")
@@ -216,7 +216,7 @@ class BaseContainerHelper(object):
         # mark container as FAILED
         self.container.state = STATE_FAILED
 
-        time.sleep(2)
+        time.sleep(1)
         db.update_to_table(
             "containers",
             db.where("name") == self.container.name,
@@ -265,7 +265,7 @@ class BaseContainerHelper(object):
         container_log = db.get(self.container.name, "container_logs")
         if container_log:
             # avoid concurrent writes, see https://github.com/msiemens/tinydb/issues/91
-            time.sleep(2)
+            time.sleep(1)
 
             container_log.state = STATE_TEARDOWN_FINISHED
             db.update(container_log.id, container_log, "container_logs")

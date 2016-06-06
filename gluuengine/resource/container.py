@@ -4,6 +4,7 @@
 # All rights reserved.
 
 import os
+import time
 import uuid
 
 from flask import abort
@@ -162,6 +163,7 @@ class ContainerResource(Resource):
             id=container_log.id,
             _external=True,
         )
+        time.sleep(1)
         db.update(container_log.id, container_log, "container_logs")
 
         logpath = os.path.join(app.config["LOG_DIR"], container_log.teardown_log)
@@ -320,6 +322,7 @@ class NewContainerResource(Resource):
             id=container_log.id,
             _external=True,
         )
+        time.sleep(1)
         db.update(container_log.id, container_log, "container_logs")
 
         logpath = os.path.join(app.config["LOG_DIR"], container_log.setup_log)

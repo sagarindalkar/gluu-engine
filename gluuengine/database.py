@@ -8,52 +8,48 @@ import json
 import os
 
 import jsonpickle
-import redis
 import tinydb
 from werkzeug.utils import import_string
+from pymongo import MongoClient
 
 
-class RedisStorage(tinydb.Storage):
+class MongoStorage(tinydb.Storage):
     def __init__(self, uri):
+        super(MongoStorage, self).__init__()
         self.uri = uri
-        self.prefix = "gluu-engine"
-        self._conn = None
+        self.dbname = uri.rsplit("/")[-1]
+        self._client = None
 
     @property
-    def conn(self):
-        if not self._conn:
-            self._conn = redis.from_url(self.uri)
-        return self._conn
+    def client(self):
+        if not self._client:
+            self._client = MongoClient(self.uri)
+            self._client.db = self._client[self.dbname]
+        return self._client
 
     def read(self):
         data = defaultdict(dict)
 
-        keys = self.conn.keys("{}:*".format(self.prefix))
-        for key in keys:
-            _, tbl, idx = key.split(":")
-            item = json.loads(self.conn.get(key))
-            data[tbl].update({int(idx): item})
-        return dict(data)
+        for collection in self.client.db.collection_names():
+            for doc in self.client.db[collection].find():
+                data[collection].update({doc["_eid"]: doc})
+        return data
 
     def write(self, data):
-        for tbl, item in data.iteritems():
+        for collection, item in data.iteritems():
             for k, v in item.iteritems():
-                self.conn.set(
-                    "{}:{}:{}".format(self.prefix, tbl, k),
-                    json.dumps(v),
-                )
+                v["_eid"] = k
+                self.client.db[collection].update({"_id": v["id"]}, v, True)
 
     def close(self):
-        pass
+        self.client.close()
 
 
-class RedisTable(tinydb.database.Table):
+class MongoTable(tinydb.database.Table):
     def remove(self, cond=None, eids=None):
         def process(data, eid):
-            key = "{}:{}:{}".format(
-                self._storage._storage.prefix, self._storage._table_name, eid,
-            )
-            self._storage._storage.conn.delete(key)
+            collection = self._storage._table_name
+            self._storage._storage.client.db[collection].delete_one({"_eid": eid})
             data.pop(eid)
         self.process_elements(process, cond, eids)
 
@@ -81,20 +77,11 @@ class Database(object):
                          "application. Ensure you have called init_app first."
 
         if not self._db:
-            # if not os.path.exists(self.app.config["DATABASE_URI"]):
-            #     try:
-            #         os.makedirs(
-            #             os.path.dirname(self.app.config["DATABASE_URI"])
-            #         )
-            #     except OSError:
-            #         pass
-            # self._db = tinydb.TinyDB(self.app.config["DATABASE_URI"])
-
             self._db = tinydb.TinyDB(
                 self.app.config["DATABASE_URI"],
-                storage=RedisStorage,
+                storage=MongoStorage,
             )
-            self._db.table_class = RedisTable
+            self._db.table_class = MongoTable
         return self._db
 
     def _load_pyobject(self, data):

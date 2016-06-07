@@ -46,7 +46,7 @@ setup(
         "marshmallow",
         "flask_marshmallow",
         "blinker",
-        "redis",
+        "pymongo",
     ],
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",

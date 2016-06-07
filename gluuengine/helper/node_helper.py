@@ -36,7 +36,7 @@ from ..machine import Machine
 
 
 @run_in_reactor
-def distribute_shared_database(filepath):
+def distribute_shared_database(filepath, app):
     """Distributes cluster data to all consumer providers.
 
     :param filepath: Path to shared database file.
@@ -46,18 +46,19 @@ def distribute_shared_database(filepath):
 
     # dest = os.path.join(os.path.dirname(filepath), "shared.json")
     # dest = filepath
-    src = dest = db.export_as_json(filepath)
+    with app.app_context():
+        src = dest = db.export_as_json(filepath)
 
-    # find all nodes where shared database will be copied to
-    nodes = db.all("nodes")
-    for node in nodes:
-        try:
-            mc.ssh(node.name,
-                   "mkdir -p {}".format(os.path.dirname(dest)))
-            mc.scp(src, "{}:{}".format(node.name, dest))
-        except RuntimeError as exc:
-            logger.warn(exc)
-            logger.warn("something is wrong while copying {}".format(src))
+        # find all nodes where shared database will be copied to
+        nodes = db.all("nodes")
+        for node in nodes:
+            try:
+                mc.ssh(node.name,
+                       "mkdir -p {}".format(os.path.dirname(dest)))
+                mc.scp(src, "{}:{}".format(node.name, dest))
+            except RuntimeError as exc:
+                logger.warn(exc)
+                logger.warn("something is wrong while copying {}".format(src))
 
 
 # backward-compat

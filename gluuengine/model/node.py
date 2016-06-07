@@ -45,11 +45,11 @@ class Node(BaseModel):
         :param type_: Type of the container.
         :returns: A list of container objects.
         """
-        condition = db.where("node_id") == self.id
+        condition = {"node_id": self.id}
         if state:
-            condition = (condition) & (db.where("state") == state)
+            condition["state"] = state
         if type_:
-            condition = (condition) & (db.where("type") == type_)
+            condition["type"] = type_
         return db.count_from_table("containers", condition)
 
     def get_containers(self, type_="", state=STATE_SUCCESS):
@@ -60,11 +60,11 @@ class Node(BaseModel):
         :param type_: Type of the container.
         :returns: A list of container objects.
         """
-        condition = db.where("node_id") == self.id
+        condition = {"node_id": self.id}
         if state:
-            condition = (condition) & (db.where("state") == state)
+            condition["state"] = state
         if type_:
-            condition = (condition) & (db.where("type") == type_)
+            condition["type"] = type_
         return db.search_from_table("containers", condition)
 
 

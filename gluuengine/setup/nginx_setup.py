@@ -20,16 +20,17 @@ class NginxSetup(BaseSetup):
     def render_https_conf(self):
         """Copies rendered nginx virtual host config.
         """
-        ctx = {
-            "ox_cluster_hostname": self.cluster.ox_cluster_hostname,
-            "cert_file": "/etc/certs/nginx.crt",
-            "key_file": "/etc/certs/nginx.key",
-            "oxauth_containers": self.cluster.get_containers(type_="oxauth"),
-            "oxidp_containers": self.cluster.get_containers(type_="oxidp"),
-            "oxtrust_containers": self.cluster.get_containers(type_="oxtrust"),
-            "session_affinity": self.get_session_affinity(),
-            "oxasimba_containers": self.cluster.get_containers(type_="oxasimba"),
-        }
+        with self.app.app_context():
+            ctx = {
+                "ox_cluster_hostname": self.cluster.ox_cluster_hostname,
+                "cert_file": "/etc/certs/nginx.crt",
+                "key_file": "/etc/certs/nginx.key",
+                "oxauth_containers": self.cluster.get_containers(type_="oxauth"),
+                "oxidp_containers": self.cluster.get_containers(type_="oxidp"),
+                "oxtrust_containers": self.cluster.get_containers(type_="oxtrust"),
+                "session_affinity": self.get_session_affinity(),
+                "oxasimba_containers": self.cluster.get_containers(type_="oxasimba"),
+            }
 
         src = "nginx/gluu_https.conf"
         dest = "/etc/nginx/sites-available/gluu_https.conf"

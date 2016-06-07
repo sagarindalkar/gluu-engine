@@ -84,9 +84,13 @@ if __name__ == '__main__':
     running_nodes_ids = []
 
     # prepare Flask context
-    create_app()
+    app = create_app()
 
-    nodes = db.search_from_table('nodes', ( (db.where("type") == 'master') | (db.where("type") == 'worker') ) )
+    with app.app_context():
+        # nodes = db.search_from_table('nodes', ( (db.where("type") == 'master') | (db.where("type") == 'worker') ) )
+        nodes = db.search_from_table("nodes", {"$or": [{"type": "master"}, {"type": "worker"}]})
+
+
     for node in nodes:
         running_nodes_ids.append(node.id)
 

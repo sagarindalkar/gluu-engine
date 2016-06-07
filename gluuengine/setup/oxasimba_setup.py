@@ -149,8 +149,9 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
         """Discovers nginx container.
         """
         self.logger.info("discovering available nginx container")
-        if self.cluster.count_containers(type_="nginx"):
-            self.import_nginx_cert()
+        with self.app.app_context():
+            if self.cluster.count_containers(type_="nginx"):
+                self.import_nginx_cert()
 
     def after_setup(self):
         """Post-setup callback.

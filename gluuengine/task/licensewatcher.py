@@ -46,39 +46,40 @@ class LicenseWatcherTask(object):
         """Monitors the license for its expiration status.
         """
         self.logger.info("checking license keys")
-        license_keys = db.all("license_keys")
+        with self.app.app_context():
+            license_keys = db.all("license_keys")
 
-        for license_key in license_keys:
-            if not license_key.expired:
-                continue
+            for license_key in license_keys:
+                if not license_key.expired:
+                    continue
 
-            self.logger.info("found expired license "
-                             "key {}".format(license_key.id))
-            self.logger.info("trying to retrieve license update")
-            new_license_key = self.update_license_key(license_key)
+                self.logger.info("found expired license "
+                                 "key {}".format(license_key.id))
+                self.logger.info("trying to retrieve license update")
+                new_license_key = self.update_license_key(license_key)
 
-            worker_nodes = db.search_from_table(
-                "nodes",
-                db.where("type") == "worker",
-            )
-            for node in worker_nodes:
-                if new_license_key.expired:
-                    # unable to do license_key renewal, hence we're going to
-                    # disable oxauth and oxidp containers
-                    for type_ in ["oxauth", "oxidp"]:
-                        self.disable_containers(node, type_)
-                else:
-                    # if we have disabled oxauth and oxidp containers in node
-                    # and license key is not expired, try to re-enable
-                    # the containers
-                    for type_ in ["oxauth", "oxidp"]:
-                        self.enable_containers(node, type_)
+                worker_nodes = db.search_from_table(
+                    "nodes",
+                    {"type": "worker"},
+                )
+                for node in worker_nodes:
+                    if new_license_key.expired:
+                        # unable to do license_key renewal, hence we're going to
+                        # disable oxauth and oxidp containers
+                        for type_ in ["oxauth", "oxidp"]:
+                            self.disable_containers(node, type_)
+                    else:
+                        # if we have disabled oxauth and oxidp containers in node
+                        # and license key is not expired, try to re-enable
+                        # the containers
+                        for type_ in ["oxauth", "oxidp"]:
+                            self.enable_containers(node, type_)
 
-            if worker_nodes:
-                # delay before distributing the data to worker nodes
-                time.sleep(5)
-                # distribute_cluster_data(self.app.config["DATABASE_URI"])
-                distribute_cluster_data(self.app.config["SHARED_DATABASE_URI"])
+                if worker_nodes:
+                    # delay before distributing the data to worker nodes
+                    time.sleep(5)
+                    # distribute_cluster_data(self.app.config["DATABASE_URI"])
+                    distribute_cluster_data(self.app.config["SHARED_DATABASE_URI"], self.app)
 
     def update_license_key(self, license_key):
         """Retrieves new license and update the database.
@@ -111,7 +112,8 @@ class LicenseWatcherTask(object):
             license_key.metadata = decoded_license["metadata"]
             license_key.signed_license = signed_license
 
-        db.update(license_key.id, license_key, "license_keys")
+        with self.app.app_context():
+            db.update(license_key.id, license_key, "license_keys")
         return license_key
 
     def disable_containers(self, node, type_):
@@ -123,13 +125,14 @@ class LicenseWatcherTask(object):
         :param type_: Type of the container.
         """
         containers = node.get_containers(type_=type_)
-        for container in containers:
-            container.state = STATE_DISABLED
-            db.update(container.id, container, "containers")
+        with self.app.app_context():
+            for container in containers:
+                container.state = STATE_DISABLED
+                db.update(container.id, container, "containers")
 
-            self.machine.ssh(node.name, "docker stop {}".format(container.cid))
-            self.logger.info("{} container {} has been "
-                             "disabled".format(type_, container.name))
+                self.machine.ssh(node.name, "docker stop {}".format(container.cid))
+                self.logger.info("{} container {} has been "
+                                 "disabled".format(type_, container.name))
 
     def enable_containers(self, node, type_):
         """Enables containers with certain type.
@@ -142,11 +145,12 @@ class LicenseWatcherTask(object):
         weave = Weave(node, self.app, self.logger)
 
         containers = node.get_containers(type_=type_, state=STATE_DISABLED)
-        for container in containers:
-            container.state = STATE_SUCCESS
-            db.update(container.id, container, "containers")
+        with self.app.app_context():
+            for container in containers:
+                container.state = STATE_SUCCESS
+                db.update(container.id, container, "containers")
 
-            self.machine.ssh(node.name, "docker restart {}".format(container.cid))
-            weave.dns_add(container.cid, container.hostname)
-            self.logger.info("{} container {} has been "
-                             "enabled".format(type_, container.id))
+                self.machine.ssh(node.name, "docker restart {}".format(container.cid))
+                weave.dns_add(container.cid, container.hostname)
+                self.logger.info("{} container {} has been "
+                                 "enabled".format(type_, container.id))

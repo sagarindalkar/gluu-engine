@@ -49,7 +49,7 @@ def get_container(db, container_id):
     try:
         container = db.search_from_table(
             "containers",
-            (db.where("id") == container_id) | (db.where("name") == container_id),
+            {"$or": [{"id": container_id}, {"name": container_id}]},
         )[0]
     except IndexError:
         container = None
@@ -63,7 +63,7 @@ def target_node_reachable(node_name):
 def master_node_reachable():
     try:
         node = db.search_from_table(
-            "nodes", db.where("type") == "master"
+            "nodes", {"type": "master"},
         )[0]
     except IndexError:
         return False
@@ -74,7 +74,7 @@ def master_node_reachable():
 def discovery_node_reachable():
     try:
         node = db.search_from_table(
-            "nodes", db.where("type") == "discovery"
+            "nodes", {"type": "discovery"},
         )[0]
     except IndexError:
         return False
@@ -154,7 +154,7 @@ class ContainerResource(Resource):
 
         # remove container (``container.id`` may empty, hence we're using
         # unique ``container.name`` instead)
-        db.delete_from_table("containers", db.where("name") == container.name)
+        db.delete_from_table("containers", {"name": container.name})
 
         container_log = ContainerLog.create_or_get(container)
         container_log.state = STATE_TEARDOWN_IN_PROGRESS
@@ -189,7 +189,7 @@ class ContainerListResource(Resource):
             abort(404)
 
         containers = db.search_from_table(
-            "containers", db.where("type") == container_type,
+            "containers", {"type": container_type},
         )
         return [container.as_dict() for container in containers]
 

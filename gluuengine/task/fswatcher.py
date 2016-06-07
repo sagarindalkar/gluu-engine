@@ -38,10 +38,11 @@ class BaseWatcherTask(object):
         """Gets a Cluster object.
         """
         if self._cluster is None:
-            try:
-                self._cluster = db.all("clusters")[0]
-            except IndexError:
-                self._cluster = None
+            with self.app.app_context():
+                try:
+                    self._cluster = db.all("clusters")[0]
+                except IndexError:
+                    self._cluster = None
         return self._cluster
 
     def __init__(self, app, *args, **kwargs):
@@ -130,12 +131,13 @@ class BaseWatcherTask(object):
             return
 
         # get swarm master node
-        try:
-            master_node = db.search_from_table(
-                "nodes", db.where("type") == "master",
-            )[0]
-        except IndexError:
-            master_node = None
+        with self.app.app_context():
+            try:
+                master_node = db.search_from_table(
+                    "nodes", {"type": "master"},
+                )[0]
+            except IndexError:
+                master_node = None
 
         if not master_node:
             self.logger.warn("unable to find master node")
@@ -167,7 +169,8 @@ class BaseWatcherTask(object):
                 ))
 
     def get_containers(self):
-        return self.cluster.get_containers(type_=self.container_type)
+        with self.app.app_context():
+            return self.cluster.get_containers(type_=self.container_type)
 
 
 class OxauthWatcherTask(BaseWatcherTask):  # pragma: no cover

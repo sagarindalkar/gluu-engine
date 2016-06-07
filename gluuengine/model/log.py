@@ -30,7 +30,7 @@ class ContainerLog(BaseModel):
         try:
             return db.search_from_table(
                 "container_logs",
-                db.where("container_name") == container.name,
+                {"container_name": container.name},
             )[0]
         except IndexError:
             pass

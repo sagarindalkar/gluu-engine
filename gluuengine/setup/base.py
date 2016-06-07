@@ -25,23 +25,25 @@ class BaseSetup(object):
 
     def __init__(self, container, cluster, app, logger=None):
         self.logger = logger or create_file_logger()
+        self.app = app
         self.build_dir = tempfile.mkdtemp()
         self.container = container
-        self.node = db.get(self.container.node_id, "nodes")
+        with self.app.app_context():
+            self.node = db.get(self.container.node_id, "nodes")
         self.cluster = cluster
         self.jinja_env = Environment(
             loader=PackageLoader("gluuengine", "templates")
         )
-        self.app = app
         self.template_dir = self.app.config["TEMPLATES_DIR"]
         self.machine = Machine()
 
-        try:
-            master_node = db.search_from_table(
-                "nodes", db.where("type") == "master",
-            )[0]
-        except IndexError:  # pragma: no cover
-            master_node = self.node
+        with self.app.app_context():
+            try:
+                master_node = db.search_from_table(
+                    "nodes", {"type": "master"},
+                )[0]
+            except IndexError:  # pragma: no cover
+                master_node = self.node
 
         self.docker = Docker(
             self.machine.config(self.node.name),

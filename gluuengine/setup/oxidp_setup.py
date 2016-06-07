@@ -59,14 +59,15 @@ class OxidpSetup(OxSetup):
 
         # notify oxidp peers to re-render their nutcracker.yml
         # and restart the daemon
-        for container in self.cluster.get_containers(type_="oxidp"):
-            if container.cid == self.container.cid:
-                continue
+        with self.app.app_context():
+            for container in self.cluster.get_containers(type_="oxidp"):
+                if container.cid == self.container.cid:
+                    continue
 
-            setup_obj = OxidpSetup(container, self.cluster,
-                                   self.app, logger=self.logger)
-            setup_obj.render_nutcracker_conf()
-            setup_obj.restart_nutcracker()
+                setup_obj = OxidpSetup(container, self.cluster,
+                                       self.app, logger=self.logger)
+                setup_obj.render_nutcracker_conf()
+                setup_obj.restart_nutcracker()
 
         self.discover_nginx()
         complete_sgn = signal("ox_setup_completed")
@@ -75,36 +76,38 @@ class OxidpSetup(OxSetup):
     def import_ldap_certs(self):
         """Imports all LDAP certificates.
         """
-        for ldap in self.cluster.get_containers(type_="ldap"):
-            self.logger.info("importing ldap cert from {}".format(ldap.hostname))
+        with self.app.app_context():
+            for ldap in self.cluster.get_containers(type_="ldap"):
+                self.logger.info("importing ldap cert from {}".format(ldap.hostname))
 
-            cert_cmd = "echo -n | openssl s_client -connect {0}:{1} | " \
-                       "sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' " \
-                       "> /etc/certs/{0}.crt".format(ldap.hostname, ldap.ldaps_port)
-            cert_cmd = '''sh -c "{}"'''.format(cert_cmd)
-            self.docker.exec_cmd(self.container.cid, cert_cmd)
+                cert_cmd = "echo -n | openssl s_client -connect {0}:{1} | " \
+                           "sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' " \
+                           "> /etc/certs/{0}.crt".format(ldap.hostname, ldap.ldaps_port)
+                cert_cmd = '''sh -c "{}"'''.format(cert_cmd)
+                self.docker.exec_cmd(self.container.cid, cert_cmd)
 
-            import_cmd = " ".join([
-                "keytool -importcert -trustcacerts",
-                "-alias '{}'".format(ldap.hostname),
-                "-file /etc/certs/{}.crt".format(ldap.hostname),
-                "-keystore {}".format(self.container.truststore_fn),
-                "-storepass changeit -noprompt",
-            ])
-            import_cmd = '''sh -c "{}"'''.format(import_cmd)
+                import_cmd = " ".join([
+                    "keytool -importcert -trustcacerts",
+                    "-alias '{}'".format(ldap.hostname),
+                    "-file /etc/certs/{}.crt".format(ldap.hostname),
+                    "-keystore {}".format(self.container.truststore_fn),
+                    "-storepass changeit -noprompt",
+                ])
+                import_cmd = '''sh -c "{}"'''.format(import_cmd)
 
-            try:
-                self.docker.exec_cmd(self.container.cid, import_cmd)
-            except DockerExecError as exc:
-                if exc.exit_code == 1:
-                    pass
+                try:
+                    self.docker.exec_cmd(self.container.cid, import_cmd)
+                except DockerExecError as exc:
+                    if exc.exit_code == 1:
+                        pass
 
     def render_nutcracker_conf(self):
         """Copies twemproxy configuration into the container.
         """
-        ctx = {
-            "oxidp_containers": self.cluster.get_containers(type_="oxidp"),
-        }
+        with self.app.app_context():
+            ctx = {
+                "oxidp_containers": self.cluster.get_containers(type_="oxidp"),
+            }
         self.copy_rendered_jinja_template(
             "oxidp/nutcracker.yml",
             "/etc/nutcracker.yml",
@@ -121,11 +124,12 @@ class OxidpSetup(OxSetup):
     def teardown(self):
         """Teardowns the container.
         """
-        for container in self.cluster.get_containers(type_="oxidp"):
-            setup_obj = OxidpSetup(container, self.cluster,
-                                   self.app, logger=self.logger)
-            setup_obj.render_nutcracker_conf()
-            setup_obj.restart_nutcracker()
+        with self.app.app_context():
+            for container in self.cluster.get_containers(type_="oxidp"):
+                setup_obj = OxidpSetup(container, self.cluster,
+                                       self.app, logger=self.logger)
+                setup_obj.render_nutcracker_conf()
+                setup_obj.restart_nutcracker()
 
         complete_sgn = signal("ox_teardown_completed")
         complete_sgn.send(self)
@@ -133,32 +137,33 @@ class OxidpSetup(OxSetup):
     def pull_shib_config(self):
         """Copies all existing oxIdp config and metadata files.
         """
-        try:
-            oxtrust = self.cluster.get_containers(type_="oxtrust")[0]
-        except IndexError:
-            oxtrust = None
+        with self.app.app_context():
+            try:
+                oxtrust = self.cluster.get_containers(type_="oxtrust")[0]
+            except IndexError:
+                oxtrust = None
 
-        if not oxtrust:
-            return
+            if not oxtrust:
+                return
 
-        # a placeholder for generated SAML config pulled from oxtrust container
-        tmp = tempfile.mkdtemp()
+            # a placeholder for generated SAML config pulled from oxtrust container
+            tmp = tempfile.mkdtemp()
 
-        # this will put copied directory to local `<tmp>/idp` directory
-        self.docker.copy_from_container(oxtrust.cid, "/opt/idp", tmp)
+            # this will put copied directory to local `<tmp>/idp` directory
+            self.docker.copy_from_container(oxtrust.cid, "/opt/idp", tmp)
 
-        # copy local `<tmp>/idp` to `/opt` inside container
-        self.logger.info("copying {}:/opt/idp to {}:/opt/idp".format(
-            oxtrust.name, self.container.name,
-        ))
-        self.docker.copy_to_container(
-            self.container.cid, os.path.join(tmp, "idp"), "/opt",
-        )
+            # copy local `<tmp>/idp` to `/opt` inside container
+            self.logger.info("copying {}:/opt/idp to {}:/opt/idp".format(
+                oxtrust.name, self.container.name,
+            ))
+            self.docker.copy_to_container(
+                self.container.cid, os.path.join(tmp, "idp"), "/opt",
+            )
 
-        try:
-            shutil.rmtree(tmp)
-        except OSError:
-            pass
+            try:
+                shutil.rmtree(tmp)
+            except OSError:
+                pass
 
     def add_auto_startup_entry(self):
         """Adds supervisor program for auto-startup.
@@ -210,49 +215,51 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
         self.copy_rendered_jinja_template(src, dest, ctx)
 
     def pull_shib_certkey(self):
-        try:
-            oxtrust = self.cluster.get_containers(type_="oxtrust")[0]
-        except IndexError:
-            oxtrust = None
-
-        if not oxtrust:
-            return
-
-        _, crt = tempfile.mkstemp()
-        self.docker.copy_from_container(
-            oxtrust.cid, "/etc/certs/shibIDP.crt", crt,
-        )
-
-        _, key = tempfile.mkstemp()
-        self.docker.copy_from_container(
-            oxtrust.cid, "/etc/certs/shibIDP.key", key,
-        )
-
-        self.logger.info("copying {}:/etc/certs/shibIDP.crt "
-                         "to {}:/etc/certs/shibIDP.crt".format(
-                             oxtrust.cid, self.container.cid))
-
-        self.docker.copy_to_container(
-            self.container.cid, crt, "/etc/certs/shibIDP.crt",
-        )
-
-        self.logger.info("copying {}:/etc/certs/shibIDP.key "
-                         "to {}:/etc/certs/shibIDP.key".format(
-                             oxtrust.cid, self.container.cid))
-
-        self.docker.copy_to_container(
-            self.container.cid, key, "/etc/certs/shibIDP.key",
-        )
-
-        for fn in (crt, key,):
+        with self.app.app_context():
             try:
-                os.unlink(fn)
-            except OSError:
-                pass
+                oxtrust = self.cluster.get_containers(type_="oxtrust")[0]
+            except IndexError:
+                oxtrust = None
+
+            if not oxtrust:
+                return
+
+            _, crt = tempfile.mkstemp()
+            self.docker.copy_from_container(
+                oxtrust.cid, "/etc/certs/shibIDP.crt", crt,
+            )
+
+            _, key = tempfile.mkstemp()
+            self.docker.copy_from_container(
+                oxtrust.cid, "/etc/certs/shibIDP.key", key,
+            )
+
+            self.logger.info("copying {}:/etc/certs/shibIDP.crt "
+                             "to {}:/etc/certs/shibIDP.crt".format(
+                                 oxtrust.cid, self.container.cid))
+
+            self.docker.copy_to_container(
+                self.container.cid, crt, "/etc/certs/shibIDP.crt",
+            )
+
+            self.logger.info("copying {}:/etc/certs/shibIDP.key "
+                             "to {}:/etc/certs/shibIDP.key".format(
+                                 oxtrust.cid, self.container.cid))
+
+            self.docker.copy_to_container(
+                self.container.cid, key, "/etc/certs/shibIDP.key",
+            )
+
+            for fn in (crt, key,):
+                try:
+                    os.unlink(fn)
+                except OSError:
+                    pass
 
     def discover_nginx(self):
         """Discovers nginx node.
         """
         self.logger.info("discovering available nginx container")
-        if self.cluster.count_containers(type_="nginx"):
-            self.import_nginx_cert()
+        with self.app.app_context():
+            if self.cluster.count_containers(type_="nginx"):
+                self.import_nginx_cert()

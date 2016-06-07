@@ -34,7 +34,7 @@ class CreateNodeResource(Resource):
         self.machine = Machine()
 
     def is_discovery_running(self):
-        if db.count_from_table('nodes', db.where('type') == 'discovery'):
+        if db.count_from_table('nodes', {'type': 'discovery'}):
             return self.machine.status(DISCOVERY_NODE_NAME)
         return False
 
@@ -58,7 +58,7 @@ class CreateNodeResource(Resource):
             }, 404
 
         if node_type == 'master':
-            discovery = db.search_from_table('nodes', db.where('type') == 'discovery')
+            discovery = db.search_from_table('nodes', {'type': 'discovery'})
             if not discovery:
                 return {
                     "status": 404,
@@ -66,7 +66,7 @@ class CreateNodeResource(Resource):
                 }, 404
 
         if node_type == 'master':
-            master = db.search_from_table('nodes', db.where('type') == 'master')
+            master = db.search_from_table('nodes', {'type': 'master'})
             if master:
                 return {
                     "status": 404,
@@ -74,7 +74,7 @@ class CreateNodeResource(Resource):
                 }, 404
 
         if node_type == 'worker':
-            master = db.search_from_table('nodes', db.where('type') == 'master')
+            master = db.search_from_table('nodes', {'type': 'master'})
             if not master:
                 return {
                     "status": 404,
@@ -149,14 +149,14 @@ class NodeResource(Resource):
         self.machine = Machine()
 
     def get(self, node_name):
-        nodes = db.search_from_table('nodes', db.where('name') == node_name)
+        nodes = db.search_from_table('nodes', {'name': node_name})
         if not nodes:
             return {"status": 404, "message": "node not found"}, 404
         else:
             return nodes[0].as_dict()
 
     def delete(self, node_name):
-        nodes = db.search_from_table('nodes', db.where('name') == node_name)
+        nodes = db.search_from_table('nodes', {'name': node_name})
         if nodes:
             node = nodes[0]
         else:
@@ -172,13 +172,13 @@ class NodeResource(Resource):
                 "message": "cannot delete node when it has containers",
             }, 403
 
-        if node.type == 'master' and db.count_from_table('nodes', db.where('type') == 'worker'):
+        if node.type == 'master' and db.count_from_table('nodes', {'type': 'worker'}):
             return {
                 "status": 403,
                 "message": "there are still worker nodes running"
             }, 403
 
-        if node.type == 'discovery' and db.count_from_table('nodes', db.where('type') == 'master'):
+        if node.type == 'discovery' and db.count_from_table('nodes', {'type': 'master'}):
             return {
                 "status": 403,
                 "message": "master node still running"
@@ -201,7 +201,7 @@ class NodeResource(Resource):
         return {}, 204
 
     def put(self, node_name):
-        nodes = db.search_from_table('nodes', db.where('name') == node_name)
+        nodes = db.search_from_table('nodes', {'name': node_name})
         if nodes:
             node = nodes[0]
         else:

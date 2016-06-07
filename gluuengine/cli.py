@@ -14,9 +14,9 @@ from .database import db
 from .dockerclient import Docker
 from .log import configure_global_logging
 from .machine import Machine
-from .task import LicenseWatcherTask
-from .task import OxauthWatcherTask
-from .task import OxtrustWatcherTask
+# from .task import LicenseWatcherTask
+# from .task import OxauthWatcherTask
+# from .task import OxtrustWatcherTask
 from .setup.signals import connect_setup_signals
 from .setup.signals import connect_teardown_signals
 
@@ -27,8 +27,8 @@ CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 def run_app(app, use_reloader=True):
     crochet_setup()
 
-    if not app.debug:
-        LicenseWatcherTask(app).perform_job()
+    # if not app.debug:
+    #     LicenseWatcherTask(app).perform_job()
 
     #OxauthWatcherTask(app).perform_job()
     #OxtrustWatcherTask(app).perform_job()
@@ -133,7 +133,7 @@ def _restart_ox(type_):
 
     try:
         master_node = db.search_from_table(
-            "nodes", db.where("type") == "master"
+            "nodes", {"type": "master"},
         )[0]
     except IndexError:
         master_node = None
@@ -145,7 +145,7 @@ def _restart_ox(type_):
 
     containers = db.search_from_table(
         "containers",
-        ((db.where("type") == type_) & (db.where("state") == "SUCCESS")),
+        {"type": type_, "state": "SUCCESS"},
     )
     for container in containers:
         node = db.get(container.node_id, "nodes")

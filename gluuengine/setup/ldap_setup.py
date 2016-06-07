@@ -349,11 +349,12 @@ command=/opt/opendj/bin/start-ds --quiet -N
         self.index_opendj("userRoot")
 
         try:
-            peer = self.cluster.get_containers(type_="ldap")[0]
-            # Initialize data from existing ldap container.
-            # To create fully meshed replication, update the other
-            # ldap container to use this new ldap container as a master.
-            self.replicate_from(peer)
+            with self.app.app_context():
+                peer = self.cluster.get_containers(type_="ldap")[0]
+                # Initialize data from existing ldap container.
+                # To create fully meshed replication, update the other
+                # ldap container to use this new ldap container as a master.
+                self.replicate_from(peer)
         except IndexError:
             self.import_ldif()
             self.import_base64_scim_config()
@@ -372,10 +373,11 @@ command=/opt/opendj/bin/start-ds --quiet -N
         """
         # import all OpenDJ certficates because oxIdp checks matched
         # certificate
-        for oxidp in self.cluster.get_containers(type_="oxidp"):
-            setup_obj = OxidpSetup(oxidp, self.cluster,
-                                   self.app, logger=self.logger)
-            setup_obj.import_ldap_certs()
+        with self.app.app_context():
+            for oxidp in self.cluster.get_containers(type_="oxidp"):
+                setup_obj = OxidpSetup(oxidp, self.cluster,
+                                       self.app, logger=self.logger)
+                setup_obj.import_ldap_certs()
 
     def after_setup(self):
         """Runs post-setup.
@@ -389,11 +391,12 @@ command=/opt/opendj/bin/start-ds --quiet -N
         self.write_ldap_pw()
 
         # stop the replication agreement
-        ldap_num = len(self.cluster.get_containers(type_="ldap"))
-        if ldap_num > 0:
-            self.disable_replication()
-            # wait for process to run in the background
-            time.sleep(5)
+        with self.app.app_context():
+            ldap_num = len(self.cluster.get_containers(type_="ldap"))
+            if ldap_num > 0:
+                self.disable_replication()
+                # wait for process to run in the background
+                time.sleep(5)
 
         # remove password file
         self.delete_ldap_pw()

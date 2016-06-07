@@ -15,25 +15,27 @@ from ..database import db
 
 class PrometheusHelper(object):
     def __init__(self, app, logger=None):
-        try:
-            self.cluster = db.all("clusters")[0]
-        except IndexError:
-            self.cluster = None
+        self.app = app
 
-        try:
-            self.provider = db.search_from_table(
-                "providers",
-                db.where("type") == "master",
-            )[0]
-        except IndexError:
-            self.provider = None
+        with self.app.app_context():
+            try:
+                self.cluster = db.all("clusters")[0]
+            except IndexError:
+                self.cluster = None
+
+            try:
+                self.provider = db.search_from_table(
+                    "providers",
+                    {"type": "master"},
+                )[0]
+            except IndexError:
+                self.provider = None
 
         self.target_path = '/etc/gluu/prometheus/prometheus.yml'
         self.docker = Client("unix:///var/run/docker.sock")
         self.jinja_env = Environment(
             loader=PackageLoader("gluuengine", "templates")
         )
-        self.app = app
         self.logger = logger or logging.getLogger(
             __name__ + "." + self.__class__.__name__,
         )

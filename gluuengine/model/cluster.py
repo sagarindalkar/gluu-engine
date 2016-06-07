@@ -204,7 +204,7 @@ class Cluster(BaseModel):
     #     """
     #     containers = db.search_from_table(
     #         "containers",
-    #         db.where("cluster_id") == self.id,
+    #         {"cluster_id": self.id},
     #     )
     #     return filter(None, [container.weave_ip for container in containers])
 
@@ -216,11 +216,11 @@ class Cluster(BaseModel):
         :param type_: Type of the container.
         :returns: A list of container objects.
         """
-        condition = db.where("cluster_id") == self.id
+        condition = {"cluster_id": self.id}
         if state:
-            condition = (condition) & (db.where("state") == state)
+            condition["state"] = state
         if type_:
-            condition = (condition) & (db.where("type") == type_)
+            condition["type"] = type_
         return db.count_from_table("containers", condition)
 
     def get_containers(self, type_="", state=STATE_SUCCESS):
@@ -231,9 +231,9 @@ class Cluster(BaseModel):
         :param type_: Type of the container.
         :returns: A list of container objects.
         """
-        condition = db.where("cluster_id") == self.id
+        condition = {"cluster_id": self.id}
         if state:
-            condition = (condition) & (db.where("state") == state)
+            condition["state"] = state
         if type_:
-            condition = (condition) & (db.where("type") == type_)
+            condition["type"] = type_
         return db.search_from_table("containers", condition)

@@ -18,20 +18,21 @@ DNS_ARGS_RE = re.compile(r"--dns (.+) --dns-search=(.+)")
 class Weave(object):
     def __init__(self, node, app, logger=None):
         self.node = node
-
-        try:
-            self.master_node = db.search_from_table(
-                "nodes", db.where("type") == "master"
-            )[0]
-        except IndexError:
-            self.master_node = None
-
-        try:
-            self.cluster = db.all("clusters")[0]
-        except IndexError:
-            self.cluster = None
-
         self.app = app
+
+        with self.app.app_context():
+            try:
+                self.master_node = db.search_from_table(
+                    "nodes", {"type": "master"},
+                )[0]
+            except IndexError:
+                self.master_node = None
+
+            try:
+                self.cluster = db.all("clusters")[0]
+            except IndexError:
+                self.cluster = None
+
         self.machine = Machine()
         self.logger = logger or logging.getLogger(
             __name__ + "." + self.__class__.__name__,

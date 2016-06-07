@@ -54,7 +54,8 @@ class LicenseKeyListResource(Resource):
 
         db.persist(license_key, "license_keys")
         # distribute_cluster_data(current_app.config["DATABASE_URI"])
-        distribute_cluster_data(current_app.config["SHARED_DATABASE_URI"])
+        distribute_cluster_data(current_app.config["SHARED_DATABASE_URI"],
+                                current_app._get_current_object())
 
         headers = {
             "Location": url_for("licensekey", license_key_id=license_key.id),
@@ -162,7 +163,8 @@ class LicenseKeyResource(Resource):
                         weave.dns_add(container.cid, container.hostname)
 
         # distribute_cluster_data(current_app.config["DATABASE_URI"])
-        distribute_cluster_data(current_app.config["SHARED_DATABASE_URI"])
+        distribute_cluster_data(current_app.config["SHARED_DATABASE_URI"],
+                                current_app._get_current_object())
         return format_license_key_resp(license_key)
 
     def delete(self, license_key_id):
@@ -176,5 +178,6 @@ class LicenseKeyResource(Resource):
 
         db.delete(license_key_id, "license_keys")
         # distribute_cluster_data(current_app.config["DATABASE_URI"])
-        distribute_cluster_data(current_app.config["SHARED_DATABASE_URI"])
+        distribute_cluster_data(current_app.config["SHARED_DATABASE_URI"],
+                                current_app._get_current_object())
         return {}, 204

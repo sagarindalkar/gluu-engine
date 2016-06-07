@@ -84,7 +84,7 @@ class ProviderListResource(Resource):
             abort(404)
 
         # list specific provider types
-        providers = db.search_from_table("providers", db.where('driver') == provider_type)
+        providers = db.search_from_table("providers", {'driver': provider_type})
         return [provider.as_dict() for provider in providers]
 
 

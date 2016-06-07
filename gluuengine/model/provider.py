@@ -15,7 +15,7 @@ class BaseProvider(BaseModel):
 
         :returns: True if provider has any node, otherwise False.
         """
-        condition = db.where("provider_id") == self.id
+        condition = {"provider_id": self.id}
         return bool(db.count_from_table("nodes", condition))
 
 

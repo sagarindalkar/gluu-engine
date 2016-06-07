@@ -24,7 +24,7 @@ class NodeReq(ma.Schema):
 
     @validates('provider_id')
     def validate_provider(self, value):
-        providers = db.search_from_table('providers', db.where('id') == value)
+        providers = db.search_from_table('providers', {'id': value})
         if not providers:
             raise ValidationError('wrong provider id')
 
@@ -37,5 +37,5 @@ class NodeReq(ma.Schema):
         if not NAME_RE.match(value):
             raise ValidationError("supported name format is 0-9a-zA-Z.-")
 
-        if db.count_from_table('nodes', db.where('name') == value):
+        if db.count_from_table('nodes', {'name': value}):
             raise ValidationError("name is already taken")

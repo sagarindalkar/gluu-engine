@@ -91,7 +91,7 @@ class LicenseKey(BaseModel):
         :returns: A list of worker node objects (if any).
         """
         workers = db.search_from_table(
-            "nodes", db.where("type") == "worker",
+            "nodes", {"type": "worker"},
         )
         return workers
 
@@ -101,6 +101,6 @@ class LicenseKey(BaseModel):
         :returns: Total number of worker node objects (if any).
         """
         counter = db.count_from_table(
-            "nodes", db.where("type") == "worker",
+            "nodes", {"type": "worker"},
         )
         return counter

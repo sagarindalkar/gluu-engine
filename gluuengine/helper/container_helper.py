@@ -50,8 +50,10 @@ class BaseContainerHelper(object):
 
     def __init__(self, container, app, logpath=None):
         self.container = container
-        self.cluster = db.get(self.container.cluster_id, "clusters")
-        self.node = db.get(self.container.node_id, "nodes")
+        self.app = app
+        with self.app.app_context():
+            self.cluster = db.get(self.container.cluster_id, "clusters")
+            self.node = db.get(self.container.node_id, "nodes")
 
         if logpath:
             self.logger = create_file_logger(logpath, name=self.container.name)
@@ -62,12 +64,13 @@ class BaseContainerHelper(object):
 
         mc = Machine()
 
-        try:
-            master_node = db.search_from_table(
-                "nodes", db.where("type") == "master",
-            )[0]
-        except IndexError:
-            master_node = self.node
+        with self.app.app_context():
+            try:
+                master_node = db.search_from_table(
+                    "nodes", {"type": "master"},
+                )[0]
+            except IndexError:
+                master_node = self.node
 
         self.docker = Docker(
             mc.config(self.node.name),
@@ -75,7 +78,6 @@ class BaseContainerHelper(object):
             logger=self.logger,
         )
 
-        self.app = app
         self.weave = Weave(self.node, self.app, logger=self.logger)
         # self.prometheus = PrometheusHelper(self.app, logger=self.logger)
 
@@ -121,12 +123,13 @@ class BaseContainerHelper(object):
                 self.container.cid, self.container.type, dns_search.rstrip("."),
             )
 
-            time.sleep(1)
-            db.update_to_table(
-                "containers",
-                db.where("name") == self.container.name,
-                self.container,
-            )
+            with self.app.app_context():
+                time.sleep(1)
+                db.update_to_table(
+                    "containers",
+                    {"name": self.container.name},
+                    self.container,
+                )
 
             # # attach weave IP to container
             # cidr = "{}/{}".format(self.container.weave_ip,
@@ -153,12 +156,13 @@ class BaseContainerHelper(object):
             # mark container as SUCCESS
             self.container.state = STATE_SUCCESS
 
-            time.sleep(1)
-            db.update_to_table(
-                "containers",
-                db.where("name") == self.container.name,
-                self.container,
-            )
+            with self.app.app_context():
+                time.sleep(1)
+                db.update_to_table(
+                    "containers",
+                    {"name": self.container.name},
+                    self.container,
+                )
 
             # after_setup must be called after container has been marked
             # as SUCCESS
@@ -177,17 +181,19 @@ class BaseContainerHelper(object):
             self.on_setup_error()
         finally:
             # mark containerLog as finished
-            container_log = db.get(self.container.name, "container_logs")
-            if container_log:
-                # avoid concurrent writes, see https://github.com/msiemens/tinydb/issues/91
-                time.sleep(1)
+            with self.app.app_context():
+                container_log = db.get(self.container.name, "container_logs")
+                if container_log:
+                    # avoid concurrent writes, see https://github.com/msiemens/tinydb/issues/91
+                    time.sleep(1)
 
-                container_log.state = STATE_SETUP_FINISHED
-                db.update(container_log.id, container_log, "container_logs")
+                    container_log.state = STATE_SETUP_FINISHED
+                    db.update(container_log.id, container_log, "container_logs")
 
             # distribute recovery data
             # distribute_cluster_data(self.app.config["DATABASE_URI"])
-            distribute_cluster_data(self.app.config["SHARED_DATABASE_URI"])
+            distribute_cluster_data(self.app.config["SHARED_DATABASE_URI"],
+                                    self.app)
 
             for handler in self.logger.handlers:
                 handler.close()
@@ -216,12 +222,13 @@ class BaseContainerHelper(object):
         # mark container as FAILED
         self.container.state = STATE_FAILED
 
-        time.sleep(1)
-        db.update_to_table(
-            "containers",
-            db.where("name") == self.container.name,
-            self.container,
-        )
+        with self.app.app_context():
+            time.sleep(1)
+            db.update_to_table(
+                "containers",
+                {"name": self.container.name},
+                self.container,
+            )
 
     @run_in_reactor
     def teardown(self):
@@ -261,18 +268,20 @@ class BaseContainerHelper(object):
             self.container.image, elapsed
         ))
 
-        # mark containerLog as finished
-        container_log = db.get(self.container.name, "container_logs")
-        if container_log:
-            # avoid concurrent writes, see https://github.com/msiemens/tinydb/issues/91
-            time.sleep(1)
+        with self.app.app_context():
+            # mark containerLog as finished
+            container_log = db.get(self.container.name, "container_logs")
+            if container_log:
+                # avoid concurrent writes, see https://github.com/msiemens/tinydb/issues/91
+                time.sleep(1)
 
-            container_log.state = STATE_TEARDOWN_FINISHED
-            db.update(container_log.id, container_log, "container_logs")
+                container_log.state = STATE_TEARDOWN_FINISHED
+                db.update(container_log.id, container_log, "container_logs")
 
         # distribute recovery data
         # distribute_cluster_data(self.app.config["DATABASE_URI"])
-        distribute_cluster_data(self.app.config["SHARED_DATABASE_URI"])
+        distribute_cluster_data(self.app.config["SHARED_DATABASE_URI"],
+                                self.app)
 
         for handler in self.logger.handlers:
             handler.close()

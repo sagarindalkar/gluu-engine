@@ -38,7 +38,6 @@ setup(
         "Flask",
         "crochet",
         "docker-py>=1.8.0",
-        "tinydb",
         "jsonpickle",
         "netaddr",
         "m2crypto",

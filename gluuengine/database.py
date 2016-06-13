@@ -75,13 +75,6 @@ class Database(PyMongo):
 
     def export_as_json(self, path):
         data = defaultdict(dict)
-        from bson import ObjectId
-
-        class JSONEncoder(json.JSONEncoder):
-            def default(self, o):
-                if isinstance(o, ObjectId):
-                    return str(o)
-                return json.JSONEncoder.default(self, o)
 
         for collection in self.db.collection_names():
             for idx, doc in enumerate(self.db[collection].find(), 1):
@@ -92,7 +85,7 @@ class Database(PyMongo):
             os.makedirs(parent_dir)
 
         with open(path, "w") as fd:
-            fd.write(JSONEncoder().encode(data))
+            fd.write(json.dumps(data))
         return path
 
 

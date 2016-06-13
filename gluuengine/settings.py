@@ -16,15 +16,22 @@ class Config(object):
     HOST = os.environ.get("HOST", "127.0.0.1")
     PORT = os.environ.get("PORT", 8080)
 
-    DATA_DIR = os.environ.get("DATA_DIR", "/var/lib/gluu-cluster")
-    DATABASE_URI = os.environ.get("DATABASE_URI", "mongodb://localhost:27017/gluuengine")
+    DATA_DIR = os.environ.get("DATA_DIR", "/var/lib/gluuengine")
+
+    DATABASE_URI = os.environ.get(
+        "DATABASE_URI",
+        "mongodb://localhost:27017/gluuengine",
+    )
+    # flask-pymongo compatibility
     MONGO_URI = DATABASE_URI
     SHARED_DATABASE_URI = os.environ.get(
         "SHARED_DATABASE_URI",
         os.path.join(DATA_DIR, "db", "shared.json"),
     )
+
     TEMPLATES_DIR = os.path.join(APP_DIR, "templates")
-    LOG_DIR = os.environ.get("LOG_DIR", "/var/log/gluu")
+    LOG_DIR = os.environ.get("LOG_DIR", "/var/log/gluuengine")
+    CONTAINER_LOG_DIR = os.path.join(LOG_DIR, "containers")
     INSTANCE_DIR = os.path.join(DATA_DIR, "instance")
 
     CUSTOM_LDAP_SCHEMA_DIR = os.path.join(

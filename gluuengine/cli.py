@@ -87,11 +87,11 @@ def main():
 )
 @click.option(
     "--logfile",
-    default="/var/log/gluuengine.log",
+    default="/var/log/gluuengine/api.log",
     metavar="<logfile>",
     type=click.Path(resolve_path=True, file_okay=True, dir_okay=True,
                     writable=True, readable=True),
-    help="Path to log file (default to /var/log/gluuengine.log).",
+    help="Path to log file (default to /var/log/gluuengine/api.log).",
 )
 @click.pass_context
 def daemon(ctx, pidfile, logfile):

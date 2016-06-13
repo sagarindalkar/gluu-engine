@@ -166,7 +166,8 @@ class ContainerResource(Resource):
         time.sleep(1)
         db.update(container_log.id, container_log, "container_logs")
 
-        logpath = os.path.join(app.config["LOG_DIR"], container_log.teardown_log)
+        logpath = os.path.join(app.config["CONTAINER_LOG_DIR"],
+                               container_log.teardown_log)
 
         # run the teardown process
         helper_class = self.helper_classes[container.type]
@@ -325,7 +326,8 @@ class NewContainerResource(Resource):
         time.sleep(1)
         db.update(container_log.id, container_log, "container_logs")
 
-        logpath = os.path.join(app.config["LOG_DIR"], container_log.setup_log)
+        logpath = os.path.join(app.config["CONTAINER_LOG_DIR"],
+                               container_log.setup_log)
 
         # run the setup process
         helper_class = self.helper_classes[container_type]
@@ -354,9 +356,9 @@ class ContainerLogResource(Resource):
         db.delete(id, "container_logs")
 
         app = current_app._get_current_object()
-        abs_setup_log = os.path.join(app.config["LOG_DIR"],
+        abs_setup_log = os.path.join(app.config["CONTAINER_LOG_DIR"],
                                      container_log.setup_log)
-        abs_teardown_log = os.path.join(app.config["LOG_DIR"],
+        abs_teardown_log = os.path.join(app.config["CONTAINER_LOG_DIR"],
                                         container_log.teardown_log)
 
         # cleanup unused logs
@@ -375,7 +377,8 @@ class ContainerLogSetupResource(Resource):
             return {"status": 404, "message": "Container setup log not found"}, 404
 
         app = current_app._get_current_object()
-        abs_logpath = os.path.join(app.config["LOG_DIR"], container_log.setup_log)
+        abs_logpath = os.path.join(app.config["CONTAINER_LOG_DIR"],
+                                   container_log.setup_log)
 
         try:
             with open(abs_logpath) as fp:
@@ -396,7 +399,7 @@ class ContainerLogTeardownResource(Resource):
             return {"status": 404, "message": "Container teardown log not found"}, 404
 
         app = current_app._get_current_object()
-        abs_logpath = os.path.join(app.config["LOG_DIR"],
+        abs_logpath = os.path.join(app.config["CONTAINER_LOG_DIR"],
                                    container_log.teardown_log)
 
         try:

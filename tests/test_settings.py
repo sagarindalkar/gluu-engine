@@ -5,7 +5,7 @@ def test_dev_config():
 
     # sanity checks
     assert cfg.DEBUG is True
-    assert cfg.DATABASE_URI == "/var/lib/gluu-cluster/db/db_dev.json"
+    assert cfg.DATABASE_URI == "/var/lib/gluuengine/db/db_dev.json"
 
 
 def test_test_config():
@@ -16,7 +16,7 @@ def test_test_config():
     # sanity checks
     assert cfg.DEBUG is True
     assert cfg.TESTING is True
-    assert cfg.DATABASE_URI == "/var/lib/gluu-cluster/db/db_test.json"
+    assert cfg.DATABASE_URI == "/var/lib/gluuengine/db/db_test.json"
 
 
 def test_prod_config():
@@ -26,8 +26,8 @@ def test_prod_config():
 
     # sanity checks
     assert cfg.DEBUG is False
-    assert cfg.LOG_DIR == "/var/log/gluu"
-    assert cfg.DATA_DIR == "/var/lib/gluu-cluster"
-    assert cfg.DATABASE_URI == "/var/lib/gluu-cluster/db/db.json"
-    assert cfg.INSTANCE_DIR == "/var/lib/gluu-cluster/instance"
-    assert cfg.CUSTOM_LDAP_SCHEMA_DIR == "/var/lib/gluu-cluster/custom/opendj/schema"
+    assert cfg.LOG_DIR == "/var/log/gluuengine"
+    assert cfg.DATA_DIR == "/var/lib/gluuengine"
+    assert cfg.DATABASE_URI == "/var/lib/gluuengine/db/db.json"
+    assert cfg.INSTANCE_DIR == "/var/lib/gluuengine/instance"
+    assert cfg.CUSTOM_LDAP_SCHEMA_DIR == "/var/lib/gluuengine/custom/opendj/schema"

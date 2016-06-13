@@ -1,8 +1,8 @@
 #!/bin/sh -e
 update-rc.d gluu-engine defaults > /dev/null
 service gluu-engine start
-#mkdir -p /var/lib/gluu-cluster
-#mkdir -p /var/log/gluu
-#chmod 644 /var/log/gluu/*
-install -d 755 /var/lib/gluu-cluster
-install -d 755 /var/log/gluu
+#mkdir -p /var/lib/gluuengine
+#mkdir -p /var/log/gluuengine
+#chmod 644 /var/log/gluuengine/*
+install -d 755 /var/lib/gluuengine
+install -d 755 /var/log/gluuengine

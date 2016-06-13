@@ -74,7 +74,7 @@ $ gluuengine daemon --pidfile /path/to/pidfile --logfile /path/to/logfile start
 
 The daemon has `start`, `stop`, `restart`, and `status` commands.
 It's worth noting that `--pidfile` and `--logfile` must be pointed to accessible (writable and readable) path by user who runs the daemon.
-By default they are pointed to `/var/run/gluuengine.pid` and `/var/log/gluuengine.log` respectively.
+By default they are pointed to `/var/run/gluuengine.pid` and `/var/log/gluuengine/api.log` respectively.
 
 ## Testing
 

@@ -4,6 +4,7 @@
 # All rights reserved.
 
 import functools
+import os
 
 import click
 from crochet import setup as crochet_setup
@@ -11,12 +12,9 @@ from daemonocle import Daemon
 
 from .app import create_app
 from .database import db
-from .dockerclient import Docker
 from .log import configure_global_logging
 from .machine import Machine
 # from .task import LicenseWatcherTask
-# from .task import OxauthWatcherTask
-# from .task import OxtrustWatcherTask
 from .setup.signals import connect_setup_signals
 from .setup.signals import connect_teardown_signals
 
@@ -29,9 +27,6 @@ def run_app(app, use_reloader=True):
 
     # if not app.debug:
     #     LicenseWatcherTask(app).perform_job()
-
-    #OxauthWatcherTask(app).perform_job()
-    #OxtrustWatcherTask(app).perform_job()
 
     connect_setup_signals()
     connect_teardown_signals()
@@ -125,57 +120,73 @@ def runserver2():
     run_app(app=app, use_reloader=False)
 
 
-def _restart_ox(type_):
+def _distribute_ox_files(type_):
     assert type_ in ("oxauth", "oxtrust",), "unsupported ox app"
 
-    # initialize Flask context
-    create_app()
+    ox_map = {
+        "oxauth": {
+            "name": "oxAuth",
+            "override_dir_config": "OXAUTH_OVERRIDE_DIR",
+            "override_remote_dir": "/var/gluu/webapps/oxauth",
+        },
+        "oxtrust": {
+            "name": "oxTrust",
+            "override_dir_config": "OXTRUST_OVERRIDE_DIR",
+            "override_remote_dir": "/var/gluu/webapps/oxtrust",
+        },
+    }
 
-    try:
-        master_node = db.search_from_table(
-            "nodes", {"type": "master"},
-        )[0]
-    except IndexError:
-        master_node = None
+    ox = ox_map[type_]
 
-    if not master_node:
-        click.echo("master node is not found")
+    click.echo("distributing custom {} files".format(ox["name"]))
 
+    app = create_app()
     mc = Machine()
 
-    containers = db.search_from_table(
-        "containers",
-        {"type": type_, "state": "SUCCESS"},
-    )
-    for container in containers:
-        node = db.get(container.node_id, "nodes")
-        dk = Docker(mc.config(node.name), mc.swarm_config(master_node.name))
+    with app.app_context():
+        nodes = db.search_from_table(
+            "nodes",
+            {"$or": [{"type": "master"}, {"type": "worker"}]},
+        )
 
-        click.echo("restarting tomcat process in "
-                   "{} container {}".format(type_, container.name))
+    src = app.config[ox["override_dir_config"]]
+    dest = src.replace(app.config[ox["override_dir_config"]],
+                       ox["override_remote_dir"])
 
-        if dk.inspect_container(container.cid)["State"]["Running"] is not True:
-            click.echo("{} container {} is not running; "
-                       "skipping ...".format(type_, container.name))
-            continue
+    for node in nodes:
+        click.echo("copying {} to {}:{} recursively".format(
+            src, node.name, dest
+        ))
+        mc.scp(src, "{}:{}".format(node.name, os.path.dirname(dest)),
+               recursive=True)
 
-        resp = dk.exec_cmd(container.cid, "supervisorctl restart tomcat")
-        if resp.exit_code != 0:
+        with app.app_context():
+            containers = db.search_from_table(
+                "containers",
+                {"node_id": node.id, "type": type_},
+            )
+
+        for container in containers:
+            # we only need to restart tomcat process inside the container
             click.echo(
-                "unable to restart tomcat process in {} container {}; "
-                "reason={}".format(type_, container.name, resp.retval)
+                "restarting tomcat process inside {} container {} "
+                "in {} node".format(ox["name"], container.cid, node.name)
+            )
+            mc.ssh(
+                node.name,
+                "sudo docker exec {} supervisorctl restart tomcat".format(container.cid),
             )
 
 
-@main.command("restart-oxauth")
-def restart_oxauth():
-    """Restart process of oxAuth containers.
+@main.command("distribute-oxauth-files")
+def distribute_oxauth_files():
+    """Distribute custom oxAuth files.
     """
-    _restart_ox("oxauth")
+    _distribute_ox_files("oxauth")
 
 
-@main.command("restart-oxtrust")
-def restart_oxtrust():
-    """Restart process of oxTrust containers.
+@main.command("distribute-oxtrust-files")
+def distribute_oxtrust_files():
+    """Distribute custom oxTrust files.
     """
-    _restart_ox("oxtrust")
+    _distribute_ox_files("oxtrust")

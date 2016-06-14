@@ -4,7 +4,6 @@
 # All rights reserved.
 
 import os
-import time
 import uuid
 
 from flask import abort
@@ -163,7 +162,6 @@ class ContainerResource(Resource):
             id=container_log.id,
             _external=True,
         )
-        time.sleep(1)
         db.update(container_log.id, container_log, "container_logs")
 
         logpath = os.path.join(app.config["CONTAINER_LOG_DIR"],
@@ -293,13 +291,6 @@ class NewContainerResource(Resource):
                            "to specified node",
             }, 403
 
-        # addr, prefixlen = cluster.reserve_ip_addr()
-        # if not addr:
-        #     return {
-        #         "status": 403,
-        #         "message": "cluster is running out of weave IP",
-        #     }, 403
-
         # pre-populate the container object
         container_class = self.container_classes[container_type]
         container = container_class()
@@ -307,10 +298,6 @@ class NewContainerResource(Resource):
         container.node_id = node.id
         container.name = "{}_{}".format(container.image, uuid.uuid4())
 
-        # set the weave IP immediately to prevent race condition
-        # when containers are requested concurrently
-        # container.weave_ip = addr
-        # container.weave_prefixlen = prefixlen
         container.state = STATE_IN_PROGRESS
 
         db.persist(container, "containers")
@@ -323,7 +310,6 @@ class NewContainerResource(Resource):
             id=container_log.id,
             _external=True,
         )
-        time.sleep(1)
         db.update(container_log.id, container_log, "container_logs")
 
         logpath = os.path.join(app.config["CONTAINER_LOG_DIR"],

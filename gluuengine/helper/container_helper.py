@@ -82,11 +82,8 @@ class BaseContainerHelper(object):
         # self.prometheus = PrometheusHelper(self.app, logger=self.logger)
 
     @run_in_reactor
-    def setup(self, connect_delay=10, exec_delay=15):
+    def setup(self):
         """Runs the container setup.
-
-        :param connect_delay: Time to wait before start connecting to minion.
-        :param exec_delay: Time to wait before start executing remote command.
         """
         try:
             self.logger.info("{} setup is started".format(self.container.image))
@@ -118,23 +115,16 @@ class BaseContainerHelper(object):
 
             # container.cid in short format
             self.container.cid = cid[:12]
-            # self.container.ip = self.docker.get_container_ip(self.container.cid)
             self.container.hostname = "{}.{}.{}".format(
                 self.container.cid, self.container.type, dns_search.rstrip("."),
             )
 
             with self.app.app_context():
-                time.sleep(1)
                 db.update_to_table(
                     "containers",
                     {"name": self.container.name},
                     self.container,
                 )
-
-            # # attach weave IP to container
-            # cidr = "{}/{}".format(self.container.weave_ip,
-            #                       self.container.weave_prefixlen)
-            # self.weave.attach(cidr, self.container.cid)
 
             # add DNS record
             self.weave.dns_add(self.container.cid, self.container.hostname)
@@ -157,7 +147,6 @@ class BaseContainerHelper(object):
             self.container.state = STATE_SUCCESS
 
             with self.app.app_context():
-                time.sleep(1)
                 db.update_to_table(
                     "containers",
                     {"name": self.container.name},
@@ -184,9 +173,6 @@ class BaseContainerHelper(object):
             with self.app.app_context():
                 container_log = db.get(self.container.name, "container_logs")
                 if container_log:
-                    # avoid concurrent writes, see https://github.com/msiemens/tinydb/issues/91
-                    time.sleep(1)
-
                     container_log.state = STATE_SETUP_FINISHED
                     db.update(container_log.id, container_log, "container_logs")
 
@@ -223,7 +209,6 @@ class BaseContainerHelper(object):
         self.container.state = STATE_FAILED
 
         with self.app.app_context():
-            time.sleep(1)
             db.update_to_table(
                 "containers",
                 {"name": self.container.name},
@@ -272,9 +257,6 @@ class BaseContainerHelper(object):
             # mark containerLog as finished
             container_log = db.get(self.container.name, "container_logs")
             if container_log:
-                # avoid concurrent writes, see https://github.com/msiemens/tinydb/issues/91
-                time.sleep(1)
-
                 container_log.state = STATE_TEARDOWN_FINISHED
                 db.update(container_log.id, container_log, "container_logs")
 
@@ -309,37 +291,37 @@ class OxauthContainerHelper(BaseContainerHelper):
 
     def __init__(self, container, app, logpath=None):
         self.volumes = {
-            # "/var/gluu/webapps/oxauth/pages": {
-            #     'bind': '/var/gluu/webapps/oxauth/pages',
-            # },
-            # "/var/gluu/webapps/oxauth/resources": {
-            #     'bind': '/var/gluu/webapps/oxauth/resources',
-            # },
-            # "/var/gluu/webapps/oxauth/libs": {
-            #     'bind': '/var/gluu/webapps/oxauth/libs',
-            # },
+            "/var/gluu/webapps/oxauth/pages": {
+                'bind': '/var/gluu/webapps/oxauth/pages',
+            },
+            "/var/gluu/webapps/oxauth/resources": {
+                'bind': '/var/gluu/webapps/oxauth/resources',
+            },
+            "/var/gluu/webapps/oxauth/libs": {
+                'bind': '/var/gluu/webapps/oxauth/libs',
+            },
         }
         super(OxauthContainerHelper, self).__init__(container, app, logpath)
 
 
 class OxtrustContainerHelper(BaseContainerHelper):
     setup_class = OxtrustSetup
-    port_bindings = {8443: ("127.0.0.1", 8443)}
+    port_bindings = {8443: ("127.0.0.1", 8443,)}
 
     def __init__(self, container, app, logpath=None):
         self.volumes = {
             "/opt/idp": {
                 "bind": "/opt/idp",
             },
-            # "/var/gluu/webapps/oxtrust/pages": {
-            #     'bind': '/var/gluu/webapps/oxtrust/pages',
-            # },
-            # "/var/gluu/webapps/oxtrust/resources": {
-            #     'bind': '/var/gluu/webapps/oxtrust/resources',
-            # },
-            # "/var/gluu/webapps/oxtrust/libs": {
-            #     'bind': '/var/gluu/webapps/oxtrust/libs',
-            # },
+            "/var/gluu/webapps/oxtrust/pages": {
+                'bind': '/var/gluu/webapps/oxtrust/pages',
+            },
+            "/var/gluu/webapps/oxtrust/resources": {
+                'bind': '/var/gluu/webapps/oxtrust/resources',
+            },
+            "/var/gluu/webapps/oxtrust/libs": {
+                'bind': '/var/gluu/webapps/oxtrust/libs',
+            },
         }
         super(OxtrustContainerHelper, self).__init__(container, app, logpath)
 
@@ -350,7 +332,7 @@ class OxidpContainerHelper(BaseContainerHelper):
 
 class NginxContainerHelper(BaseContainerHelper):
     setup_class = NginxSetup
-    port_bindings = {80: ("0.0.0.0", 80), 443: ("0.0.0.0", 443)}
+    port_bindings = {80: ("0.0.0.0", 80,), 443: ("0.0.0.0", 443,)}
 
 
 class OxasimbaContainerHelper(BaseContainerHelper):

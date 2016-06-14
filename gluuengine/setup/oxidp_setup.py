@@ -174,7 +174,7 @@ command=/opt/tomcat/bin/catalina.sh run
 environment=CATALINA_PID=/var/run/tomcat.pid
 
 [program:memcached]
-command=/usr/bin/memcached -p 11211 -u memcache -m 64 -t 4 -l 127.0.0.1 -l {} -vv
+command=/usr/bin/memcached -p 11211 -u memcache -m 64 -t 4 -l 0.0.0.0 -vv
 stdout_logfile=/var/log/memcached.log
 stderr_logfile=/var/log/memcached.log
 
@@ -183,7 +183,7 @@ command=nutcracker -c /etc/nutcracker.yml -p /var/run/nutcracker.pid -o /var/log
 
 [program:httpd]
 command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /etc/apache2/envvars && /usr/sbin/apache2ctl -DFOREGROUND\\"
-""".format(self.container.weave_ip)
+"""
 
         self.logger.info("adding supervisord entry")
         cmd = '''sh -c "echo '{}' >> /etc/supervisor/conf.d/supervisord.conf"'''.format(payload)

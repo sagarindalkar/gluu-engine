@@ -12,22 +12,12 @@ from ..model import Cluster
 from ..reqparser import ClusterReq
 
 
-def format_cluster_resp(cluster):
-    item = cluster.as_dict()
-    item["ldap_containers"] = [container.id for container in cluster.get_containers(type_="ldap")]
-    item["oxauth_containers"] = [container.id for container in cluster.get_containers(type_="oxauth")]
-    item["oxtrust_containers"] = [container.id for container in cluster.get_containers(type_="oxtrust")]
-    item["oxidp_containers"] = [container.id for container in cluster.get_containers(type_="oxidp")]
-    item["nginx_containers"] = [container.id for container in cluster.get_containers(type_="nginx")]
-    return item
-
-
 class ClusterResource(Resource):
     def get(self, cluster_id):
         cluster = db.get(cluster_id, "clusters")
         if not cluster:
             return {"status": 404, "message": "Cluster not found"}, 404
-        return format_cluster_resp(cluster)
+        return cluster.as_dict()
 
     def delete(self, cluster_id):
         cluster = db.get(cluster_id, "clusters")
@@ -46,7 +36,7 @@ class ClusterResource(Resource):
 class ClusterListResource(Resource):
     def get(self):
         clusters = db.all("clusters")
-        return [format_cluster_resp(cluster) for cluster in clusters]
+        return [cluster.as_dict() for cluster in clusters]
 
     def post(self):
         # limit to 1 cluster for now
@@ -67,4 +57,4 @@ class ClusterListResource(Resource):
         headers = {
             "Location": url_for("cluster", cluster_id=cluster.id),
         }
-        return format_cluster_resp(cluster), 201, headers
+        return cluster.as_dict(), 201, headers

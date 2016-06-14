@@ -39,7 +39,6 @@ setup(
         "crochet",
         "docker-py>=1.8.0",
         "jsonpickle",
-        "netaddr",
         "m2crypto",
         "daemonocle",
         "marshmallow",

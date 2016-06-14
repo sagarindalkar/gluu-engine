@@ -163,7 +163,7 @@ def _distribute_ox_files(type_):
         with app.app_context():
             containers = db.search_from_table(
                 "containers",
-                {"node_id": node.id, "type": type_},
+                {"node_id": node.id, "type": type_, "state": "SUCCESS"},
             )
 
         for container in containers:

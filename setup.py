@@ -45,6 +45,7 @@ setup(
         "flask_marshmallow",
         "blinker",
         "flask-pymongo",
+        "gunicorn",
     ],
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",

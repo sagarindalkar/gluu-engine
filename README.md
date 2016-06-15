@@ -53,28 +53,14 @@ To run the application in foreground, type the following command in the shell:
 
 ```
 $ source env/bin/activate
-$ gluuengine runserver
+$ gluuengine runserver  # good for development
 ```
 
-Or, if you have `make` installed
+For production mode, we can use `gunicorn`:
 
 ```
-$ source env/bin/activate
-$ make run
+$ gunicorn -b 127.0.0.1:8080 --log-level warning --access-logfile - --error-logfile -
 ```
-
-## Daemon Mode
-
-To run `gluuengine` in background (daemon mode):
-
-```
-$ source env/bin/activate
-$ gluuengine daemon --pidfile /path/to/pidfile --logfile /path/to/logfile start
-```
-
-The daemon has `start`, `stop`, `restart`, and `status` commands.
-It's worth noting that `--pidfile` and `--logfile` must be pointed to accessible (writable and readable) path by user who runs the daemon.
-By default they are pointed to `/var/run/gluuengine.pid` and `/var/log/gluuengine/api.log` respectively.
 
 ## Testing
 

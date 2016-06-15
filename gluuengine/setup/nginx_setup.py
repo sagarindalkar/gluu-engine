@@ -53,14 +53,14 @@ class NginxSetup(BaseSetup):
 [program:{}]
 command=/usr/sbin/nginx -g \\"daemon off;\\"
 """.format(self.container.type)
-        self.logger.info("adding supervisord entry")
+        self.logger.debug("adding supervisord entry")
         cmd = '''sh -c "echo '{}' >> /etc/supervisor/conf.d/supervisord.conf"'''.format(payload)
         self.docker.exec_cmd(self.container.cid, cmd)
 
     def restart_nginx(self):
         """Restarts nginx via supervisorctl.
         """
-        self.logger.info("restarting nginx")
+        self.logger.debug("restarting nginx")
         service_cmd = "supervisorctl restart nginx"
         self.docker.exec_cmd(self.container.cid, service_cmd)
 
@@ -77,9 +77,9 @@ command=/usr/sbin/nginx -g \\"daemon off;\\"
 
         if os.path.exists(ssl_cert) and os.path.exists(ssl_key):
             # copy cert and key
-            self.logger.info("copying existing SSL cert")
+            self.logger.debug("copying existing SSL cert")
             self.docker.copy_to_container(self.container.cid, ssl_cert, "/etc/certs/nginx.crt")
-            self.logger.info("copying existing SSL key")
+            self.logger.debug("copying existing SSL key")
             self.docker.copy_to_container(self.container.cid, ssl_key, "/etc/certs/nginx.key")
         else:
             self.gen_cert("nginx", self.cluster.decrypted_admin_pw,

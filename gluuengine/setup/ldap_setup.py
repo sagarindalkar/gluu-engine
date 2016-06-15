@@ -44,7 +44,7 @@ class LdapSetup(BaseSetup):
         any operation that requires password. Calling ``delete_ldap_pw``
         method will remove this password file.
         """
-        self.logger.info("writing temporary LDAP password")
+        self.logger.debug("writing temporary LDAP password")
 
         local_dest = os.path.join(self.build_dir, ".pw")
         with codecs.open(local_dest, "w", encoding="utf-8") as fp:
@@ -59,7 +59,7 @@ class LdapSetup(BaseSetup):
     def delete_ldap_pw(self):
         """Removes temporary LDAP password.
         """
-        self.logger.info("deleting temporary LDAP password")
+        self.logger.debug("deleting temporary LDAP password")
         self.docker.exec_cmd(
             self.container.cid,
             'rm -f {}'.format(self.container.ldap_pass_fn)
@@ -99,11 +99,8 @@ class LdapSetup(BaseSetup):
             '--propertiesFilePath', dest,
         ])
 
-        self.logger.info("running opendj setup")
+        self.logger.debug("running opendj setup")
         self.docker.exec_cmd(self.container.cid, setup_cmd)
-
-        # Use predefined dsjavaproperties
-        self.logger.info("running dsjavaproperties")
         self.docker.exec_cmd(self.container.cid, self.container.ldap_ds_java_prop_command)
 
     def configure_opendj(self):
@@ -121,6 +118,7 @@ class LdapSetup(BaseSetup):
             "set-password-policy-prop --policy-name 'Default Password Policy' --set default-password-storage-scheme:'Salted SHA-512'",
         ]
 
+        self.logger.debug("configuring opendj config changes")
         for changes in config_changes:
             dsconfig_cmd = " ".join([
                 self.container.ldap_dsconfig_command,
@@ -132,7 +130,6 @@ class LdapSetup(BaseSetup):
                 '--bindPasswordFile', self.container.ldap_pass_fn,
                 changes,
             ])
-            self.logger.info("configuring opendj config changes: {}".format(dsconfig_cmd))
 
             dsconfig_cmd = '''sh -c "{}"'''.format(dsconfig_cmd)
             self.docker.exec_cmd(self.container.cid, dsconfig_cmd)
@@ -155,11 +152,6 @@ class LdapSetup(BaseSetup):
                 for backend_name in attr_map["backend"]:
                     if backend_name != backend:
                         continue
-
-                    self.logger.info(
-                        "creating {} attribute for {} index "
-                        "in {} backend".format(attr_name, index_type, backend)
-                    )
 
                     index_cmd = " ".join([
                         self.container.ldap_dsconfig_command,
@@ -230,7 +222,7 @@ class LdapSetup(BaseSetup):
         )
 
         # Export public OpenDJ certificate
-        self.logger.info("exporting OpenDJ certificate")
+        self.logger.debug("exporting OpenDJ certificate")
         cmd = ' '.join([
             self.container.keytool_command, '-exportcert',
             '-keystore', openDjTruststoreFn,
@@ -244,7 +236,7 @@ class LdapSetup(BaseSetup):
 
     def import_opendj_cert(self):
         # Import OpenDJ certificate into java truststore
-        self.logger.info("importing OpenDJ certificate into Java truststore")
+        self.logger.debug("importing OpenDJ certificate into Java truststore")
         cmd = ' '.join([
             "/usr/bin/keytool", "-import", "-trustcacerts",
             "-alias", self.container.hostname,
@@ -270,6 +262,10 @@ class LdapSetup(BaseSetup):
         setup_obj.write_ldap_pw()
 
         base_dns = ("o=gluu", "o=site",)
+
+        self.logger.info("initializing and enabling replication between {} and {}".format(
+            peer.hostname, self.container.hostname,
+        ))
         for base_dn in base_dns:
             enable_cmd = " ".join([
                 "/opt/opendj/bin/dsreplication", "enable",
@@ -289,9 +285,6 @@ class LdapSetup(BaseSetup):
                 "--secureReplication1", "--secureReplication2",
                 "-X", "-n", "-Q",
             ])
-            self.logger.info("enabling {!r} replication between {} and {}".format(
-                base_dn, peer.hostname, self.container.hostname,
-            ))
             self.docker.exec_cmd(self.container.cid, enable_cmd)
 
             # wait before initializing the replication to ensure it
@@ -309,14 +302,8 @@ class LdapSetup(BaseSetup):
                 "--portDestination", self.container.ldap_admin_port,
                 "-X", "-n", "-Q",
             ])
-            self.logger.info("initializing {!r} replication between {} and {}".format(
-                base_dn, peer.hostname, self.container.hostname,
-            ))
             self.docker.exec_cmd(self.container.cid, init_cmd)
             time.sleep(5)
-
-        self.logger.info("see related logs at {}:/tmp directory "
-                         "for replication process".format(self.container.name))
 
         # cleanups temporary password file
         setup_obj.delete_ldap_pw()
@@ -330,7 +317,7 @@ class LdapSetup(BaseSetup):
 command=/opt/opendj/bin/start-ds --quiet -N
 """
 
-        self.logger.info("adding supervisord entry")
+        self.logger.debug("adding supervisord entry")
         cmd = '''sh -c "echo '{}' >> /etc/supervisor/conf.d/supervisord.conf"'''.format(payload)
         self.docker.exec_cmd(self.container.cid, cmd)
 
@@ -343,8 +330,9 @@ command=/opt/opendj/bin/start-ds --quiet -N
         self.setup_opendj()
         self.add_auto_startup_entry()
         self.reload_supervisor()
-        self.ensure_opendj_running()
         self.configure_opendj()
+
+        self.logger.debug("creating LDAP attribute for available backends")
         self.index_opendj("site")
         self.index_opendj("userRoot")
 
@@ -413,7 +401,7 @@ command=/opt/opendj/bin/start-ds --quiet -N
                 continue
             basename = os.path.basename(file_)
             dest = "{}/{}".format(self.container.schema_folder, basename)
-            self.logger.info("copying {}".format(basename))
+            self.logger.debug("copying {}".format(basename))
             self.docker.copy_to_container(self.container.cid, file_, dest)
 
     def disable_replication(self):
@@ -578,21 +566,6 @@ command=/opt/opendj/bin/start-ds --quiet -N
         ctx = {}
         return self.render_jinja_template(src, ctx)
 
-    def ensure_opendj_running(self):
-        max_retry = 6
-        retry_attempt = 0
-
-        while retry_attempt < max_retry:
-            status_cmd = "supervisorctl status opendj"
-            resp = self.docker.exec_cmd(self.container.cid, status_cmd)
-
-            if "RUNNING" in resp.retval:
-                break
-            else:
-                self.logger.warn("opendj is not running; retrying ...")
-                time.sleep(10)
-                retry_attempt += 1
-
     def render_oxcas_config(self):
         """Renders oxCAS configuration.
         """
@@ -627,5 +600,5 @@ command=/opt/opendj/bin/start-ds --quiet -N
             '--append',
             '--trustAll',
         ])
-        self.logger.info("importing {}".format(file_basename))
+        self.logger.debug("importing {}".format(file_basename))
         self.docker.exec_cmd(self.container.cid, import_cmd)

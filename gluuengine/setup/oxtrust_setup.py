@@ -73,7 +73,7 @@ class OxtrustSetup(OxSetup):
     def discover_nginx(self):
         """Discovers nginx container.
         """
-        self.logger.info("discovering available nginx container")
+        self.logger.debug("discovering available nginx container")
         with self.app.app_context():
             if self.cluster.count_containers(type_="nginx"):
                 self.import_nginx_cert()
@@ -95,14 +95,14 @@ command=/opt/tomcat/bin/catalina.sh run
 environment=CATALINA_PID=/var/run/tomcat.pid
 """
 
-        self.logger.info("adding supervisord entry")
+        self.logger.debug("adding supervisord entry")
         cmd = '''sh -c "echo '{}' >> /etc/supervisor/conf.d/supervisord.conf"'''.format(payload)
         self.docker.exec_cmd(self.container.cid, cmd)
 
     def restart_tomcat(self):
         """Restarts Tomcat via supervisorctl.
         """
-        self.logger.info("restarting tomcat")
+        self.logger.debug("restarting tomcat")
         restart_cmd = "supervisorctl restart tomcat"
         self.docker.exec_cmd(self.container.cid, restart_cmd)
 
@@ -137,7 +137,7 @@ environment=CATALINA_PID=/var/run/tomcat.pid
                 src = os.path.join(root, fn)
                 dest = src.replace(self.app.config["OXTRUST_OVERRIDE_DIR"],
                                    "/var/gluu/webapps/oxtrust")
-                self.logger.info("copying {} to {}:{}".format(
+                self.logger.debug("copying {} to {}:{}".format(
                     src, self.container.name, dest,
                 ))
                 self.docker.exec_cmd(

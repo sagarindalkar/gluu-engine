@@ -78,7 +78,7 @@ class OxidpSetup(OxSetup):
         """
         with self.app.app_context():
             for ldap in self.cluster.get_containers(type_="ldap"):
-                self.logger.info("importing ldap cert from {}".format(ldap.hostname))
+                self.logger.debug("importing ldap cert from {}".format(ldap.hostname))
 
                 cert_cmd = "echo -n | openssl s_client -connect {0}:{1} | " \
                            "sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' " \
@@ -117,7 +117,7 @@ class OxidpSetup(OxSetup):
     def restart_nutcracker(self):
         """Restarts twemproxy via supervisorctl.
         """
-        self.logger.info("restarting twemproxy in {}".format(self.container.name))
+        self.logger.debug("restarting twemproxy in {}".format(self.container.name))
         restart_cmd = "supervisorctl restart nutcracker"
         self.docker.exec_cmd(self.container.cid, restart_cmd)
 
@@ -153,7 +153,7 @@ class OxidpSetup(OxSetup):
             self.docker.copy_from_container(oxtrust.cid, "/opt/idp", tmp)
 
             # copy local `<tmp>/idp` to `/opt` inside container
-            self.logger.info("copying {}:/opt/idp to {}:/opt/idp".format(
+            self.logger.debug("copying {}:/opt/idp to {}:/opt/idp".format(
                 oxtrust.name, self.container.name,
             ))
             self.docker.copy_to_container(
@@ -185,7 +185,7 @@ command=nutcracker -c /etc/nutcracker.yml -p /var/run/nutcracker.pid -o /var/log
 command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /etc/apache2/envvars && /usr/sbin/apache2ctl -DFOREGROUND\\"
 """
 
-        self.logger.info("adding supervisord entry")
+        self.logger.debug("adding supervisord entry")
         cmd = '''sh -c "echo '{}' >> /etc/supervisor/conf.d/supervisord.conf"'''.format(payload)
         self.docker.exec_cmd(self.container.cid, cmd)
 
@@ -234,17 +234,17 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
                 oxtrust.cid, "/etc/certs/shibIDP.key", key,
             )
 
-            self.logger.info("copying {}:/etc/certs/shibIDP.crt "
-                             "to {}:/etc/certs/shibIDP.crt".format(
-                                 oxtrust.cid, self.container.cid))
+            self.logger.debug("copying {}:/etc/certs/shibIDP.crt "
+                              "to {}:/etc/certs/shibIDP.crt".format(
+                                  oxtrust.cid, self.container.cid))
 
             self.docker.copy_to_container(
                 self.container.cid, crt, "/etc/certs/shibIDP.crt",
             )
 
-            self.logger.info("copying {}:/etc/certs/shibIDP.key "
-                             "to {}:/etc/certs/shibIDP.key".format(
-                                 oxtrust.cid, self.container.cid))
+            self.logger.debug("copying {}:/etc/certs/shibIDP.key "
+                              "to {}:/etc/certs/shibIDP.key".format(
+                                  oxtrust.cid, self.container.cid))
 
             self.docker.copy_to_container(
                 self.container.cid, key, "/etc/certs/shibIDP.key",
@@ -259,7 +259,7 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
     def discover_nginx(self):
         """Discovers nginx node.
         """
-        self.logger.info("discovering available nginx container")
+        self.logger.debug("discovering available nginx container")
         with self.app.app_context():
             if self.cluster.count_containers(type_="nginx"):
                 self.import_nginx_cert()

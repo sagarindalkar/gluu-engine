@@ -55,12 +55,15 @@ class BaseContainerHelper(object):
             self.cluster = db.get(self.container.cluster_id, "clusters")
             self.node = db.get(self.container.node_id, "nodes")
 
+        log_level = logging.DEBUG if self.app.config["DEBUG"] else logging.INFO
         if logpath:
-            self.logger = create_file_logger(logpath, name=self.container.name)
+            self.logger = create_file_logger(logpath, log_level=log_level,
+                                             name=self.container.name)
         else:
             self.logger = logging.getLogger(
                 __name__ + "." + self.__class__.__name__,
             )
+            self.logger.setLevel(log_level)
 
         mc = Machine()
 
@@ -75,10 +78,9 @@ class BaseContainerHelper(object):
         self.docker = Docker(
             mc.config(self.node.name),
             mc.swarm_config(master_node.name),
-            logger=self.logger,
         )
 
-        self.weave = Weave(self.node, self.app, logger=self.logger)
+        self.weave = Weave(self.node, self.app)
         # self.prometheus = PrometheusHelper(self.app, logger=self.logger)
 
     @run_in_reactor

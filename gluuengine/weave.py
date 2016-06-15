@@ -3,7 +3,6 @@
 #
 # All rights reserved.
 
-import logging
 import re
 
 from .database import db
@@ -13,7 +12,7 @@ DNS_ARGS_RE = re.compile(r"--dns (.+) --dns-search=(.+)")
 
 
 class Weave(object):
-    def __init__(self, node, app, logger=None):
+    def __init__(self, node, app):
         self.node = node
         self.app = app
 
@@ -31,9 +30,6 @@ class Weave(object):
                 self.cluster = None
 
         self.machine = Machine()
-        self.logger = logger or logging.getLogger(
-            __name__ + "." + self.__class__.__name__,
-        )
         self.weave_encryption = self.app.config['WEAVE_ENCRYPTION']
 
     def attach(self, container_id, cidr=""):
@@ -61,7 +57,6 @@ class Weave(object):
         :param domain_name: Local domain name.
         """
         dns_cmd = "sudo weave dns-add {} -h {}".format(container_id, hostname)
-        self.logger.info("adding {} to local DNS server".format(hostname))
         self.machine.ssh(self.node.name, dns_cmd)
 
     def docker_bridge_ip(self):  # pragma: no cover

@@ -4,7 +4,6 @@
 # All rights reserved.
 
 import json
-import logging
 from collections import namedtuple
 from contextlib import contextmanager
 
@@ -20,12 +19,9 @@ DockerExecResult = namedtuple("DockerExecResult",
 
 
 class Docker(object):
-    def __init__(self, config, swarm_config, logger=None):
+    def __init__(self, config, swarm_config):
         self.config = config
         self.swarm_config = swarm_config
-        self.logger = logger or logging.getLogger(
-            "{}.{}".format(__name__, self.__class__.__name__),
-        )
         self.registry_base_url = REGISTRY_BASE_URL
 
     def image_exists(self, name):
@@ -41,8 +37,6 @@ class Docker(object):
     def setup_container(self, name, image, env=None, port_bindings=None,
                         volumes=None, dns=None, dns_search=None, ulimits=None,
                         hostname=None):
-        self.logger.info("creating container {!r}".format(name))
-
         image = "{}/{}".format(self.registry_base_url, image)
 
         # pull the image first if not exist
@@ -101,7 +95,6 @@ class Docker(object):
             while True:
                 try:
                     output = resp.next()
-                    self.logger.info(output)
                 except StopIteration:
                     break
 
@@ -159,12 +152,9 @@ class Docker(object):
                 hostname=hostname,
             )
             container_id = container["Id"]
-            self.logger.info("container {!r} has been created".format(name))
 
             if container_id:
                 client.start(container=container_id)
-                self.logger.info("container {!r} with ID {!r} "
-                                 "has been started".format(name, container_id))
             return container_id
 
     def copy_to_container(self, container, src, dest):

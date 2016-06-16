@@ -7,14 +7,8 @@ import re
 
 from marshmallow import validates
 from marshmallow import ValidationError
-# from netaddr import AddrFormatError
-# from netaddr import IPNetwork
 
 from ..extensions import ma
-
-# WEAVE_NETWORK_RE = re.compile(
-#     r"[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/[0-9]{1,2}"
-# )
 
 # cluster name
 #
@@ -35,7 +29,6 @@ class ClusterReq(ma.Schema):
     state = ma.Str(required=True)
     admin_email = ma.Email(required=True)
     admin_pw = ma.Str(required=True)
-    # weave_ip_network = ma.Str(required=True)
 
     @validates("country_code")
     def validate_country_code(self, value):
@@ -45,22 +38,6 @@ class ClusterReq(ma.Schema):
         """
         if len(value) != 2:
             raise ValidationError("requires 2 characters")
-
-    # @validates("weave_ip_network")
-    # def validate_weave_ip_network(self, value):
-    #     """Validates cluster's weave IP network.
-
-    #     :param value: Cluster's weave IP network.
-    #     """
-    #     # allow only IPv4 for now
-    #     if not WEAVE_NETWORK_RE.match(value):
-    #         raise ValidationError("invalid IP network address format")
-
-    #     # check if IP is supported by ``netaddr``
-    #     try:
-    #         IPNetwork(value)
-    #     except AddrFormatError as exc:
-    #         raise ValidationError(exc.message)
 
     @validates("admin_pw")
     def validate_admin_pw(self, value):

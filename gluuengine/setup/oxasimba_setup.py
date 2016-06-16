@@ -62,7 +62,7 @@ environment=CATALINA_PID=/var/run/tomcat.pid
 command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /etc/apache2/envvars && /usr/sbin/apache2ctl -DFOREGROUND\\"
 """
 
-        self.logger.info("adding supervisord entry")
+        self.logger.debug("adding supervisord entry")
         cmd = '''sh -c "echo '{}' >> /etc/supervisor/conf.d/supervisord.conf"'''.format(payload)
         self.docker.exec_cmd(self.container.cid, cmd)
 
@@ -142,13 +142,13 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
         for src in files:
             fn = os.path.basename(src)
             dest = "/opt/idp/metadata/{}".format(fn)
-            self.logger.info("copying {}".format(fn))
+            self.logger.debug("copying {}".format(fn))
             self.docker.copy_to_container(self.container.cid, src, dest)
 
     def discover_nginx(self):
         """Discovers nginx container.
         """
-        self.logger.info("discovering available nginx container")
+        self.logger.debug("discovering available nginx container")
         with self.app.app_context():
             if self.cluster.count_containers(type_="nginx"):
                 self.import_nginx_cert()

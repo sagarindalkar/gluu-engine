@@ -6,6 +6,7 @@
 '''The app module, containing the app factory function.'''
 import os
 
+from crochet import setup as crochet_setup
 from flask import Flask
 
 from .settings import ProdConfig
@@ -32,6 +33,9 @@ from .resource import ContainerResource
 from .resource import NewContainerResource
 from .resource import ScaleContainerResource
 from .database import db
+from .setup.signals import connect_setup_signals
+from .setup.signals import connect_teardown_signals
+# from .log import configure_global_logging
 
 
 def _get_config_object(api_env=""):
@@ -47,6 +51,8 @@ def _get_config_object(api_env=""):
 
 
 def create_app():
+    # configure_global_logging()
+
     api_env = os.environ.get("API_ENV")
 
     app = Flask(__name__)
@@ -62,6 +68,14 @@ def create_app():
 
     register_resources()
     register_extensions(app)
+
+    crochet_setup()
+
+    # if not app.debug:
+    #     LicenseWatcherTask(app).perform_job()
+
+    connect_setup_signals()
+    connect_teardown_signals()
     return app
 
 
@@ -72,11 +86,6 @@ def register_extensions(app):
 
 
 def register_resources():
-    #ARG,
-    #node_type : master|worker|kv
-    #POST,
-    #name : name (for kv name must be gluu.discovery)
-    #provider_id : id
     restapi.add_resource(CreateNodeResource,
                          '/nodes/<string:node_type>',
                          endpoint='create_node')

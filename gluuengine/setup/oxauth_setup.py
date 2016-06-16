@@ -34,7 +34,7 @@ environment=CATALINA_PID=/var/run/tomcat.pid
 command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /etc/apache2/envvars && /usr/sbin/apache2ctl -DFOREGROUND\\"
 """
 
-        self.logger.info("adding supervisord entry")
+        self.logger.debug("adding supervisord entry")
         cmd = '''sh -c "echo '{}' >> /etc/supervisor/conf.d/supervisord.conf"'''.format(payload)
         self.docker.exec_cmd(self.container.cid, cmd)
 
@@ -114,7 +114,7 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
                 src = os.path.join(root, fn)
                 dest = src.replace(self.app.config["OXAUTH_OVERRIDE_DIR"],
                                    "/var/gluu/webapps/oxauth")
-                self.logger.info("copying {} to {}:{}".format(
+                self.logger.debug("copying {} to {}:{}".format(
                     src, self.container.name, dest,
                 ))
                 self.docker.exec_cmd(

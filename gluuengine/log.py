@@ -39,7 +39,7 @@ def create_file_logger(filepath="", log_level=logging.DEBUG, name=""):
     return logger
 
 
-def configure_global_logging(logfile=None):  # pragma: no cover
+def configure_global_logging():  # pragma: no cover
     """Configure logging globally.
     """
     handlers = {
@@ -49,16 +49,6 @@ def configure_global_logging(logfile=None):  # pragma: no cover
             "formatter": "simple",
         },
     }
-    if logfile:
-        handlers["file"] = {
-            "level": "INFO",
-            "class": "logging.handlers.TimedRotatingFileHandler",
-            "filename": logfile,
-            "when": "d",
-            "interval": 1,
-            "backupCount": 1,
-            "formatter": "simple",
-        }
 
     log_config = {
         "version": 1,

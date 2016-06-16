@@ -48,7 +48,6 @@ class BaseSetup(object):
         self.docker = Docker(
             self.machine.config(self.node.name),
             self.machine.swarm_config(master_node.name),
-            logger=self.logger,
         )
 
     def setup(self):  # pragma: no cover
@@ -63,8 +62,8 @@ class BaseSetup(object):
     def remove_build_dir(self):
         """Deletes temporary build directory.
         """
-        self.logger.info("removing temporary build "
-                         "directory {}".format(self.build_dir))
+        self.logger.debug("removing temporary build "
+                          "directory {}".format(self.build_dir))
         try:
             shutil.rmtree(self.build_dir)
         except OSError:  # pragma: no cover
@@ -87,7 +86,7 @@ class BaseSetup(object):
         with codecs.open(local, "w", encoding="utf-8") as fp:
             fp.write(rendered_content)
 
-        self.logger.info("rendering {}".format(file_basename))
+        self.logger.debug("rendering {}".format(file_basename))
         self.docker.copy_to_container(self.container.cid, local, dest)
 
     def gen_cert(self, suffix, password, user, group, hostname):
@@ -99,7 +98,7 @@ class BaseSetup(object):
         :param group: Group who owns the certificate.
         :param hostname: Hostname used for CN (Common Name) value.
         """
-        self.logger.info("generating certificates for {}".format(suffix))
+        self.logger.debug("generating certificates for {}".format(suffix))
         key_with_password = "{}/{}.key.orig".format(self.container.cert_folder, suffix)
         key = "{}/{}.key".format(self.container.cert_folder, suffix)
         csr = "{}/{}.csr".format(self.container.cert_folder, suffix)
@@ -152,7 +151,7 @@ class BaseSetup(object):
         crt_cmd = '''sh -c "{}"'''.format(crt_cmd)
         self.docker.exec_cmd(self.container.cid, crt_cmd)
 
-        self.logger.info("changing access to {} certificates".format(suffix))
+        self.logger.debug("changing access to {} certificates".format(suffix))
         self.docker.exec_cmd(
             self.container.cid,
             "chown {}:{} {}".format(user, group, key_with_password),
@@ -176,7 +175,7 @@ class BaseSetup(object):
         :param user: User who owns the certificates.
         :param group: Group who owns the certificates.
         """
-        self.logger.info("changing access to {}".format(self.container.cert_folder))
+        self.logger.debug("changing access to {}".format(self.container.cert_folder))
         self.docker.exec_cmd(
             self.container.cid,
             "chown -R {}:{} {}".format(user, group, self.container.cert_folder),
@@ -229,7 +228,7 @@ class BaseSetup(object):
         with codecs.open(local, "w", encoding="utf-8") as fp:
             fp.write(rendered_content)
 
-        self.logger.info("rendering {}".format(file_basename))
+        self.logger.debug("rendering {}".format(file_basename))
         self.docker.copy_to_container(self.container.cid, local, dest)
 
     def reload_supervisor(self):
@@ -244,7 +243,7 @@ class BaseSetup(object):
 
     def ldap_failover_hostname(self):
         # get hostname for ldap failover
-        weave = Weave(self.node, self.app, logger=self.logger)
+        weave = Weave(self.node, self.app)
         _, dns_search = weave.dns_args()
         hostname = "ldap.{}".format(dns_search.rstrip("."))
         return hostname
@@ -254,7 +253,7 @@ class OxSetup(BaseSetup):
     def write_salt_file(self):
         """Copies salt file.
         """
-        self.logger.info("writing salt file")
+        self.logger.debug("writing salt file")
 
         local_dest = os.path.join(self.build_dir, "salt")
         with codecs.open(local_dest, "w", encoding="utf-8") as fp:
@@ -276,7 +275,7 @@ class OxSetup(BaseSetup):
         :param group: Group who owns the certificate.
         :param hostname: Name of the certificate.
         """
-        self.logger.info("Creating keystore %s" % suffix)
+        self.logger.debug("Creating keystore %s" % suffix)
 
         # Convert key to pkcs12
         pkcs_fn = '%s/%s.pkcs12' % (self.container.cert_folder, suffix)
@@ -304,7 +303,7 @@ class OxSetup(BaseSetup):
         ])
         self.docker.exec_cmd(self.container.cid, import_cmd)
 
-        self.logger.info("changing access to keystore file")
+        self.logger.debug("changing access to keystore file")
         self.docker.exec_cmd(
             self.container.cid, "chown {}:{} {}".format(user, group, pkcs_fn)
         )
@@ -345,7 +344,7 @@ class OxSetup(BaseSetup):
     def import_nginx_cert(self):
         """Imports SSL certificate from nginx container.
         """
-        self.logger.info("importing nginx cert to {}".format(self.container.name))
+        self.logger.debug("importing nginx cert to {}".format(self.container.name))
 
         # imports nginx cert into oxtrust cacerts to avoid
         # "peer not authenticated" error

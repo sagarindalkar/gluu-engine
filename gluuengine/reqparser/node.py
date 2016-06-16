@@ -5,10 +5,8 @@
 
 import re
 
-# from marshmallow import post_load
 from marshmallow import validates
 from marshmallow import ValidationError
-# from marshmallow.validate import OneOf
 
 from ..database import db
 from ..extensions import ma

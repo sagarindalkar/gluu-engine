@@ -83,6 +83,9 @@ class BaseContainerHelper(object):
 
     @run_in_reactor
     def setup(self, connect_delay=10, exec_delay=15):
+        self.mp_setup()
+
+    def mp_setup(self, connect_delay=10, exec_delay=15):
         """Runs the container setup.
 
         :param connect_delay: Time to wait before start connecting to minion.

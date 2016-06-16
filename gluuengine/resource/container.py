@@ -6,12 +6,14 @@
 import os
 import time
 import uuid
+from itertools import cycle
 
 from flask import abort
 from flask import current_app
 from flask import request
 from flask import url_for
 from flask_restful import Resource
+import concurrent.futures
 
 from ..database import db
 from ..reqparser import ContainerReq
@@ -418,3 +420,94 @@ class ContainerLogListResource(Resource):
     def get(self):
         container_logs = db.all("container_logs")
         return [container_log.as_dict() for container_log in container_logs]
+
+
+class ScaleContainerResource(Resource):
+    SCALE_ENABLE_CONTAINERS = (
+        "oxauth",
+        "oxidp",
+    )
+
+    helper_classes = {
+        "oxauth": OxauthContainerHelper,
+        "oxidp": OxidpContainerHelper,
+    }
+
+    container_classes = {
+        "oxauth": OxauthContainer,
+        "oxidp": OxidpContainer,
+    }
+
+    def get_running_nodes(self):
+        m = Machine()
+        running_nodes = m.list('running')
+        running_nodes.remove('gluu.discovery')
+        return running_nodes
+
+    def setup_obj_generator(self, app, container_type, number, cluster_id, node_id_pool):
+        for i in xrange(number):
+            container_class = self.container_classes[container_type]
+            container = container_class()
+            container.cluster_id = cluster_id
+            container.node_id = node_id_pool.next()
+            container.name = "{}_{}".format(container.image, uuid.uuid4())
+            container.state = STATE_IN_PROGRESS
+            db.persist(container, "containers")
+            
+            # log related setup
+            container_log = ContainerLog.create_or_get(container)
+            container_log.state = STATE_SETUP_IN_PROGRESS
+            container_log.setup_log_url = url_for(
+                "containerlog_setup",
+                id=container_log.id,
+                _external=True,
+            )
+            db.update(container_log.id, container_log, "container_logs")
+            logpath = os.path.join(app.config["CONTAINER_LOG_DIR"],
+                                   container_log.setup_log)
+
+            # make the setup obj
+            helper_class = self.helper_classes[container_type]
+            helper = helper_class(container, app, logpath)
+            yield helper
+
+    def post(self, container_type, number):
+        app = current_app._get_current_object()
+        #validate container type
+        if container_type not in self.SCALE_ENABLE_CONTAINERS:
+            abort(404)
+
+        #validate number
+        if not isinstance(number, (int, long) ):
+            abort(404)
+
+        try:
+            cluster = db.all("clusters")[0]
+        except IndexError:
+            return {
+                "status": 403,
+                "message": "container deployment requires a cluster",
+            }, 403
+
+        #get id list of running nodes
+        running_nodes = self.get_running_nodes()
+        running_nodes_ids = []
+        nodes = db.search_from_table('nodes', {"$or": [{"type": "master"}, {"type": "worker"}]})
+        for node in nodes:
+            if node.name in running_nodes:
+                running_nodes_ids.append(node.id)
+
+        #make a circular id list of running nodes
+        node_id_pool = cycle(running_nodes_ids)
+
+        #make a list of container setup object
+        setup_obj_generator = self.setup_obj_generator(app, container_type, number, cluster.id, node_id_pool)
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
+            for setup_obj in setup_obj_generator:
+                executor.submit(setup_obj.setup)
+
+        return {
+                "status": 202,
+                "message": 'deploying {} {}'.format(number, container_type),
+        }, 202

@@ -30,6 +30,7 @@ from .resource import ContainerLogListResource
 from .resource import ContainerListResource
 from .resource import ContainerResource
 from .resource import NewContainerResource
+from .resource import ScaleContainerResource
 from .database import db
 
 
@@ -139,4 +140,8 @@ def register_resources():
     restapi.add_resource(NewContainerResource,
                          "/containers/<string:container_type>",
                          endpoint="new_container",
+                         )
+    restapi.add_resource(ScaleContainerResource,
+                         "/scale-containers/<string:container_type>/<int:number>",
+                         endpoint="scale_container",
                          )

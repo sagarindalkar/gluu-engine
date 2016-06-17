@@ -13,6 +13,7 @@ from flask import request
 from flask import url_for
 from flask_restful import Resource
 import concurrent.futures
+from crochet import run_in_reactor
 
 from ..database import db
 from ..reqparser import ContainerReq
@@ -431,31 +432,41 @@ class ScaleContainerResource(Resource):
         return running_nodes
 
     def setup_obj_generator(self, app, container_type, number, cluster_id, node_id_pool):
-        for i in xrange(number):
-            container_class = self.container_classes[container_type]
-            container = container_class()
-            container.cluster_id = cluster_id
-            container.node_id = node_id_pool.next()
-            container.name = "{}_{}".format(container.image, uuid.uuid4())
-            container.state = STATE_IN_PROGRESS
-            db.persist(container, "containers")
+        with app.app_context():
+            for i in xrange(number):
+                container_class = self.container_classes[container_type]
+                container = container_class()
+                container.cluster_id = cluster_id
+                container.node_id = node_id_pool.next()
+                container.name = "{}_{}".format(container.image, uuid.uuid4())
+                container.state = STATE_IN_PROGRESS
+                db.persist(container, "containers")
 
-            # log related setup
-            container_log = ContainerLog.create_or_get(container)
-            container_log.state = STATE_SETUP_IN_PROGRESS
-            container_log.setup_log_url = url_for(
-                "containerlog_setup",
-                id=container_log.id,
-                _external=True,
-            )
-            db.update(container_log.id, container_log, "container_logs")
-            logpath = os.path.join(app.config["CONTAINER_LOG_DIR"],
-                                   container_log.setup_log)
+                # log related setup
+                container_log = ContainerLog.create_or_get(container)
+                container_log.state = STATE_SETUP_IN_PROGRESS
+                
+                #TODO ref, http://pastebin.com/aZS14GUb
+                #FIXME flask context problem
+                # container_log.setup_log_url = url_for(
+                #     "containerlog_setup",
+                #     id=container_log.id,
+                #     _external=True,
+                # )
+                db.update(container_log.id, container_log, "container_logs")
+                logpath = os.path.join(app.config["CONTAINER_LOG_DIR"],
+                                       container_log.setup_log)
 
-            # make the setup obj
-            helper_class = self.helper_classes[container_type]
-            helper = helper_class(container, app, logpath)
-            yield helper
+                # make the setup obj
+                helper_class = self.helper_classes[container_type]
+                helper = helper_class(container, app, logpath)
+                yield helper
+
+    @run_in_reactor
+    def scaleosorus(self, setup_obj_generator):
+        with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
+            for setup_obj in setup_obj_generator:
+                executor.submit(setup_obj.mp_setup)
 
     def post(self, container_type, number):
         app = current_app._get_current_object()
@@ -494,9 +505,7 @@ class ScaleContainerResource(Resource):
         #make a list of container setup object
         setup_obj_generator = self.setup_obj_generator(app, container_type, number, cluster.id, node_id_pool)
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
-            for setup_obj in setup_obj_generator:
-                executor.submit(setup_obj.mp_setup)
+        self.scaleosorus(setup_obj_generator)
 
         return {
             "status": 202,

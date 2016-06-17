@@ -35,7 +35,7 @@ from .resource import ScaleContainerResource
 from .database import db
 from .setup.signals import connect_setup_signals
 from .setup.signals import connect_teardown_signals
-# from .log import configure_global_logging
+from .log import configure_global_logging
 
 
 def _get_config_object(api_env=""):
@@ -51,7 +51,7 @@ def _get_config_object(api_env=""):
 
 
 def create_app():
-    # configure_global_logging()
+    configure_global_logging()
 
     api_env = os.environ.get("API_ENV")
 

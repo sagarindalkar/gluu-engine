@@ -439,7 +439,7 @@ class ScaleContainerResource(Resource):
             container.name = "{}_{}".format(container.image, uuid.uuid4())
             container.state = STATE_IN_PROGRESS
             db.persist(container, "containers")
-            
+
             # log related setup
             container_log = ContainerLog.create_or_get(container)
             container_log.state = STATE_SETUP_IN_PROGRESS
@@ -463,9 +463,11 @@ class ScaleContainerResource(Resource):
         if container_type not in self.SCALE_ENABLE_CONTAINERS:
             abort(404)
 
-        #validate number
-        if not isinstance(number, (int, long) ):
-            abort(404)
+        if number <= 0:
+            return {
+                "status": 403,
+                "message": "cannot deploy 0 or lower number of container",
+            }, 403
 
         try:
             cluster = db.all("clusters")[0]
@@ -476,12 +478,15 @@ class ScaleContainerResource(Resource):
             }, 403
 
         #get id list of running nodes
-        running_nodes = self.get_running_nodes()
-        running_nodes_ids = []
         nodes = db.search_from_table('nodes', {"$or": [{"type": "master"}, {"type": "worker"}]})
-        for node in nodes:
-            if node.name in running_nodes:
-                running_nodes_ids.append(node.id)
+        if not nodes:
+            return {
+                "status": 403,
+                "message": "container deployment requires nodes",
+            }, 403
+
+        running_nodes = self.get_running_nodes()
+        running_nodes_ids = [node.id for node in nodes if node.name in running_nodes]
 
         #make a circular id list of running nodes
         node_id_pool = cycle(running_nodes_ids)
@@ -494,6 +499,6 @@ class ScaleContainerResource(Resource):
                 executor.submit(setup_obj.mp_setup)
 
         return {
-                "status": 202,
-                "message": 'deploying {} {}'.format(number, container_type),
+            "status": 202,
+            "message": 'deploying {} {}'.format(number, container_type),
         }, 202

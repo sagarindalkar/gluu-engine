@@ -160,13 +160,7 @@ class ContainerResource(Resource):
 
         container_log = ContainerLog.create_or_get(container)
         container_log.state = STATE_TEARDOWN_IN_PROGRESS
-        container_log.teardown_log_url = url_for(
-            "containerlog_teardown",
-            id=container_log.id,
-            _external=True,
-        )
         db.update(container_log.id, container_log, "container_logs")
-
         logpath = os.path.join(app.config["CONTAINER_LOG_DIR"],
                                container_log.teardown_log)
 
@@ -176,7 +170,11 @@ class ContainerResource(Resource):
         helper.teardown()
 
         headers = {
-            "X-Container-Teardown-Log": container_log.teardown_log_url,
+            "X-Container-Teardown-Log": url_for(
+                "containerlog_teardown",
+                id=container_log.id,
+                _external=True,
+            ),
         }
         return {}, 204, headers
 
@@ -308,13 +306,7 @@ class NewContainerResource(Resource):
         # log related setup
         container_log = ContainerLog.create_or_get(container)
         container_log.state = STATE_SETUP_IN_PROGRESS
-        container_log.setup_log_url = url_for(
-            "containerlog_setup",
-            id=container_log.id,
-            _external=True,
-        )
         db.update(container_log.id, container_log, "container_logs")
-
         logpath = os.path.join(app.config["CONTAINER_LOG_DIR"],
                                container_log.setup_log)
 
@@ -324,10 +316,40 @@ class NewContainerResource(Resource):
         helper.setup()
 
         headers = {
-            "X-Container-Setup-Log": container_log.setup_log_url,
+            "X-Container-Setup-Log": url_for(
+                "containerlog_setup",
+                id=container_log.id,
+                _external=True,
+            ),
             "Location": url_for("container", container_id=container.name),
         }
         return container.as_dict(), 202, headers
+
+
+def format_container_log_response(container_log):
+    app = current_app._get_current_object()
+
+    setup_log = os.path.join(app.config["CONTAINER_LOG_DIR"],
+                             container_log.setup_log)
+    teardown_log = os.path.join(app.config["CONTAINER_LOG_DIR"],
+                                container_log.teardown_log)
+
+    resp = container_log.as_dict()
+
+    if os.path.exists(setup_log):
+        resp["setup_log_url"] = url_for(
+            "containerlog_setup",
+            id=container_log.id,
+            _external=True,
+        )
+
+    if os.path.exists(teardown_log):
+        resp["teardown_log_url"] = url_for(
+            "containerlog_teardown",
+            id=container_log.id,
+            _external=True,
+        )
+    return resp
 
 
 class ContainerLogResource(Resource):
@@ -335,7 +357,7 @@ class ContainerLogResource(Resource):
         container_log = db.get(id, "container_logs")
         if not container_log:
             return {"status": 404, "message": "Container log not found"}, 404
-        return container_log.as_dict()
+        return format_container_log_response(container_log)
 
     def delete(self, id):
         container_log = db.get(id, "container_logs")
@@ -371,7 +393,7 @@ class ContainerLogSetupResource(Resource):
 
         try:
             with open(abs_logpath) as fp:
-                resp = container_log.as_dict()
+                resp = format_container_log_response(container_log)
                 resp["setup_log_contents"] = [line.strip() for line in fp]
                 return resp
         except IOError:
@@ -393,7 +415,7 @@ class ContainerLogTeardownResource(Resource):
 
         try:
             with open(abs_logpath) as fp:
-                resp = container_log.as_dict()
+                resp = format_container_log_response(container_log)
                 resp["teardown_log_contents"] = [line.strip() for line in fp]
                 return resp
         except IOError:
@@ -406,7 +428,10 @@ class ContainerLogTeardownResource(Resource):
 class ContainerLogListResource(Resource):
     def get(self):
         container_logs = db.all("container_logs")
-        return [container_log.as_dict() for container_log in container_logs]
+        return [
+            format_container_log_response(container_log)
+            for container_log in container_logs
+        ]
 
 
 class ScaleContainerResource(Resource):
@@ -445,14 +470,6 @@ class ScaleContainerResource(Resource):
                 # log related setup
                 container_log = ContainerLog.create_or_get(container)
                 container_log.state = STATE_SETUP_IN_PROGRESS
-                
-                #TODO ref, http://pastebin.com/aZS14GUb
-                #FIXME flask context problem
-                # container_log.setup_log_url = url_for(
-                #     "containerlog_setup",
-                #     id=container_log.id,
-                #     _external=True,
-                # )
                 db.update(container_log.id, container_log, "container_logs")
                 logpath = os.path.join(app.config["CONTAINER_LOG_DIR"],
                                        container_log.setup_log)

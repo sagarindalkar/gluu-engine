@@ -50,6 +50,34 @@ def configure_global_logging():  # pragma: no cover
         },
     }
 
+    loggers = {
+        "gluuengine": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "werkzeug": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "twisted": {
+            "handlers": ["console"],
+            "level": "ERROR",
+            "propagate": False,
+        },
+        "gunicorn.access": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "gunicorn.error": {
+            "handlers": ["console"],
+            "level": "ERROR",
+            "propagate": False,
+        },
+    }
+
     log_config = {
         "version": 1,
         "disable_existing_loggers": True,
@@ -59,20 +87,6 @@ def configure_global_logging():  # pragma: no cover
             },
         },
         "handlers": handlers,
-        "loggers": {
-            "gluuengine": {
-                "handlers": handlers.keys(),
-                "propagate": True,
-                "level": "INFO",
-            },
-            "werkzeug": {
-                "handlers": handlers.keys(),
-                "level": "INFO",
-            },
-            "twisted": {
-                "handlers": handlers.keys(),
-                "level": "ERROR",
-            },
-        },
+        "loggers": loggers,
     }
     logging.config.dictConfig(log_config)

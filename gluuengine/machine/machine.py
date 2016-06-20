@@ -100,6 +100,7 @@ class Machine(object):
         cmd = [
             "create",
             "--driver={}".format(provider.driver),
+            '--engine-install-url="https://raw.githubusercontent.com/GluuFederation/cluster-tools/master/get_docker.sh"'
         ]
 
         if provider.driver == 'generic':

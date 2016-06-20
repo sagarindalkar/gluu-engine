@@ -40,12 +40,12 @@ setup(
         "docker-py>=1.8.0",
         "jsonpickle",
         "m2crypto",
-        "daemonocle",
         "marshmallow",
         "flask_marshmallow",
         "blinker",
         "flask-pymongo",
         "gunicorn",
+        "futures",
     ],
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",

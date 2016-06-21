@@ -50,6 +50,10 @@ class DeployDiscoveryNode(object):
             time.sleep(1)
         self._is_completed()
 
+        for handler in self.logger.handlers:
+            handler.close()
+            self.logger.removeHandler(handler)
+
     def _node_create(self):
         try:
             self.logger.info('creating discovery node')
@@ -118,6 +122,10 @@ class DeployMasterNode(object):
                 self._recovery()
                 time.sleep(1)
         self._is_completed()
+
+        for handler in self.logger.handlers:
+            handler.close()
+            self.logger.removeHandler(handler)
 
     def _is_completed(self):
         if (self.node.state_node_create
@@ -293,6 +301,10 @@ class DeployWorkerNode(object):
                 self._recovery()
                 time.sleep(1)
         self._is_completed()
+
+        for handler in self.logger.handlers:
+            handler.close()
+            self.logger.removeHandler(handler)
 
     def _is_completed(self):
         if (self.node.state_node_create

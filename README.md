@@ -13,9 +13,9 @@ __NOTE__: The `master` branch is used for unreleased version. For __v0.4.x__ rel
 ### Ubuntu packages
 
 ```
-echo "deb http://repo.gluu.org/ubuntu/ trusty-devel main" | sudo tee /etc/apt/sources.list.d/gluu-repo.list
-curl -s https://repo.gluu.org/ubuntu/gluu-apt.key | sudo apt-key add -
-apt-get install -y python-pip python-dev swig libsasl2-dev libssl-dev openjdk-7-jre-headless oxd-license-validator
+echo "deb http://repo.gluu.org/ubuntu/ trusty-devel main" | tee /etc/apt/sources.list.d/gluu-repo.list
+curl -s https://repo.gluu.org/ubuntu/gluu-apt.key | apt-key add -
+apt-get install -y git python-virtualenv python-dev swig libssl-dev openjdk-7-jre-headless oxd-license-validator
 ```
 
 ### Docker Engine

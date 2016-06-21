@@ -2,7 +2,7 @@
 
 Here you can see the full list of changes between each gluu-flask release.
 
-## Version 0.5.0 (beta2)
+## Version 0.5.0 (beta3)
 
 Release date to be announced later.
 
@@ -23,7 +23,7 @@ WARNING: this release is a non-backward compatible with older releases.
 *   `gluuoxauth` image is upgraded to v2.4.3.
 *   `gluuoxtrust` image is upgraded to v2.4.3.
 *   `gluuoxidp` image is upgraded to v2.4.3.
-*   Docker Engine is upgraded to v1.11.1.
+*   Docker Engine is upgraded to v1.11.2.
 *   Speed up image downloads/updates by pulling them from Gluu's private registry.
 *   Removed `X-Deploy-Log` header from Container API response in favor of `X-Container-Setup-Log`
 *   Introduced `X-Container-Teardown-Log` header.

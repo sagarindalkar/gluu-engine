@@ -8,7 +8,9 @@ import re
 from .database import db
 from .machine import Machine
 
-DNS_ARGS_RE = re.compile(r"--dns (.+) --dns-search=(.+)")
+# older weave dns-args returns --dns x.x.x.x --dns-search=weave.local.
+# whereas newer weave dns-args returns --dns=x.x.x.x --dns-search=weave.local.
+DNS_ARGS_RE = re.compile(r"--dns[=|\s](.+) --dns-search=(.+)")
 
 
 class Weave(object):

@@ -101,7 +101,8 @@ class MasterNode(Node):
         'state_docker_cert',
         'state_fswatcher',
         'state_recovery',
-        'state_complete'
+        'state_complete',
+        "state_rng_tools",
     ])
 
     def __init__(self, fields=None):
@@ -115,6 +116,7 @@ class MasterNode(Node):
         self.state_fswatcher = False
         self.state_recovery = False
         self.state_complete = False
+        self.state_rng_tools = False
         self.type = 'master'
         self.populate(fields)
         self.resource_fields = dict(self.resource_fields.items() + self.state_fields.items())
@@ -133,7 +135,8 @@ class WorkerNode(Node):
         'state_weave_launch',
         'state_registry_cert',
         'state_recovery',
-        'state_complete'
+        'state_complete',
+        "state_rng_tools",
     ])
 
     def __init__(self, fields=None):
@@ -145,6 +148,7 @@ class WorkerNode(Node):
         self.state_registry_cert = False
         self.state_recovery = False
         self.state_complete = False
+        self.state_rng_tools = False
         self.type = 'worker'
         self.populate(fields)
         self.resource_fields = dict(self.resource_fields.items() + self.state_fields.items())

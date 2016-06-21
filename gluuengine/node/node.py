@@ -21,6 +21,7 @@ FSWATCHER_SCRIPT = "https://github.com/GluuFederation/cluster-tools/raw/master/f
 FSWATCHER_CONF = "https://github.com/GluuFederation/cluster-tools/raw/master/fswatcher/fswatcher.conf"
 RECOVERY_SCRIPT = "https://github.com/GluuFederation/cluster-tools/raw/master/recovery/recovery.py"
 RECOVERY_CONF = "https://github.com/GluuFederation/cluster-tools/raw/master/recovery/recovery.conf"
+RNG_TOOLS_CONF = "https://raw.githubusercontent.com/GluuFederation/cluster-tools/master/rng_tools"
 
 # TODO: put common finctions here and use decerators
 # class DeployNode(object):
@@ -121,6 +122,9 @@ class DeployMasterNode(object):
             if not self.node.state_recovery:
                 self._recovery()
                 time.sleep(1)
+            if not self.node.state_rng_tools:
+                self._rng_tools()
+                time.sleep(1)
         self._is_completed()
 
         for handler in self.logger.handlers:
@@ -128,14 +132,11 @@ class DeployMasterNode(object):
             self.logger.removeHandler(handler)
 
     def _is_completed(self):
-        if (self.node.state_node_create
-                and self.node.state_install_weave
-                and self.node.state_weave_permission
-                and self.node.state_weave_launch
-                and self.node.state_registry_cert
-                and self.node.state_docker_cert
-                and self.node.state_fswatcher
-                and self.node.state_recovery):
+        if all([self.node.state_node_create, self.node.state_install_weave,
+                self.node.state_weave_permission, self.node.state_weave_launch,
+                self.node.state_registry_cert, self.node.state_docker_cert,
+                self.node.state_fswatcher, self.node.state_recovery,
+                self.node.state_rng_tools]):
             self.node.state_complete = True
             self.logger.info('node deployment is done')
             with self.app.app_context():
@@ -192,7 +193,6 @@ class DeployMasterNode(object):
                 self.node.name,
                 r"sudo mkdir -p /etc/docker/certs.d/{}".format(REGISTRY_BASE_URL),
             )
-            #TODO: fix it
             registry_cert = get_registry_cert(
                 os.path.join(self.app.config["REGISTRY_CERT_DIR"], "ca.crt")
             )
@@ -268,6 +268,21 @@ class DeployMasterNode(object):
             self.logger.error('failed to install recovery')
             self.logger.error(e)
 
+    def _rng_tools(self):
+        try:
+            self.logger.info("installing rng-tools in {} node".format(self.node.name))
+            cmd_list = [
+                "sudo wget {} -O /etc/default/rng-tools".format(RNG_TOOLS_CONF),
+                """sudo apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install -y rng-tools""",
+            ]
+            self.machine.ssh(self.node.name, ' && '.join(cmd_list))
+            self.node.state_rng_tools = True
+            with self.app.app_context():
+                db.update(self.node.id, self.node, 'nodes')
+        except RuntimeError as e:
+            self.logger.error('failed to install rng-tools')
+            self.logger.error(e)
+
 
 class DeployWorkerNode(object):
     def __init__(self, node_model_obj, discovery, app):
@@ -300,6 +315,9 @@ class DeployWorkerNode(object):
             if not self.node.state_recovery:
                 self._recovery()
                 time.sleep(1)
+            if not self.node.state_rng_tools:
+                self._rng_tools()
+                time.sleep(1)
         self._is_completed()
 
         for handler in self.logger.handlers:
@@ -307,12 +325,10 @@ class DeployWorkerNode(object):
             self.logger.removeHandler(handler)
 
     def _is_completed(self):
-        if (self.node.state_node_create
-                and self.node.state_install_weave
-                and self.node.state_weave_permission
-                and self.node.state_weave_launch
-                and self.node.state_registry_cert
-                and self.node.state_recovery):
+        if all([self.node.state_node_create, self.node.state_install_weave,
+                self.node.state_weave_permission, self.node.state_weave_launch,
+                self.node.state_registry_cert, self.node.state_recovery,
+                self.node.state_rng_tools]):
             self.node.state_complete = True
             self.logger.info('node deployment is done')
             with self.app.app_context():
@@ -406,4 +422,19 @@ class DeployWorkerNode(object):
                 db.update(self.node.id, self.node, 'nodes')
         except RuntimeError as e:
             self.logger.error('failed to install recovery')
+            self.logger.error(e)
+
+    def _rng_tools(self):
+        try:
+            self.logger.info("installing rng-tools in {} node".format(self.node.name))
+            cmd_list = [
+                "sudo wget {} -O /etc/default/rng-tools".format(RNG_TOOLS_CONF),
+                """sudo apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install -y rng-tools""",
+            ]
+            self.machine.ssh(self.node.name, ' && '.join(cmd_list))
+            self.node.state_rng_tools = True
+            with self.app.app_context():
+                db.update(self.node.id, self.node, 'nodes')
+        except RuntimeError as e:
+            self.logger.error('failed to install rng-tools')
             self.logger.error(e)

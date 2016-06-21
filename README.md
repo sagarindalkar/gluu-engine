@@ -20,21 +20,23 @@ sudo apt-get install -y python-pip python-dev swig libsasl2-dev libssl-dev openj
 
 ### Docker Engine
 
-Follow the guide to install Docker Engine here: https://docs.docker.com/engine/installation/linux/ubuntulinux/.
+```
+apt-get update
+apt-get install apt-transport-https ca-certificates
+apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
+echo "deb https://apt.dockerproject.org/repo ubuntu-trusty main" > /etc/apt/sources.list.d/docker.list
+apt-get update
+apt-get install -y docker-engine=1.11.2-0~trusty
+```
 
 ### Docker Machine
 
-Follow the guide to install Docker Machine here: https://docs.docker.com/machine/install-machine/
+```
+$ curl -L https://github.com/docker/machine/releases/download/v0.7.0/docker-machine-`uname -s`-`uname -m` > /usr/local/bin/docker-machine \
+    && chmod +x /usr/local/bin/docker-machine
+```
 
 ## Deployment
-
-### Install pip and virtualenv
-
-```
-wget -q -O- https://bitbucket.org/pypa/setuptools/raw/bootstrap/ez_setup.py | python -
-wget -q -O- https://raw.github.com/pypa/pip/master/contrib/get-pip.py | python -
-pip install virtualenv
-```
 
 ### Clone the project
 
@@ -43,23 +45,25 @@ $ git clone https://github.com/GluuFederation/gluu-engine.git
 $ cd gluu-engine
 $ virtualenv env
 $ source env/bin/activate
+$ pip install -U pip
 $ pip install -r requirements.txt
 $ python setup.py install
 ```
 
 ## Run
 
-To run the application in foreground, type the following command in the shell:
+For development mode:
 
 ```
 $ source env/bin/activate
-$ gluuengine runserver  # good for development
+$ gunicorn -b 127.0.0.1:8080 --log-level info --access-logfile - --error-logfile - --reload
 ```
 
-For production mode, we can use `gunicorn`:
+For production mode:
 
 ```
-$ gunicorn -b 127.0.0.1:8080 --log-level warning --access-logfile - --error-logfile -
+$ source env/bin/activate
+$ gunicorn -b 127.0.0.1:8080 --log-level warning --access-logfile - --error-logfile - -e API_ENV=prod
 ```
 
 ## Testing

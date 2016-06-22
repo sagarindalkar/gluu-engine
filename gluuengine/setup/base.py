@@ -242,10 +242,35 @@ class BaseSetup(object):
         time.sleep(self.supervisor_reload_delay)
 
     def ldap_failover_hostname(self):
+        return self.ldap_host
+
+    @property
+    def ldap_binddn(self):
+        if self.cluster.external_ldap:
+            return self.cluster.external_ldap_binddn
+        return self.cluster.ldap_binddn
+
+    @property
+    def encoded_ox_ldap_pw(self):
+        if self.cluster.external_ldap:
+            return self.cluster.external_ldap_encoded_password
+        return self.cluster.encoded_ox_ldap_pw
+
+    @property
+    def inum_appliance(self):
+        if self.cluster.external_ldap:
+            return self.cluster.external_ldap_inum_appliance
+        return self.cluster.inum_appliance
+
+    @property
+    def ldap_host(self):
         # get hostname for ldap failover
-        weave = Weave(self.node, self.app)
-        _, dns_search = weave.dns_args()
-        hostname = "ldap.{}".format(dns_search.rstrip("."))
+        if self.cluster.external_ldap:
+            hostname = self.cluster.external_ldap_host
+        else:
+            weave = Weave(self.node, self.app)
+            _, dns_search = weave.dns_args()
+            hostname = "ldap.{}".format(dns_search.rstrip("."))
         return hostname
 
 
@@ -253,11 +278,16 @@ class OxSetup(BaseSetup):
     def write_salt_file(self):
         """Copies salt file.
         """
+        if self.cluster.external_ldap:
+            salt = self.cluster.external_encoded_salt
+        else:
+            salt = self.cluster.passkey
+
         self.logger.debug("writing salt file")
 
         local_dest = os.path.join(self.build_dir, "salt")
         with codecs.open(local_dest, "w", encoding="utf-8") as fp:
-            fp.write("encodeSalt = {}".format(self.cluster.passkey))
+            fp.write("encodeSalt = {}".format(salt))
 
         remote_dest = os.path.join(self.container.tomcat_conf_dir, "salt")
         self.docker.copy_to_container(self.container.cid, local_dest, remote_dest)
@@ -321,10 +351,10 @@ class OxSetup(BaseSetup):
         dest = os.path.join(self.container.tomcat_conf_dir, os.path.basename(src))
 
         ctx = {
-            "ldap_binddn": self.container.ldap_binddn,
-            "encoded_ox_ldap_pw": self.cluster.encoded_ox_ldap_pw,
+            "ldap_binddn": self.ldap_binddn,
+            "encoded_ox_ldap_pw": self.encoded_ox_ldap_pw,
             "ldap_hosts": "{}:{}".format(self.ldap_failover_hostname(), self.cluster.ldaps_port),
-            "inum_appliance": self.cluster.inum_appliance,
+            "inum_appliance": self.inum_appliance,
             "cert_folder": self.container.cert_folder,
         }
         self.copy_rendered_jinja_template(src, dest, ctx)

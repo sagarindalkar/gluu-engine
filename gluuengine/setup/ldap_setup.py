@@ -84,10 +84,10 @@ class LdapSetup(BaseSetup):
         ctx = {
             "ldap_hostname": self.ldap_failover_hostname(),
             "ldap_port": self.container.ldap_port,
-            "ldaps_port": self.container.ldaps_port,
+            "ldaps_port": self.cluster.ldaps_port,
             "ldap_jmx_port": self.container.ldap_jmx_port,
             "ldap_admin_port": self.container.ldap_admin_port,
-            "ldap_binddn": self.container.ldap_binddn,
+            "ldap_binddn": self.cluster.ldap_binddn,
             "ldap_pass_fn": self.container.ldap_pass_fn,
             "ldap_backend_type": "local-db",  # we're still using OpenDJ 2.6
         }
@@ -126,7 +126,7 @@ class LdapSetup(BaseSetup):
                 '--no-prompt',
                 '--hostname', self.container.hostname,
                 '--port', self.container.ldap_admin_port,
-                '--bindDN', "'{}'".format(self.container.ldap_binddn),
+                '--bindDN', "'{}'".format(self.cluster.ldap_binddn),
                 '--bindPasswordFile', self.container.ldap_pass_fn,
                 changes,
             ])
@@ -163,7 +163,7 @@ class LdapSetup(BaseSetup):
                         '--set', 'index-entry-limit:4000',
                         '--hostName', self.container.hostname,
                         '--port', self.container.ldap_admin_port,
-                        '--bindDN', "'{}'".format(self.container.ldap_binddn),
+                        '--bindDN', "'{}'".format(self.cluster.ldap_binddn),
                         '-j', self.container.ldap_pass_fn,
                         '--trustAll', '--noPropertiesFile', '--no-prompt',
                     ])
@@ -182,8 +182,8 @@ class LdapSetup(BaseSetup):
             "inum_appliance": self.cluster.inum_appliance,
             "hostname": self.ldap_failover_hostname(),
             "ox_cluster_hostname": self.cluster.ox_cluster_hostname,
-            "ldaps_port": self.container.ldaps_port,
-            "ldap_binddn": self.container.ldap_binddn,
+            "ldaps_port": self.cluster.ldaps_port,
+            "ldap_binddn": self.cluster.ldap_binddn,
             "inum_org": self.cluster.inum_org,
             "inum_org_fn": self.cluster.inum_org_fn,
             "org_name": self.cluster.org_name,
@@ -271,12 +271,12 @@ class LdapSetup(BaseSetup):
                 "/opt/opendj/bin/dsreplication", "enable",
                 "--host1", peer.hostname,
                 "--port1", peer.ldap_admin_port,
-                "--bindDN1", "'{}'".format(peer.ldap_binddn),
+                "--bindDN1", "'{}'".format(self.cluster.ldap_binddn),
                 "--bindPasswordFile1", self.container.ldap_pass_fn,
                 "--replicationPort1", peer.ldap_replication_port,
                 "--host2", self.container.hostname,
                 "--port2", self.container.ldap_admin_port,
-                "--bindDN2", "'{}'".format(self.container.ldap_binddn),
+                "--bindDN2", "'{}'".format(self.cluster.ldap_binddn),
                 "--bindPasswordFile2", self.container.ldap_pass_fn,
                 "--replicationPort2", self.container.ldap_replication_port,
                 "--adminUID", "admin",
@@ -521,7 +521,7 @@ command=/opt/opendj/bin/start-ds --quiet -N
         """
         src = "oxtrust/oxtrust-cache-refresh.json"
         ctx = {
-            "ldap_binddn": self.container.ldap_binddn,
+            "ldap_binddn": self.cluster.ldap_binddn,
             "encoded_ox_ldap_pw": self.cluster.encoded_ox_ldap_pw,
             "ldap_hosts": "{}:{}".format(self.ldap_failover_hostname(), self.cluster.ldaps_port),
         }
@@ -594,7 +594,7 @@ command=/opt/opendj/bin/start-ds --quiet -N
             '--backendID', backend_id,
             '--hostname', self.container.hostname,
             '--port', self.container.ldap_admin_port,
-            '--bindDN', "'{}'".format(self.container.ldap_binddn),
+            '--bindDN', "'{}'".format(self.cluster.ldap_binddn),
             '-j', self.container.ldap_pass_fn,
             "--rejectFile", "/tmp/rejected-{}".format(file_basename),
             '--append',

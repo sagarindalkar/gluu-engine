@@ -22,7 +22,6 @@ class Cluster(BaseModel):
         'name',
         'description',
         'ox_cluster_hostname',
-        'ldaps_port',
         'org_name',
         'org_short_name',
         'country_code',
@@ -34,6 +33,11 @@ class Cluster(BaseModel):
         'inum_org_fn',
         'inum_appliance',
         'inum_appliance_fn',
+        "external_ldap",
+        "external_ldap_host",
+        "external_ldap_port",
+        "external_ldap_binddn",
+        "external_ldap_inum_appliance",
     ])
 
     def __init__(self, fields=None):
@@ -50,6 +54,7 @@ class Cluster(BaseModel):
 
         self.ox_cluster_hostname = fields.get("ox_cluster_hostname")
         self.ldaps_port = "1636"
+        self.ldap_binddn = "cn=directory manager"
 
         # Name of org for X.509 certificate
         self.org_name = fields.get("org_name")
@@ -114,6 +119,37 @@ class Cluster(BaseModel):
         # key store for oxAsimba
         self.encoded_asimba_jks_pw = self.admin_pw
         self.asimba_jks_fn = "/etc/certs/asimbaIDP.jks"
+
+        # a flag to decide whether `external_ldap_*` attributes
+        # should be filled
+        self.external_ldap = fields.get(
+            "external_ldap",
+            False,
+        )
+        self.external_ldap_host = fields.get(
+            "external_ldap_host",
+            "",
+        )
+        self.external_ldap_port = fields.get(
+            "external_ldap_port",
+            "",
+        )
+        self.external_ldap_binddn = fields.get(
+            "external_ldap_binddn",
+            "",
+        )
+        self.external_ldap_encoded_password = fields.get(
+            "external_ldap_encoded_password",
+            "",
+        )
+        self.external_ldap_inum_appliance = fields.get(
+            "external_ldap_inum_appliance",
+            "",
+        )
+        self.external_encoded_salt = fields.get(
+            "external_encoded_salt",
+            "",
+        )
 
     @property
     def decrypted_admin_pw(self):

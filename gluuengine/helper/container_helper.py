@@ -222,6 +222,9 @@ class BaseContainerHelper(object):
 
     @run_in_reactor
     def teardown(self):
+        self.mp_teardown()
+
+    def mp_teardown(self):
         self.logger.info("{} teardown is started".format(self.container.image))
         start = time.time()
 

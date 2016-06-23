@@ -10,6 +10,7 @@ from flask_restful import Resource
 from ..database import db
 from ..model import Cluster
 from ..reqparser import ClusterReq
+from ..reqparser import ClusterUpdateReq
 
 
 class ClusterResource(Resource):
@@ -32,6 +33,38 @@ class ClusterResource(Resource):
         db.delete(cluster_id, "clusters")
         return {}, 204
 
+    def put(self, cluster_id):
+        cluster = db.get(cluster_id, "clusters")
+        if not cluster:
+            return {"status": 404, "message": "Cluster not found"}, 404
+        truthy = set(('t', 'T', 'true', 'True', 'TRUE', '1', 1, True))
+        falsy = set(('f', 'F', 'false', 'False', 'FALSE', '0', 0, 0.0, False))
+        external_ldap = request.form.get("external_ldap", False)
+        if external_ldap in falsy:
+            external_ldap = False
+        elif external_ldap in truthy:
+            external_ldap = True
+        else:
+            external_ldap = False
+
+        data, errors = ClusterUpdateReq(
+            context={"external_ldap": external_ldap},
+        ).load(request.form)
+
+        if errors:
+            return {
+                "status": 400,
+                "message": "Invalid data",
+                "params": errors,
+            }, 400
+
+        # only set attr with user inputs
+        for k, v in data.iteritems():
+            setattr(cluster, k, v)
+
+        db.update(cluster.id, cluster, "clusters")
+        return cluster.as_dict()
+
 
 class ClusterListResource(Resource):
     def get(self):
@@ -43,7 +76,20 @@ class ClusterListResource(Resource):
         if len(db.all("clusters")) >= 1:
             return {"status": 403, "message": "cannot add more cluster"}, 403
 
-        data, errors = ClusterReq().load(request.form)
+        truthy = set(('t', 'T', 'true', 'True', 'TRUE', '1', 1, True))
+        falsy = set(('f', 'F', 'false', 'False', 'FALSE', '0', 0, 0.0, False))
+        external_ldap = request.form.get("external_ldap", False)
+        if external_ldap in falsy:
+            external_ldap = False
+        elif external_ldap in truthy:
+            external_ldap = True
+        else:
+            external_ldap = False
+
+        data, errors = ClusterReq(
+            context={"external_ldap": external_ldap}
+        ).load(request.form)
+
         if errors:
             return {
                 "status": 400,

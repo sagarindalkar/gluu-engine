@@ -18,9 +18,49 @@ from ..extensions import ma
 CLUSTER_NAME_RE = re.compile(r"^[a-zA-Z0-9]+[a-zA-Z0-9-_\.]+[a-zA-Z0-9]$")
 
 
-class ClusterReq(ma.Schema):
+class ExternalLDAPMixin(object):
+    external_ldap = ma.Bool(missing=False)
+    external_ldap_host = ma.Str(missing="")
+    external_ldap_port = ma.Int(missing=0)
+    external_ldap_binddn = ma.Str(missing="")
+    external_ldap_encoded_password = ma.Str(missing="")
+    external_encoded_salt = ma.Str(missing="")
+    external_ldap_inum_appliance = ma.Str(missing="")
+
+    @validates("external_ldap_host")
+    def validate_external_ldap_host(self, value):
+        if self.context.get("external_ldap") and not value:
+            raise ValidationError("Field is required when external_ldap is enabled")
+
+    @validates("external_ldap_port")
+    def validate_external_ldap_port(self, value):
+        if self.context.get("external_ldap") and not value:
+            raise ValidationError("Field is required when external_ldap is enabled")
+
+    @validates("external_ldap_binddn")
+    def validate_external_ldap_binddn(self, value):
+        if self.context.get("external_ldap") and not value:
+            raise ValidationError("Field is required when external_ldap is enabled")
+
+    @validates("external_ldap_inum_appliance")
+    def validate_external_ldap_inum_appliance(self, value):
+        if self.context.get("external_ldap") and not value:
+            raise ValidationError("Field is required when external_ldap is enabled")
+
+    @validates("external_ldap_encoded_password")
+    def validate_external_ldap_encoded_password(self, value):
+        if self.context.get("external_ldap") and not value:
+            raise ValidationError("Field is required when external_ldap is enabled")
+
+    @validates("external_encoded_salt")
+    def validate_external_encoded_salt(self, value):
+        if self.context.get("external_ldap") and not value:
+            raise ValidationError("Field is required when external_ldap is enabled")
+
+
+class ClusterReq(ExternalLDAPMixin, ma.Schema):
     name = ma.Str(required=True)
-    description = ma.Str()
+    description = ma.Str(missing="")
     ox_cluster_hostname = ma.Str(required=True)
     org_name = ma.Str(required=True)
     org_short_name = ma.Str(required=True)
@@ -56,3 +96,7 @@ class ClusterReq(ma.Schema):
         """
         if not CLUSTER_NAME_RE.match(value):
             raise ValidationError("Unaccepted cluster name format")
+
+
+class ClusterUpdateReq(ExternalLDAPMixin, ma.Schema):
+    pass

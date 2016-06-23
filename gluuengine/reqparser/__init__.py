@@ -4,6 +4,7 @@
 # All rights reserved.
 
 from .cluster import ClusterReq  # noqa
+from .cluster import ClusterUpdateReq  # noqa
 from .node import NodeReq  # noqa
 from .provider import GenericProviderReq  # noqa
 from .provider import DigitalOceanProviderReq  # noqa

@@ -17,6 +17,7 @@ from crochet import run_in_reactor
 
 from ..database import db
 from ..reqparser import ContainerReq
+from ..model import STATE_SUCCESS
 from ..model import STATE_IN_PROGRESS
 from ..model import STATE_SETUP_IN_PROGRESS
 from ..model import STATE_TEARDOWN_IN_PROGRESS
@@ -456,6 +457,12 @@ class ScaleContainerResource(Resource):
         running_nodes.remove('gluu.discovery')
         return running_nodes
 
+    def make_node_id_pool(self, nodes):
+        running_nodes = self.get_running_nodes()
+        running_nodes_ids = [node.id for node in nodes if node.name in running_nodes]
+        #make a circular id list of running nodes
+        return cycle(running_nodes_ids)
+
     def setup_obj_generator(self, app, container_type, number, cluster_id, node_id_pool):
         with app.app_context():
             for i in xrange(number):
@@ -513,18 +520,82 @@ class ScaleContainerResource(Resource):
                 "message": "container deployment requires nodes",
             }, 403
 
-        running_nodes = self.get_running_nodes()
-        running_nodes_ids = [node.id for node in nodes if node.name in running_nodes]
-
-        #make a circular id list of running nodes
-        node_id_pool = cycle(running_nodes_ids)
+        node_id_pool = self.make_node_id_pool(nodes)
 
         #make a list of container setup object
-        setup_obj_generator = self.setup_obj_generator(app, container_type, number, cluster.id, node_id_pool)
+        sg = self.setup_obj_generator(app, container_type, number, cluster.id, node_id_pool)
 
-        self.scaleosorus(setup_obj_generator)
+        self.scaleosorus(sg)
 
         return {
             "status": 202,
             "message": 'deploying {} {}'.format(number, container_type),
+        }, 202
+
+    @run_in_reactor
+    def delscaleosorus(self, delete_obj_generator):
+        with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
+            for delete_obj in delete_obj_generator:
+                executor.submit(delete_obj.mp_teardown)
+
+    def delete_obj_genarator(self, app, containers):
+        with app.app_context():
+            for container in containers:
+                db.delete_from_table("containers", {"name": container.name})
+                container_log = ContainerLog.create_or_get(container)
+                container_log.state = STATE_TEARDOWN_IN_PROGRESS
+                db.update(container_log.id, container_log, "container_logs")
+                logpath = os.path.join(app.config["CONTAINER_LOG_DIR"],
+                                       container_log.teardown_log)
+                helper_class = self.helper_classes[container.type]
+                helper = helper_class(container, app, logpath)
+                yield helper
+
+    def delete(self, container_type, number):
+        app = current_app._get_current_object()
+
+        #validate container type
+        if container_type not in self.SCALE_ENABLE_CONTAINERS:
+            abort(404)
+
+        #validate number
+        if number <= 0:
+            return {
+                "status": 403,
+                "message": "cannot deploy 0 or lower number of container",
+            }, 403
+
+        #get the count of requested container type
+        count = db.count_from_table('containers', {'$and': [{'type': container_type}, {'state': STATE_SUCCESS}]})
+        if number > count:
+            return {
+                "status": 403,
+                "message": "delete request number is greater than running containers",
+            }, 403
+
+        #get the list of container object
+        containers = db.search_from_table('containers', {'$and': [{'type': container_type}, {'state': STATE_SUCCESS}]})
+
+        #select and arrange containers
+        nodes = db.search_from_table('nodes', {"$or": [{"type": "master"}, {"type": "worker"}]})
+        node_id_pool = self.make_node_id_pool(nodes)
+
+        containers_reorder = []
+        while True:
+            nid = node_id_pool.next()
+            for con in containers:
+                if con.node_id == nid and con not in containers_reorder:
+                    containers_reorder.append(con)
+                    break
+            if len(containers_reorder) == number:
+                break
+
+        #get a genatator of delete_object
+        dg = self.delete_obj_genarator(app, containers_reorder)
+        #start backgroung delete oparation
+        self.delscaleosorus(dg)
+        
+        return {
+            "status": 202,
+            "message": 'deleting {} {}'.format(number, container_type),
         }, 202

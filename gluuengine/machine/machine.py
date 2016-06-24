@@ -13,7 +13,7 @@ from ..registry import REGISTRY_BASE_URL
 
 LS_FIELDS = ["Name", "Active", "ActiveHost", "ActiveSwarm", "DriverName",
              "State", "URL", "Swarm", "Error", "DockerVersion", "ResponseTime"]
-
+GLUU_GET_DOCKER = 'https://raw.githubusercontent.com/GluuFederation/cluster-tools/master/get_docker.sh'
 
 class Machine(object):
     def __init__(self, path='docker-machine'):
@@ -96,11 +96,14 @@ class Machine(object):
         ])
         return cmd
 
+    def _get_rackspace_cmd(self, provider):
+        pass
+
     def create(self, node, provider, discovery):
         cmd = [
             "create",
             "--driver={}".format(provider.driver),
-            '--engine-install-url="https://raw.githubusercontent.com/GluuFederation/cluster-tools/master/get_docker.sh"'
+            '--engine-install-url="{}"'.format(GLUU_GET_DOCKER),
         ]
 
         if provider.driver == 'generic':

@@ -103,6 +103,7 @@ class MasterNode(Node):
         'state_recovery',
         'state_complete',
         "state_rng_tools",
+        "state_pull_images",
     ])
 
     def __init__(self, fields=None):
@@ -117,6 +118,7 @@ class MasterNode(Node):
         self.state_recovery = False
         self.state_complete = False
         self.state_rng_tools = False
+        self.state_pull_images = False
         self.type = 'master'
         self.populate(fields)
         self.resource_fields = dict(self.resource_fields.items() + self.state_fields.items())
@@ -137,6 +139,7 @@ class WorkerNode(Node):
         'state_recovery',
         'state_complete',
         "state_rng_tools",
+        "state_pull_images",
     ])
 
     def __init__(self, fields=None):
@@ -149,6 +152,7 @@ class WorkerNode(Node):
         self.state_recovery = False
         self.state_complete = False
         self.state_rng_tools = False
+        self.state_pull_images = False
         self.type = 'worker'
         self.populate(fields)
         self.resource_fields = dict(self.resource_fields.items() + self.state_fields.items())

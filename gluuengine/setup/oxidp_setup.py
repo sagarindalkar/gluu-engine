@@ -76,30 +76,37 @@ class OxidpSetup(OxSetup):
     def import_ldap_certs(self):
         """Imports all LDAP certificates.
         """
-        with self.app.app_context():
-            for ldap in self.cluster.get_containers(type_="ldap"):
-                self.logger.debug("importing ldap cert from {}".format(ldap.hostname))
+        def import_certs(host, port):
+            self.logger.debug("importing ldap cert from {}".format(host))
 
-                cert_cmd = "echo -n | openssl s_client -connect {0}:{1} | " \
-                           "sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' " \
-                           "> /etc/certs/{0}.crt".format(ldap.hostname, ldap.ldaps_port)
-                cert_cmd = '''sh -c "{}"'''.format(cert_cmd)
-                self.docker.exec_cmd(self.container.cid, cert_cmd)
+            cert_cmd = "echo -n | openssl s_client -connect {0}:{1} | " \
+                       "sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' " \
+                       "> /etc/certs/{0}.crt".format(host, port)
+            cert_cmd = '''sh -c "{}"'''.format(cert_cmd)
+            self.docker.exec_cmd(self.container.cid, cert_cmd)
 
-                import_cmd = " ".join([
-                    "keytool -importcert -trustcacerts",
-                    "-alias '{}'".format(ldap.hostname),
-                    "-file /etc/certs/{}.crt".format(ldap.hostname),
-                    "-keystore {}".format(self.container.truststore_fn),
-                    "-storepass changeit -noprompt",
-                ])
-                import_cmd = '''sh -c "{}"'''.format(import_cmd)
+            import_cmd = " ".join([
+                "keytool -importcert -trustcacerts",
+                "-alias '{}'".format(host),
+                "-file /etc/certs/{}.crt".format(host),
+                "-keystore {}".format(self.container.truststore_fn),
+                "-storepass changeit -noprompt",
+            ])
+            import_cmd = '''sh -c "{}"'''.format(import_cmd)
 
-                try:
-                    self.docker.exec_cmd(self.container.cid, import_cmd)
-                except DockerExecError as exc:
-                    if exc.exit_code == 1:
-                        pass
+            try:
+                self.docker.exec_cmd(self.container.cid, import_cmd)
+            except DockerExecError as exc:
+                if exc.exit_code == 1:
+                    pass
+
+        if self.cluster.external_ldap:
+            import_certs(self.cluster.external_ldap_host,
+                         self.cluster.external_ldap_port)
+        else:
+            with self.app.app_context():
+                for ldap in self.cluster.get_containers(type_="ldap"):
+                    import_certs(ldap.hostname, self.cluster.ldaps_port)
 
     def render_nutcracker_conf(self):
         """Copies twemproxy configuration into the container.

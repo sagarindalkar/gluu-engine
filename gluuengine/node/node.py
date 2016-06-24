@@ -23,16 +23,8 @@ RECOVERY_SCRIPT = "https://github.com/GluuFederation/cluster-tools/raw/master/re
 RECOVERY_CONF = "https://github.com/GluuFederation/cluster-tools/raw/master/recovery/recovery.conf"
 RNG_TOOLS_CONF = "https://raw.githubusercontent.com/GluuFederation/cluster-tools/master/rng_tools"
 
-# TODO: put common finctions here and use decerators
-# class DeployNode(object):
-#     def __init__(self, node_model_obj, discovery = None):
-#         self.node = node_model_obj
-#         self.logger = create_file_logger(LOGPATH, name=self.node.name)
-#         self.machine = Machine()
-#         self.provider = db.get(self.node.provider_id, 'providers')
-#         self.discovery = discovery
 
-class DeployDiscoveryNode(object):
+class DeployNode(object):
     def __init__(self, node_model_obj, app):
         self.app = app
         self.node = node_model_obj
@@ -40,6 +32,105 @@ class DeployDiscoveryNode(object):
         self.machine = Machine()
         with self.app.app_context():
             self.provider = db.get(self.node.provider_id, 'providers')
+
+    def _rng_tools(self):
+        try:
+            self.logger.info("installing rng-tools in {} node".format(self.node.name))
+            cmd_list = [
+                "sudo wget {} -O /etc/default/rng-tools".format(RNG_TOOLS_CONF),
+                """sudo apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install -y rng-tools""",
+            ]
+            self.machine.ssh(self.node.name, ' && '.join(cmd_list))
+            self.node.state_rng_tools = True
+            with self.app.app_context():
+                db.update(self.node.id, self.node, 'nodes')
+        except RuntimeError as e:
+            self.logger.error('failed to install rng-tools')
+            self.logger.error(e)
+
+    def _pull_images(self):
+        try:
+            self.logger.info("pulling gluu images in {} node".format(self.node.name))
+            cmd_list = [
+                'sudo docker pull {}/gluuoxauth'.format(REGISTRY_BASE_URL),
+                'sudo docker pull {}/gluunginx'.format(REGISTRY_BASE_URL),
+            ]
+            self.machine.ssh(self.node.name, ' && '.join(cmd_list))
+            self.node.state_pull_images = True
+            with self.app.app_context():
+                    db.update(self.node.id, self.node, 'nodes')
+        except RuntimeError as e:
+            self.logger.error('failed to pull images')
+            self.logger.error(e)
+
+    def _recovery(self):
+        try:
+            self.logger.info("installing recovery in {} node".format(self.node.name))
+            cmd_list = [
+                "sudo wget {} -P /usr/bin".format(RECOVERY_SCRIPT),
+                "sudo chmod +x /usr/bin/recovery.py",
+                "sudo apt-get -qq install -y --force-yes supervisor",
+                "sudo wget {} -P /etc/supervisor/conf.d".format(RECOVERY_CONF),
+                "sudo supervisorctl reload",
+            ]
+            self.machine.ssh(self.node.name, ' && '.join(cmd_list))
+            self.node.state_recovery = True
+            with self.app.app_context():
+                db.update(self.node.id, self.node, 'nodes')
+        except RuntimeError as e:
+            self.logger.error('failed to install recovery')
+            self.logger.error(e)
+
+    def _registry_cert(self):
+        try:
+            self.logger.info("retrieving registry certificate")
+            self.machine.ssh(
+                self.node.name,
+                r"sudo mkdir -p /etc/docker/certs.d/{}".format(REGISTRY_BASE_URL),
+            )
+            registry_cert = get_registry_cert(
+                os.path.join(self.app.config["REGISTRY_CERT_DIR"], "ca.crt")
+            )
+            self.machine.scp(
+                registry_cert,
+                r"{}:/etc/docker/certs.d/{}/ca.crt".format(
+                    self.node.name,
+                    REGISTRY_BASE_URL,
+                ),
+            )
+            self.node.state_registry_cert = True
+            with self.app.app_context():
+                db.update(self.node.id, self.node, 'nodes')
+        except RuntimeError as e:
+            self.logger.error('failed to retrieve registry certificate')
+            self.logger.error(e)
+
+    def _install_weave(self):
+        try:
+            self.logger.info('installing weave')
+            self.machine.ssh(self.node.name, 'sudo curl -L git.io/weave -o /usr/local/bin/weave')
+            self.node.state_install_weave = True
+            with self.app.app_context():
+                db.update(self.node.id, self.node, 'nodes')
+        except RuntimeError as e:
+            self.logger.error('failed to install weave')
+            self.logger.error(e)
+
+    def _weave_permission(self):
+        try:
+            self.logger.info('adding exec permission of weave')
+            self.machine.ssh(self.node.name, 'sudo chmod +x /usr/local/bin/weave')
+            self.node.state_weave_permission = True
+            with self.app.app_context():
+                db.update(self.node.id, self.node, 'nodes')
+        except RuntimeError as e:
+            self.logger.error('failed to set weave permission')
+            self.logger.error(e)
+
+
+class DeployDiscoveryNode(DeployNode):
+    def __init__(self, node_model_obj, app):
+        super(DeployDiscoveryNode, self).__init__(node_model_obj, app)
 
     @run_in_reactor
     def deploy(self):
@@ -85,14 +176,9 @@ class DeployDiscoveryNode(object):
                 db.update(self.node.id, self.node, 'nodes')
 
 
-class DeployMasterNode(object):
+class DeployMasterNode(DeployNode):
     def __init__(self, node_model_obj, discovery, app):
-        self.app = app
-        self.node = node_model_obj
-        self.logger = create_file_logger(app.config['NODE_LOG_PATH'], name=self.node.name)
-        self.machine = Machine()
-        with self.app.app_context():
-            self.provider = db.get(self.node.provider_id, 'providers')
+        super(DeployMasterNode, self).__init__(node_model_obj, app)
         self.discovery = discovery
 
     @run_in_reactor
@@ -125,6 +211,9 @@ class DeployMasterNode(object):
             if not self.node.state_rng_tools:
                 self._rng_tools()
                 time.sleep(1)
+            if not self.node.state_pull_images:
+                self._pull_images()
+                time.sleep(1)
         self._is_completed()
 
         for handler in self.logger.handlers:
@@ -136,7 +225,7 @@ class DeployMasterNode(object):
                 self.node.state_weave_permission, self.node.state_weave_launch,
                 self.node.state_registry_cert, self.node.state_docker_cert,
                 self.node.state_fswatcher, self.node.state_recovery,
-                self.node.state_rng_tools]):
+                self.node.state_rng_tools, self.node.state_pull_images]):
             self.node.state_complete = True
             self.logger.info('node deployment is done')
             with self.app.app_context():
@@ -153,28 +242,6 @@ class DeployMasterNode(object):
             self.logger.error('failed to create node')
             self.logger.error(e)
 
-    def _install_weave(self):
-        try:
-            self.logger.info('installing weave')
-            self.machine.ssh(self.node.name, 'sudo curl -L git.io/weave -o /usr/local/bin/weave')
-            self.node.state_install_weave = True
-            with self.app.app_context():
-                db.update(self.node.id, self.node, 'nodes')
-        except RuntimeError as e:
-            self.logger.error('failed to install weave')
-            self.logger.error(e)
-
-    def _weave_permission(self):
-        try:
-            self.logger.info('adding exec permission of weave')
-            self.machine.ssh(self.node.name, 'sudo chmod +x /usr/local/bin/weave')
-            self.node.state_weave_permission = True
-            with self.app.app_context():
-                db.update(self.node.id, self.node, 'nodes')
-        except RuntimeError as e:
-            self.logger.error('failed to set weave permission')
-            self.logger.error(e)
-
     def _weave_launch(self):
         try:
             self.logger.info('launching weave')
@@ -186,30 +253,7 @@ class DeployMasterNode(object):
             self.logger.error('failed to launch weave')
             self.logger.error(e)
 
-    def _registry_cert(self):
-        try:
-            self.logger.info("retrieving registry certificate")
-            self.machine.ssh(
-                self.node.name,
-                r"sudo mkdir -p /etc/docker/certs.d/{}".format(REGISTRY_BASE_URL),
-            )
-            registry_cert = get_registry_cert(
-                os.path.join(self.app.config["REGISTRY_CERT_DIR"], "ca.crt")
-            )
-            self.machine.scp(
-                registry_cert,
-                r"{}:/etc/docker/certs.d/{}/ca.crt".format(
-                    self.node.name,
-                    REGISTRY_BASE_URL,
-                ),
-            )
-            self.node.state_registry_cert = True
-            with self.app.app_context():
-                db.update(self.node.id, self.node, 'nodes')
-        except RuntimeError as e:
-            self.logger.error('failed to retrieve registry certificate')
-            self.logger.error(e)
-
+    #pushing docker cert so that fswatcher script can work
     def _docker_cert(self):
         try:
             self.logger.info("pushing docker client cert into master node")
@@ -250,48 +294,10 @@ class DeployMasterNode(object):
             self.logger.error('failed to install fswatcher script')
             self.logger.error(e)
 
-    def _recovery(self):
-        try:
-            self.logger.info("installing recovery in {} node".format(self.node.name))
-            cmd_list = [
-                "sudo wget {} -P /usr/bin".format(RECOVERY_SCRIPT),
-                "sudo chmod +x /usr/bin/recovery.py",
-                "sudo apt-get -qq install -y --force-yes supervisor",
-                "sudo wget {} -P /etc/supervisor/conf.d".format(RECOVERY_CONF),
-                "sudo supervisorctl reload",
-            ]
-            self.machine.ssh(self.node.name, ' && '.join(cmd_list))
-            self.node.state_recovery = True
-            with self.app.app_context():
-                db.update(self.node.id, self.node, 'nodes')
-        except RuntimeError as e:
-            self.logger.error('failed to install recovery')
-            self.logger.error(e)
 
-    def _rng_tools(self):
-        try:
-            self.logger.info("installing rng-tools in {} node".format(self.node.name))
-            cmd_list = [
-                "sudo wget {} -O /etc/default/rng-tools".format(RNG_TOOLS_CONF),
-                """sudo apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install -y rng-tools""",
-            ]
-            self.machine.ssh(self.node.name, ' && '.join(cmd_list))
-            self.node.state_rng_tools = True
-            with self.app.app_context():
-                db.update(self.node.id, self.node, 'nodes')
-        except RuntimeError as e:
-            self.logger.error('failed to install rng-tools')
-            self.logger.error(e)
-
-
-class DeployWorkerNode(object):
+class DeployWorkerNode(DeployNode):
     def __init__(self, node_model_obj, discovery, app):
-        self.node = node_model_obj
-        self.logger = create_file_logger(app.config['NODE_LOG_PATH'], name=self.node.name)
-        self.machine = Machine()
-        self.app = app
-        with self.app.app_context():
-            self.provider = db.get(self.node.provider_id, 'providers')
+        super(DeployWorkerNode, self).__init__(node_model_obj, app)
         self.discovery = discovery
 
     @run_in_reactor
@@ -318,6 +324,9 @@ class DeployWorkerNode(object):
             if not self.node.state_rng_tools:
                 self._rng_tools()
                 time.sleep(1)
+            if not self.node.state_pull_images:
+                self._pull_images()
+                time.sleep(1)
         self._is_completed()
 
         for handler in self.logger.handlers:
@@ -328,7 +337,7 @@ class DeployWorkerNode(object):
         if all([self.node.state_node_create, self.node.state_install_weave,
                 self.node.state_weave_permission, self.node.state_weave_launch,
                 self.node.state_registry_cert, self.node.state_recovery,
-                self.node.state_rng_tools]):
+                self.node.state_rng_tools, self.node.state_pull_images]):
             self.node.state_complete = True
             self.logger.info('node deployment is done')
             with self.app.app_context():
@@ -345,28 +354,6 @@ class DeployWorkerNode(object):
             self.logger.error('failed to create node')
             self.logger.error(e)
 
-    def _install_weave(self):
-        try:
-            self.logger.info('installing weave')
-            self.machine.ssh(self.node.name, 'sudo curl -L git.io/weave -o /usr/local/bin/weave')
-            self.node.state_install_weave = True
-            with self.app.app_context():
-                db.update(self.node.id, self.node, 'nodes')
-        except RuntimeError as e:
-            self.logger.error('failed to install weave')
-            self.logger.error(e)
-
-    def _weave_permission(self):
-        try:
-            self.logger.info('adding exec permission of weave')
-            self.machine.ssh(self.node.name, 'sudo chmod +x /usr/local/bin/weave')
-            self.node.state_weave_permission = True
-            with self.app.app_context():
-                db.update(self.node.id, self.node, 'nodes')
-        except RuntimeError as e:
-            self.logger.error('failed to set weave permission')
-            self.logger.error(e)
-
     def _weave_launch(self):
         try:
             self.logger.info('launching weave')
@@ -378,63 +365,4 @@ class DeployWorkerNode(object):
                 db.update(self.node.id, self.node, 'nodes')
         except RuntimeError as e:
             self.logger.error('failed to launch weave')
-            self.logger.error(e)
-
-    def _registry_cert(self):
-        try:
-            self.logger.info("retrieving registry certificate")
-            self.machine.ssh(
-                self.node.name,
-                r"sudo mkdir -p /etc/docker/certs.d/{}".format(REGISTRY_BASE_URL),
-            )
-            #TODO: fix it
-            registry_cert = get_registry_cert(
-                os.path.join(self.app.config["REGISTRY_CERT_DIR"], "ca.crt")
-            )
-            self.machine.scp(
-                registry_cert,
-                r"{}:/etc/docker/certs.d/{}/ca.crt".format(
-                    self.node.name,
-                    REGISTRY_BASE_URL,
-                ),
-            )
-            self.node.state_registry_cert = True
-
-            with self.app.app_context():
-                db.update(self.node.id, self.node, 'nodes')
-        except RuntimeError as e:
-            self.logger.error('failed to retrieve registry certificate')
-            self.logger.error(e)
-
-    def _recovery(self):
-        try:
-            self.logger.info("installing recovery in {} node".format(self.node.name))
-            cmd_list = [
-                "sudo wget {} -P /usr/bin".format(RECOVERY_SCRIPT),
-                "sudo chmod +x /usr/bin/recovery.py",
-                "sudo apt-get -qq install -y --force-yes supervisor",
-                "sudo wget {} -P /etc/supervisor/conf.d".format(RECOVERY_CONF),
-                "sudo supervisorctl reload",
-            ]
-            self.machine.ssh(self.node.name, ' && '.join(cmd_list))
-            self.node.state_recovery = True
-            with self.app.app_context():
-                db.update(self.node.id, self.node, 'nodes')
-        except RuntimeError as e:
-            self.logger.error('failed to install recovery')
-            self.logger.error(e)
-
-    def _rng_tools(self):
-        try:
-            self.logger.info("installing rng-tools in {} node".format(self.node.name))
-            cmd_list = [
-                "sudo wget {} -O /etc/default/rng-tools".format(RNG_TOOLS_CONF),
-                """sudo apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install -y rng-tools""",
-            ]
-            self.machine.ssh(self.node.name, ' && '.join(cmd_list))
-            self.node.state_rng_tools = True
-            with self.app.app_context():
-                db.update(self.node.id, self.node, 'nodes')
-        except RuntimeError as e:
-            self.logger.error('failed to install rng-tools')
             self.logger.error(e)

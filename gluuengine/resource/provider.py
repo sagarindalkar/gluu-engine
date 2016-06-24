@@ -19,6 +19,7 @@ PROVIDER_TYPES = (
     # 'aws',
     'digitalocean',
     # 'google',
+    #'rackspace',
 )
 
 

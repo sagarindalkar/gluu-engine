@@ -101,3 +101,6 @@ class DigitalOceanProvider(BaseProvider):
 
 class AWSProvider(BaseProvider):
     pass
+
+class RackspaceProvider(BaseProvider):
+    pass

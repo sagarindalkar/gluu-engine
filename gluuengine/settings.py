@@ -58,6 +58,8 @@ class Config(object):
     OXAUTH_LOGS_VOLUME_DIR = os.path.join(LOG_DIR, "oxauth")
     OXIDP_LOGS_VOLUME_DIR = os.path.join(LOG_DIR, "oxidp")
 
+    GLUU_IMAGE_TAG = os.environ.get("GLUU_IMAGE_TAG", "latest")
+
 
 class ProdConfig(Config):
     """Production configuration.

@@ -91,7 +91,7 @@ class BaseContainerHelper(object):
         """Runs the container setup.
         """
         try:
-            self.logger.info("{} setup is started".format(self.container.image))
+            self.logger.info("{} setup is started".format(self.container.name))
             start = time.time()
 
             # get docker bridge IP as it's where weavedns runs
@@ -99,7 +99,7 @@ class BaseContainerHelper(object):
 
             cid = self.docker.setup_container(
                 name=self.container.name,
-                image=self.container.image,
+                image="{}:{}".format(self.container.image, self.app.config["GLUU_IMAGE_TAG"]),
                 env=[
                     "constraint:node=={}".format(self.node.name),
                 ],
@@ -168,7 +168,7 @@ class BaseContainerHelper(object):
 
             elapsed = time.time() - start
             self.logger.info("{} setup is finished ({} seconds)".format(
-                self.container.image, elapsed
+                self.container.name, elapsed
             ))
         except Exception:
             self.logger.error(exc_traceback())
@@ -225,7 +225,7 @@ class BaseContainerHelper(object):
         self.mp_teardown()
 
     def mp_teardown(self):
-        self.logger.info("{} teardown is started".format(self.container.image))
+        self.logger.info("{} teardown is started".format(self.container.name))
         start = time.time()
 
         # only do teardown on container with SUCCESS and DISABLED status
@@ -258,7 +258,7 @@ class BaseContainerHelper(object):
 
         elapsed = time.time() - start
         self.logger.info("{} teardown is finished ({} seconds)".format(
-            self.container.image, elapsed
+            self.container.name, elapsed
         ))
 
         with self.app.app_context():

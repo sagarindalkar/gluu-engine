@@ -55,6 +55,9 @@ class Config(object):
     REGISTRY_CERT_DIR = os.path.join(DATA_DIR, "registry_certs")
     NODE_LOG_PATH = os.path.join(LOG_DIR, "node.log")
 
+    OXAUTH_LOGS_VOLUME_DIR = os.path.join(LOG_DIR, "oxauth")
+    OXIDP_LOGS_VOLUME_DIR = os.path.join(LOG_DIR, "oxidp")
+
 
 class ProdConfig(Config):
     """Production configuration.

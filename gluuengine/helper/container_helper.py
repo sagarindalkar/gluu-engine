@@ -298,6 +298,9 @@ class OxauthContainerHelper(BaseContainerHelper):
     setup_class = OxauthSetup
 
     def __init__(self, container, app, logpath=None):
+        log_volume = os.path.join(
+            app.config["OXAUTH_LOGS_VOLUME_DIR"], container.name, "logs",
+        )
         self.volumes = {
             "/var/gluu/webapps/oxauth/pages": {
                 'bind': '/var/gluu/webapps/oxauth/pages',
@@ -307,6 +310,9 @@ class OxauthContainerHelper(BaseContainerHelper):
             },
             "/var/gluu/webapps/oxauth/libs": {
                 'bind': '/var/gluu/webapps/oxauth/libs',
+            },
+            log_volume: {
+                "bind": "/opt/tomcat/logs",
             },
         }
         super(OxauthContainerHelper, self).__init__(container, app, logpath)
@@ -336,6 +342,17 @@ class OxtrustContainerHelper(BaseContainerHelper):
 
 class OxidpContainerHelper(BaseContainerHelper):
     setup_class = OxidpSetup
+
+    def __init__(self, container, app, logpath=None):
+        log_volume = os.path.join(
+            app.config["OXIDP_LOGS_VOLUME_DIR"], container.name, "logs",
+        )
+        self.volumes = {
+            log_volume: {
+                "bind": "/opt/idp/logs",
+            },
+        }
+        super(OxidpContainerHelper, self).__init__(container, app, logpath)
 
 
 class NginxContainerHelper(BaseContainerHelper):

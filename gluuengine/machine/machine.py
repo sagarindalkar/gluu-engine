@@ -81,6 +81,7 @@ class Machine(object):
             '--amazonec2-ami={}'.format(provider.amazonec2_ami),
             '--amazonec2-instance-type={}'.format(provider.amazonec2_instance_type),
             '--amazonec2-region={}'.format(provider.amazonec2_region),
+            '--amazonec2-private-address-only={}'.format(provider.amazonec2_private_address_only),
         ])
         return cmd
 

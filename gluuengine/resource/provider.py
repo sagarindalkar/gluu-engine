@@ -11,12 +11,14 @@ from flask_restful import Resource
 from ..database import db
 from ..reqparser import GenericProviderReq
 from ..reqparser import DigitalOceanProviderReq
+from ..reqparser import AwsProviderReq
 from ..model import GenericProvider
 from ..model import DigitalOceanProvider
+from ..model import AwsProvider
 
 PROVIDER_TYPES = (
     'generic',
-    # 'aws',
+    'aws',
     'digitalocean',
     # 'google',
     #'rackspace',
@@ -27,23 +29,23 @@ class CreateProviderResource(Resource):
     def __init__(self):
         self.validate = {
             'generic': self.validate_generic,
-            # 'aws': self.validate_aws,
+            'aws': self.validate_aws,
             'digitalocean': self.validate_digitalocean,
             # 'google': self.validate_google,
         }
         self.model_cls = {
             'generic': GenericProvider,
-            # 'aws': self.validate_aws,
             'digitalocean': DigitalOceanProvider,
-            # 'google': self.validate_google,
+            'aws': AwsProvider,
         }
 
     def validate_generic(self):
         data, errors = GenericProviderReq().load(request.form)
         return data, errors
 
-    # def validate_aws(self):
-    #     pass
+    def validate_aws(self):
+        data, errors = AwsProviderReq().load(request.form)
+        return data, errors
 
     def validate_digitalocean(self):
         data, errors = DigitalOceanProviderReq().load(request.form)

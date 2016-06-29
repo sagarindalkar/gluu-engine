@@ -78,7 +78,6 @@ class LicenseWatcherTask(object):
                 if worker_nodes:
                     # delay before distributing the data to worker nodes
                     time.sleep(5)
-                    # distribute_cluster_data(self.app.config["DATABASE_URI"])
                     distribute_cluster_data(self.app.config["SHARED_DATABASE_URI"], self.app)
 
     def update_license_key(self, license_key):
@@ -130,7 +129,7 @@ class LicenseWatcherTask(object):
                 container.state = STATE_DISABLED
                 db.update(container.id, container, "containers")
 
-                self.machine.ssh(node.name, "docker stop {}".format(container.cid))
+                self.machine.ssh(node.name, "sudo docker stop {}".format(container.cid))
                 self.logger.info("{} container {} has been "
                                  "disabled".format(type_, container.name))
 
@@ -150,7 +149,7 @@ class LicenseWatcherTask(object):
                 container.state = STATE_SUCCESS
                 db.update(container.id, container, "containers")
 
-                self.machine.ssh(node.name, "docker restart {}".format(container.cid))
+                self.machine.ssh(node.name, "sudo docker restart {}".format(container.cid))
                 weave.dns_add(container.cid, container.hostname)
                 self.logger.info("{} container {} has been "
                                  "enabled".format(type_, container.id))

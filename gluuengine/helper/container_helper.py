@@ -182,7 +182,6 @@ class BaseContainerHelper(object):
                     db.update(container_log.id, container_log, "container_logs")
 
             # distribute recovery data
-            # distribute_cluster_data(self.app.config["DATABASE_URI"])
             distribute_cluster_data(self.app.config["SHARED_DATABASE_URI"],
                                     self.app)
 
@@ -269,7 +268,6 @@ class BaseContainerHelper(object):
                 db.update(container_log.id, container_log, "container_logs")
 
         # distribute recovery data
-        # distribute_cluster_data(self.app.config["DATABASE_URI"])
         distribute_cluster_data(self.app.config["SHARED_DATABASE_URI"],
                                 self.app)
 

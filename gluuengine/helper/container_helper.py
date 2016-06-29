@@ -91,7 +91,7 @@ class BaseContainerHelper(object):
         """Runs the container setup.
         """
         try:
-            self.logger.info("{} setup is started".format(self.container.image))
+            self.logger.info("{} setup is started".format(self.container.name))
             start = time.time()
 
             # get docker bridge IP as it's where weavedns runs
@@ -99,7 +99,7 @@ class BaseContainerHelper(object):
 
             cid = self.docker.setup_container(
                 name=self.container.name,
-                image=self.container.image,
+                image="{}:{}".format(self.container.image, self.app.config["GLUU_IMAGE_TAG"]),
                 env=[
                     "constraint:node=={}".format(self.node.name),
                 ],
@@ -168,7 +168,7 @@ class BaseContainerHelper(object):
 
             elapsed = time.time() - start
             self.logger.info("{} setup is finished ({} seconds)".format(
-                self.container.image, elapsed
+                self.container.name, elapsed
             ))
         except Exception:
             self.logger.error(exc_traceback())
@@ -225,7 +225,7 @@ class BaseContainerHelper(object):
         self.mp_teardown()
 
     def mp_teardown(self):
-        self.logger.info("{} teardown is started".format(self.container.image))
+        self.logger.info("{} teardown is started".format(self.container.name))
         start = time.time()
 
         # only do teardown on container with SUCCESS and DISABLED status
@@ -258,7 +258,7 @@ class BaseContainerHelper(object):
 
         elapsed = time.time() - start
         self.logger.info("{} teardown is finished ({} seconds)".format(
-            self.container.image, elapsed
+            self.container.name, elapsed
         ))
 
         with self.app.app_context():
@@ -298,6 +298,9 @@ class OxauthContainerHelper(BaseContainerHelper):
     setup_class = OxauthSetup
 
     def __init__(self, container, app, logpath=None):
+        log_volume = os.path.join(
+            app.config["OXAUTH_LOGS_VOLUME_DIR"], container.name, "logs",
+        )
         self.volumes = {
             "/var/gluu/webapps/oxauth/pages": {
                 'bind': '/var/gluu/webapps/oxauth/pages',
@@ -307,6 +310,9 @@ class OxauthContainerHelper(BaseContainerHelper):
             },
             "/var/gluu/webapps/oxauth/libs": {
                 'bind': '/var/gluu/webapps/oxauth/libs',
+            },
+            log_volume: {
+                "bind": "/opt/tomcat/logs",
             },
         }
         super(OxauthContainerHelper, self).__init__(container, app, logpath)
@@ -336,6 +342,17 @@ class OxtrustContainerHelper(BaseContainerHelper):
 
 class OxidpContainerHelper(BaseContainerHelper):
     setup_class = OxidpSetup
+
+    def __init__(self, container, app, logpath=None):
+        log_volume = os.path.join(
+            app.config["OXIDP_LOGS_VOLUME_DIR"], container.name, "logs",
+        )
+        self.volumes = {
+            log_volume: {
+                "bind": "/opt/idp/logs",
+            },
+        }
+        super(OxidpContainerHelper, self).__init__(container, app, logpath)
 
 
 class NginxContainerHelper(BaseContainerHelper):

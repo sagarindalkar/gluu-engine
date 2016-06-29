@@ -52,13 +52,13 @@ class DeployNode(object):
         try:
             self.logger.info("pulling gluu images in {} node".format(self.node.name))
             cmd_list = [
-                'sudo docker pull {}/gluuoxauth'.format(REGISTRY_BASE_URL),
-                'sudo docker pull {}/gluunginx'.format(REGISTRY_BASE_URL),
+                'sudo docker pull {}/gluuoxauth:{}'.format(REGISTRY_BASE_URL, self.app.config["GLUU_IMAGE_TAG"]),
+                'sudo docker pull {}/gluunginx:{}'.format(REGISTRY_BASE_URL, self.app.config["GLUU_IMAGE_TAG"]),
             ]
             self.machine.ssh(self.node.name, ' && '.join(cmd_list))
             self.node.state_pull_images = True
             with self.app.app_context():
-                    db.update(self.node.id, self.node, 'nodes')
+                db.update(self.node.id, self.node, 'nodes')
         except RuntimeError as e:
             self.logger.error('failed to pull images')
             self.logger.error(e)

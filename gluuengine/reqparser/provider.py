@@ -127,3 +127,46 @@ class DigitalOceanProviderReq(BaseProviderReq):
 
     # Digital Ocean size
     digitalocean_size = ma.Str(validate=OneOf(DO_SIZE_CHOICES), default="4gb")
+
+
+AWS_REGION_CHOICES = (
+    'us-east-1',        #US East (N. Virginia)
+    'us-west-2',        #US West (Oregon)
+    'us-west-1',        #US West (N. California)
+    'eu-west-1',        #EU (Ireland)
+    'eu-central-1',     #EU (Frankfurt)
+    'ap-southeast-1',   #Asia Pacific (Singapore)
+    'ap-northeast-1',   #Asia Pacific (Tokyo)
+    'ap-southeast-2',   #Asia Pacific (Sydney)
+    'ap-northeast-2',   #Asia Pacific (Seoul)
+    'sa-east-1',        #South America (São Paulo)
+)
+
+AWS_INSTANCE_TYPE_CHOICES = (
+    't2.micro',
+    'm4.large',     # 2    8
+    'm4.xlarge',    # 4   16
+    'm4.2xlarge',   # 8   32
+    'm4.4xlarge',   #16   64
+    'm4.10xlarge',  #40  160
+)
+
+'''
+--amazonec2-access-key#
+--amazonec2-secret-key#
+--amazonec2-ami=ami-5f709f34 (in model)
+--amazonec2-instance-type#
+--amazonec2-region=us-east-1#
+--amazonec2-vpc-id*
+--amazonec2-zone*
+--amazonec2-security-group*
+--amazonec2-private-address-only#
+
+'''
+
+class AwsProviderReq(BaseProviderReq):
+    amazonec2_access_key = ma.Str(required=True)
+    amazonec2_secret_key = ma.Str(required=True)
+    amazonec2_region = ma.Str(required=True, validate=OneOf(AWS_REGION_CHOICES))
+    amazonec2_instance_type = ma.Str(validate=OneOf(AWS_INSTANCE_TYPE_CHOICES), default="m4.large")
+    amazonec2_private_address_only = ma.Bool(default=False)

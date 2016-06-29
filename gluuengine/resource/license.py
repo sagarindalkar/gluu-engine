@@ -23,8 +23,8 @@ from ..utils import decode_signed_license
 def format_license_key_resp(obj):
     resp = obj.as_dict()
     resp["public_key"] = obj.decrypted_public_key
-    resp["public_password"] = obj.decrypted_public_password
-    resp["license_password"] = obj.decrypted_license_password
+    # resp["public_password"] = obj.decrypted_public_password
+    # resp["license_password"] = obj.decrypted_license_password
     return resp
 
 
@@ -99,7 +99,6 @@ class LicenseKeyListResource(Resource):
             license_key.valid = decoded_license["valid"]
             license_key.metadata = decoded_license["metadata"]
             license_key.signed_license = signed_license
-            db.update(license_key.id, license_key, "license_keys")
             return license_key, err_msg
 
 

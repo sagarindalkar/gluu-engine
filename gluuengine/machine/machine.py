@@ -5,6 +5,7 @@
 
 import json
 import re
+import os
 
 from docker.tls import TLSConfig
 
@@ -196,11 +197,24 @@ class Machine(object):
             stdout, stderr, error = self._run(cmd)
         return stdout.strip()
 
-    def scp(self, source, destination, recursive=False):
+    def _scp(self, source, destination, recursive=False):
         r = '-r' if recursive else ''
         cmd = 'scp {} {} {}'.format(r, source, destination)
         self._run(cmd)
         return True
+
+    def scp(self, source, destination, recursive=False):
+        destination_machine_name = destination.split(':')[0]
+        dest_tmp = '{}:/tmp'.format(destination_machine_name)
+        #step one
+        self._scp(source, dest_tmp, recursive)
+        #step two
+        r = '-r' if recursive else ''
+        dest_path = ':'.join(destination.split(':')[1:])
+        last_part = os.path.basename(source)
+        source_tmp = '/tmp/{}'.format(last_part)
+        cmd = 'sudo cp {} {} {}'.format(r, source_tmp, dest_path)
+        self.ssh(destination_machine_name, cmd)
 
     def status(self, machine_name):
         cmd = 'status {}'.format(machine_name)

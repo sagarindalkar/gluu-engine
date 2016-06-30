@@ -46,6 +46,7 @@ setup(
         "flask-pymongo",
         "gunicorn",
         "futures",
+        "click",
     ],
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",

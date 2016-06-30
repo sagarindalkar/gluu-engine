@@ -141,7 +141,7 @@ class LicenseWatcherTask(object):
         :param node: Node object.
         :param type_: Type of the container.
         """
-        weave = Weave(node, self.app, self.logger)
+        weave = Weave(node, self.app)
 
         containers = node.get_containers(type_=type_, state=STATE_DISABLED)
         with self.app.app_context():

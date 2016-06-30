@@ -36,6 +36,7 @@ from .database import db
 from .setup.signals import connect_setup_signals
 from .setup.signals import connect_teardown_signals
 from .log import configure_global_logging
+from .task import LicenseWatcherTask
 
 
 def _get_config_object(api_env=""):
@@ -71,8 +72,8 @@ def create_app():
 
     crochet_setup()
 
-    # if not app.debug:
-    #     LicenseWatcherTask(app).perform_job()
+    if not app.debug:
+        LicenseWatcherTask(app).perform_job()
 
     connect_setup_signals()
     connect_teardown_signals()

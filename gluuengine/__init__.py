@@ -3,4 +3,4 @@
 #
 # All rights reserved.
 
-__version__ = "0.5.0-beta4"
+__version__ = "0.5.0-beta5"

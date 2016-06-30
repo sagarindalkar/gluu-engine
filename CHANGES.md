@@ -2,7 +2,7 @@
 
 Here you can see the full list of changes between each gluu-flask release.
 
-## Version 0.5.0 (beta3)
+## Version 0.5.0 (beta5)
 
 Release date to be announced later.
 
@@ -28,6 +28,7 @@ WARNING: this release is a non-backward compatible with older releases.
 *   Removed `X-Deploy-Log` header from Container API response in favor of `X-Container-Setup-Log`
 *   Introduced `X-Container-Teardown-Log` header.
 *   Removed unused `gluuengine distribute-data` and `gluuengine populate-node-logs` commands.
+*   Fixed license key monitoring daemon.
 
 ## Version 0.4.4
 

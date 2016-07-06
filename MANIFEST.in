@@ -1,3 +1,0 @@
-recursive-include gluuengine/templates *
-recursive-exclude * __pycache__
-recursive-exclude * *.py[co]

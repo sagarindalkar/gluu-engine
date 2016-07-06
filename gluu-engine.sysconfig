@@ -1,9 +1,0 @@
-# put this file at /etc/sysconfig/gluu-engine
-# API environment set as production mode
-API_ENV=prod
-
-# Address where app is bind
-HOST=127.0.0.1
-
-# Port to listen to
-PORT=8080

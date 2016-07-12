@@ -1,5 +1,4 @@
 {
-    "mode":"ldap",
     "issuer":"https://{{ ox_cluster_hostname }}",
     "loginPage":"https://{{ ox_cluster_hostname }}/oxauth/login",
     "authorizationPage":"https://{{ ox_cluster_hostname }}/oxauth/authorize",
@@ -22,6 +21,11 @@
     "introspectionEndpoint":"https://{{ ox_cluster_hostname }}/oxauth/seam/resource/restv1/introspection",
     "umaConfigurationEndpoint":"https://{{ ox_cluster_hostname }}/oxauth/seam/resource/restv1/oxauth/uma-configuration",
     "sectorIdentifierEndpoint":"https://{{ ox_cluster_hostname }}/oxauth/sectoridentifier",
+    "oxElevenGenerateKeyEndpoint":"https://{{ ox_cluster_hostname }}/oxeleven/rest/oxeleven/generateKey",
+    "oxElevenSignEndpoint":"https://{{ ox_cluster_hostname }}/oxeleven/rest/oxeleven/sign",
+    "oxElevenVerifySignatureEndpoint":"https://{{ ox_cluster_hostname }}/oxeleven/rest/oxeleven/verifySignature",
+    "oxElevenDeleteKeyEndpoint":"https://{{ ox_cluster_hostname }}/oxeleven/rest/oxeleven/deleteKey",
+    "oxElevenJwksEndpoint":"https://{{ ox_cluster_hostname }}/oxeleven/rest/oxeleven/jwks",
     "openidSubAttribute":"inum",
     "responseTypesSupported":[
         "code",
@@ -160,6 +164,7 @@
     "idTokenLifetime":3600,
     "shortLivedAccessTokenLifetime":300,
     "longLivedAccessTokenLifetime":31536000,
+    "sessionAsJwt":false,
     "umaRequesterPermissionTokenLifetime":3600,
     "umaAddScopesAutomatically":true,
     "umaKeepClientDuringResourceSetRegistration":true,
@@ -220,5 +225,14 @@
     "metricReporterKeepDataDays":15,
     "pairwiseIdType":"persistent",
     "pairwiseCalculationKey":"{{ pairwise_calculation_key }}",
-    "pairwiseCalculationSalt":"{{ pairwise_calculation_salt }}"
+    "pairwiseCalculationSalt":"{{ pairwise_calculation_salt }}",
+    "webKeysStorage": "keystore",
+    "dnName": "{{ default_openid_jks_dn_name }}",
+    "keyStoreFile": "{{ oxauth_openid_jks_fn }}",
+    "keyStoreSecret": "{{ oxauth_openid_jks_pass }}",
+    "authLevelMapping": {
+        "1": ["password"],
+        "2": ["sms","reset_code"],
+        "3": ["oxpush2","u2f"]
+    }
 }

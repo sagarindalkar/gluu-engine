@@ -422,12 +422,19 @@ command=/opt/opendj/bin/start-ds --quiet -N
     def import_base64_config(self):
         """Copies rendered configuration.ldif and imports into LDAP.
         """
+        # TODO: need to save file to /etc/certs/oxauth-keys.json?
+        oxauth_jwks = self.gen_openid_key(
+            self.oxauth_openid_jks_fn,
+            self.oxauth_openid_jks_pass,
+        )
+
+        # TODO: need to save all rendered config as files?
         ctx = {
             "inum_appliance": self.cluster.inum_appliance,
             "oxauth_config_base64": generate_base64_contents(self.render_oxauth_config(), 1),
             "oxauth_static_conf_base64": generate_base64_contents(self.render_oxauth_static_config(), 1),
             "oxauth_error_base64": generate_base64_contents(self.render_oxauth_error_config(), 1),
-            "oxauth_openid_key_base64": generate_base64_contents(self.gen_openid_key(), 1),
+            "oxauth_openid_key_base64": generate_base64_contents(oxauth_jwks, 1),
             "oxtrust_config_base64": generate_base64_contents(self.render_oxtrust_config(), 1),
             "oxtrust_cache_refresh_base64": generate_base64_contents(self.render_oxtrust_cache_refresh(), 1),
             "oxtrust_import_person_base64": generate_base64_contents(self.render_oxtrust_import_person(), 1),
@@ -442,25 +449,66 @@ command=/opt/opendj/bin/start-ds --quiet -N
         )
         self._run_import_ldif("/opt/opendj/ldif/configuration.ldif", "userRoot")
 
-    def gen_openid_key(self):
+    def gen_openid_key(self, jks_path, jks_pwd):
         """Generates OpenID Connect key.
         """
+        default_openid_jks_dn_name = "CN=oxAuth CA Certificates"
+        default_key_algs = "RS256 RS384 RS512 ES256 ES384 ES512"
+        default_key_expiration = 365
+
+        self.logger.debug("creating empty JKS keystore")
+
+        # create JKS with dummy key
+        cmd = " ".join([
+            'keytool', '-genkey',
+            '-alias', 'dummy',
+            '-keystore', jks_path,
+            '-storepass', jks_pwd,
+            '-keypass', jks_pwd,
+            '-dname', "'{}'".format(default_openid_jks_dn_name),
+        ])
+        cmd = '''sh -c "{}"'''.format(cmd)
+        self.docker.exec_cmd(self.container.cid, cmd)
+
+        # Delete dummy key from JKS
+        cmd = " ".join([
+            'keytool', '-delete',
+            '-alias', 'dummy',
+            '-keystore', jks_path,
+            '-storepass', jks_pwd,
+            '-keypass', jks_pwd,
+            '-dname', "'{}'".format(default_openid_jks_dn_name),
+        ])
+        cmd = '''sh -c "{}"'''.format(cmd)
+        self.docker.exec_cmd(self.container.cid, cmd)
+
         def extra_jar_abspath(jar):
             return "/opt/gluu/lib/{}".format(jar)
 
         jars = map(extra_jar_abspath, [
-            "bcprov-jdk16-1.46.jar",
+            "bcprov-jdk15on-1.54.jar",
+            "bcpkix-jdk15on-1.54.jar",
             "jettison-1.3.jar",
+            "log4j-1.2.14.jar",
             "commons-lang-2.6.jar",
-            "log4j-1.2.17.jar",
             "commons-codec-1.5.jar",
-            "oxauth-model-2.4.3.Final.jar",
-            "oxauth-server-2.4.3.Final.jar",
+            "commons-cli-1.2.jar",
+            "oxauth-model-2.4.4.Final.jar",
+            "oxauth-server-2.4.4.Final.jar",
         ])
-        classpath = ":".join(jars)
+
         resp = self.docker.exec_cmd(
             self.container.cid,
-            "java -cp {} org.xdi.oxauth.util.KeyGenerator".format(classpath),
+            " ".join([
+                "java", "-Dlog4j.defaultInitOverride=true",
+                "-cp", ":".join(jars),
+                "org.xdi.oxauth.util.KeyGenerator",
+                "-keystore", jks_path,
+                "-keypasswd", jks_pwd,
+                "-algorithms", "'{}'".format(default_key_algs),
+                "-dname", "'{}'".format(default_openid_jks_dn_name),
+                "-expiration", default_key_expiration,
+            ]),
         )
         return resp.retval
 
@@ -474,6 +522,9 @@ command=/opt/opendj/bin/start-ds --quiet -N
             "inum_org": self.cluster.inum_org,
             "pairwise_calculation_key": get_sys_random_chars(randint(20, 30)),
             "pairwise_calculation_salt": get_sys_random_chars(randint(20, 30)),
+            "oxauth_openid_jks_fn": self.cluster.oxauth_openid_jks_fn,
+            "oxauth_openid_jks_pass": self.cluster.oxauth_openid_jks_pass,
+            "default_openid_jks_dn_name": "CN=oxAuth CA Certificates",
         }
         return self.render_jinja_template(src, ctx)
 
@@ -513,6 +564,8 @@ command=/opt/opendj/bin/start-ds --quiet -N
             "config_generation": "true",
             "scim_rs_client_id": self.cluster.scim_rs_client_id,
             "oxtrust_hostname": "localhost:8443",
+            "scim_rs_client_jks_fn": "/etc/certs/scim-rs.jks",
+            "scim_rs_client_jks_pass_encoded": self.cluster.scim_rs_client_jks_pass_encoded,
         }
         return self.render_jinja_template(src, ctx)
 
@@ -543,13 +596,22 @@ command=/opt/opendj/bin/start-ds --quiet -N
         """Copies SCIM configuration (scim.ldif) into the container
         and imports into LDAP.
         """
+        scim_rs_client_jwks = self.gen_openid_key(
+            self.cluster.scim_rs_client_jks_fn,
+            self.cluster.scim_rs_client_jks_pass,
+        )
+        scim_rp_client_jwks = self.gen_openid_key(
+            self.cluster.scim_rp_client_jks_fn,
+            self.cluster.scim_rp_client_jks_pass,
+        )
+
         ctx = {
             "inum_org": self.cluster.inum_org,
             "ox_cluster_hostname": self.cluster.ox_cluster_hostname,
             "scim_rs_client_id": self.cluster.scim_rs_client_id,
             "scim_rp_client_id": self.cluster.scim_rp_client_id,
-            "scim_rs_client_base64_jwks": generate_base64_contents(self.gen_openid_key(), 1),
-            "scim_rp_client_base64_jwks": generate_base64_contents(self.gen_openid_key(), 1),
+            "scim_rs_client_base64_jwks": generate_base64_contents(scim_rs_client_jwks, 1),
+            "scim_rp_client_base64_jwks": generate_base64_contents(scim_rp_client_jwks, 1),
             "oxtrust_hostname": "localhost:8443",
         }
         self.copy_rendered_jinja_template(

@@ -146,6 +146,13 @@ def generate_base64_contents(text, num_spaces):
     return text
 
 
+def generate_base64_from_file(filename, num_spaces):
+    text = ""
+    with open(filename) as fd:
+        text = fd.read()
+    return generate_base64_contents(text, num_spaces)
+
+
 def get_sys_random_chars(size=12, chars=_DEFAULT_CHARS):
     """Generates random characters based on OS.
     """

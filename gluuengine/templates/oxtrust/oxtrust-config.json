@@ -106,11 +106,13 @@
 
     "oxAuthIssuer":"https://{{ ox_cluster_hostname }}",
     "oxAuthAuthorizeUrl":"https://{{ ox_cluster_hostname }}/oxauth/authorize",
+    "oxAuthRegisterUrl":"https://{{ ox_cluster_hostname }}/oxauth/seam/resource/restv1/oxauth/register",
     "oxAuthTokenUrl":"https://{{ ox_cluster_hostname }}/oxauth/seam/resource/restv1/oxauth/token",
     "oxAuthTokenValidationUrl":"https://{{ ox_cluster_hostname }}/oxauth/seam/resource/restv1/oxauth/validate",
     "oxAuthEndSessionUrl":"https://{{ ox_cluster_hostname }}/oxauth/seam/resource/restv1/oxauth/end_session",
     "oxAuthUserInfo":"https://{{ ox_cluster_hostname }}/oxauth/seam/resource/restv1/oxauth/userinfo",
     "oxAuthLogoutUrl":"https://{{ ox_cluster_hostname }}/oxauth/logout",
+    "oxAuthSectorIdentifierUrl":"https://{{ ox_cluster_hostname }}/oxauth/sectoridentifier",
 
     "oxAuthClientId":"{{ oxauth_client_id }}",
     "oxAuthClientPassword":"{{ oxauth_client_encoded_pw }}",
@@ -124,7 +126,12 @@
     "umaClientKeyId":"",
     "umaResourceId":"1447184268430",
     "umaScope":"https://{{ ox_cluster_hostname }}/oxauth/seam/resource/restv1/uma/scopes/scim_access",
+    "umaClientKeyStoreFile":"{{ scim_rs_client_jks_fn }}",
+    "umaClientKeyStorePassword":"{{ scim_rs_client_jks_pass_encoded }}",
 
     "cssLocation":"",
-    "jsLocation":""
+    "jsLocation":"",
+
+    "scimTestMode":false,
+    "scimTestModeAccessToken":""
 }

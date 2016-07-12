@@ -105,12 +105,22 @@ class Cluster(BaseModel):
         self.oxauth_client_id = '%s!0008!%s' % (self.inum_org, client_quads)
         oxauth_client_pw = get_random_chars()
         self.oxauth_client_encoded_pw = encrypt_text(oxauth_client_pw, self.passkey)
+        self.oxauth_openid_jks_fn = "/etc/certs/oxauth-keys.jks"
+        self.oxauth_openid_jks_pass = get_random_chars()
 
         # scim-related attrs
         scim_rs_quads = '%s.%s' % tuple([get_quad() for i in xrange(2)])
         self.scim_rs_client_id = '%s!0008!%s' % (self.inum_org, scim_rs_quads)
+        self.scim_rs_client_jks_fn = "/etc/certs/scim-rs.jks"
+        self.scim_rs_client_jks_pass = get_random_chars()
+        self.scim_rs_client_jks_pass_encoded = encrypt_text(
+            self.scim_rs_client_jks_pass, self.passkey,
+        )
+
         scim_rp_quads = '%s.%s' % tuple([get_quad() for i in xrange(2)])
         self.scim_rp_client_id = '%s!0008!%s' % (self.inum_org, scim_rp_quads)
+        self.scim_rp_client_jks_fn = "/etc/certs/scim-rp.jks"
+        self.scim_rp_client_jks_pass = "secret"
 
         # key store for oxIdp
         self.encoded_shib_jks_pw = self.admin_pw

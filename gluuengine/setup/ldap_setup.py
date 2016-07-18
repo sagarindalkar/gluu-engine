@@ -493,8 +493,8 @@ command=/opt/opendj/bin/start-ds --quiet -N
             "commons-lang-2.6.jar",
             "commons-codec-1.5.jar",
             "commons-cli-1.2.jar",
-            "oxauth-model-2.4.4.Final.jar",
-            "oxauth-server-2.4.4.Final.jar",
+            "oxauth-model.jar",
+            "oxauth-server.jar",
         ])
 
         resp = self.docker.exec_cmd(

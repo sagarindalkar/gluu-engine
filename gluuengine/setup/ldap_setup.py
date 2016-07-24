@@ -424,8 +424,8 @@ command=/opt/opendj/bin/start-ds --quiet -N
         """
         # TODO: need to save file to /etc/certs/oxauth-keys.json?
         oxauth_jwks = self.gen_openid_key(
-            self.oxauth_openid_jks_fn,
-            self.oxauth_openid_jks_pass,
+            self.cluster.oxauth_openid_jks_fn,
+            self.cluster.oxauth_openid_jks_pass,
         )
 
         # TODO: need to save all rendered config as files?
@@ -497,19 +497,17 @@ command=/opt/opendj/bin/start-ds --quiet -N
             "oxauth-server.jar",
         ])
 
-        resp = self.docker.exec_cmd(
-            self.container.cid,
-            " ".join([
-                "java", "-Dlog4j.defaultInitOverride=true",
-                "-cp", ":".join(jars),
-                "org.xdi.oxauth.util.KeyGenerator",
-                "-keystore", jks_path,
-                "-keypasswd", jks_pwd,
-                "-algorithms", "'{}'".format(default_key_algs),
-                "-dname", "'{}'".format(default_openid_jks_dn_name),
-                "-expiration", default_key_expiration,
-            ]),
-        )
+        cmd = " ".join([
+            "java", "-Dlog4j.defaultInitOverride=true",
+            "-cp", ":".join(jars),
+            "org.xdi.oxauth.util.KeyGenerator",
+            "-keystore", jks_path,
+            "-keypasswd", jks_pwd,
+            "-algorithms", default_key_algs,
+            "-dnname", "'{}'".format(default_openid_jks_dn_name),
+            "-expiration", "{}".format(default_key_expiration),
+        ])
+        resp = self.docker.exec_cmd(self.container.cid, cmd)
         return resp.retval
 
     def render_oxauth_config(self):

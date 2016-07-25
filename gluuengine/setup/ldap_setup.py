@@ -456,8 +456,6 @@ command=/opt/opendj/bin/start-ds --quiet -N
         default_key_algs = "RS256 RS384 RS512 ES256 ES384 ES512"
         default_key_expiration = 365
 
-        self.logger.debug("creating empty JKS keystore")
-
         # create JKS with dummy key
         cmd = " ".join([
             'keytool', '-genkey',

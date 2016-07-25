@@ -89,7 +89,7 @@ class LdapSetup(BaseSetup):
             "ldap_admin_port": self.container.ldap_admin_port,
             "ldap_binddn": self.cluster.ldap_binddn,
             "ldap_pass_fn": self.container.ldap_pass_fn,
-            "ldap_backend_type": "local-db",  # we're still using OpenDJ 2.6
+            "ldap_backend_type": "je",  # OpenDJ 3.0
         }
         self.render_template(src, dest, ctx)
 
@@ -111,9 +111,9 @@ class LdapSetup(BaseSetup):
             "set-attribute-syntax-prop --syntax-name 'Directory String' --set allow-zero-length-values:true",
             "set-password-policy-prop --policy-name 'Default Password Policy' --set allow-pre-encoded-passwords:true",
             "set-log-publisher-prop --publisher-name 'File-Based Audit Logger' --set enabled:true",
-            "create-backend --backend-name site --set base-dn:o=site --type local-db --set enabled:true",
+            "create-backend --backend-name site --set base-dn:o=site --type je --set enabled:true",  # OpenDJ 3.0
             "set-connection-handler-prop --handler-name 'LDAP Connection Handler' --set enabled:false",
-            'set-access-control-handler-prop --remove global-aci:\'(targetattr!=\\"userPassword||authPassword||changes||changeNumber||changeType||changeTime||targetDN||newRDN||newSuperior||deleteOldRDN||targetEntryUUID||changeInitiatorsName||changeLogCookie||includedAttributes\\")(version 3.0; acl \\"Anonymous read access\\"; allow (read,search,compare) userdn=\\"ldap:///anyone\\";)\'',
+            'set-access-control-handler-prop --remove global-aci:\'(targetattr!=\\"userPassword||authPassword||debugsearchindex||changes||changeNumber||changeType||changeTime||targetDN||newRDN||newSuperior||deleteOldRDN\\")(version 3.0; acl \\"Anonymous read access\\"; allow (read,search,compare) userdn=\\"ldap:///anyone\\";)\'',  # OpenDJ 3.0
             "set-global-configuration-prop --set reject-unauthenticated-requests:true",
             "set-password-policy-prop --policy-name 'Default Password Policy' --set default-password-storage-scheme:'Salted SHA-512'",
         ]
@@ -155,7 +155,7 @@ class LdapSetup(BaseSetup):
 
                     index_cmd = " ".join([
                         self.container.ldap_dsconfig_command,
-                        'create-local-db-index',
+                        "create-backend-index",
                         '--backend-name', backend,
                         '--type', 'generic',
                         '--index-name', attr_name,
@@ -646,17 +646,30 @@ command=/opt/opendj/bin/start-ds --quiet -N
 
     def _run_import_ldif(self, ldif_fn, backend_id):
         file_basename = os.path.basename(ldif_fn)
-        import_cmd = " ".join([
-            self.container.import_ldif_command,
-            '--ldifFile', ldif_fn,
-            '--backendID', backend_id,
-            '--hostname', self.container.hostname,
-            '--port', self.container.ldap_admin_port,
-            '--bindDN', "'{}'".format(self.cluster.ldap_binddn),
-            '-j', self.container.ldap_pass_fn,
-            "--rejectFile", "/tmp/rejected-{}".format(file_basename),
-            '--append',
-            '--trustAll',
-        ])
+        if backend_id == "site":
+            import_cmd = " ".join([
+                "/opt/opendj/bin/import-ldif",
+                '--ldifFile', ldif_fn,
+                '--backendID', backend_id,
+                '--hostname', self.container.hostname,
+                '--port', self.container.ldap_admin_port,
+                '--bindDN', "'{}'".format(self.cluster.ldap_binddn),
+                '-j', self.container.ldap_pass_fn,
+                '--trustAll',
+            ])
+        else:
+            import_cmd = " ".join([
+                "/opt/opendj/bin/ldapmodify",
+                '--filename', ldif_fn,
+                '--hostname', self.container.hostname,
+                '--port', self.container.ldap_admin_port,
+                '--bindDN', "'{}'".format(self.cluster.ldap_binddn),
+                '-j', self.container.ldap_pass_fn,
+                "--defaultAdd",
+                "--continueOnError",
+                "--useSSL",
+                '--trustAll',
+            ])
+
         self.logger.debug("importing {}".format(file_basename))
         self.docker.exec_cmd(self.container.cid, import_cmd)

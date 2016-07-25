@@ -70,9 +70,6 @@ class LdapContainer(BaseModel):
         # Full path to dsjavaproperties command
         self.ldap_ds_java_prop_command = "%s/bin/dsjavaproperties" % self.ldap_base_folder
 
-        # Full path to import command
-        self.import_ldif_command = '%s/bin/import-ldif' % self.ldap_base_folder
-
         # Temporary path to store ldap password (should be removed)
         self.ldap_pass_fn = '/home/ldap/.pw'
 

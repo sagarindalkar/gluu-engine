@@ -1,8 +1,8 @@
 # Changelog
 
-Here you can see the full list of changes between each gluu-flask release.
+Here you can see the full list of changes between each `gluu-engine` release.
 
-## Version 0.5.0 (beta5)
+## Version 0.5.0 (beta6)
 
 Release date to be announced later.
 
@@ -20,9 +20,9 @@ WARNING: this release is a non-backward compatible with older releases.
 *   Container's deployment log are deleted after container teardown.
 *   Set maximum file descriptor in `ldap` container.
 *   `httpd` container is completely removed from cluster.
-*   `gluuoxauth` image is upgraded to v2.4.3.
-*   `gluuoxtrust` image is upgraded to v2.4.3.
-*   `gluuoxidp` image is upgraded to v2.4.3.
+*   `gluuoxauth` image is upgraded to CE v2.4.4.
+*   `gluuoxtrust` image is upgraded to CE v2.4.4.
+*   `gluuoxidp` image and container are not supported.
 *   Docker Engine is upgraded to v1.11.2.
 *   Speed up image downloads/updates by pulling them from Gluu's private registry.
 *   Removed `X-Deploy-Log` header from Container API response in favor of `X-Container-Setup-Log`

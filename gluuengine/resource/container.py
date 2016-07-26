@@ -24,13 +24,13 @@ from ..model import STATE_TEARDOWN_IN_PROGRESS
 from ..helper import LdapContainerHelper
 from ..helper import OxauthContainerHelper
 from ..helper import OxtrustContainerHelper
-from ..helper import OxidpContainerHelper
+# from ..helper import OxidpContainerHelper
 from ..helper import NginxContainerHelper
 from ..helper import OxasimbaContainerHelper
 from ..model import LdapContainer
 from ..model import OxauthContainer
 from ..model import OxtrustContainer
-from ..model import OxidpContainer
+# from ..model import OxidpContainer
 from ..model import NginxContainer
 from ..model import OxasimbaContainer
 from ..model import ContainerLog
@@ -42,9 +42,9 @@ CONTAINER_CHOICES = (
     "ldap",
     "oxauth",
     "oxtrust",
-    "oxidp",
+    # "oxidp",  # disabled for now
     "nginx",
-    # "oxasimba",
+    # "oxasimba",  # disabled for now
 )
 
 
@@ -90,7 +90,7 @@ class ContainerResource(Resource):
         "ldap": LdapContainerHelper,
         "oxauth": OxauthContainerHelper,
         "oxtrust": OxtrustContainerHelper,
-        "oxidp": OxidpContainerHelper,
+        # "oxidp": OxidpContainerHelper,  # disabled for now
         "nginx": NginxContainerHelper,
         "oxasimba": OxasimbaContainerHelper,
     }
@@ -200,7 +200,7 @@ class NewContainerResource(Resource):
         "ldap": LdapContainerHelper,
         "oxauth": OxauthContainerHelper,
         "oxtrust": OxtrustContainerHelper,
-        "oxidp": OxidpContainerHelper,
+        # "oxidp": OxidpContainerHelper,  # disabled for now
         "nginx": NginxContainerHelper,
         "oxasimba": OxasimbaContainerHelper,
     }
@@ -209,7 +209,7 @@ class NewContainerResource(Resource):
         "ldap": LdapContainer,
         "oxauth": OxauthContainer,
         "oxtrust": OxtrustContainer,
-        "oxidp": OxidpContainer,
+        # "oxidp": OxidpContainer,  # disabled for now
         "nginx": NginxContainer,
         "oxasimba": OxasimbaContainer,
     }
@@ -438,17 +438,17 @@ class ContainerLogListResource(Resource):
 class ScaleContainerResource(Resource):
     SCALE_ENABLE_CONTAINERS = (
         "oxauth",
-        "oxidp",
+        # "oxidp",  # disabled for now
     )
 
     helper_classes = {
         "oxauth": OxauthContainerHelper,
-        "oxidp": OxidpContainerHelper,
+        # "oxidp": OxidpContainerHelper,  # disabled for now
     }
 
     container_classes = {
         "oxauth": OxauthContainer,
-        "oxidp": OxidpContainer,
+        # "oxidp": OxidpContainer,  # disabled for now
     }
 
     def get_running_nodes(self):
@@ -594,7 +594,7 @@ class ScaleContainerResource(Resource):
         dg = self.delete_obj_genarator(app, containers_reorder)
         #start backgroung delete oparation
         self.delscaleosorus(dg)
-        
+
         return {
             "status": 202,
             "message": 'deleting {} {}'.format(number, container_type),

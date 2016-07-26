@@ -15,23 +15,26 @@ def app(request):
     from gluuengine.app import create_app
     from crochet import no_setup
 
+    no_setup()
     os.environ["API_ENV"] = "test"
     app = create_app()
-    no_setup()
     return app
 
 
-@pytest.fixture()
+@pytest.fixture(scope="session")
 def db(request, app):
     from gluuengine.database import db
 
-    db.init_app(app)
+    db.init_app(app, "MONGOTEST")
 
     def teardown():
         try:
-            os.unlink(app.config["DATABASE_URI"])
+            os.unlink(app.config["SHARED_DATABASE_URI"])
         except OSError:
             pass
+
+        with app.app_context():
+            db.cx.drop_database(db.db.name)
 
     request.addfinalizer(teardown)
     return db

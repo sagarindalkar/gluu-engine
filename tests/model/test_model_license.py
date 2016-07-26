@@ -28,11 +28,13 @@ def test_decrypted_license_password(license_key):
     assert license_key.decrypted_license_password == "license_password"
 
 
-def test_get_workers(db, license_key, worker_node):
-    db.persist(worker_node, "nodes")
-    assert license_key.get_workers()
+def test_get_workers(app, db, license_key, worker_node):
+    with app.app_context():
+        db.persist(worker_node, "nodes")
+        assert license_key.get_workers()
 
 
-def test_count_workers(db, license_key, worker_node):
-    db.persist(worker_node, "nodes")
-    assert license_key.count_workers() == 1
+def test_count_workers(app, db, license_key, worker_node):
+    with app.app_context():
+        db.persist(worker_node, "nodes")
+        assert license_key.count_workers() >= 1

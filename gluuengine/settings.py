@@ -78,4 +78,8 @@ class TestConfig(Config):
     TESTING = True
     DEBUG = True
     DATABASE_URI = os.environ.get("DATABASE_URI", "mongodb://localhost:27017/gluuengine-test")
-    MONGO_URI = DATABASE_URI
+    MONGOTEST_URI = DATABASE_URI
+    SHARED_DATABASE_URI = os.environ.get(
+        "SHARED_DATABASE_URI",
+        os.path.join(Config.DATA_DIR, "db", "shared-test.json"),
+    )

@@ -1,6 +1,9 @@
 import os.path
 
+import pytest
 
+
+@pytest.mark.skip(reason="rewrite needed")
 def test_remove_build_dir(base_setup):
     base_setup.remove_build_dir()
 
@@ -8,6 +11,7 @@ def test_remove_build_dir(base_setup):
     assert os.path.exists(base_setup.build_dir) is False
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_render_template(patched_po_run, base_setup):
     src = "tests/setup/fake_template.txt"
     dest = os.path.join(base_setup.build_dir, "fake_template.txt")
@@ -19,14 +23,17 @@ def test_render_template(patched_po_run, base_setup):
     os.unlink(dest)
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_gen_cert(base_setup, patched_exec_cmd):
     base_setup.gen_cert("ldap", "secret", "root", "root", "localhost")
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_change_cert_access(base_setup, patched_exec_cmd):
     base_setup.change_cert_access("root", "root")
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_get_template_path(app, base_setup):
     import os
 
@@ -34,6 +41,7 @@ def test_get_template_path(app, base_setup):
     assert base_setup.get_template_path("random/unique.txt") == expected
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_render_jinja_template(base_setup):
     import os
     from jinja2 import Environment
@@ -48,6 +56,7 @@ def test_render_jinja_template(base_setup):
     assert "johndoe" in txt
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_copy_rendered_jinja_template(base_setup, patched_po_run):
     import os
     from jinja2 import Environment
@@ -62,10 +71,12 @@ def test_copy_rendered_jinja_template(base_setup, patched_po_run):
     base_setup.copy_rendered_jinja_template(src, dest, ctx)
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_reload_supervisor(base_setup, patched_exec_cmd, patched_sleep):
     base_setup.reload_supervisor()
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_ldap_failover_hostname(monkeypatch, base_setup):
     monkeypatch.setattr(
         "gluuengine.weave.Weave.dns_args",
@@ -74,15 +85,18 @@ def test_ldap_failover_hostname(monkeypatch, base_setup):
     assert base_setup.ldap_failover_hostname() == "ldap.weave.local"
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_write_salt_file(ox_setup, patched_po_run):
     ox_setup.write_salt_file()
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_gen_keystore(ox_setup, patched_po_run, patched_exec_cmd):
     ox_setup.gen_keystore("shibIDP", "/tmp/shibIDP.jks", "changeme",
                           "in.key", "in.crt", "root", "root", "localhost")
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_render_ldap_props_template(monkeypatch, ox_setup, patched_po_run):
     monkeypatch.setattr(
         "gluuengine.setup.base.OxSetup.ldap_failover_hostname",
@@ -91,9 +105,11 @@ def test_render_ldap_props_template(monkeypatch, ox_setup, patched_po_run):
     ox_setup.render_ldap_props_template()
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_configure_vhost(ox_setup, patched_exec_cmd):
     ox_setup.configure_vhost()
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_import_nginx_cert(ox_setup, patched_po_run, patched_exec_cmd):
     ox_setup.import_nginx_cert()

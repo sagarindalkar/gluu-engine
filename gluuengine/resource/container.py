@@ -35,6 +35,7 @@ from ..model import NginxContainer
 from ..model import OxasimbaContainer
 from ..model import ContainerLog
 from ..machine import Machine
+from ..utils import as_boolean
 
 
 #: List of supported container
@@ -220,7 +221,9 @@ class NewContainerResource(Resource):
         if container_type not in CONTAINER_CHOICES:
             abort(404)
 
-        data, errors = ContainerReq().load(request.form)
+        data, errors = ContainerReq(
+            context={"enable_license": as_boolean(app.config["ENABLE_LICENSE"])},
+        ).load(request.form)
 
         if errors:
             return {

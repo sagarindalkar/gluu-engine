@@ -29,7 +29,7 @@ class ContainerReq(ma.Schema):
         if node.type not in ("master", "worker",):
             raise ValidationError("cannot use non master or worker node")
 
-        if node.type == "worker":
+        if node.type == "worker" and self.context["enable_license"]:
             try:
                 license_key = db.all("license_keys")[0]
             except IndexError:

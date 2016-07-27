@@ -105,18 +105,7 @@ class ContainerResource(Resource):
 
     def delete(self, container_id):
         app = current_app._get_current_object()
-
-        truthy = ("1", "True", "true", "t",)
-        falsy = ("0", "false", "False", "f",)
-
-        force_delete = request.args.get("force_rm", False)
-
-        if force_delete in falsy:
-            force_delete = False
-        elif force_delete in truthy:
-            force_delete = True
-        else:
-            force_delete = False
+        force_delete = as_boolean(request.args.get("force_rm", False))
 
         # get container object
         container = get_container(db, container_id)

@@ -11,6 +11,7 @@ from ..database import db
 from ..model import Cluster
 from ..reqparser import ClusterReq
 from ..reqparser import ClusterUpdateReq
+from ..utils import as_boolean
 
 
 class ClusterResource(Resource):
@@ -35,17 +36,11 @@ class ClusterResource(Resource):
 
     def put(self, cluster_id):
         cluster = db.get(cluster_id, "clusters")
+
         if not cluster:
             return {"status": 404, "message": "Cluster not found"}, 404
-        truthy = set(('t', 'T', 'true', 'True', 'TRUE', '1', 1, True))
-        falsy = set(('f', 'F', 'false', 'False', 'FALSE', '0', 0, 0.0, False))
-        external_ldap = request.form.get("external_ldap", False)
-        if external_ldap in falsy:
-            external_ldap = False
-        elif external_ldap in truthy:
-            external_ldap = True
-        else:
-            external_ldap = False
+
+        external_ldap = as_boolean(request.form.get("external_ldap", False))
 
         data, errors = ClusterUpdateReq(
             context={"external_ldap": external_ldap},

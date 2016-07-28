@@ -17,6 +17,7 @@ from ..node import DeployMasterNode
 from ..node import DeployWorkerNode
 from ..machine import Machine
 from ..database import db
+from ..utils import as_boolean
 
 # TODO: put it in config
 NODE_TYPES = ('master', 'worker', 'discovery',)
@@ -39,6 +40,8 @@ class CreateNodeResource(Resource):
         return False
 
     def post(self, node_type):
+        app = current_app._get_current_object()
+
         if node_type not in NODE_TYPES:
             return {
                 "status": 404,
@@ -99,37 +102,38 @@ class CreateNodeResource(Resource):
         if node_type == 'discovery':
             node = DiscoveryNode(data)
             db.persist(node, 'nodes')
-            ddn = DeployDiscoveryNode(node, current_app._get_current_object())
+            ddn = DeployDiscoveryNode(node, app)
             ddn.deploy()
 
         if node_type == 'master':
             node = MasterNode(data)
             db.persist(node, 'nodes')
-            dmn = DeployMasterNode(node, discovery, current_app._get_current_object())
+            dmn = DeployMasterNode(node, discovery, app)
             dmn.deploy()
 
         if node_type == 'worker':
-            try:
-                license_key = db.all("license_keys")[0]
-            except IndexError:
-                license_key = None
+            if as_boolean(app.config["ENABLE_LICENSE"]):
+                try:
+                    license_key = db.all("license_keys")[0]
+                except IndexError:
+                    license_key = None
 
-            if not license_key:
-                return {
-                    "status": 403,
-                    "message": "creating worker node requires a license key",
-                }, 403
+                if not license_key:
+                    return {
+                        "status": 403,
+                        "message": "creating worker node requires a license key",
+                    }, 403
 
-            # we have license key, but it's expired
-            if license_key.expired:
-                return {
-                    "status": 403,
-                    "message": "creating worker node requires a non-expired license key",
-                }, 403
+                # we have license key, but it's expired
+                if license_key.expired:
+                    return {
+                        "status": 403,
+                        "message": "creating worker node requires a non-expired license key",
+                    }, 403
 
             node = WorkerNode(data)
             db.persist(node, 'nodes')
-            dwn = DeployWorkerNode(node, discovery, current_app._get_current_object())
+            dwn = DeployWorkerNode(node, discovery, app)
             dwn.deploy()
 
         headers = {

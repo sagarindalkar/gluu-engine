@@ -59,6 +59,7 @@ class Config(object):
     OXIDP_LOGS_VOLUME_DIR = os.path.join(LOG_DIR, "oxidp")
 
     GLUU_IMAGE_TAG = os.environ.get("GLUU_IMAGE_TAG", "latest")
+    ENABLE_LICENSE = True
 
 
 class ProdConfig(Config):
@@ -72,6 +73,7 @@ class DevConfig(Config):
     DEBUG = True
     DATABASE_URI = os.environ.get("DATABASE_URI", "mongodb://localhost:27017/gluuengine-dev")
     MONGO_URI = DATABASE_URI
+    ENABLE_LICENSE = False
 
 
 class TestConfig(Config):
@@ -83,3 +85,4 @@ class TestConfig(Config):
         "SHARED_DATABASE_URI",
         os.path.join(Config.DATA_DIR, "db", "shared-test.json"),
     )
+    ENABLE_LICENSE = False

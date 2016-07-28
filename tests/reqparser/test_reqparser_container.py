@@ -32,7 +32,7 @@ def test_validate_node_missing_license(app, db, worker_node):
     with app.app_context():
         db.persist(worker_node, "nodes")
 
-        req = ContainerReq()
+        req = ContainerReq(context={"enable_license": True})
 
         with pytest.raises(ValidationError):
             req.validate_node(worker_node.id)
@@ -47,7 +47,7 @@ def test_validate_node_expired_license(app, db, worker_node, license_key):
         license_key.metadata = {}
         db.persist(license_key, "license_keys")
 
-        req = ContainerReq()
+        req = ContainerReq(context={"enable_license": True})
 
         with pytest.raises(ValidationError):
             req.validate_node(worker_node.id)

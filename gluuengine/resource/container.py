@@ -35,6 +35,7 @@ from ..model import NginxContainer
 from ..model import OxasimbaContainer
 from ..model import ContainerLog
 from ..machine import Machine
+from ..utils import as_boolean
 
 
 #: List of supported container
@@ -104,18 +105,7 @@ class ContainerResource(Resource):
 
     def delete(self, container_id):
         app = current_app._get_current_object()
-
-        truthy = ("1", "True", "true", "t",)
-        falsy = ("0", "false", "False", "f",)
-
-        force_delete = request.args.get("force_rm", False)
-
-        if force_delete in falsy:
-            force_delete = False
-        elif force_delete in truthy:
-            force_delete = True
-        else:
-            force_delete = False
+        force_delete = as_boolean(request.args.get("force_rm", False))
 
         # get container object
         container = get_container(db, container_id)
@@ -220,7 +210,9 @@ class NewContainerResource(Resource):
         if container_type not in CONTAINER_CHOICES:
             abort(404)
 
-        data, errors = ContainerReq().load(request.form)
+        data, errors = ContainerReq(
+            context={"enable_license": as_boolean(app.config["ENABLE_LICENSE"])},
+        ).load(request.form)
 
         if errors:
             return {

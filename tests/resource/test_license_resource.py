@@ -86,8 +86,7 @@ def test_license_key_put(app, db, license_key, validator_ok):
 
 @pytest.mark.skip(reason="rewrite needed")
 def test_license_key_put_enable_nodes(app, db, license_key, validator_ok,
-                                      oxauth_node, provider,
-                                      patched_salt, salt_event_ok):
+                                      oxauth_node, provider):
     provider.type = "consumer"
     db.persist(provider, "providers")
     oxauth_node.provider_id = provider.id

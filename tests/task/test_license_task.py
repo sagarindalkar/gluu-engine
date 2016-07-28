@@ -19,8 +19,7 @@ def test_license_not_expired(
 @pytest.mark.skip(reason="rewrite needed")
 def test_disable_nodes(db, license_key, provider,
                        oxauth_node, oxidp_node, app,
-                       oxd_resp_err, patched_salt,
-                       salt_event_ok, patched_sleep):
+                       oxd_resp_err, patched_sleep):
     from gluuengine.task import LicenseExpirationTask
 
     # license with expired timestamp
@@ -52,7 +51,6 @@ def test_disable_nodes(db, license_key, provider,
 def test_enable_nodes(db, license_key, provider, app,
                       oxauth_node, oxidp_node,
                       oxd_resp_ok, validator_ok,
-                      patched_salt, salt_event_ok,
                       patched_sleep):
     from gluuengine.task import LicenseExpirationTask
 

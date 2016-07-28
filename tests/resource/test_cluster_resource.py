@@ -4,7 +4,7 @@ import pytest
 
 
 @pytest.mark.skip(reason="rewrite needed")
-def test_cluster_post(app, db, patched_salt):
+def test_cluster_post(app, db):
     from gluuengine.model import Cluster
 
     resp = app.test_client().post(
@@ -112,7 +112,7 @@ def test_cluster_post_max_cluster_reached(app, db, cluster):
 
 
 @pytest.mark.skip(reason="rewrite needed")
-def test_cluster_post_invalid_country_code(app, db, patched_salt):
+def test_cluster_post_invalid_country_code(app, db):
     resp = app.test_client().post(
         "/clusters",
         data={
@@ -138,7 +138,7 @@ def test_cluster_post_invalid_country_code(app, db, patched_salt):
     "10.20.10.0",
     "500.1.2.3/256",
 ])
-def test_cluster_post_invalid_weave_network(app, db, patched_salt, weave_ip_network):
+def test_cluster_post_invalid_weave_network(app, db, weave_ip_network):
     resp = app.test_client().post(
         "/clusters",
         data={

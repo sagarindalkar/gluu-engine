@@ -18,7 +18,7 @@ def test_provider_invalid_cluster(app, cluster):
 
 @pytest.mark.skip(reason="rewrite needed")
 def test_provider_list_post_master(monkeypatch, app, db, cluster,
-                                   patched_salt, patched_sleep):
+                                   patched_sleep):
     monkeypatch.setattr(
         "gluuengine.helper.WeaveHelper.launch",
         lambda cls: None,
@@ -127,7 +127,7 @@ def test_provider_list_post_consumer_unretrieved_license(
 
 @pytest.mark.skip(reason="rewrite needed")
 def test_provider_list_post_consumer(monkeypatch, app, db, cluster,
-                                     patched_salt, patched_sleep,
+                                     patched_sleep,
                                      license_key, oxd_resp_ok,
                                      validator_ok, provider):
     db.persist(cluster, "clusters")
@@ -150,7 +150,7 @@ def test_provider_list_post_consumer(monkeypatch, app, db, cluster,
 
 @pytest.mark.skip(reason="rewrite needed")
 def test_provider_list_post_consumer_no_meta(
-        monkeypatch, app, db, cluster, patched_salt, patched_sleep,
+        monkeypatch, app, db, cluster, patched_sleep,
         license_key, oxd_resp_ok, validator_err, provider):
     db.persist(cluster, "clusters")
     # create master provider first
@@ -240,8 +240,8 @@ def test_provider_put_missing_params(app, db, provider):
 
 @pytest.mark.skip(reason="rewrite needed")
 def test_provider_put_updated(app, db, provider, oxauth_node,
-                              patched_salt, license_key,
-                              validator_ok, cluster, patched_sleep):
+                              license_key, validator_ok,
+                              cluster, patched_sleep):
     from gluuengine.model import STATE_DISABLED
 
     db.persist(cluster, "clusters")

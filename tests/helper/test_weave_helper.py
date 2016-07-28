@@ -3,7 +3,7 @@ import pytest
 
 @pytest.mark.skip(reason="rewrite needed")
 def test_weave_launch_master(app, db, provider, cluster,
-                             patched_salt, patched_sleep):
+                             patched_sleep):
     from gluuengine.helper import WeaveHelper
 
     db.persist(cluster, "clusters")
@@ -13,7 +13,7 @@ def test_weave_launch_master(app, db, provider, cluster,
 
 @pytest.mark.skip(reason="rewrite needed")
 def test_weave_launch_consumer(app, db, provider, cluster,
-                               patched_salt, patched_sleep):
+                               patched_sleep):
     from gluuengine.helper import WeaveHelper
 
     db.persist(cluster, "clusters")
@@ -23,7 +23,7 @@ def test_weave_launch_consumer(app, db, provider, cluster,
 
 @pytest.mark.skip(reason="rewrite needed")
 def test_weave_expose_network(app, db, provider, cluster,
-                              patched_salt, patched_sleep):
+                              patched_sleep):
     from gluuengine.helper import WeaveHelper
 
     db.persist(cluster, "clusters")
@@ -37,7 +37,7 @@ def test_weave_expose_network(app, db, provider, cluster,
     "consumer",
 ])
 def test_weave_launch(app, db, provider, cluster, type_,
-                      patched_salt, patched_sleep):
+                      patched_sleep):
     from gluuengine.helper import WeaveHelper
 
     db.persist(cluster, "clusters")
@@ -50,17 +50,6 @@ def test_weave_launch(app, db, provider, cluster, type_,
 def test_weave_docker_bridge_ip(app, db, provider, cluster,
                                 monkeypatch):
     from gluuengine.helper import WeaveHelper
-
-    monkeypatch.setattr(
-        "salt.utils.event.MasterEvent.get_event",
-        lambda cls, wait, tag, full: {
-            "tag": "salt/job",
-            "data": {
-                "retcode": 0,
-                "return": "172.42.0.1",
-            },
-        },
-    )
 
     db.persist(cluster, "clusters")
     weave = WeaveHelper(provider, app)

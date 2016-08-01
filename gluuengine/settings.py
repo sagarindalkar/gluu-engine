@@ -20,7 +20,7 @@ class Config(object):
 
     DATABASE_URI = os.environ.get(
         "DATABASE_URI",
-        "mongodb://localhost:27017/gluuengine",
+        "mongodb://mongo:27017/gluuengine",
     )
     # flask-pymongo compatibility
     MONGO_URI = DATABASE_URI
@@ -71,7 +71,7 @@ class DevConfig(Config):
     """Development configuration.
     """
     DEBUG = True
-    DATABASE_URI = os.environ.get("DATABASE_URI", "mongodb://localhost:27017/gluuengine-dev")
+    DATABASE_URI = os.environ.get("DATABASE_URI", "mongodb://mongo:27017/gluuengine-dev")
     MONGO_URI = DATABASE_URI
     ENABLE_LICENSE = False
 
@@ -79,6 +79,6 @@ class DevConfig(Config):
 class TestConfig(Config):
     TESTING = True
     DEBUG = True
-    DATABASE_URI = os.environ.get("DATABASE_URI", "mongodb://localhost:27017/gluuengine-test")
+    DATABASE_URI = os.environ.get("DATABASE_URI", "mongodb://mongo:27017/gluuengine-test")
     MONGO_URI = DATABASE_URI
     ENABLE_LICENSE = False

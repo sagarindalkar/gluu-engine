@@ -10,5 +10,5 @@
         "email",
         "user_name"
     ],
-    "openIdRedirectUrl": "https://{{ oxtrust_hostname }}/identity/authentication/finishlogout"
+    "openIdRedirectUrl": "https://{{ ox_cluster_hostname }}/identity/authentication/finishlogout"
 }

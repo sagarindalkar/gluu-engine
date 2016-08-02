@@ -4,14 +4,20 @@
 # All rights reserved.
 
 import json
+import os
+import shutil
+import tempfile
 from collections import namedtuple
 from contextlib import contextmanager
 
-from docker import Client
+# from docker import Client
+import docker
 
 from ..errors import DockerExecError
 from ..registry import REGISTRY_BASE_URL
-from ..utils import po_run
+# from ..utils import po_run
+from ..utils import make_tarfile
+from ..utils import extract_tarfile
 
 
 DockerExecResult = namedtuple("DockerExecResult",
@@ -157,17 +163,49 @@ class Docker(object):
                 client.start(container=container_id)
             return container_id
 
+    # def copy_to_container(self, container, src, dest):
+    #     cfg_str = self._swarm_conf_str()
+    #     cmd = "docker {} cp {} {}:{}".format(cfg_str, src, container, dest)
+    #     stdout, stderr, err_code = po_run(cmd)
+    #     return stdout, stderr, err_code
+
     def copy_to_container(self, container, src, dest):
-        cfg_str = self._swarm_conf_str()
-        cmd = "docker {} cp {} {}:{}".format(cfg_str, src, container, dest)
-        stdout, stderr, err_code = po_run(cmd)
-        return stdout, stderr, err_code
+        tmp_path = "/tmp"
+
+        with make_tarfile(src) as tf:
+            with self._get_client() as client:
+                client.put_archive(container, tmp_path, tf)
+
+        self.exec_cmd(
+            container,
+            "mkdir -p {}".format(os.path.dirname(dest)),
+        )
+        self.exec_cmd(
+            container,
+            "mv {}/{} {}".format(tmp_path, os.path.basename(src), dest),
+        )
+
+    # def copy_from_container(self, container, src, dest):
+    #     cfg_str = self._swarm_conf_str()
+    #     cmd = "docker {} cp {}:{} {}".format(cfg_str, container, src, dest)
+    #     stdout, stderr, err_code = po_run(cmd)
+    #     return stdout, stderr, err_code
 
     def copy_from_container(self, container, src, dest):
-        cfg_str = self._swarm_conf_str()
-        cmd = "docker {} cp {}:{} {}".format(cfg_str, container, src, dest)
-        stdout, stderr, err_code = po_run(cmd)
-        return stdout, stderr, err_code
+        with tempfile.NamedTemporaryFile() as fd:
+            with self._get_client() as client:
+                resp, _ = client.get_archive(container, src)
+                for stream in resp:
+                    fd.write(stream)
+                fd.seek(0)
+
+                # pull archive to temporary path
+                tmp_path = "/tmp"
+                extract_tarfile(fd, tmp_path)
+
+                if not os.path.exists(os.path.dirname(dest)):
+                    os.makedirs(os.path.dirname(dest))
+                shutil.move("{}/{}".format(tmp_path, os.path.basename(src)), dest)
 
     def _swarm_conf_str(self):
         cfg_str = " ".join([
@@ -203,7 +241,7 @@ class Docker(object):
         else:
             cfg = self.config
 
-        client = Client(base_url=cfg.get("base_url"), tls=cfg.get("tls"))
+        client = docker.Client(base_url=cfg.get("base_url"), tls=cfg.get("tls"))
         try:
             yield client
         finally:

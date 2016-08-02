@@ -10,6 +10,8 @@ import os
 import random
 import string
 import sys
+import tarfile
+import tempfile
 import traceback
 import time
 import uuid
@@ -183,3 +185,20 @@ def as_boolean(val, default=False):
     if val in falsy:
         return False
     return default
+
+
+def make_tarfile(src):
+    abspath = os.path.abspath(src)
+    recursive = os.path.isdir(abspath)
+
+    fd = tempfile.NamedTemporaryFile()
+    tf = tarfile.open(mode="w", fileobj=fd)
+    tf.add(abspath, arcname=os.path.basename(src), recursive=recursive)
+    tf.close()
+    fd.seek(0)
+    return fd
+
+
+def extract_tarfile(tardata, path):
+    with tarfile.open(mode='r', fileobj=tardata) as t:
+        t.extractall(path)

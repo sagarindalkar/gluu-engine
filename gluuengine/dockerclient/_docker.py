@@ -10,7 +10,6 @@ import tempfile
 from collections import namedtuple
 from contextlib import contextmanager
 
-# from docker import Client
 import docker
 
 from ..errors import DockerExecError
@@ -187,12 +186,13 @@ class Docker(object):
                 fd.seek(0)
 
                 # pull archive to temporary path
-                tmp_path = "/tmp"
+                tmp_path = tempfile.mkdtemp()
                 extract_tarfile(fd, tmp_path)
 
                 if not os.path.exists(os.path.dirname(dest)):
                     os.makedirs(os.path.dirname(dest))
                 shutil.move("{}/{}".format(tmp_path, os.path.basename(src)), dest)
+                shutil.rmtree(tmp_path)
 
     def _swarm_conf_str(self):
         cfg_str = " ".join([

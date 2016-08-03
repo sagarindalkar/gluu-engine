@@ -15,7 +15,6 @@ import docker
 
 from ..errors import DockerExecError
 from ..registry import REGISTRY_BASE_URL
-# from ..utils import po_run
 from ..utils import make_tarfile
 from ..utils import extract_tarfile
 
@@ -163,12 +162,6 @@ class Docker(object):
                 client.start(container=container_id)
             return container_id
 
-    # def copy_to_container(self, container, src, dest):
-    #     cfg_str = self._swarm_conf_str()
-    #     cmd = "docker {} cp {} {}:{}".format(cfg_str, src, container, dest)
-    #     stdout, stderr, err_code = po_run(cmd)
-    #     return stdout, stderr, err_code
-
     def copy_to_container(self, container, src, dest):
         tmp_path = "/tmp"
 
@@ -184,12 +177,6 @@ class Docker(object):
             container,
             "mv {}/{} {}".format(tmp_path, os.path.basename(src), dest),
         )
-
-    # def copy_from_container(self, container, src, dest):
-    #     cfg_str = self._swarm_conf_str()
-    #     cmd = "docker {} cp {}:{} {}".format(cfg_str, container, src, dest)
-    #     stdout, stderr, err_code = po_run(cmd)
-    #     return stdout, stderr, err_code
 
     def copy_from_container(self, container, src, dest):
         with tempfile.NamedTemporaryFile() as fd:

@@ -15,20 +15,24 @@ WARNING: this release is a non-backward compatible with older releases.
     * The old Node is renamed to Container; the new Node refers to actual machine/server.
     * The old NodeLog is renamed to ContainerLog
 
+*   Image changes:
+
+    * `gluuoxauth` upgraded to CE v2.4.4.
+    * `gluuoxtrust` upgraded to CE v2.4.4.
+    * `gluuopendj` upgraded to OpenDJ 3 (Gluu snapshot).
+    * `gluuhttpd` removed from cluster.
+    * `gluuoxidp` is no longer supported.
+
 *   Fixed error when stopping failed container deployment.
 *   Speed up container teardown by skipping provisioning in failed container.
 *   Set maximum file descriptor in `ldap` container.
-*   `gluuhttpd` image and container is completely removed from cluster.
-*   `gluuoxauth` image is upgraded to CE v2.4.4.
-*   `gluuoxtrust` image is upgraded to CE v2.4.4.
-*   `gluuoxidp` image and container are not supported.
-*   `gluuopendj` image is upgraded to OpenDJ 3 (Gluu snapshot).
 *   Docker Engine is upgraded to v1.11.2.
 *   Speed up image downloads/updates by pulling them from Gluu's private registry.
 *   Removed `X-Deploy-Log` header from Container API response in favor of `X-Container-Setup-Log`
 *   Introduced `X-Container-Teardown-Log` header.
 *   Removed unused `gluuengine distribute-data` and `gluuengine populate-node-logs` commands.
 *   Fixed license key monitoring daemon.
+*   oxTrust is exposed as part of the cluster.
 
 ## Version 0.4.4
 

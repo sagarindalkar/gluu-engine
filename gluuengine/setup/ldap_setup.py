@@ -190,7 +190,6 @@ class LdapSetup(BaseSetup):
             "inum_org_fn": self.cluster.inum_org_fn,
             "org_name": self.cluster.org_name,
             "scim_rp_client_id": self.cluster.scim_rp_client_id,
-            "oxtrust_hostname": "localhost:8443",
         }
 
         ldifFolder = '%s/ldif' % self.container.ldap_base_folder
@@ -561,7 +560,6 @@ command=/opt/opendj/bin/start-ds --quiet -N
             "ldap_hosts": "{}:{}".format(self.ldap_failover_hostname(), self.cluster.ldaps_port),
             "config_generation": "true",
             "scim_rs_client_id": self.cluster.scim_rs_client_id,
-            "oxtrust_hostname": "localhost:8443",
             "scim_rs_client_jks_fn": "/etc/certs/scim-rs.jks",
             "scim_rs_client_jks_pass_encoded": self.cluster.scim_rs_client_jks_pass_encoded,
         }
@@ -586,7 +584,6 @@ command=/opt/opendj/bin/start-ds --quiet -N
             "ox_cluster_hostname": self.cluster.ox_cluster_hostname,
             "oxauth_client_id": self.cluster.oxauth_client_id,
             "oxauth_client_encoded_pw": self.cluster.oxauth_client_encoded_pw,
-            "oxtrust_hostname": "localhost:8443",
         }
         return self.render_jinja_template(src, ctx)
 
@@ -610,7 +607,6 @@ command=/opt/opendj/bin/start-ds --quiet -N
             "scim_rp_client_id": self.cluster.scim_rp_client_id,
             "scim_rs_client_base64_jwks": generate_base64_contents(scim_rs_client_jwks, 1),
             "scim_rp_client_base64_jwks": generate_base64_contents(scim_rp_client_jwks, 1),
-            "oxtrust_hostname": "localhost:8443",
         }
         self.copy_rendered_jinja_template(
             "opendj/ldif/scim.ldif",

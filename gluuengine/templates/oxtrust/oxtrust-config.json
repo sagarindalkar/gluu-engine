@@ -7,7 +7,7 @@
 
     "baseDN":"o=gluu",
 
-    "baseEndpoint":"https://{{ oxtrust_hostname }}/identity/seam/resource/restv1",
+    "baseEndpoint":"https://{{ ox_cluster_hostname }}/identity/seam/resource/restv1",
 
     "authMode":"",
 
@@ -118,8 +118,8 @@
     "oxAuthClientPassword":"{{ oxauth_client_encoded_pw }}",
     "oxAuthClientScope":"openid+profile+email+user_name",
 
-    "loginRedirectUrl":"https://{{ oxtrust_hostname }}/identity/authentication/authcode",
-    "logoutRedirectUrl":"https://{{ oxtrust_hostname }}/identity/authentication/finishlogout",
+    "loginRedirectUrl":"https://{{ ox_cluster_hostname }}/identity/authentication/authcode",
+    "logoutRedirectUrl":"https://{{ ox_cluster_hostname }}/identity/authentication/finishlogout",
 
     "umaIssuer":"https://{{ ox_cluster_hostname }}",
     "umaClientId":"{{ scim_rs_client_id }}",

@@ -318,7 +318,6 @@ class OxauthContainerHelper(BaseContainerHelper):
 
 class OxtrustContainerHelper(BaseContainerHelper):
     setup_class = OxtrustSetup
-    port_bindings = {8443: ("127.0.0.1", 8443,)}
 
     def __init__(self, container, app, logpath=None):
         self.volumes = {

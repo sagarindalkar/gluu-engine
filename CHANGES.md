@@ -2,7 +2,7 @@
 
 Here you can see the full list of changes between each `gluu-engine` release.
 
-## Version 0.5.0 (beta7)
+## Version 0.5.0 (beta8)
 
 Release date to be announced later.
 

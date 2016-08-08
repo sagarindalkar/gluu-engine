@@ -33,11 +33,11 @@ class Cluster(BaseModel):
         'inum_org_fn',
         'inum_appliance',
         'inum_appliance_fn',
-        "external_ldap",
-        "external_ldap_host",
-        "external_ldap_port",
-        "external_ldap_binddn",
-        "external_ldap_inum_appliance",
+        # "external_ldap",
+        # "external_ldap_host",
+        # "external_ldap_port",
+        # "external_ldap_binddn",
+        # "external_ldap_inum_appliance",
     ])
 
     def __init__(self, fields=None):

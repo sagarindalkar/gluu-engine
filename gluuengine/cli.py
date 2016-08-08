@@ -15,30 +15,9 @@ from .machine import Machine
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
 
-def run_app(app, use_reloader=True):
-    app.run(
-        host=app.config["HOST"],
-        port=int(app.config["PORT"]),
-        use_reloader=use_reloader,
-    )
-
-
 @click.group(context_settings=CONTEXT_SETTINGS)
 def main():
     pass
-
-
-@main.command()
-@click.option(
-    "--auto-reload",
-    is_flag=True,
-    help="Enable/disable auto-reload feature",
-)
-def runserver(auto_reload):
-    """Run development server with/without auto-reloader.
-    """
-    app = create_app()
-    run_app(app, use_reloader=auto_reload)
 
 
 def _distribute_ox_files(type_):

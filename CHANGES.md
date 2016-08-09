@@ -2,7 +2,7 @@
 
 Here you can see the full list of changes between each `gluu-engine` release.
 
-## Version 0.5.0 (beta8)
+## Version 0.5.0 (beta9)
 
 Release date to be announced later.
 
@@ -30,7 +30,7 @@ WARNING: this release is a non-backward compatible with older releases.
 *   Speed up image downloads/updates by pulling them from Gluu's private registry.
 *   Removed `X-Deploy-Log` header from Container API response in favor of `X-Container-Setup-Log`
 *   Introduced `X-Container-Teardown-Log` header.
-*   Removed unused `gluuengine distribute-data` and `gluuengine populate-node-logs` commands.
+*   Removed unused `gluuengine distribute-data`, `gluuengine populate-node-logs`, and `runserver` commands.
 *   Fixed license key monitoring daemon.
 *   oxTrust is exposed as part of the cluster.
 

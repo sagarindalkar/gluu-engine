@@ -36,8 +36,8 @@ from .database import db
 from .setup.signals import connect_setup_signals
 from .setup.signals import connect_teardown_signals
 from .log import configure_global_logging
-# from .task import LicenseWatcherTask
-# from .utils import as_boolean
+from .task import LicenseWatcherTask
+from .utils import as_boolean
 
 
 def _get_config_object(api_env=""):
@@ -73,9 +73,11 @@ def create_app():
 
     crochet_setup()
 
-    # FIXME: avoid race condition in multi-worker env
-    # if as_boolean(app.config["ENABLE_LICENSE"]):
-    #     LicenseWatcherTask(app).perform_job()
+    if as_boolean(app.config["ENABLE_LICENSE"]):
+        if not os.path.isfile("/tmp/lwatcher.run"):
+            with open("/tmp/lwatcher.run", "w") as fd:
+                fd.write("1")
+            LicenseWatcherTask(app).perform_job()
 
     connect_setup_signals()
     connect_teardown_signals()

@@ -59,15 +59,15 @@ class Docker(object):
             hostname=hostname,
         )
 
-    # def get_container_ip(self, container_id):
-    #     """Gets container IP.
+    def get_container_ip(self, container_id):
+        """Gets container IP.
 
-    #     :param container_id: ID or name of the container.
-    #     :returns: Container's IP address.
-    #     """
-    #     with self._get_client() as client:
-    #         info = client.inspect_container(container_id)
-    #         return info["NetworkSettings"]["IPAddress"]
+        :param container_id: ID or name of the container.
+        :returns: Container's IP address.
+        """
+        with self._get_client() as client:
+            info = client.inspect_container(container_id)
+            return info["NetworkSettings"]["Networks"]["weave"]["IPAddress"]
 
     def remove_container(self, container_id):
         """Removes container.

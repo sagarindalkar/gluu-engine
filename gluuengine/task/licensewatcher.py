@@ -94,7 +94,7 @@ class LicenseWatcherTask(object):
 
         self.logger.info("new license has been retrieved")
         try:
-            signed_license = resp.json()["license"]
+            signed_license = resp.json()[0]["license"]
             decoded_license = decode_signed_license(
                 signed_license,
                 license_key.decrypted_public_key,

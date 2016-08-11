@@ -82,7 +82,7 @@ class LicenseKeyListResource(Resource):
             ))
             return license_key, err_msg
 
-        signed_license = sl_resp.json()["license"]
+        signed_license = sl_resp.json()[0]["license"]
         try:
             # generate metadata
             decoded_license = decode_signed_license(

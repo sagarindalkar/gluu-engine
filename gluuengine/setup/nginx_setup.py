@@ -20,17 +20,36 @@ class NginxSetup(BaseSetup):
     def render_https_conf(self):
         """Copies rendered nginx virtual host config.
         """
+        def resolve_weave_ip(container_id):
+            return self.docker.get_container_ip(container_id)
+
+        oxauth_containers = filter(None, [
+            resolve_weave_ip(container.cid)
+            for container in self.cluster.get_containers(type_="oxauth")
+        ])
+        oxtrust_containers = filter(None, [
+            resolve_weave_ip(container.cid)
+            for container in self.cluster.get_containers(type_="oxtrust")
+        ])
+        oxidp_containers = filter(None, [
+            resolve_weave_ip(container.cid)
+            for container in self.cluster.get_containers(type_="oxidp")
+        ])
+        oxasimba_containers = filter(None, [
+            resolve_weave_ip(container.cid)
+            for container in self.cluster.get_containers(type_="oxasimba")
+        ])
+
         with self.app.app_context():
             ctx = {
                 "ox_cluster_hostname": self.cluster.ox_cluster_hostname,
                 "cert_file": "/etc/certs/nginx.crt",
                 "key_file": "/etc/certs/nginx.key",
-                "oxauth_containers": self.cluster.get_containers(type_="oxauth"),
-                "oxidp_containers": self.cluster.get_containers(type_="oxidp"),
-                "oxtrust_containers": self.cluster.get_containers(type_="oxtrust"),
                 "session_affinity": self.get_session_affinity(),
-                "oxasimba_containers": self.cluster.get_containers(type_="oxasimba"),
-                "oxtrust_containers": self.cluster.get_containers(type_="oxtrust"),
+                "oxauth_containers": oxauth_containers,
+                "oxtrust_containers": oxtrust_containers,
+                "oxidp_containers": oxidp_containers,
+                "oxasimba_containers": oxasimba_containers,
             }
 
         src = "nginx/gluu_https.conf"

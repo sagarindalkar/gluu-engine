@@ -23,24 +23,24 @@ class NginxSetup(BaseSetup):
         def resolve_weave_ip(container_id):
             return self.docker.get_container_ip(container_id)
 
-        oxauth_containers = filter(None, [
-            resolve_weave_ip(container.cid)
-            for container in self.cluster.get_containers(type_="oxauth")
-        ])
-        oxtrust_containers = filter(None, [
-            resolve_weave_ip(container.cid)
-            for container in self.cluster.get_containers(type_="oxtrust")
-        ])
-        oxidp_containers = filter(None, [
-            resolve_weave_ip(container.cid)
-            for container in self.cluster.get_containers(type_="oxidp")
-        ])
-        oxasimba_containers = filter(None, [
-            resolve_weave_ip(container.cid)
-            for container in self.cluster.get_containers(type_="oxasimba")
-        ])
-
         with self.app.app_context():
+            oxauth_containers = filter(None, [
+                resolve_weave_ip(container.cid)
+                for container in self.cluster.get_containers(type_="oxauth")
+            ])
+            oxtrust_containers = filter(None, [
+                resolve_weave_ip(container.cid)
+                for container in self.cluster.get_containers(type_="oxtrust")
+            ])
+            oxidp_containers = filter(None, [
+                resolve_weave_ip(container.cid)
+                for container in self.cluster.get_containers(type_="oxidp")
+            ])
+            oxasimba_containers = filter(None, [
+                resolve_weave_ip(container.cid)
+                for container in self.cluster.get_containers(type_="oxasimba")
+            ])
+
             ctx = {
                 "ox_cluster_hostname": self.cluster.ox_cluster_hostname,
                 "cert_file": "/etc/certs/nginx.crt",

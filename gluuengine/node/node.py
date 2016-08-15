@@ -69,7 +69,12 @@ class DeployNode(object):
             cmd_list = [
                 "sudo wget {} -P /usr/bin".format(RECOVERY_SCRIPT),
                 "sudo chmod +x /usr/bin/recovery.py",
-                "sudo apt-get -qq install -y --force-yes supervisor",
+                "sudo apt-get -qq install -y --force-yes supervisor python-pip",
+                "sudo pip -q install --upgrade pip",
+                "sudo pip -q install virtualenv",
+                "sudo mkdir -p /root/.virtualenvs",
+                "sudo virtualenv /root/.virtualenvs/recovery",
+                "sudo /root/.virtualenvs/recovery/bin/pip -q install jinja2",
                 "sudo wget {} -P /etc/supervisor/conf.d".format(RECOVERY_CONF),
                 "sudo supervisorctl reload",
             ]
@@ -78,7 +83,7 @@ class DeployNode(object):
             with self.app.app_context():
                 db.update(self.node.id, self.node, 'nodes')
         except RuntimeError as e:
-            self.logger.error('failed to install recovery')
+            self.logger.error('failed to install recovery script')
             self.logger.error(e)
 
     def _registry_cert(self):

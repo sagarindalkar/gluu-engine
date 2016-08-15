@@ -2,7 +2,7 @@
 
 Here you can see the full list of changes between each `gluu-engine` release.
 
-## Version 0.5.0 (beta9)
+## Version 0.5.0 (rc1)
 
 Release date to be announced later.
 
@@ -33,6 +33,7 @@ WARNING: this release is a non-backward compatible with older releases.
 *   Removed unused `gluuengine distribute-data`, `gluuengine populate-node-logs`, and `runserver` commands.
 *   Fixed license key monitoring daemon.
 *   oxTrust is exposed as part of the cluster.
+*   Fixed nginx config.
 
 ## Version 0.4.4
 

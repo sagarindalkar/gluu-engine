@@ -10,6 +10,8 @@ import click
 from .app import create_app
 from .database import db
 from .machine import Machine
+from .registry import get_registry_cert
+from .registry import REGISTRY_BASE_URL
 
 # global context settings
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
@@ -88,3 +90,36 @@ def distribute_oxtrust_files():
     """Distribute custom oxTrust files.
     """
     _distribute_ox_files("oxtrust")
+
+
+@main.command("update-registry-cert")
+def update_reg_cert():
+    """Update and distribute registry certificate.
+    """
+    app = create_app()
+    mc = Machine()
+
+    with app.app_context():
+        nodes = db.search_from_table(
+            "nodes",
+            {"$or": [{"type": "master"}, {"type": "worker"}]},
+        )
+
+        reg_cert = get_registry_cert(
+            os.path.join(app.config["REGISTRY_CERT_DIR"], "ca.crt"),
+            redownload=True,
+        )
+
+        for node in nodes:
+            click.echo("copying registry cert to {} node".format(node.name))
+            mc.ssh(
+                node.name,
+                "mkdir -p /etc/docker/certs.d/{}".format(REGISTRY_BASE_URL)
+            )
+            mc.scp(
+                reg_cert,
+                r"{}:/etc/docker/certs.d/{}/ca.crt".format(
+                    node.name,
+                    REGISTRY_BASE_URL,
+                ),
+            )

@@ -2,7 +2,7 @@
 
 Here you can see the full list of changes between each `gluu-engine` release.
 
-## Version 0.5.0 (rc1)
+## Version 0.5.0 (rc2)
 
 Release date to be announced later.
 
@@ -34,6 +34,7 @@ WARNING: this release is a non-backward compatible with older releases.
 *   Fixed license key monitoring daemon.
 *   oxTrust is exposed as part of the cluster.
 *   Fixed nginx config.
+*   Fixed issue with expired registry cert.
 
 ## Version 0.4.4
 

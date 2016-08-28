@@ -2,9 +2,9 @@
 
 Here you can see the full list of changes between each `gluu-engine` release.
 
-## Version 0.5.0 (rc2)
+## Version 0.5.0
 
-Release date to be announced later.
+Released on August 29th, 2016.
 
 WARNING: this release is a non-backward compatible with older releases.
 

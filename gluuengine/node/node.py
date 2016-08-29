@@ -371,3 +371,94 @@ class DeployWorkerNode(DeployNode):
         except RuntimeError as e:
             self.logger.error('failed to launch weave')
             self.logger.error(e)
+
+
+class LoggingNodeDeployer(DeployNode):
+    @run_in_reactor
+    def deploy(self):
+        if not self.node.state_node_create:
+            self._node_create()
+            time.sleep(1)
+
+        if self.node.state_node_create:
+            if not self.node.state_rng_tools:
+                self._rng_tools()
+                time.sleep(1)
+            if not self.node.state_install_elasticsearch:
+                self._install_elasticsearch()
+                time.sleep(1)
+            if not self.node.state_install_kibana:
+                self._install_kibana()
+                time.sleep(1)
+        self._is_completed()
+
+        for handler in self.logger.handlers:
+            handler.close()
+            self.logger.removeHandler(handler)
+
+    def _node_create(self):
+        try:
+            self.logger.info('creating logging node')
+            self.machine.create(self.node, self.provider, None)
+            self.node.state_node_create = True
+            with self.app.app_context():
+                db.update(self.node.id, self.node, 'nodes')
+        except RuntimeError as e:
+            self.logger.error('failed to create node')
+            self.logger.error(e)
+
+    def _install_elasticsearch(self):
+        # TODO: setup TLS and perhaps Shield plugin
+        self.logger.info('installing elasticsearch')
+
+        try:
+            env = os.environ.get("API_ENV", "dev")
+            volume = "/usr/share/elasticsearch/data"
+            self.machine.ssh(self.node.name, "sudo mkdir -p {}".format(volume))
+
+            cmd = " ".join([
+                "docker run -d --restart=always --name=elasticsearch",
+                "-p 9200:9200 -p 9300:9300",
+                "-v {volume}:{volume}".format(volume=volume),
+                "elasticsearch",
+                "-Des.logger.level=WARN ",
+                "-Des.node.name=${HOSTNAME}",
+                "-Des.cluster.name=es-logging-{}".format(env),
+                # "-Des.discovery.zen.ping.unicast.hosts=es1",  # clustering
+            ])
+            self.machine.ssh(self.node.name, cmd)
+            self.node.state_install_elasticsearch = True
+            with self.app.app_context():
+                db.update(self.node.id, self.node, 'nodes')
+        except RuntimeError as e:
+            self.logger.error('failed to install elasticsearch')
+            self.logger.error(e)
+
+    def _install_kibana(self):
+        # TODO: only install kibana in 1 node in multi logging node
+        self.logger.info('installing kibana')
+
+        try:
+            cmd = " ".join([
+                "docker run -d --restart=always --name=kibana",
+                "-p 5601:5601",
+                "--link elasticsearch",
+                "kibana",
+            ])
+            self.machine.ssh(self.node.name, cmd)
+            self.node.state_install_kibana = True
+            with self.app.app_context():
+                db.update(self.node.id, self.node, 'nodes')
+        except RuntimeError as e:
+            self.logger.error('failed to install kibana')
+            self.logger.error(e)
+
+    def _is_completed(self):
+        if all([self.node.state_node_create,
+                self.node.state_rng_tools,
+                self.node.state_install_elasticsearch,
+                self.node.state_install_kibana]):
+            self.node.state_complete = True
+            self.logger.info('node deployment is done')
+            with self.app.app_context():
+                db.update(self.node.id, self.node, 'nodes')

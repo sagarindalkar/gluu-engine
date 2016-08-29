@@ -6,3 +6,4 @@
 from .node import DeployDiscoveryNode  # noqa
 from .node import DeployMasterNode  # noqa
 from .node import DeployWorkerNode  # noqa
+from .node import LoggingNodeDeployer  # noqa

@@ -162,3 +162,29 @@ class WorkerNode(Node):
         self.name = fields.get('name', '')
         #self.type = fields.get('type', '')
         self.provider_id = fields.get('provider_id', '')
+
+
+class LoggingNode(Node):
+    _state_fields = dict.fromkeys([
+        "state_node_create",
+        "state_rng_tools",
+        "state_install_elasticsearch",
+        "state_install_kibana",
+        "state_complete",
+    ])
+
+    def __init__(self, fields=None):
+        self.id = str(uuid.uuid4())
+        self.type = "logging"
+        self.state_node_create = False
+        self.state_rng_tools = False
+        self.state_install_elasticsearch = False
+        self.state_install_kibana = False
+        self.state_complete = False
+        self.resource_fields.update(self._state_fields)
+        self.populate(fields)
+
+    def populate(self, fields=None):
+        fields = fields or {}
+        self.name = fields.get("name", "")
+        self.provider_id = fields.get("provider_id", "")

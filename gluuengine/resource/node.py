@@ -12,15 +12,17 @@ from ..reqparser import NodeReq
 from ..model import DiscoveryNode
 from ..model import MasterNode
 from ..model import WorkerNode
+from ..model import LoggingNode
 from ..node import DeployDiscoveryNode
 from ..node import DeployMasterNode
 from ..node import DeployWorkerNode
+from ..node import LoggingNodeDeployer
 from ..machine import Machine
 from ..database import db
 from ..utils import as_boolean
 
 # TODO: put it in config
-NODE_TYPES = ('master', 'worker', 'discovery',)
+NODE_TYPES = ('master', 'worker', 'discovery', "logging",)
 DISCOVERY_PORT = '8500'
 DISCOVERY_NODE_NAME = 'gluu.discovery'
 
@@ -84,6 +86,14 @@ class CreateNodeResource(Resource):
                     "message": "worker node needs a master",
                 }, 404
 
+        if node_type == 'logging':
+            logging = db.search_from_table('nodes', {'type': 'logging'})
+            if logging:
+                return {
+                    "status": 403,
+                    "message": "logging node is already created",
+                }, 403
+
         data, errors = NodeReq().load(request.form)
         if errors:
             return {
@@ -94,7 +104,7 @@ class CreateNodeResource(Resource):
 
         #TODO: get discovery node name
         discovery = None
-        if node_type != 'discovery':
+        if node_type not in ('discovery', 'logging',):
             discovery = Discovery()
             discovery.ip = self.machine.ip(DISCOVERY_NODE_NAME)
             discovery.port = DISCOVERY_PORT
@@ -135,6 +145,12 @@ class CreateNodeResource(Resource):
             db.persist(node, 'nodes')
             dwn = DeployWorkerNode(node, discovery, app)
             dwn.deploy()
+
+        if node_type == "logging":
+            node = LoggingNode(data)
+            db.persist(node, 'nodes')
+            deployer = LoggingNodeDeployer(node, app)
+            deployer.deploy()
 
         headers = {
             "Location": url_for("node", node_name=node.name),
@@ -205,6 +221,8 @@ class NodeResource(Resource):
         return {}, 204
 
     def put(self, node_name):
+        app = current_app._get_current_object()
+
         nodes = db.search_from_table('nodes', {'name': node_name})
         if nodes:
             node = nodes[0]
@@ -215,17 +233,19 @@ class NodeResource(Resource):
             }, 404
 
         discovery = None
-        if node.type != 'discovery':
+        if node.type not in ('discovery', 'logging',):
             discovery = Discovery()
             discovery.ip = self.machine.ip(DISCOVERY_NODE_NAME)
             discovery.port = DISCOVERY_PORT
 
         if node.type == 'discovery':
-            dn = DeployDiscoveryNode(node, current_app._get_current_object())
+            dn = DeployDiscoveryNode(node, app)
         if node.type == 'master':
-            dn = DeployMasterNode(node, discovery, current_app._get_current_object())
+            dn = DeployMasterNode(node, discovery, app)
         if node.type == 'worker':
-            dn = DeployWorkerNode(node, discovery, current_app._get_current_object())
+            dn = DeployWorkerNode(node, discovery, app)
+        if node.type == 'logging':
+            dn = LoggingNodeDeployer(node, app)
 
         dn.deploy()
         headers = {

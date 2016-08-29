@@ -58,7 +58,7 @@ class Machine(object):
         cmd = 'config --swarm {}'.format(machine_name)
         return self._config(cmd, machine_name, docker_friendly)
 
-    def _dicovery(self, discovery):
+    def _discovery(self, discovery):
         cmd = " ".join([
             '--swarm-discovery=consul://{}:{}'.format(discovery.ip, discovery.port),
             '--engine-opt=cluster-store=consul://{}:{}'.format(discovery.ip, discovery.port),
@@ -119,19 +119,17 @@ class Machine(object):
 
         if node.type == 'master':
             cmd.append('--swarm --swarm-master')
-            cmd.append('--engine-label=org.gluu.node-type={}'.format(node.type))
 
         if node.type == 'worker':
             cmd.append('--swarm')
-            cmd.append('--engine-label=org.gluu.node-type={}'.format(node.type))
 
-        if node.type != 'discovery':
-            cmd.append(self._dicovery(discovery))
-            cmd.append('--engine-label=org.gluu.node-type={}'.format(node.type))
+        if node.type not in ('discovery', 'logging',):
+            cmd.append(self._discovery(discovery))
 
         if node.type in ("master", "worker",):
             cmd.append("--engine-insecure-registry=https://{}".format(REGISTRY_BASE_URL))
 
+        cmd.append('--engine-label=org.gluu.node-type={}'.format(node.type))
         cmd.append(node.name)
 
         cmd = " ".join(cmd)

@@ -4,13 +4,16 @@
 # All rights reserved.
 
 from .node import Node  # noqa
-from .node import DiscoveryNode # noqa
-from .node import MasterNode # noqa
-from .node import WorkerNode # noqa
+from .node import DiscoveryNode  # noqa
+from .node import MasterNode  # noqa
+from .node import WorkerNode  # noqa
+from .node import LoggingNode  # noqa
+
 from .provider import GenericProvider  # noqa
 from .provider import DigitalOceanProvider  # noqa
-from .provider import AwsProvider # noqa
+from .provider import AwsProvider  # noqa
 #from .provider import RackspaceProvider  # noqa
+
 from .cluster import Cluster  # noqa
 from .license import LicenseKey  # noqa
 

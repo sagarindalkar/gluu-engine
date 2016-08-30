@@ -2,6 +2,13 @@
 
 Here you can see the full list of changes between each `gluu-engine` release.
 
+## Version 0.5.1
+
+Released on August 31st, 2016.
+
+* Use newest `oxlicense-validator.jar` to validate license.
+* Fixed race condition in `Docker.copy_to_container` method when generating random temporary directory.
+
 ## Version 0.5.0
 
 Released on August 29th, 2016.

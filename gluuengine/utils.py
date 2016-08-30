@@ -92,8 +92,8 @@ def decode_signed_license(signed_license, public_key, public_password, license_p
     :param license_password: License password retrieved from license server
     """
     validator = os.environ.get(
-        "OXD_LICENSE_VALIDATOR",
-        "/usr/share/oxd-license-validator/oxd-license-validator.jar",
+        "OXLICENSE_VALIDATOR",
+        "/usr/share/oxlicense-validator/oxlicense-validator.jar",
     )
 
     stdout, _, _ = po_run("java -jar {} {} {} {} {}".format(

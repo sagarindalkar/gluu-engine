@@ -134,7 +134,7 @@ class BaseContainerHelper(object):
             # add DNS record
             self.weave.dns_add(self.container.cid, self.container.hostname)
 
-            if self.container.type == "ldap":
+            if self.container.type in ("ldap", "oxauth", "oxtrust",):
                 # useful for failover in ox apps
                 self.weave.dns_add(
                     self.container.cid,

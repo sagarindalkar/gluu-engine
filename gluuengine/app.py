@@ -74,8 +74,9 @@ def create_app():
     crochet_setup()
 
     if as_boolean(app.config["ENABLE_LICENSE"]):
-        if not os.path.isfile("/tmp/lwatcher.run"):
-            with open("/tmp/lwatcher.run", "w") as fd:
+        runfile = os.path.join(app.config["DATA_DIR"], "lwatcher.run")
+        if not os.path.isfile(runfile):
+            with open(runfile, "w") as fd:
                 fd.write("1")
             LicenseWatcherTask(app).perform_job()
 

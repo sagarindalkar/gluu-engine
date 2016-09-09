@@ -18,7 +18,10 @@ raw_env = 'API_ENV=prod'  # 'prod|test|dev'
 
 
 def on_exit(server):
+    wsgi_app = server.app.load_wsgiapp()
+    runfile = os.path.join(wsgi_app.config["DATA_DIR"], "lwatcher.run")
+
     try:
-        os.unlink("/tmp/lwatcher.run")
+        os.unlink(runfile)
     except OSError:
         pass

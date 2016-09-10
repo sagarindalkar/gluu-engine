@@ -82,7 +82,8 @@ def exc_traceback():
     return exc_string
 
 
-def decode_signed_license(signed_license, public_key, public_password, license_password):
+def decode_signed_license(signed_license, public_key,
+                          public_password, license_password):
     """Gets license's metadata from a signed license retrieved from license
     server (https://license.gluu.org).
 
@@ -96,12 +97,16 @@ def decode_signed_license(signed_license, public_key, public_password, license_p
         "/usr/share/oxlicense-validator/oxlicense-validator.jar",
     )
 
-    stdout, _, _ = po_run("java -jar {} {} {} {} {}".format(
+    product = "de"
+    current_date = retrieve_current_date()
+    stdout, _, _ = po_run("java -jar {} {} {} {} {} {} {}".format(
         validator,
         signed_license,
         public_key,
         public_password,
         license_password,
+        product,
+        current_date,
     ))
 
     # output example:
@@ -127,12 +132,6 @@ def retrieve_signed_license(code):
         verify=False,
     )
     return resp
-
-
-def timestamp_millis():
-    """Time in milliseconds since the EPOCH.
-    """
-    return time.time() * 1000
 
 
 def reindent(text, num_spaces):
@@ -202,3 +201,12 @@ def make_tarfile(src):
 def extract_tarfile(tardata, path):
     with tarfile.open(mode='r', fileobj=tardata) as t:
         t.extractall(path)
+
+
+def retrieve_current_date():
+    """Retrieves current date from license server.
+    """
+    req = requests.get(
+        "https://license.gluu.org/oxLicense/rest/currentMilliseconds"
+    )
+    return req.json()

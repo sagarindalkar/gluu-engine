@@ -10,6 +10,8 @@ import os
 import random
 import string
 import sys
+import tarfile
+import tempfile
 import traceback
 import time
 import uuid
@@ -80,7 +82,8 @@ def exc_traceback():
     return exc_string
 
 
-def decode_signed_license(signed_license, public_key, public_password, license_password):
+def decode_signed_license(signed_license, public_key,
+                          public_password, license_password):
     """Gets license's metadata from a signed license retrieved from license
     server (https://license.gluu.org).
 
@@ -90,16 +93,20 @@ def decode_signed_license(signed_license, public_key, public_password, license_p
     :param license_password: License password retrieved from license server
     """
     validator = os.environ.get(
-        "OXD_LICENSE_VALIDATOR",
-        "/usr/share/oxd-license-validator/oxd-license-validator.jar",
+        "OXLICENSE_VALIDATOR",
+        "/usr/share/oxlicense-validator/oxlicense-validator.jar",
     )
 
-    stdout, _, _ = po_run("java -jar {} {} {} {} {}".format(
+    product = "de"
+    current_date = retrieve_current_date()
+    stdout, _, _ = po_run("java -jar {} {} {} {} {} {} {}".format(
         validator,
         signed_license,
         public_key,
         public_password,
         license_password,
+        product,
+        current_date,
     ))
 
     # output example:
@@ -125,12 +132,6 @@ def retrieve_signed_license(code):
         verify=False,
     )
     return resp
-
-
-def timestamp_millis():
-    """Time in milliseconds since the EPOCH.
-    """
-    return time.time() * 1000
 
 
 def reindent(text, num_spaces):
@@ -183,3 +184,29 @@ def as_boolean(val, default=False):
     if val in falsy:
         return False
     return default
+
+
+def make_tarfile(src):
+    abspath = os.path.abspath(src)
+    recursive = os.path.isdir(abspath)
+
+    fd = tempfile.NamedTemporaryFile()
+    tf = tarfile.open(mode="w", fileobj=fd)
+    tf.add(abspath, arcname=os.path.basename(src), recursive=recursive)
+    tf.close()
+    fd.seek(0)
+    return fd
+
+
+def extract_tarfile(tardata, path):
+    with tarfile.open(mode='r', fileobj=tardata) as t:
+        t.extractall(path)
+
+
+def retrieve_current_date():
+    """Retrieves current date from license server.
+    """
+    req = requests.get(
+        "https://license.gluu.org/oxLicense/rest/currentMilliseconds"
+    )
+    return req.json()

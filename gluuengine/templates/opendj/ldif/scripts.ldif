@@ -614,7 +614,7 @@ inum: %(inum_org)s!0011!92F0.BF9E
 oxConfigurationProperty: {"value1":"qr_options","value2":"{ size: 500, mSize: 0.
  05 }","description":""}
 oxConfigurationProperty: {"value1":"label","value2":"Super Gluu","description":""}
-oxConfigurationProperty: {"value1":"registration_uri","value2":"https://%(oxtrust_hostname)s/identity/register","description":""}
+oxConfigurationProperty: {"value1":"registration_uri","value2":"https://%(ox_cluster_hostname)s/identity/register","description":""}
 oxConfigurationProperty: {"value1":"authentication_mode","value2":"two_step","de
  scription":""}
 oxConfigurationProperty: {"value1":"credentials_file","value2":"/etc/certs/super_gluu_creds.json","description":""}

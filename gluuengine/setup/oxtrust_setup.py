@@ -29,11 +29,13 @@ class OxtrustSetup(OxSetup):
         self.render_ldap_props_template()
         self.render_server_xml_template()
         self.write_salt_file()
+        self.render_httpd_conf()
+        self.configure_vhost()
         self.render_check_ssl_template()
         self.gen_cert("shibIDP", self.cluster.decrypted_admin_pw,
                       "tomcat", "tomcat", hostname)
-        # self.gen_cert("httpd", self.cluster.decrypted_admin_pw,
-        #               "www-data", "www-data", hostname)
+        self.gen_cert("httpd", self.cluster.decrypted_admin_pw,
+                      "www-data", "www-data", hostname)
 
         # IDP keystore
         self.gen_keystore(
@@ -93,6 +95,9 @@ class OxtrustSetup(OxSetup):
 [program:tomcat]
 command=/opt/tomcat/bin/catalina.sh run
 environment=CATALINA_PID=/var/run/tomcat.pid
+
+[program:httpd]
+command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /etc/apache2/envvars && /usr/sbin/apache2ctl -DFOREGROUND\\"
 """
 
         self.logger.debug("adding supervisord entry")
@@ -145,3 +150,17 @@ environment=CATALINA_PID=/var/run/tomcat.pid
                     "mkdir -p {}".format(os.path.dirname(dest)),
                 )
                 self.docker.copy_to_container(self.container.cid, src, dest)
+
+    def render_httpd_conf(self):
+        """Copies rendered Apache2's virtual host into the container.
+        """
+        src = "oxtrust/gluu_httpd.conf"
+        file_basename = os.path.basename(src)
+        dest = os.path.join("/etc/apache2/sites-available", file_basename)
+
+        ctx = {
+            "hostname": self.container.hostname,
+            "httpd_cert_fn": "/etc/certs/httpd.crt",
+            "httpd_key_fn": "/etc/certs/httpd.key",
+        }
+        self.copy_rendered_jinja_template(src, dest, ctx)

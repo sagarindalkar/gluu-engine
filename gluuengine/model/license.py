@@ -8,9 +8,9 @@ import uuid
 from ..database import db
 from .base import BaseModel
 from ..utils import generate_passkey
-from ..utils import timestamp_millis
 from ..utils import encrypt_text
 from ..utils import decrypt_text
+from ..utils import retrieve_current_date
 
 
 class LicenseKey(BaseModel):
@@ -73,17 +73,12 @@ class LicenseKey(BaseModel):
     def expired(self):
         """Gets expiration status.
         """
-        # metadata is not generated yet
-        if not self.metadata:
+        expiration_date = self.metadata.get("expiration_date")
+        # expiration_date likely tampered
+        if not expiration_date:
             return True
-
-        # ``expiration_date`` is set to null
-        if not self.metadata["expiration_date"]:
-            return False
-
-        # ``expiration_date`` is time in milliseconds since the EPOCH
-        now = timestamp_millis()
-        return now > self.metadata["expiration_date"]
+        current_date = retrieve_current_date()
+        return current_date > expiration_date
 
     def get_workers(self):
         """Gets worker nodes.
@@ -104,3 +99,7 @@ class LicenseKey(BaseModel):
             "nodes", {"type": "worker"},
         )
         return counter
+
+    @property
+    def mismatched(self):
+        return self.metadata.get("product") != "de"

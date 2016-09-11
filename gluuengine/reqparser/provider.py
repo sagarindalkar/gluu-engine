@@ -151,18 +151,10 @@ AWS_INSTANCE_TYPE_CHOICES = (
     'm4.10xlarge',  #40  160
 )
 
-'''
---amazonec2-access-key#
---amazonec2-secret-key#
---amazonec2-ami=ami-5f709f34 (in model)
---amazonec2-instance-type#
---amazonec2-region=us-east-1#
---amazonec2-vpc-id*
---amazonec2-zone*
---amazonec2-security-group*
---amazonec2-private-address-only#
-
-'''
+#not implemented
+#--amazonec2-vpc-id
+#--amazonec2-zone
+#--amazonec2-security-group
 
 class AwsProviderReq(BaseProviderReq):
     amazonec2_access_key = ma.Str(required=True)

@@ -66,7 +66,7 @@ class LicenseWatcherTask(object):
                     if new_license_key.expired:
                         # unable to do license_key renewal, hence we're going to
                         # disable oxauth and oxidp containers
-                        for type_ in ["oxauth", "oxidp"]:
+                        for type_ in ("oxauth", "oxidp",):
                             self.disable_containers(node, type_)
                     else:
                         # if we have disabled oxauth and oxidp containers in node
@@ -94,7 +94,7 @@ class LicenseWatcherTask(object):
 
         self.logger.info("new license has been retrieved")
         try:
-            signed_license = resp.json()["license"]
+            signed_license = resp.json()[0]["license"]
             decoded_license = decode_signed_license(
                 signed_license,
                 license_key.decrypted_public_key,
@@ -102,7 +102,7 @@ class LicenseWatcherTask(object):
                 license_key.decrypted_license_password,
             )
         except ValueError as exc:  # pragma: no cover
-            self.logger.warn("unable to generate metadata for new license; "
+            self.logger.warn("unable to validate new license; "
                              "reason={}".format(exc))
             decoded_license["valid"] = False
             decoded_license["metadata"] = {}
@@ -141,15 +141,16 @@ class LicenseWatcherTask(object):
         :param node: Node object.
         :param type_: Type of the container.
         """
-        weave = Weave(node, self.app)
-
         containers = node.get_containers(type_=type_, state=STATE_DISABLED)
         with self.app.app_context():
+            weave = Weave(node, self.app)
+
             for container in containers:
                 container.state = STATE_SUCCESS
                 db.update(container.id, container, "containers")
 
                 self.machine.ssh(node.name, "sudo docker restart {}".format(container.cid))
                 weave.dns_add(container.cid, container.hostname)
+                weave.dns_add(container.cid, "{}.weave.local".format(type_))
                 self.logger.info("{} container {} has been "
                                  "enabled".format(type_, container.id))

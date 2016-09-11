@@ -40,6 +40,10 @@ class ContainerReq(ma.Schema):
                 raise ValidationError("cannot deploy container to "
                                       "node with expired license")
 
+            if license_key.mismatched:
+                raise ValidationError("cannot deploy container to "
+                                      "node with incorrect product license")
+
     @post_load
     def finalize_data(self, data):
         """Build finalized data.

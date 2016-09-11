@@ -79,6 +79,8 @@ class LdapSetup(BaseSetup):
         """Setups OpenDJ server without actually running the server
         in post-installation step.
         """
+        self.logger.info("running opendj setup")
+
         src = self.get_template_path("opendj/opendj-setup.properties")
         dest = os.path.join(self.container.ldap_base_folder, os.path.basename(src))
         ctx = {
@@ -98,14 +100,14 @@ class LdapSetup(BaseSetup):
             '--no-prompt', '--cli', '--doNotStart', '--acceptLicense',
             '--propertiesFilePath', dest,
         ])
-
-        self.logger.debug("running opendj setup")
         self.docker.exec_cmd(self.container.cid, setup_cmd)
         self.docker.exec_cmd(self.container.cid, self.container.ldap_ds_java_prop_command)
 
     def configure_opendj(self):
         """Configures OpenDJ.
         """
+        self.logger.info("configuring opendj")
+
         config_changes = [
             "set-global-configuration-prop --set single-structural-objectclass-behavior:accept",
             "set-attribute-syntax-prop --syntax-name 'Directory String' --set allow-zero-length-values:true",
@@ -118,7 +120,6 @@ class LdapSetup(BaseSetup):
             "set-password-policy-prop --policy-name 'Default Password Policy' --set default-password-storage-scheme:'Salted SHA-512'",
         ]
 
-        self.logger.debug("configuring opendj config changes")
         for changes in config_changes:
             dsconfig_cmd = " ".join([
                 self.container.ldap_dsconfig_command,
@@ -137,6 +138,7 @@ class LdapSetup(BaseSetup):
     def index_opendj(self, backend):
         """Creates required index in OpenDJ server.
         """
+        self.logger.info("indexing attributes for {} backend".format(backend))
 
         resp = self.docker.exec_cmd(self.container.cid, "cat /opt/opendj/opendj_index.json")  # noqa
         try:
@@ -188,7 +190,6 @@ class LdapSetup(BaseSetup):
             "inum_org_fn": self.cluster.inum_org_fn,
             "org_name": self.cluster.org_name,
             "scim_rp_client_id": self.cluster.scim_rp_client_id,
-            "oxtrust_hostname": "localhost:8443",
         }
 
         ldifFolder = '%s/ldif' % self.container.ldap_base_folder
@@ -332,7 +333,6 @@ command=/opt/opendj/bin/start-ds --quiet -N
         self.reload_supervisor()
         self.configure_opendj()
 
-        self.logger.debug("creating LDAP attribute for available backends")
         self.index_opendj("site")
         self.index_opendj("userRoot")
 
@@ -344,6 +344,7 @@ command=/opt/opendj/bin/start-ds --quiet -N
                 # ldap container to use this new ldap container as a master.
                 self.replicate_from(peer)
         except IndexError:
+            self.logger.info("importing data from ldif files")
             self.import_ldif()
             self.import_base64_scim_config()
             self.import_base64_config()
@@ -559,7 +560,6 @@ command=/opt/opendj/bin/start-ds --quiet -N
             "ldap_hosts": "{}:{}".format(self.ldap_failover_hostname(), self.cluster.ldaps_port),
             "config_generation": "true",
             "scim_rs_client_id": self.cluster.scim_rs_client_id,
-            "oxtrust_hostname": "localhost:8443",
             "scim_rs_client_jks_fn": "/etc/certs/scim-rs.jks",
             "scim_rs_client_jks_pass_encoded": self.cluster.scim_rs_client_jks_pass_encoded,
         }
@@ -584,7 +584,6 @@ command=/opt/opendj/bin/start-ds --quiet -N
             "ox_cluster_hostname": self.cluster.ox_cluster_hostname,
             "oxauth_client_id": self.cluster.oxauth_client_id,
             "oxauth_client_encoded_pw": self.cluster.oxauth_client_encoded_pw,
-            "oxtrust_hostname": "localhost:8443",
         }
         return self.render_jinja_template(src, ctx)
 
@@ -608,7 +607,6 @@ command=/opt/opendj/bin/start-ds --quiet -N
             "scim_rp_client_id": self.cluster.scim_rp_client_id,
             "scim_rs_client_base64_jwks": generate_base64_contents(scim_rs_client_jwks, 1),
             "scim_rp_client_base64_jwks": generate_base64_contents(scim_rp_client_jwks, 1),
-            "oxtrust_hostname": "localhost:8443",
         }
         self.copy_rendered_jinja_template(
             "opendj/ldif/scim.ldif",

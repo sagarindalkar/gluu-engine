@@ -134,7 +134,7 @@ class BaseContainerHelper(object):
             # add DNS record
             self.weave.dns_add(self.container.cid, self.container.hostname)
 
-            if self.container.type == "ldap":
+            if self.container.type in ("ldap", "oxauth", "oxtrust",):
                 # useful for failover in ox apps
                 self.weave.dns_add(
                     self.container.cid,
@@ -318,7 +318,6 @@ class OxauthContainerHelper(BaseContainerHelper):
 
 class OxtrustContainerHelper(BaseContainerHelper):
     setup_class = OxtrustSetup
-    port_bindings = {8443: ("127.0.0.1", 8443,)}
 
     def __init__(self, container, app, logpath=None):
         self.volumes = {

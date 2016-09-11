@@ -78,7 +78,7 @@ class DeployNode(object):
             with self.app.app_context():
                 db.update(self.node.id, self.node, 'nodes')
         except RuntimeError as e:
-            self.logger.error('failed to install recovery')
+            self.logger.error('failed to install recovery script')
             self.logger.error(e)
 
     def _registry_cert(self):

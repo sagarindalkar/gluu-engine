@@ -2,9 +2,28 @@
 
 Here you can see the full list of changes between each `gluu-engine` release.
 
-## Version 0.5.0 (beta6)
+## Version 0.5.3
 
-Release date to be announced later.
+Released on September 11th, 2016.
+
+* Simplified containers resolver using weave dns load balancer.
+
+## Version 0.5.2
+
+Released on September 2nd, 2016.
+
+* Simplified containers resolver using weave dns load balancer.
+
+## Version 0.5.1
+
+Released on August 31st, 2016.
+
+* Use newest `oxlicense-validator.jar` to validate license.
+* Fixed race condition in `Docker.copy_to_container` method when generating random temporary directory.
+
+## Version 0.5.0
+
+Released on August 29th, 2016.
 
 WARNING: this release is a non-backward compatible with older releases.
 
@@ -15,20 +34,26 @@ WARNING: this release is a non-backward compatible with older releases.
     * The old Node is renamed to Container; the new Node refers to actual machine/server.
     * The old NodeLog is renamed to ContainerLog
 
+*   Image changes:
+
+    * `gluuoxauth` upgraded to CE v2.4.4.
+    * `gluuoxtrust` upgraded to CE v2.4.4.
+    * `gluuopendj` upgraded to OpenDJ 3 (Gluu snapshot).
+    * `gluuhttpd` removed from cluster.
+    * `gluuoxidp` is no longer supported.
+
 *   Fixed error when stopping failed container deployment.
 *   Speed up container teardown by skipping provisioning in failed container.
-*   Container's deployment log are deleted after container teardown.
 *   Set maximum file descriptor in `ldap` container.
-*   `httpd` container is completely removed from cluster.
-*   `gluuoxauth` image is upgraded to CE v2.4.4.
-*   `gluuoxtrust` image is upgraded to CE v2.4.4.
-*   `gluuoxidp` image and container are not supported.
 *   Docker Engine is upgraded to v1.11.2.
 *   Speed up image downloads/updates by pulling them from Gluu's private registry.
 *   Removed `X-Deploy-Log` header from Container API response in favor of `X-Container-Setup-Log`
 *   Introduced `X-Container-Teardown-Log` header.
-*   Removed unused `gluuengine distribute-data` and `gluuengine populate-node-logs` commands.
+*   Removed unused `gluuengine distribute-data`, `gluuengine populate-node-logs`, and `runserver` commands.
 *   Fixed license key monitoring daemon.
+*   oxTrust is exposed as part of the cluster.
+*   Fixed nginx config.
+*   Fixed issue with expired registry cert.
 
 ## Version 0.4.4
 

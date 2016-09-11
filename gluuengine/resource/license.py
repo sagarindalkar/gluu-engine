@@ -3,6 +3,7 @@
 #
 # All rights reserved.
 
+from crochet import run_in_reactor
 from flask import url_for
 from flask import request
 from flask import current_app
@@ -46,6 +47,7 @@ class LicenseKeyListResource(Resource):
 
         license_key = LicenseKey(fields=data)
         license_key, err = self.populate_license(license_key)
+
         if err:
             return {
                 "status": 422,
@@ -92,7 +94,7 @@ class LicenseKeyListResource(Resource):
                 license_key.decrypted_license_password,
             )
         except ValueError as exc:
-            current_app.logger.warn("unable to generate metadata; "
+            current_app.logger.warn("unable to validate license key; "
                                     "reason={}".format(exc))
             decoded_license = {"valid": False, "metadata": {}}
         finally:
@@ -132,7 +134,7 @@ class LicenseKeyResource(Resource):
                 license_key.decrypted_license_password,
             )
         except RuntimeError as exc:
-            current_app.logger.warn("unable to generate metadata; "
+            current_app.logger.warn("unable to validate license key; "
                                     "reason={}".format(exc))
             decoded_license = {"valid": False, "metadata": {}}
         finally:
@@ -141,24 +143,12 @@ class LicenseKeyResource(Resource):
             db.update(license_key.id, license_key, "license_keys")
 
         # if worker nodes have disabled oxAuth and oxIdp containers and license
-        # key is not expired, try to re-enable the containers
-        if not license_key.expired:
-            mc = Machine()
-
-            for worker_node in license_key.get_workers():
-                weave = Weave(
-                    worker_node, current_app._get_current_object(),
-                )
-                for type_ in ["oxauth", "oxidp"]:
-                    containers = worker_node.get_containers(
-                        type_=type_, state=STATE_DISABLED,
-                    )
-
-                    for container in containers:
-                        container.state = STATE_SUCCESS
-                        db.update(container.id, container, "containers")
-                        mc.ssh(worker_node.name, "docker restart {}".format(container.cid))
-                        weave.dns_add(container.cid, container.hostname)
+        # key is not expired and using DE product, try to re-enable
+        # the containers
+        if not (license_key.expired and license_key.mismatched):
+            self._enable_containers(
+                license_key, current_app._get_current_object()
+            )
 
         distribute_cluster_data(current_app.config["SHARED_DATABASE_URI"],
                                 current_app._get_current_object())
@@ -177,3 +167,27 @@ class LicenseKeyResource(Resource):
         distribute_cluster_data(current_app.config["SHARED_DATABASE_URI"],
                                 current_app._get_current_object())
         return {}, 204
+
+    @run_in_reactor
+    def _enable_containers(self, license_key, app):
+        with app.app_context():
+            mc = Machine()
+            containers = []
+
+            for worker_node in license_key.get_workers():
+                weave = Weave(worker_node, app)
+                for type_ in ("oxauth", "oxidp",):
+                    containers = worker_node.get_containers(
+                        type_=type_, state=STATE_DISABLED,
+                    )
+
+                    for container in containers:
+                        container.state = STATE_SUCCESS
+                        db.update(container.id, container, "containers")
+                        mc.ssh(worker_node.name, "docker restart {}".format(container.cid))
+                        weave.dns_add(container.cid, container.hostname)
+                        weave.dns_add(container.cid, "{}.weave.local".format(type_))
+
+            if containers:
+                # distribute json only if disabled containers exist
+                distribute_cluster_data(app.config["SHARED_DATABASE_URI"], app)

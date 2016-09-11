@@ -141,6 +141,13 @@ class CreateNodeResource(Resource):
                         "message": "creating worker node requires a non-expired license key",
                     }, 403
 
+                # we have license key, but it's for another type of product
+                if license_key.mismatched:
+                    return {
+                        "status": 403,
+                        "message": "creating worker node requires a DE product license key",
+                    }, 403
+
             node = WorkerNode(data)
             db.persist(node, 'nodes')
             dwn = DeployWorkerNode(node, discovery, app)

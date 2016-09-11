@@ -2,6 +2,18 @@
 
 Here you can see the full list of changes between each `gluu-engine` release.
 
+## Version 0.5.3
+
+Released on September 11th, 2016.
+
+* Simplified containers resolver using weave dns load balancer.
+
+## Version 0.5.2
+
+Released on September 2nd, 2016.
+
+* Simplified containers resolver using weave dns load balancer.
+
 ## Version 0.5.1
 
 Released on August 31st, 2016.

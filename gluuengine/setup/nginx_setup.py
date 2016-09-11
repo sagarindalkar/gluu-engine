@@ -24,22 +24,13 @@ class NginxSetup(BaseSetup):
             return self.docker.get_container_ip(container_id)
 
         with self.app.app_context():
-            oxauth_containers = filter(None, [
-                resolve_weave_ip(container.cid)
-                for container in self.cluster.get_containers(type_="oxauth")
-            ])
-            oxtrust_containers = filter(None, [
-                resolve_weave_ip(container.cid)
-                for container in self.cluster.get_containers(type_="oxtrust")
-            ])
-            oxidp_containers = filter(None, [
-                resolve_weave_ip(container.cid)
-                for container in self.cluster.get_containers(type_="oxidp")
-            ])
-            oxasimba_containers = filter(None, [
-                resolve_weave_ip(container.cid)
-                for container in self.cluster.get_containers(type_="oxasimba")
-            ])
+            oxauth_containers = []
+            if self.cluster.count_containers("oxauth"):
+                oxauth_containers.append("oxauth.weave.local")
+
+            oxtrust_containers = []
+            if self.cluster.count_containers("oxtrust"):
+                oxtrust_containers.append("oxtrust.weave.local")
 
             ctx = {
                 "ox_cluster_hostname": self.cluster.ox_cluster_hostname,
@@ -48,8 +39,8 @@ class NginxSetup(BaseSetup):
                 "session_affinity": self.get_session_affinity(),
                 "oxauth_containers": oxauth_containers,
                 "oxtrust_containers": oxtrust_containers,
-                "oxidp_containers": oxidp_containers,
-                "oxasimba_containers": oxasimba_containers,
+                # "oxidp_containers": oxidp_containers,
+                # "oxasimba_containers": oxasimba_containers,
             }
 
         src = "nginx/gluu_https.conf"

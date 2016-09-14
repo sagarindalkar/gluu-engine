@@ -18,14 +18,13 @@ from ..helper import distribute_cluster_data
 from ..weave import Weave
 from ..machine import Machine
 from ..utils import retrieve_signed_license
+from ..utils import retrieve_current_date
 from ..utils import decode_signed_license
 
 
 def format_license_key_resp(obj):
     resp = obj.as_dict()
     resp["public_key"] = obj.decrypted_public_key
-    # resp["public_password"] = obj.decrypted_public_password
-    # resp["license_password"] = obj.decrypted_license_password
     return resp
 
 
@@ -46,17 +45,27 @@ class LicenseKeyListResource(Resource):
             }, 400
 
         license_key = LicenseKey(fields=data)
-        license_key, err = self.populate_license(license_key)
+
+        current_app.logger.info("downloading signed license")
+        license_key, err = populate_license(license_key)
 
         if err:
-            return {
-                "status": 422,
-                "message": "unable to retrieve license; reason={}".format(err),
-            }, 422
+            return {"status": 422, "message": err}, 422
 
+        if license_key.expired:
+            return {
+                "status": 403,
+                "message": "expired license is not allowed",
+            }, 403
+
+        if license_key.mismatched:
+            return {
+                "status": 403,
+                "message": "non-Docker Edition product license is not allowed",
+            }, 403
+
+        license_key.updated_at = retrieve_current_date()
         db.persist(license_key, "license_keys")
-        distribute_cluster_data(current_app.config["SHARED_DATABASE_URI"],
-                                current_app._get_current_object())
 
         headers = {
             "Location": url_for("licensekey", license_key_id=license_key.id),
@@ -67,41 +76,6 @@ class LicenseKeyListResource(Resource):
         license_keys = db.all("license_keys")
         return [format_license_key_resp(license_key)
                 for license_key in license_keys]
-
-    def populate_license(self, license_key):
-        err_msg = ""
-
-        # download signed license from license server
-        current_app.logger.info("downloading signed license")
-
-        sl_resp = retrieve_signed_license(license_key.code)
-        if not sl_resp.ok:
-            err_msg = "unable to retrieve license from " \
-                      "https://license.gluu.org; code={} reason={}"
-            current_app.logger.warn(err_msg.format(
-                sl_resp.status_code,
-                sl_resp.text,
-            ))
-            return license_key, err_msg
-
-        signed_license = sl_resp.json()[0]["license"]
-        try:
-            # generate metadata
-            decoded_license = decode_signed_license(
-                signed_license,
-                license_key.decrypted_public_key,
-                license_key.decrypted_public_password,
-                license_key.decrypted_license_password,
-            )
-        except ValueError as exc:
-            current_app.logger.warn("unable to validate license key; "
-                                    "reason={}".format(exc))
-            decoded_license = {"valid": False, "metadata": {}}
-        finally:
-            license_key.valid = decoded_license["valid"]
-            license_key.metadata = decoded_license["metadata"]
-            license_key.signed_license = signed_license
-            return license_key, err_msg
 
 
 class LicenseKeyResource(Resource):
@@ -116,43 +90,36 @@ class LicenseKeyResource(Resource):
         if not license_key:
             return {"status": 404, "message": "license key not found"}, 404
 
-        data, errors = LicenseKeyReq().load(request.form)
-        if errors:
+        current_app.logger.info("downloading signed license")
+        license_key, err = populate_license(license_key)
+
+        if err:
+            return {"status": 422, "message": err}, 422
+
+        if license_key.expired:
             return {
-                "status": 400,
-                "message": "Invalid data",
-                "params": errors,
-            }, 400
-        license_key.populate(data)
+                "status": 403,
+                "message": "expired license is not allowed",
+            }, 403
 
-        try:
-            # try to recalculate the metadata
-            decoded_license = decode_signed_license(
-                license_key.signed_license,
-                license_key.decrypted_public_key,
-                license_key.decrypted_public_password,
-                license_key.decrypted_license_password,
-            )
-        except RuntimeError as exc:
-            current_app.logger.warn("unable to validate license key; "
-                                    "reason={}".format(exc))
-            decoded_license = {"valid": False, "metadata": {}}
-        finally:
-            license_key.valid = decoded_license["valid"]
-            license_key.metadata = decoded_license["metadata"]
-            db.update(license_key.id, license_key, "license_keys")
+        if license_key.mismatched:
+            return {
+                "status": 403,
+                "message": "non-Docker Edition product license is not allowed",
+            }, 403
 
-        # if worker nodes have disabled oxAuth and oxIdp containers and license
-        # key is not expired and using DE product, try to re-enable
-        # the containers
-        if not (license_key.expired and license_key.mismatched):
-            self._enable_containers(
-                license_key, current_app._get_current_object()
-            )
+        license_key.updated_at = retrieve_current_date()
+        db.update(license_key.id, license_key, "license_keys")
 
-        distribute_cluster_data(current_app.config["SHARED_DATABASE_URI"],
-                                current_app._get_current_object())
-        return format_license_key_resp(license_key)
+        # TODO: review if this is necessary in API call
+        self._enable_containers(
+            license_key, current_app._get_current_object()
+        )
+
+        headers = {
+            "Location": url_for("licensekey", license_key_id=license_key.id),
+        }
+        return format_license_key_resp(license_key), 200, headers
 
     def delete(self, license_key_id):
         license_key = db.get(license_key_id, "license_keys")
@@ -184,10 +151,44 @@ class LicenseKeyResource(Resource):
                     for container in containers:
                         container.state = STATE_SUCCESS
                         db.update(container.id, container, "containers")
-                        mc.ssh(worker_node.name, "docker restart {}".format(container.cid))
+                        mc.ssh(
+                            worker_node.name,
+                            "docker restart {}".format(container.cid),
+                        )
                         weave.dns_add(container.cid, container.hostname)
-                        weave.dns_add(container.cid, "{}.weave.local".format(type_))
+                        weave.dns_add(
+                            container.cid,
+                            "{}.weave.local".format(type_),
+                        )
 
             if containers:
                 # distribute json only if disabled containers exist
                 distribute_cluster_data(app.config["SHARED_DATABASE_URI"], app)
+
+
+def populate_license(license_key):
+    err = ""
+
+    resp = retrieve_signed_license(license_key.code)
+    if not resp.ok:
+        err = "unable to retrieve license from license server; " \
+              "code={} reason={}".format(resp.status_code, resp.text)
+        return license_key, err
+
+    signed_license = resp.json()[0]["license"]
+    try:
+        # generate metadata
+        decoded_license = decode_signed_license(
+            signed_license,
+            license_key.decrypted_public_key,
+            license_key.decrypted_public_password,
+            license_key.decrypted_license_password,
+        )
+    except ValueError as exc:
+        err = "unable to validate license key; reason={}".format(exc)
+        decoded_license = {"valid": False, "metadata": {}}
+    finally:
+        license_key.valid = decoded_license["valid"]
+        license_key.metadata = decoded_license["metadata"]
+        license_key.signed_license = signed_license
+        return license_key, err

@@ -13,7 +13,6 @@ import sys
 import tarfile
 import tempfile
 import traceback
-import time
 import uuid
 from subprocess import Popen
 from subprocess import PIPE
@@ -126,9 +125,14 @@ def retrieve_signed_license(code):
 
     :param code: Code (or licenseId).
     """
+    mac_addr = get_mac_addr()
     resp = requests.post(
         "https://license.gluu.org/oxLicense/rest/generate",
-        data={"licenseId": code},
+        data={
+            "licenseId": code,
+            "count": 1,
+            "macAddress": mac_addr,
+        },
         verify=False,
     )
     return resp
@@ -210,3 +214,10 @@ def retrieve_current_date():
         "https://license.gluu.org/oxLicense/rest/currentMilliseconds"
     )
     return req.json()
+
+
+def get_mac_addr():
+    """Gets MAC address according to standard IEEE EUI-48 format.
+    """
+    mac_num = hex(uuid.getnode()).replace("0x", "").upper()
+    return "-".join(mac_num[i:i + 2] for i in range(0, 11, 2))

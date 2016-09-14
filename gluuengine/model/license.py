@@ -20,6 +20,7 @@ class LicenseKey(BaseModel):
         "code",
         "valid",
         "metadata",
+        "updated_at",
     ])
 
     def __init__(self, fields=None):
@@ -28,6 +29,7 @@ class LicenseKey(BaseModel):
         self.valid = False
         self.metadata = {}
         self.signed_license = ""
+        self.updated_at = None
         self.populate(fields)
 
     def populate(self, fields=None):

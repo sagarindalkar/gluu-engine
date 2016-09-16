@@ -102,8 +102,11 @@ class LicenseWatcherTask(object):
         with self.app.app_context():
             worker_nodes = license_key.get_workers()
 
+            # cache the expiration state
+            license_expired = license_key.expired
+
             for node in worker_nodes:
-                if license_key.expired:
+                if license_expired:
                     # disable specific containers
                     self.disable_containers(node, "oxauth")
                 else:

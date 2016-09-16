@@ -17,9 +17,8 @@ from ..model import STATE_SUCCESS
 from ..helper import distribute_cluster_data
 from ..weave import Weave
 from ..machine import Machine
-from ..utils import retrieve_signed_license
 from ..utils import retrieve_current_date
-from ..utils import decode_signed_license
+from ..utils import populate_license
 
 
 def format_license_key_resp(obj):
@@ -164,31 +163,3 @@ class LicenseKeyResource(Resource):
             if containers:
                 # distribute json only if disabled containers exist
                 distribute_cluster_data(app.config["SHARED_DATABASE_URI"], app)
-
-
-def populate_license(license_key):
-    err = ""
-
-    resp = retrieve_signed_license(license_key.code)
-    if not resp.ok:
-        err = "unable to retrieve license from license server; " \
-              "code={} reason={}".format(resp.status_code, resp.text)
-        return license_key, err
-
-    signed_license = resp.json()[0]["license"]
-    try:
-        # generate metadata
-        decoded_license = decode_signed_license(
-            signed_license,
-            license_key.decrypted_public_key,
-            license_key.decrypted_public_password,
-            license_key.decrypted_license_password,
-        )
-    except ValueError as exc:
-        err = "unable to validate license key; reason={}".format(exc)
-        decoded_license = {"valid": False, "metadata": {}}
-    finally:
-        license_key.valid = decoded_license["valid"]
-        license_key.metadata = decoded_license["metadata"]
-        license_key.signed_license = signed_license
-        return license_key, err

@@ -221,3 +221,31 @@ def get_mac_addr():
     """
     mac_num = hex(uuid.getnode()).replace("0x", "").upper()
     return "-".join(mac_num[i:i + 2] for i in range(0, 11, 2))
+
+
+def populate_license(license_key):
+    err = ""
+
+    resp = retrieve_signed_license(license_key.code)
+    if not resp.ok:
+        err = "unable to retrieve license from license server; " \
+              "code={} reason={}".format(resp.status_code, resp.reason)
+        return license_key, err
+
+    signed_license = resp.json()[0]["license"]
+    try:
+        # generate metadata
+        decoded_license = decode_signed_license(
+            signed_license,
+            license_key.decrypted_public_key,
+            license_key.decrypted_public_password,
+            license_key.decrypted_license_password,
+        )
+    except ValueError as exc:
+        err = "unable to validate license key; reason={}".format(exc)
+        decoded_license = {"valid": False, "metadata": {}}
+    finally:
+        license_key.valid = decoded_license["valid"]
+        license_key.metadata = decoded_license["metadata"]
+        license_key.signed_license = signed_license
+        return license_key, err

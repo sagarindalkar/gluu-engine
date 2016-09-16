@@ -13,13 +13,22 @@ from ..database import db
 from ..helper import distribute_cluster_data
 from ..model import STATE_DISABLED
 from ..model import STATE_SUCCESS
-from ..utils import retrieve_signed_license
-from ..utils import decode_signed_license
 from ..weave import Weave
 from ..machine import Machine
+from ..utils import populate_license
+from ..utils import retrieve_current_date
 
 # Default interval when running periodic task (set to 1 day)
-_DEFAULT_INTERVAL = 60 * 60 * 24
+TASK_INTERVAL = 60 * 60 * 24
+
+# Default interval (in milliseconds) to check neccessary update
+UPDATE_INTERVAL_MILLIS = 60 * 60 * 24 * 1000
+
+# Retry interval for updating license (if previous attempt is failed)
+RETRY_INTERVAL = 60 * 60 * 3
+
+# Maximum retries for updating license
+RETRY_LIMIT = 3
 
 
 class LicenseWatcherTask(object):
@@ -39,86 +48,87 @@ class LicenseWatcherTask(object):
             self.logger.error(failure.getTraceback())
 
         lc = LoopingCall(self.monitor_license)
-        deferred = lc.start(_DEFAULT_INTERVAL, now=True)
+        deferred = lc.start(TASK_INTERVAL, now=True)
         deferred.addErrback(on_error)
 
     def monitor_license(self):
-        """Monitors the license for its expiration status.
-        """
-        self.logger.info("checking license keys")
-        with self.app.app_context():
-            license_keys = db.all("license_keys")
+        license_key = self.get_license_key()
+        err = ""
 
-            for license_key in license_keys:
-                if not license_key.expired:
-                    continue
+        self.logger.info("checking license key")
 
-                self.logger.info("found expired license "
-                                 "key {}".format(license_key.id))
-                self.logger.info("trying to retrieve license update")
-                new_license_key = self.update_license_key(license_key)
+        if not license_key:
+            self.logger.info("license key is currently unavailable")
+            return
 
-                worker_nodes = db.search_from_table(
-                    "nodes",
-                    {"type": "worker"},
+        # get current datetime from license server
+        current_date = retrieve_current_date()
+
+        # if license has been already updated within 24 hours,
+        # no need to re-populate the license
+        if (current_date - license_key.updated_at) < UPDATE_INTERVAL_MILLIS:
+            self.logger.info("license key is up-to-date")
+            return
+
+        # do retries (max. 3 times)
+        retry_attempt = 0
+
+        while True:
+            # re-populate the license; this will also send MAC address
+            self.logger.info("downloading signed license")
+            license_key, err = populate_license(license_key)
+
+            if err:
+                self.logger.warn(err)
+
+                if retry_attempt == RETRY_LIMIT:
+                    self.logger.warn("failed to update license after "
+                                     "few retries")
+                    break
+
+                self.logger.info(
+                    "auto-retry in {} seconds".format(RETRY_INTERVAL)
                 )
-                for node in worker_nodes:
-                    if new_license_key.expired:
-                        # unable to do license_key renewal, hence we're going to
-                        # disable oxauth and oxidp containers
-                        for type_ in ("oxauth", "oxidp",):
-                            self.disable_containers(node, type_)
-                    else:
-                        # if we have disabled oxauth and oxidp containers in node
-                        # and license key is not expired, try to re-enable
-                        # the containers
-                        for type_ in ["oxauth", "oxidp"]:
-                            self.enable_containers(node, type_)
+                time.sleep(RETRY_INTERVAL)
+                retry_attempt += 1
+            else:
+                # mark the latest update time
+                license_key.updated_at = retrieve_current_date()
+                with self.app.app_context():
+                    db.update(license_key.id, license_key, "license_keys")
+                self.logger.info("license key has been updated")
+                break
 
-                if worker_nodes:
-                    # delay before distributing the data to worker nodes
-                    time.sleep(5)
-                    distribute_cluster_data(self.app.config["SHARED_DATABASE_URI"], self.app)
+        with self.app.app_context():
+            worker_nodes = license_key.get_workers()
 
-    def update_license_key(self, license_key):
-        """Retrieves new license and update the database.
+            for node in worker_nodes:
+                if license_key.expired:
+                    # disable specific containers
+                    self.disable_containers(node, "oxauth")
+                else:
+                    # if we have specific containers being disabled in node,
+                    # try to re-enable the containers
+                    self.enable_containers(node, "oxauth")
 
-        :param license_key: LicenseKey object.
-        :returns: LicenseKey object with updated values.
-        """
-        resp = retrieve_signed_license(license_key.code)
-        if not resp.ok:
-            self.logger.warn("unable to retrieve new license; "
-                             "reason: {}".format(resp.text))
+            # distribute data as we may have new state about containers
+            if worker_nodes:
+                distribute_cluster_data(
+                    self.app.config["SHARED_DATABASE_URI"], self.app,
+                )
+
+    def get_license_key(self):
+        with self.app.app_context():
+            try:
+                license_key = db.all("license_keys")[0]
+            except IndexError:
+                license_key = None
             return license_key
 
-        self.logger.info("new license has been retrieved")
-        try:
-            signed_license = resp.json()[0]["license"]
-            decoded_license = decode_signed_license(
-                signed_license,
-                license_key.decrypted_public_key,
-                license_key.decrypted_public_password,
-                license_key.decrypted_license_password,
-            )
-        except ValueError as exc:  # pragma: no cover
-            self.logger.warn("unable to validate new license; "
-                             "reason={}".format(exc))
-            decoded_license["valid"] = False
-            decoded_license["metadata"] = {}
-        finally:
-            license_key.valid = decoded_license["valid"]
-            license_key.metadata = decoded_license["metadata"]
-            license_key.signed_license = signed_license
-
-        with self.app.app_context():
-            db.update(license_key.id, license_key, "license_keys")
-        return license_key
-
     def disable_containers(self, node, type_):
-        """Disables containers with certain type.
+        """Disables containers having specific type.
 
-        Disabled container will be excluded from weave network.
+        Disabled container will be stopped and excluded from cluster's network.
 
         :param node: Node object.
         :param type_: Type of the container.
@@ -129,14 +139,16 @@ class LicenseWatcherTask(object):
                 container.state = STATE_DISABLED
                 db.update(container.id, container, "containers")
 
-                self.machine.ssh(node.name, "sudo docker stop {}".format(container.cid))
+                self.machine.ssh(
+                    node.name, "sudo docker stop {}".format(container.cid),
+                )
                 self.logger.info("{} container {} has been "
                                  "disabled".format(type_, container.name))
 
     def enable_containers(self, node, type_):
-        """Enables containers with certain type.
+        """Enables containers having specific type.
 
-        Enabled container will be included into weave network.
+        Enabled container will be restarted and included into cluster's network.
 
         :param node: Node object.
         :param type_: Type of the container.
@@ -149,7 +161,9 @@ class LicenseWatcherTask(object):
                 container.state = STATE_SUCCESS
                 db.update(container.id, container, "containers")
 
-                self.machine.ssh(node.name, "sudo docker restart {}".format(container.cid))
+                self.machine.ssh(
+                    node.name, "sudo docker restart {}".format(container.cid),
+                )
                 weave.dns_add(container.cid, container.hostname)
                 weave.dns_add(container.cid, "{}.weave.local".format(type_))
                 self.logger.info("{} container {} has been "

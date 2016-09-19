@@ -2,6 +2,12 @@
 
 Here you can see the full list of changes between each `gluu-engine` release.
 
+## Version 0.5.5
+
+Released on September 19th, 2016.
+
+* Fixed error when having connection problem to license server.
+
 ## Version 0.5.4
 
 Released on September 16th, 2016.

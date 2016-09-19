@@ -1,3 +1,7 @@
+import pytest
+
+
+@pytest.mark.skip(reason="rewrite needed")
 def test_ldap_container_helper(monkeypatch, app, cluster, master_node,
                                db, ldap_container, swarm_config):
     from gluuengine.helper.container_helper import LdapContainerHelper
@@ -21,6 +25,7 @@ def test_ldap_container_helper(monkeypatch, app, cluster, master_node,
         assert helper.setup_class == LdapSetup
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_oxauth_container_helper(monkeypatch, app, cluster, master_node,
                                  oxauth_container, db, swarm_config):
     from gluuengine.helper import OxauthContainerHelper
@@ -44,6 +49,7 @@ def test_oxauth_container_helper(monkeypatch, app, cluster, master_node,
         assert helper.setup_class == OxauthSetup
 
 
+@pytest.mark.skip(reason="rewrite needed")
 def test_oxtrust_container_helper(monkeypatch, app, cluster, master_node,
                                   oxtrust_container, db, swarm_config):
     from gluuengine.helper import OxtrustContainerHelper

@@ -7,6 +7,7 @@ import logging
 import time
 
 from crochet import run_in_reactor
+from requests.exceptions import ConnectionError
 from twisted.internet.task import LoopingCall
 
 from ..database import db
@@ -61,8 +62,12 @@ class LicenseWatcherTask(object):
             self.logger.info("license key is currently unavailable")
             return
 
-        # get current datetime from license server
-        current_date = retrieve_current_date()
+        try:
+            # get current datetime from license server
+            current_date = retrieve_current_date()
+        except ConnectionError:
+            self.logger.warn("unable to get current date from license server")
+            return
 
         # if license has been already updated within 24 hours,
         # no need to re-populate the license

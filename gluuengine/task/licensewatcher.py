@@ -118,12 +118,7 @@ class LicenseWatcherTask(object):
                     # if we have specific containers being disabled in node,
                     # try to re-enable the containers
                     self.enable_containers(node, "oxauth")
-
-            # distribute data as we may have new state about containers
-            if worker_nodes:
-                distribute_cluster_data(
-                    self.app.config["SHARED_DATABASE_URI"], self.app,
-                )
+                distribute_cluster_data(self.app, node)
 
     def get_license_key(self):
         with self.app.app_context():

@@ -106,16 +106,9 @@ class OxauthSetup(OxSetup):
         self.copy_rendered_jinja_template(src, dest, ctx)
 
     def pull_oxauth_override(self):
-        for root, _, files in os.walk(self.app.config["OXAUTH_OVERRIDE_DIR"]):
-            for fn in files:
-                src = os.path.join(root, fn)
-                dest = src.replace(self.app.config["OXAUTH_OVERRIDE_DIR"],
-                                   "/var/gluu/webapps/oxauth")
-                self.logger.debug("copying {} to {}:{}".format(
-                    src, self.container.name, dest,
-                ))
-                self.docker.exec_cmd(
-                    self.container.cid,
-                    "mkdir -p {}".format(os.path.dirname(dest)),
-                )
-                self.docker.copy_to_container(self.container.cid, src, dest)
+        src = self.app.config["OXAUTH_OVERRIDE_DIR"]
+
+        if os.path.exists(src):
+            dest = "{}:/var/gluu/webapps/oxauth".format(self.node.name)
+            self.logger.info("copying {} to {} recursively".format(src, dest))
+            self.machine.scp(src, dest, recursive=True)

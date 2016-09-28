@@ -28,8 +28,7 @@ class OxidpSetup(OxSetup):
 
         self.gen_cert("shibIDP", self.cluster.decrypted_admin_pw,
                       "tomcat", "tomcat", hostname)
-        self.gen_cert("httpd", self.cluster.decrypted_admin_pw,
-                      "www-data", "www-data", hostname)
+        self.get_web_cert()
 
         # IDP keystore
         self.gen_keystore(
@@ -215,8 +214,8 @@ class OxidpSetup(OxSetup):
 
         ctx = {
             "hostname": self.container.hostname,
-            "httpd_cert_fn": "/etc/certs/httpd.crt",
-            "httpd_key_fn": "/etc/certs/httpd.key",
+            "httpd_cert_fn": "/etc/certs/nginx.crt",
+            "httpd_key_fn": "/etc/certs/nginx.key",
         }
         self.copy_rendered_jinja_template(src, dest, ctx)
 

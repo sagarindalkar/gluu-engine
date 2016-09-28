@@ -3,8 +3,6 @@
 #
 # All rights reserved.
 
-import os
-
 from blinker import signal
 
 from .base import BaseSetup
@@ -68,40 +66,7 @@ class NginxSetup(BaseSetup):
     def setup(self):
         """Runs the actual setup.
         """
-        hostname = self.cluster.ox_cluster_hostname.split(":")[0]
-
-        if not os.path.exists(self.app.config["SSL_CERT_DIR"]):
-            os.makedirs(self.app.config["SSL_CERT_DIR"])
-
-        ssl_cert = os.path.join(self.app.config["SSL_CERT_DIR"], "nginx.crt")
-        ssl_key = os.path.join(self.app.config["SSL_CERT_DIR"], "nginx.key")
-
-        if os.path.exists(ssl_cert) and os.path.exists(ssl_key):
-            # copy cert and key
-            self.logger.debug("copying existing SSL cert")
-            self.docker.copy_to_container(self.container.cid, ssl_cert, "/etc/certs/nginx.crt")
-            self.logger.debug("copying existing SSL key")
-            self.docker.copy_to_container(self.container.cid, ssl_key, "/etc/certs/nginx.key")
-        else:
-            self.gen_cert("nginx", self.cluster.decrypted_admin_pw,
-                          "www-data", "www-data", hostname)
-
-            # save certs locally, so we can reuse and distribute them
-            try:
-                os.makedirs(self.app.config["SSL_CERT_DIR"])
-            except OSError:
-                pass
-
-            resp = self.docker.exec_cmd(self.container.cid, "cat /etc/certs/nginx.crt")
-            if resp.retval:
-                with open(ssl_cert, "w") as fp:
-                    fp.write(resp.retval)
-
-            resp = self.docker.exec_cmd(self.container.cid, "cat /etc/certs/nginx.key")
-            if resp.retval:
-                with open(ssl_key, "w") as fp:
-                    fp.write(resp.retval)
-
+        self.get_web_cert()
         self.change_cert_access("www-data", "www-data")
         self.render_https_conf()
         self.configure_vhost()

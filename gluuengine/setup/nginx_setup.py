@@ -53,13 +53,10 @@ class NginxSetup(BaseSetup):
     def add_auto_startup_entry(self):
         """Adds supervisor program for auto-startup.
         """
-        payload = """
-[program:{}]
-command=/usr/sbin/nginx -g \\"daemon off;\\"
-""".format(self.container.type)
-        self.logger.debug("adding supervisord entry")
-        cmd = '''sh -c "echo '{}' >> /etc/supervisor/conf.d/supervisord.conf"'''.format(payload)
-        self.docker.exec_cmd(self.container.cid, cmd)
+        self.logger.debug("adding nginx config for supervisord")
+        src = "nginx/nginx.conf"
+        dest = "/etc/supervisor/conf.d/nginx.conf"
+        self.copy_rendered_jinja_template(src, dest)
 
     def restart_nginx(self):
         """Restarts nginx via supervisorctl.

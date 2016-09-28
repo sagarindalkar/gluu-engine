@@ -91,18 +91,15 @@ class OxtrustSetup(OxSetup):
     def add_auto_startup_entry(self):
         """Adds supervisor program for auto-startup.
         """
-        payload = """
-[program:tomcat]
-command=/opt/tomcat/bin/catalina.sh run
-environment=CATALINA_PID=/var/run/tomcat.pid
+        self.logger.debug("adding tomcat config for supervisord")
+        src = "_shared/tomcat.conf"
+        dest = "/etc/supervisor/conf.d/tomcat.conf"
+        self.copy_rendered_jinja_template(src, dest)
 
-[program:httpd]
-command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /etc/apache2/envvars && /usr/sbin/apache2ctl -DFOREGROUND\\"
-"""
-
-        self.logger.debug("adding supervisord entry")
-        cmd = '''sh -c "echo '{}' >> /etc/supervisor/conf.d/supervisord.conf"'''.format(payload)
-        self.docker.exec_cmd(self.container.cid, cmd)
+        self.logger.debug("adding httpd config for supervisord")
+        src = "_shared/httpd.conf"
+        dest = "/etc/supervisor/conf.d/httpd.conf"
+        self.copy_rendered_jinja_template(src, dest)
 
     def restart_tomcat(self):
         """Restarts Tomcat via supervisorctl.

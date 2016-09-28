@@ -11,12 +11,6 @@ from .base import BaseSetup
 
 
 class NginxSetup(BaseSetup):
-    def get_session_affinity(self):
-        resp = self.docker.exec_cmd(self.container.cid, "nginx -V")
-        if "nginx-sticky-module-ng" in resp.retval:
-            return "sticky secure httponly hash=sha1"
-        return "ip_hash"
-
     def render_https_conf(self):
         """Copies rendered nginx virtual host config.
         """
@@ -36,7 +30,6 @@ class NginxSetup(BaseSetup):
                 "ox_cluster_hostname": self.cluster.ox_cluster_hostname,
                 "cert_file": "/etc/certs/nginx.crt",
                 "key_file": "/etc/certs/nginx.key",
-                "session_affinity": self.get_session_affinity(),
                 "oxauth_containers": oxauth_containers,
                 "oxtrust_containers": oxtrust_containers,
                 # "oxidp_containers": oxidp_containers,

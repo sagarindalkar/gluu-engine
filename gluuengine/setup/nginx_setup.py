@@ -24,6 +24,10 @@ class NginxSetup(BaseSetup):
             if self.cluster.count_containers("oxtrust"):
                 oxtrust_containers.append("oxtrust.weave.local")
 
+            oxeleven_containers = []
+            if self.cluster.count_containers("oxeleven"):
+                oxeleven_containers.append("oxeleven.weave.local")
+
             ctx = {
                 "ox_cluster_hostname": self.cluster.ox_cluster_hostname,
                 "cert_file": "/etc/certs/nginx.crt",

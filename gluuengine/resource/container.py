@@ -26,13 +26,15 @@ from ..helper import OxauthContainerHelper
 from ..helper import OxtrustContainerHelper
 # from ..helper import OxidpContainerHelper
 from ..helper import NginxContainerHelper
-from ..helper import OxasimbaContainerHelper
+# from ..helper import OxasimbaContainerHelper
+from ..helper import OxelevenContainerHelper
 from ..model import LdapContainer
 from ..model import OxauthContainer
 from ..model import OxtrustContainer
 # from ..model import OxidpContainer
 from ..model import NginxContainer
-from ..model import OxasimbaContainer
+# from ..model import OxasimbaContainer
+from ..model import OxelevenContainer
 from ..model import ContainerLog
 from ..machine import Machine
 from ..utils import as_boolean
@@ -46,6 +48,7 @@ CONTAINER_CHOICES = (
     # "oxidp",  # disabled for now
     "nginx",
     # "oxasimba",  # disabled for now
+    "oxeleven",
 )
 
 
@@ -93,7 +96,8 @@ class ContainerResource(Resource):
         "oxtrust": OxtrustContainerHelper,
         # "oxidp": OxidpContainerHelper,  # disabled for now
         "nginx": NginxContainerHelper,
-        "oxasimba": OxasimbaContainerHelper,
+        # "oxasimba": OxasimbaContainerHelper,
+        "oxeleven": OxelevenContainerHelper,
     }
 
     def get(self, container_id):
@@ -192,7 +196,8 @@ class NewContainerResource(Resource):
         "oxtrust": OxtrustContainerHelper,
         # "oxidp": OxidpContainerHelper,  # disabled for now
         "nginx": NginxContainerHelper,
-        "oxasimba": OxasimbaContainerHelper,
+        # "oxasimba": OxasimbaContainerHelper,
+        "oxeleven": OxelevenContainerHelper,
     }
 
     container_classes = {
@@ -201,7 +206,8 @@ class NewContainerResource(Resource):
         "oxtrust": OxtrustContainer,
         # "oxidp": OxidpContainer,  # disabled for now
         "nginx": NginxContainer,
-        "oxasimba": OxasimbaContainer,
+        # "oxasimba": OxasimbaContainer,
+        "oxeleven": OxelevenContainer,
     }
 
     def post(self, container_type):
@@ -283,6 +289,14 @@ class NewContainerResource(Resource):
                 "status": 403,
                 "message": "cannot deploy additional ldap container "
                            "to specified node",
+            }, 403
+
+        # only allow 1 oxeleven per cluster
+        if container_type == "oxeleven" and cluster.count_containers(type_="oxeleven"):
+            return {
+                "status": 403,
+                "message": "cannot deploy additional oxeleven container "
+                           "to cluster",
             }, 403
 
         # pre-populate the container object

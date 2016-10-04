@@ -26,7 +26,6 @@ class LdapContainer(BaseModel):
     ])
 
     def __init__(self):
-        # Node unique identifier
         self.id = str(uuid.uuid4())
         self.cluster_id = ""
         self.node_id = ""
@@ -83,12 +82,6 @@ class LdapContainer(BaseModel):
         # Full path to openssl command
         self.openssl_command = '/usr/bin/openssl'
 
-    @property
-    def recovery_priority(self):
-        """Gets recovery priority number used by recovery script.
-        """
-        return 1
-
 
 class OxauthContainer(BaseModel):
     resource_fields = dict.fromkeys([
@@ -123,12 +116,6 @@ class OxauthContainer(BaseModel):
         self.tomcat_conf_dir = "/opt/tomcat/conf"
         self.tomcat_log_folder = "/opt/tomcat/logs"
 
-    @property
-    def recovery_priority(self):
-        """Gets recovery priority number used by recovery script.
-        """
-        return 2
-
 
 class OxtrustContainer(BaseModel):
     resource_fields = dict.fromkeys([
@@ -161,12 +148,6 @@ class OxtrustContainer(BaseModel):
         self.tomcat_home = "/opt/tomcat"
         self.tomcat_conf_dir = "/opt/tomcat/conf"
         self.tomcat_log_folder = "/opt/tomcat/logs"
-
-    @property
-    def recovery_priority(self):
-        """Gets recovery priority number used by recovery script.
-        """
-        return 3
 
 
 class OxidpContainer(BaseModel):
@@ -201,12 +182,6 @@ class OxidpContainer(BaseModel):
         self.ldap_binddn = "cn=directory manager"
         self.saml_type = "shibboleth"
 
-    @property
-    def recovery_priority(self):
-        """Gets recovery priority number used by recovery script.
-        """
-        return 4
-
 
 class NginxContainer(BaseModel):
     resource_fields = dict.fromkeys([
@@ -232,12 +207,6 @@ class NginxContainer(BaseModel):
         self.cert_folder = "/etc/certs"
         self.hostname = ""
         self.cid = ""
-
-    @property
-    def recovery_priority(self):
-        """Gets recovery priority number used by recovery script.
-        """
-        return 5
 
 
 class OxasimbaContainer(BaseModel):
@@ -270,6 +239,32 @@ class OxasimbaContainer(BaseModel):
         self.truststore_fn = "/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/security/cacerts"
         self.ldap_binddn = "cn=directory manager"
 
-    @property
-    def recovery_priority(self):
-        return 6
+
+class OxelevenContainer(BaseModel):
+    resource_fields = dict.fromkeys([
+        "id",
+        "name",
+        "type",
+        "cluster_id",
+        "node_id",
+        "state",
+        "hostname",
+        "cid",
+    ])
+
+    def __init__(self):
+        self.id = str(uuid.uuid4())
+        self.cluster_id = ""
+        self.node_id = ""
+        self.name = ""
+        self.type = "oxeleven"
+        self.image = "gluuoxeleven"
+        self.state = ""
+        self.hostname = ""
+        self.cid = ""
+
+        self.cert_folder = "/etc/certs"
+        self.tomcat_home = "/opt/tomcat"
+        self.tomcat_conf_dir = "/opt/tomcat/conf"
+        self.tomcat_log_folder = "/opt/tomcat/logs"
+        self.truststore_fn = "/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/security/cacerts"

@@ -27,6 +27,7 @@ from ..setup import OxtrustSetup
 from ..setup import OxidpSetup
 from ..setup import NginxSetup
 from ..setup import OxasimbaSetup
+from ..setup import OxelevenSetup
 from ..log import create_file_logger
 from ..utils import exc_traceback
 from ..machine import Machine
@@ -134,7 +135,7 @@ class BaseContainerHelper(object):
             # add DNS record
             self.weave.dns_add(self.container.cid, self.container.hostname)
 
-            if self.container.type in ("ldap", "oxauth", "oxtrust",):
+            if self.container.type in ("ldap", "oxauth", "oxtrust", "oxeleven",):
                 # useful for failover in ox apps
                 self.weave.dns_add(
                     self.container.cid,
@@ -357,3 +358,7 @@ class NginxContainerHelper(BaseContainerHelper):
 
 class OxasimbaContainerHelper(BaseContainerHelper):
     setup_class = OxasimbaSetup
+
+
+class OxelevenContainerHelper(BaseContainerHelper):
+    setup_class = OxelevenSetup

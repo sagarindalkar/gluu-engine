@@ -9,3 +9,4 @@ from .oxtrust_setup import OxtrustSetup  # noqa
 from .oxidp_setup import OxidpSetup  # noqa
 from .nginx_setup import NginxSetup  # noqa
 from .oxasimba_setup import OxasimbaSetup  # noqa
+from .oxeleven_setup import OxelevenSetup  # noqa

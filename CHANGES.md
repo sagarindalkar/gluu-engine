@@ -2,13 +2,19 @@
 
 Here you can see the full list of changes between each `gluu-engine` release.
 
+## Version 0.5.7
+
+Released on October 17th, 2016.
+
+* Fixed task launcher being running in each gunicorn worker. Related issue: [#101](https://github.com/GluuFederation/gluu-engine/issues/101).
+
 ## Version 0.5.6
 
 Released on October 13th, 2016.
 
 * Updated `oxauth-config.json` template.
 * Updated `gluu_https.conf` template for `gluunginx` container.
-* Smaller entries in `shared-db.json`.
+* Smaller entries in `shared.json`.
 * Reuse same SSL certs and keys for web frontends.
 
 ## Version 0.5.5

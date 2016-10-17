@@ -50,4 +50,4 @@ def post_fork(server, worker):
 def pre_fork(server, worker):
     # delay before forking other workers, this will give time for a worker
     # to claim task
-    time.sleep(0.5)
+    time.sleep(1)

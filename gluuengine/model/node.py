@@ -167,6 +167,9 @@ class WorkerNode(Node):
 class LoggingNode(Node):
     _state_fields = dict.fromkeys([
         "state_node_create",
+        "state_install_weave",
+        "state_weave_permission",
+        "state_weave_launch",
         "state_rng_tools",
         "state_install_elasticsearch",
         "state_install_kibana",
@@ -177,6 +180,9 @@ class LoggingNode(Node):
         self.id = str(uuid.uuid4())
         self.type = "logging"
         self.state_node_create = False
+        self.state_install_weave = False
+        self.state_weave_permission = False
+        self.state_weave_launch = False
         self.state_rng_tools = False
         self.state_install_elasticsearch = False
         self.state_install_kibana = False

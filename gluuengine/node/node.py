@@ -13,6 +13,7 @@ from ..log import create_file_logger
 
 from ..registry import REGISTRY_BASE_URL
 from ..registry import get_registry_cert
+from ..weave import Weave
 
 REMOTE_DOCKER_CERT_DIR = "/opt/gluu/docker/certs"
 CERT_FILES = ['ca.pem', 'cert.pem', 'key.pem']
@@ -244,10 +245,16 @@ class DeployMasterNode(DeployNode):
 
     def _weave_launch(self):
         try:
-            self.logger.info('launching weave')
-            self.machine.ssh(self.node.name, 'sudo weave launch')
-            self.node.state_weave_launch = True
             with self.app.app_context():
+                self.logger.info('launching weave')
+                try:
+                    elk = db.search_from_table('nodes', {'type': 'logging'})[0]
+                    ip = self.machine.ip(elk.name)
+                except IndexError:
+                    # elk node is not available
+                    ip = ""
+                self.machine.ssh(self.node.name, 'sudo weave launch {}'.format(ip))
+                self.node.state_weave_launch = True
                 db.update(self.node.id, self.node, 'nodes')
         except RuntimeError as e:
             self.logger.error('failed to launch weave')
@@ -376,6 +383,15 @@ class LoggingNodeDeployer(DeployNode):
             time.sleep(1)
 
         if self.node.state_node_create:
+            if not self.node.state_install_weave:
+                self._install_weave()
+                time.sleep(1)
+            if not self.node.state_weave_permission:
+                self._weave_permission()
+                time.sleep(1)
+            if not self.node.state_weave_launch:
+                self._weave_launch()
+                time.sleep(1)
             if not self.node.state_rng_tools:
                 self._rng_tools()
                 time.sleep(1)
@@ -408,13 +424,19 @@ class LoggingNodeDeployer(DeployNode):
 
         try:
             env = os.environ.get("API_ENV", "dev")
-            volume = "/usr/share/elasticsearch/data"
-            self.machine.ssh(self.node.name, "sudo mkdir -p {}".format(volume))
+            weave = Weave(self.node, self.app)
+            bridge_ip, dns_search = weave.dns_args()
 
             cmd = " ".join([
-                "docker run -d --restart=always --name=elasticsearch",
-                "-p 9200:9200 -p 9300:9300",
-                "-v {volume}:{volume}".format(volume=volume),
+                "docker run -d --restart=always ",
+                "--name=elasticsearch --hostname elasticsearch.weave.local",
+                "-p 127.0.0.1:9200:9200 -p 127.0.0.1:9300:9300",
+                "-v /usr/share/elasticsearch/data:/usr/share/elasticsearch/data",
+                # "-v /etc/gluu/elasticsearch:/usr/share/elasticsearch/config",
+                # "-v /etc/gluu/elasticsearch:/etc/elasticsearch",
+                "--dns {}".format(bridge_ip),
+                "--dns-search {}".format(dns_search),
+                "--net weave",
                 "elasticsearch",
                 "-Des.logger.level=WARN ",
                 "-Des.node.name=${HOSTNAME}",
@@ -434,10 +456,15 @@ class LoggingNodeDeployer(DeployNode):
         self.logger.info('installing kibana')
 
         try:
+            weave = Weave(self.node, self.app)
+            bridge_ip, dns_search = weave.dns_args()
+
             cmd = " ".join([
                 "docker run -d --restart=always --name=kibana",
-                "-p 5601:5601",
+                "-p 127.0.0.1:5601:5601",
                 "--link elasticsearch",
+                "--dns {} --dns-search {}".format(bridge_ip, dns_search),
+                "--net weave",
                 "kibana",
             ])
             self.machine.ssh(self.node.name, cmd)
@@ -457,3 +484,20 @@ class LoggingNodeDeployer(DeployNode):
             self.logger.info('node deployment is done')
             with self.app.app_context():
                 db.update(self.node.id, self.node, 'nodes')
+
+    def _weave_launch(self):
+        try:
+            self.logger.info('launching weave')
+            with self.app.app_context():
+                try:
+                    master = db.search_from_table('nodes', {'type': 'master'})[0]
+                    ip = self.machine.ip(master.name)
+                except IndexError:
+                    # master node is not available
+                    ip = ""
+                self.machine.ssh(self.node.name, 'sudo weave launch {}'.format(ip))
+                self.node.state_weave_launch = True
+                db.update(self.node.id, self.node, 'nodes')
+        except RuntimeError as e:
+            self.logger.error('failed to launch weave')
+            self.logger.error(e)

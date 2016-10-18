@@ -30,8 +30,7 @@ class OxasimbaSetup(OxSetup):  # pragma: no cover
 
         self.gen_cert("asimba", self.cluster.decrypted_admin_pw,
                       "tomcat", "tomcat", hostname)
-        self.gen_cert("httpd", self.cluster.decrypted_admin_pw,
-                      "www-data", "www-data", hostname)
+        self.get_web_cert()
 
         # Asimba keystore
         self.gen_keystore(
@@ -53,18 +52,15 @@ class OxasimbaSetup(OxSetup):  # pragma: no cover
         return True
 
     def add_auto_startup_entry(self):
-        payload = """
-[program:tomcat]
-command=/opt/tomcat/bin/catalina.sh run
-environment=CATALINA_PID=/var/run/tomcat.pid
+        self.logger.debug("adding tomcat config for supervisord")
+        src = "_shared/tomcat.conf"
+        dest = "/etc/supervisor/conf.d/tomcat.conf"
+        self.copy_rendered_jinja_template(src, dest)
 
-[program:httpd]
-command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /etc/apache2/envvars && /usr/sbin/apache2ctl -DFOREGROUND\\"
-"""
-
-        self.logger.debug("adding supervisord entry")
-        cmd = '''sh -c "echo '{}' >> /etc/supervisor/conf.d/supervisord.conf"'''.format(payload)
-        self.docker.exec_cmd(self.container.cid, cmd)
+        self.logger.debug("adding httpd config for supervisord")
+        src = "_shared/httpd.conf"
+        dest = "/etc/supervisor/conf.d/httpd.conf"
+        self.copy_rendered_jinja_template(src, dest)
 
     def render_server_xml_template(self):
         src = "oxasimba/server.xml"
@@ -82,8 +78,8 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
 
         ctx = {
             "hostname": self.container.hostname,
-            "httpd_cert_fn": "/etc/certs/httpd.crt",
-            "httpd_key_fn": "/etc/certs/httpd.key",
+            "httpd_cert_fn": "/etc/certs/nginx.crt",
+            "httpd_key_fn": "/etc/certs/nginx.key",
         }
         self.copy_rendered_jinja_template(src, dest, ctx)
 

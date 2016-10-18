@@ -28,8 +28,7 @@ class OxidpSetup(OxSetup):
 
         self.gen_cert("shibIDP", self.cluster.decrypted_admin_pw,
                       "tomcat", "tomcat", hostname)
-        self.gen_cert("httpd", self.cluster.decrypted_admin_pw,
-                      "www-data", "www-data", hostname)
+        self.get_web_cert()
 
         # IDP keystore
         self.gen_keystore(
@@ -175,26 +174,25 @@ class OxidpSetup(OxSetup):
     def add_auto_startup_entry(self):
         """Adds supervisor program for auto-startup.
         """
-        payload = """
-[program:tomcat]
-command=/opt/tomcat/bin/catalina.sh run
-environment=CATALINA_PID=/var/run/tomcat.pid
+        self.logger.debug("adding tomcat config for supervisord")
+        src = "_shared/tomcat.conf"
+        dest = "/etc/supervisor/conf.d/tomcat.conf"
+        self.copy_rendered_jinja_template(src, dest)
 
-[program:memcached]
-command=/usr/bin/memcached -p 11211 -u memcache -m 64 -t 4 -l 0.0.0.0 -vv
-stdout_logfile=/var/log/memcached.log
-stderr_logfile=/var/log/memcached.log
+        self.logger.debug("adding httpd config for supervisord")
+        src = "_shared/httpd.conf"
+        dest = "/etc/supervisor/conf.d/httpd.conf"
+        self.copy_rendered_jinja_template(src, dest)
 
-[program:nutcracker]
-command=nutcracker -c /etc/nutcracker.yml -p /var/run/nutcracker.pid -o /var/log/nutcracker.log -v 11
+        self.logger.debug("adding memcached config for supervisord")
+        src = "oxidp/memcached.conf"
+        dest = "/etc/supervisor/conf.d/memcached.conf"
+        self.copy_rendered_jinja_template(src, dest)
 
-[program:httpd]
-command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /etc/apache2/envvars && /usr/sbin/apache2ctl -DFOREGROUND\\"
-"""
-
-        self.logger.debug("adding supervisord entry")
-        cmd = '''sh -c "echo '{}' >> /etc/supervisor/conf.d/supervisord.conf"'''.format(payload)
-        self.docker.exec_cmd(self.container.cid, cmd)
+        self.logger.debug("adding nutcracker config for supervisord")
+        src = "oxidp/nutcracker.conf"
+        dest = "/etc/supervisor/conf.d/nutcracker.conf"
+        self.copy_rendered_jinja_template(src, dest)
 
     def render_server_xml_template(self):
         """Copies rendered Tomcat's server.xml into the container.
@@ -216,8 +214,8 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
 
         ctx = {
             "hostname": self.container.hostname,
-            "httpd_cert_fn": "/etc/certs/httpd.crt",
-            "httpd_key_fn": "/etc/certs/httpd.key",
+            "httpd_cert_fn": "/etc/certs/nginx.crt",
+            "httpd_key_fn": "/etc/certs/nginx.key",
         }
         self.copy_rendered_jinja_template(src, dest, ctx)
 

@@ -4,8 +4,6 @@
 # All rights reserved.
 
 import json
-import os
-from collections import defaultdict
 
 import jsonpickle
 from werkzeug.utils import import_string
@@ -72,21 +70,6 @@ class Database(PyMongo):
 
     def delete_from_table(self, table_name, condition):
         return self.db[table_name].delete_one(condition)
-
-    def export_as_json(self, path):
-        data = defaultdict(dict)
-
-        for collection in self.db.collection_names():
-            for idx, doc in enumerate(self.db[collection].find(), 1):
-                data[collection].update({idx: doc})
-
-        parent_dir = os.path.dirname(path)
-        if not os.path.exists(parent_dir):
-            os.makedirs(parent_dir)
-
-        with open(path, "w") as fd:
-            fd.write(json.dumps(data))
-        return path
 
 
 # shortcut to database object

@@ -130,36 +130,29 @@ class LicenseKeyResource(Resource):
             return {"status": 403, "message": msg}, 403
 
         db.delete(license_key_id, "license_keys")
-        distribute_cluster_data(current_app.config["SHARED_DATABASE_URI"],
-                                current_app._get_current_object())
         return {}, 204
 
     @run_in_reactor
     def _enable_containers(self, license_key, app):
         with app.app_context():
             mc = Machine()
-            containers = []
 
             for worker_node in license_key.get_workers():
                 weave = Weave(worker_node, app)
-                for type_ in ("oxauth", "oxidp",):
-                    containers = worker_node.get_containers(
-                        type_=type_, state=STATE_DISABLED,
+                containers = worker_node.get_containers(
+                    type_="oxauth", state=STATE_DISABLED,
+                )
+
+                for container in containers:
+                    container.state = STATE_SUCCESS
+                    db.update(container.id, container, "containers")
+                    mc.ssh(
+                        worker_node.name,
+                        "docker restart {}".format(container.cid),
                     )
-
-                    for container in containers:
-                        container.state = STATE_SUCCESS
-                        db.update(container.id, container, "containers")
-                        mc.ssh(
-                            worker_node.name,
-                            "docker restart {}".format(container.cid),
-                        )
-                        weave.dns_add(container.cid, container.hostname)
-                        weave.dns_add(
-                            container.cid,
-                            "{}.weave.local".format(type_),
-                        )
-
-            if containers:
-                # distribute json only if disabled containers exist
-                distribute_cluster_data(app.config["SHARED_DATABASE_URI"], app)
+                    weave.dns_add(container.cid, container.hostname)
+                    weave.dns_add(
+                        container.cid,
+                        "{}.weave.local".format("oxauth"),
+                    )
+                distribute_cluster_data(app, worker_node)

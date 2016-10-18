@@ -32,10 +32,10 @@ class OxtrustSetup(OxSetup):
         self.render_httpd_conf()
         self.configure_vhost()
         self.render_check_ssl_template()
+
         self.gen_cert("shibIDP", self.cluster.decrypted_admin_pw,
                       "tomcat", "tomcat", hostname)
-        self.gen_cert("httpd", self.cluster.decrypted_admin_pw,
-                      "www-data", "www-data", hostname)
+        self.get_web_cert()
 
         # IDP keystore
         self.gen_keystore(
@@ -91,18 +91,15 @@ class OxtrustSetup(OxSetup):
     def add_auto_startup_entry(self):
         """Adds supervisor program for auto-startup.
         """
-        payload = """
-[program:tomcat]
-command=/opt/tomcat/bin/catalina.sh run
-environment=CATALINA_PID=/var/run/tomcat.pid
+        self.logger.debug("adding tomcat config for supervisord")
+        src = "_shared/tomcat.conf"
+        dest = "/etc/supervisor/conf.d/tomcat.conf"
+        self.copy_rendered_jinja_template(src, dest)
 
-[program:httpd]
-command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /etc/apache2/envvars && /usr/sbin/apache2ctl -DFOREGROUND\\"
-"""
-
-        self.logger.debug("adding supervisord entry")
-        cmd = '''sh -c "echo '{}' >> /etc/supervisor/conf.d/supervisord.conf"'''.format(payload)
-        self.docker.exec_cmd(self.container.cid, cmd)
+        self.logger.debug("adding httpd config for supervisord")
+        src = "_shared/httpd.conf"
+        dest = "/etc/supervisor/conf.d/httpd.conf"
+        self.copy_rendered_jinja_template(src, dest)
 
     def restart_tomcat(self):
         """Restarts Tomcat via supervisorctl.
@@ -137,19 +134,12 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
                 pass
 
     def pull_oxtrust_override(self):
-        for root, _, files in os.walk(self.app.config["OXTRUST_OVERRIDE_DIR"]):
-            for fn in files:
-                src = os.path.join(root, fn)
-                dest = src.replace(self.app.config["OXTRUST_OVERRIDE_DIR"],
-                                   "/var/gluu/webapps/oxtrust")
-                self.logger.debug("copying {} to {}:{}".format(
-                    src, self.container.name, dest,
-                ))
-                self.docker.exec_cmd(
-                    self.container.cid,
-                    "mkdir -p {}".format(os.path.dirname(dest)),
-                )
-                self.docker.copy_to_container(self.container.cid, src, dest)
+        src = self.app.config["OXTRUST_OVERRIDE_DIR"]
+
+        if os.path.exists(src):
+            dest = "{}:/var/gluu/webapps/oxtrust".format(self.node.name)
+            self.logger.info("copying {} to {} recursively".format(src, dest))
+            self.machine.scp(src, dest, recursive=True)
 
     def render_httpd_conf(self):
         """Copies rendered Apache2's virtual host into the container.
@@ -160,7 +150,7 @@ command=/usr/bin/pidproxy /var/run/apache2/apache2.pid /bin/bash -c \\"source /e
 
         ctx = {
             "hostname": self.container.hostname,
-            "httpd_cert_fn": "/etc/certs/httpd.crt",
-            "httpd_key_fn": "/etc/certs/httpd.key",
+            "httpd_cert_fn": "/etc/certs/nginx.crt",
+            "httpd_key_fn": "/etc/certs/nginx.key",
         }
         self.copy_rendered_jinja_template(src, dest, ctx)

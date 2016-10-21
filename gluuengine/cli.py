@@ -4,11 +4,14 @@
 # All rights reserved.
 
 import os
+import uuid
 
 import click
 
 from .app import create_app
 from .database import db
+from .dockerclient import Docker
+from .errors import DockerExecError
 from .machine import Machine
 from .registry import get_registry_cert
 from .registry import REGISTRY_BASE_URL
@@ -123,3 +126,84 @@ def update_reg_cert():
                     REGISTRY_BASE_URL,
                 ),
             )
+
+
+@main.command("distribute-ssl-cert")
+def distribute_ssl_cert():
+    """Distribute SSL certificate and key.
+    """
+    app = create_app()
+
+    ssl_cert = os.path.join(app.config["SSL_CERT_DIR"], "nginx.crt")
+    if not os.path.exists(ssl_cert):
+        click.echo("{} is not available; process cancelled".format(ssl_cert))
+        return
+
+    ssl_key = os.path.join(app.config["SSL_CERT_DIR"], "nginx.key")
+    if not os.path.exists(ssl_key):
+        click.echo("{} is not available; process cancelled".format(ssl_key))
+        return
+
+    with app.app_context():
+        try:
+            master_node = db.search_from_table("nodes", {"type": "master"})[0]
+        except IndexError:
+            master_node = None
+
+        if not master_node:
+            click.echo("master node is not available; process cancelled")
+            return
+
+        mc = Machine()
+        dk = Docker(mc.config(master_node.name),
+                    mc.swarm_config(master_node.name))
+
+        ngx_containers = db.search_from_table(
+            "containers",
+            {"type": "nginx", "state": "SUCCESS"},
+        )
+        for ngx in ngx_containers:
+            click.echo("copying {} to {}:/etc/certs/nginx.crt".format(ssl_cert, ngx.name))
+            dk.copy_to_container(ngx.cid, ssl_cert, "/etc/certs/nginx.crt")
+            click.echo("copying {} to {}:/etc/certs/nginx.key".format(ssl_key, ngx.name))
+            dk.copy_to_container(ngx.cid, ssl_key, "/etc/certs/nginx.key")
+            dk.exec_cmd(ngx.cid, "supervisorctl restart nginx")
+
+        # oxTrust relies on nginx cert and key, hence we need to update it
+        try:
+            oxtrust = db.search_from_table(
+                "containers",
+                {"type": "oxtrust", "state": "SUCCESS"},
+            )[0]
+        except IndexError:
+            oxtrust = None
+
+        if oxtrust:
+            click.echo("copying {} to {}:/etc/certs/nginx.crt".format(ssl_cert, oxtrust.name))
+            dk.copy_to_container(oxtrust.cid, ssl_cert, "/etc/certs/nginx.crt")
+            click.echo("copying {} to {}:/etc/certs/nginx.key".format(ssl_key, oxtrust.name))
+            dk.copy_to_container(oxtrust.cid, ssl_key, "/etc/certs/nginx.key")
+
+            der_cmd = "openssl x509 -outform der -in /etc/certs/nginx.crt " \
+                      "-out /etc/certs/nginx.der"
+            dk.exec_cmd(oxtrust.cid, der_cmd)
+
+            import_cmd = " ".join([
+                "keytool -importcert -trustcacerts",
+                "-alias '{}'".format(uuid.uuid4()),
+                "-file /etc/certs/nginx.der",
+                "-keystore {}".format(oxtrust.truststore_fn),
+                "-storepass changeit -noprompt",
+            ])
+            import_cmd = '''sh -c "{}"'''.format(import_cmd)
+
+            try:
+                click.echo("importing ssl cert into {} keystore".format(oxtrust.name))
+                dk.exec_cmd(oxtrust.cid, import_cmd)
+            except DockerExecError as exc:
+                if exc.exit_code == 1:
+                    # certificate already imported
+                    click.echo("certificate already imported")
+
+        # mark the process as finished
+        click.echo("distributing SSL cert and key is done")

@@ -8,6 +8,7 @@ import os.path
 import shutil
 import tempfile
 import time
+import uuid
 
 from jinja2 import Environment
 from jinja2 import PackageLoader
@@ -408,7 +409,7 @@ class OxSetup(BaseSetup):
 
         import_cmd = " ".join([
             "keytool -importcert -trustcacerts",
-            "-alias '{}'".format(self.cluster.ox_cluster_hostname),
+            "-alias '{}'".format(uuid.uuid4()),
             "-file /etc/certs/nginx.der",
             "-keystore {}".format(self.container.truststore_fn),
             "-storepass changeit -noprompt",
@@ -419,5 +420,4 @@ class OxSetup(BaseSetup):
             self.docker.exec_cmd(self.container.cid, import_cmd)
         except DockerExecError as exc:  # pragma: no cover
             if exc.exit_code == 1:
-                # certificate already imported
-                pass
+                self.logger.warn("certificate already imported")

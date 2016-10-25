@@ -2,6 +2,15 @@
 
 Here you can see the full list of changes between each `gluu-engine` release.
 
+## Version 0.5.8
+
+Released on October 26th, 2016.
+
+* `pre_fork` delay time has been increased.
+* Sensitive fields are hidden from API responses.
+* Added command to distribute SSL certificate and key.
+* Added new rule to validate `active` flag in license's metadata. Related issue: [#103](https://github.com/GluuFederation/gluu-engine/issues/103).
+
 ## Version 0.5.7
 
 Released on October 17th, 2016.

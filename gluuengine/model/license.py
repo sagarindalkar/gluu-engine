@@ -105,3 +105,7 @@ class LicenseKey(BaseModel):
     @property
     def mismatched(self):
         return self.metadata.get("product") != "de"
+
+    @property
+    def is_active(self):
+        return self.metadata.get("active") is True

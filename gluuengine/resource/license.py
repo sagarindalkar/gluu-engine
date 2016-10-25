@@ -63,6 +63,12 @@ class LicenseKeyListResource(Resource):
                 "message": "non-Docker Edition product license is not allowed",
             }, 403
 
+        if not license_key.is_active:
+            return {
+                "status": 403,
+                "message": "non-active license is not allowed",
+            }, 403
+
         license_key.updated_at = retrieve_current_date()
         db.persist(license_key, "license_keys")
 
@@ -105,6 +111,12 @@ class LicenseKeyResource(Resource):
             return {
                 "status": 403,
                 "message": "non-Docker Edition product license is not allowed",
+            }, 403
+
+        if not license_key.is_active:
+            return {
+                "status": 403,
+                "message": "non-active license is not allowed",
             }, 403
 
         license_key.updated_at = retrieve_current_date()

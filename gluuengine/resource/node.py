@@ -138,6 +138,12 @@ class CreateNodeResource(Resource):
                         "message": "creating worker node requires a DE product license key",
                     }, 403
 
+                if not license_key.is_active:
+                    return {
+                        "status": 403,
+                        "message": "creating worker node requires active license",
+                    }, 403
+
             node = WorkerNode(data)
             db.persist(node, 'nodes')
             dwn = DeployWorkerNode(node, discovery, app)

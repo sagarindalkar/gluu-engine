@@ -44,6 +44,10 @@ class ContainerReq(ma.Schema):
                 raise ValidationError("cannot deploy container to "
                                       "node with incorrect product license")
 
+            if not license_key.is_active:
+                raise ValidationError("cannot deploy container to "
+                                      "node with non-active license")
+
     @post_load
     def finalize_data(self, data):
         """Build finalized data.

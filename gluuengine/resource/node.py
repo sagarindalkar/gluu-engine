@@ -22,7 +22,6 @@ from ..utils import as_boolean
 # TODO: put it in config
 NODE_TYPES = ('master', 'worker', 'discovery',)
 DISCOVERY_PORT = '8500'
-DISCOVERY_NODE_NAME = 'gluu.discovery'
 
 
 class Discovery(object):
@@ -34,11 +33,6 @@ class CreateNodeResource(Resource):
     def __init__(self):
         self.machine = Machine()
 
-    def is_discovery_running(self):
-        if db.count_from_table('nodes', {'type': 'discovery'}):
-            return self.machine.status(DISCOVERY_NODE_NAME)
-        return False
-
     def post(self, node_type):
         app = current_app._get_current_object()
 
@@ -47,42 +41,39 @@ class CreateNodeResource(Resource):
                 "status": 404,
                 "message": "Node type is not supported",
             }, 404
-        #TODO: need to remove this name constrain
-        if node_type == 'discovery' and request.form.get('name', '') != DISCOVERY_NODE_NAME:
-            return {
-                "status": 404,
-                "message": "discovery node name must be, " + DISCOVERY_NODE_NAME,
-            }, 404
 
-        if node_type == 'discovery' and self.is_discovery_running():
+        try:
+            dcv_node = db.search_from_table(
+                "nodes", {"type": "discovery"}
+            )[0]
+        except IndexError:
+            dcv_node = None
+
+        if node_type == 'discovery' and dcv_node:
             return {
-                "status": 404,
-                "message": "discovery server is already created",
-            }, 404
+                "status": 403,
+                "message": "discovery node is already created",
+            }, 403
 
         if node_type == 'master':
-            discovery = db.search_from_table('nodes', {'type': 'discovery'})
-            if not discovery:
+            if not db.count_from_table('nodes', {'type': 'discovery'}):
                 return {
-                    "status": 404,
+                    "status": 403,
                     "message": "master node needs a discovery",
-                }, 404
+                }, 403
 
-        if node_type == 'master':
-            master = db.search_from_table('nodes', {'type': 'master'})
-            if master:
+            if db.count_from_table('nodes', {'type': 'master'}):
                 return {
-                    "status": 404,
+                    "status": 403,
                     "message": "master node is already created",
-                }, 404
+                }, 403
 
         if node_type == 'worker':
-            master = db.search_from_table('nodes', {'type': 'master'})
-            if not master:
+            if not db.count_from_table('nodes', {'type': 'master'}):
                 return {
-                    "status": 404,
+                    "status": 403,
                     "message": "worker node needs a master",
-                }, 404
+                }, 403
 
         data, errors = NodeReq().load(request.form)
         if errors:
@@ -92,11 +83,9 @@ class CreateNodeResource(Resource):
                 "params": errors,
             }, 400
 
-        #TODO: get discovery node name
-        discovery = None
         if node_type != 'discovery':
             discovery = Discovery()
-            discovery.ip = self.machine.ip(DISCOVERY_NODE_NAME)
+            discovery.ip = self.machine.ip(dcv_node.name)
             discovery.port = DISCOVERY_PORT
 
         if node_type == 'discovery':
@@ -218,6 +207,8 @@ class NodeResource(Resource):
         return {}, 204
 
     def put(self, node_name):
+        app = current_app._get_current_object()
+
         nodes = db.search_from_table('nodes', {'name': node_name})
         if nodes:
             node = nodes[0]
@@ -227,18 +218,24 @@ class NodeResource(Resource):
                 "message": "node not found"
             }, 404
 
-        discovery = None
+        try:
+            dcv_node = db.search_from_table(
+                "nodes", {"type": "master"}
+            )[0]
+        except IndexError:
+            dcv_node = None
+
         if node.type != 'discovery':
             discovery = Discovery()
-            discovery.ip = self.machine.ip(DISCOVERY_NODE_NAME)
+            discovery.ip = self.machine.ip(dcv_node.name)
             discovery.port = DISCOVERY_PORT
 
         if node.type == 'discovery':
-            dn = DeployDiscoveryNode(node, current_app._get_current_object())
+            dn = DeployDiscoveryNode(node, app)
         if node.type == 'master':
-            dn = DeployMasterNode(node, discovery, current_app._get_current_object())
+            dn = DeployMasterNode(node, discovery, app)
         if node.type == 'worker':
-            dn = DeployWorkerNode(node, discovery, current_app._get_current_object())
+            dn = DeployWorkerNode(node, discovery, app)
 
         dn.deploy()
         headers = {

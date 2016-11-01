@@ -446,7 +446,12 @@ class ScaleContainerResource(Resource):
     def get_running_nodes(self):
         m = Machine()
         running_nodes = m.list('running')
-        running_nodes.remove('gluu.discovery')
+
+        try:
+            dcv_node = db.search_from_table("nodes", {"type": "discovery"})[0]
+            running_nodes.remove(dcv_node.name)
+        except IndexError:
+            pass
         return running_nodes
 
     def make_node_id_pool(self, nodes):

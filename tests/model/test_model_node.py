@@ -28,4 +28,4 @@ def test_count_containers_by_state(db, worker_node, ldap_container):
 
 
 def test_enforced_node_name(discovery_node):
-    assert discovery_node.name == "gluu.discovery"
+    assert discovery_node.name == "discovery-node"

@@ -86,8 +86,7 @@ class DiscoveryNode(Node):
 
     def populate(self, fields=None):
         fields = fields or {}
-        self.name = 'gluu.discovery'
-        #self.type = fields.get('type', '')
+        self.name = fields.get("name", "gluu.discovery")
         self.provider_id = fields.get('provider_id', '')
 
 

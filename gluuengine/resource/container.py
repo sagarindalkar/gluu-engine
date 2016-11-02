@@ -291,6 +291,14 @@ class NewContainerResource(Resource):
                            "to specified node",
             }, 403
 
+        # only allow oxeleven in master node
+        if container_type == "oxeleven" and node.type != "master":
+            return {
+                "status": 403,
+                "message": "cannot deploy oxeleven container "
+                           "to non-master node",
+            }, 403
+
         # only allow 1 oxeleven per cluster
         if container_type == "oxeleven" and cluster.count_containers(type_="oxeleven"):
             return {

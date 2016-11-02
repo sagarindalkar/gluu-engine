@@ -40,7 +40,7 @@ class Docker(object):
 
     def setup_container(self, name, image, env=None, port_bindings=None,
                         volumes=None, dns=None, dns_search=None, ulimits=None,
-                        hostname=None):
+                        command= None, hostname=None):
         image = "{}/{}".format(self.registry_base_url, image)
 
         # pull the image first if not exist
@@ -56,6 +56,7 @@ class Docker(object):
             dns=dns,
             dns_search=dns_search,
             ulimits=ulimits,
+            command=command,
             hostname=hostname,
         )
 
@@ -109,7 +110,7 @@ class Docker(object):
 
     def run_container(self, name, image, env=None, port_bindings=None,
                       volumes=None, dns=None, dns_search=None,
-                      ulimits=None, hostname=None):
+                      ulimits=None, command=None, hostname=None):
         """Runs a docker container in detached mode.
 
         This is a two-steps operation:
@@ -125,6 +126,7 @@ class Docker(object):
         :param dns: DNS name servers.
         :param dns_search: DNS search domains.
         :param ulimits: ulimit settings.
+        :param command: cmd arg.
         :returns: A string of container ID in long format if container
                   is running successfully, otherwise an empty string.
         """
@@ -153,6 +155,7 @@ class Docker(object):
                         "MaximumRetryCount": 10,
                     },
                 ),
+                command = command,
                 hostname=hostname,
             )
             container_id = container["Id"]

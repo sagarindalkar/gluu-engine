@@ -109,6 +109,7 @@ class BaseContainerHelper(object):
                 dns=[bridge_ip],
                 dns_search=[dns_search],
                 ulimits=self.ulimits,
+                command = ['oxeleven', self.cluster.admin_pw] if self.container.type == 'oxeleven' else [],
                 # hostname=self.container.hostname,
             )
 

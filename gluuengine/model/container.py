@@ -262,9 +262,3 @@ class OxelevenContainer(BaseModel):
         self.state = ""
         self.hostname = ""
         self.cid = ""
-
-        self.cert_folder = "/etc/certs"
-        self.tomcat_home = "/opt/tomcat"
-        self.tomcat_conf_dir = "/opt/tomcat/conf"
-        self.tomcat_log_folder = "/opt/tomcat/logs"
-        self.truststore_fn = "/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/security/cacerts"

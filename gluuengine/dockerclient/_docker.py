@@ -13,7 +13,6 @@ from contextlib import contextmanager
 import docker
 
 from ..errors import DockerExecError
-from ..registry import REGISTRY_BASE_URL
 from ..utils import make_tarfile
 from ..utils import extract_tarfile
 
@@ -26,7 +25,7 @@ class Docker(object):
     def __init__(self, config, swarm_config):
         self.config = config
         self.swarm_config = swarm_config
-        self.registry_base_url = REGISTRY_BASE_URL
+        self.registry_base_url = "gluufederation"
 
     def image_exists(self, name):
         """Checks whether a docker image exists.

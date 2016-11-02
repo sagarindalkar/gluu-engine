@@ -11,9 +11,6 @@ from ..database import db
 from ..machine import Machine
 from ..log import create_file_logger
 
-from ..registry import REGISTRY_BASE_URL
-from ..registry import get_registry_cert
-
 REMOTE_DOCKER_CERT_DIR = "/opt/gluu/docker/certs"
 CERT_FILES = ['ca.pem', 'cert.pem', 'key.pem']
 
@@ -52,8 +49,8 @@ class DeployNode(object):
         try:
             self.logger.info("pulling gluu images in {} node".format(self.node.name))
             cmd_list = [
-                'sudo docker pull {}/gluuoxauth:{}'.format(REGISTRY_BASE_URL, self.app.config["GLUU_IMAGE_TAG"]),
-                'sudo docker pull {}/gluunginx:{}'.format(REGISTRY_BASE_URL, self.app.config["GLUU_IMAGE_TAG"]),
+                'sudo docker pull gluufederation/oxauth:{}'.format(self.app.config["GLUU_IMAGE_TAG"]),
+                'sudo docker pull gluufederation/nginx:{}'.format(self.app.config["GLUU_IMAGE_TAG"]),
             ]
             self.machine.ssh(self.node.name, ' && '.join(cmd_list))
             self.node.state_pull_images = True
@@ -79,30 +76,6 @@ class DeployNode(object):
                 db.update(self.node.id, self.node, 'nodes')
         except RuntimeError as e:
             self.logger.error('failed to install recovery script')
-            self.logger.error(e)
-
-    def _registry_cert(self):
-        try:
-            self.logger.info("retrieving registry certificate")
-            self.machine.ssh(
-                self.node.name,
-                r"sudo mkdir -p /etc/docker/certs.d/{}".format(REGISTRY_BASE_URL),
-            )
-            registry_cert = get_registry_cert(
-                os.path.join(self.app.config["REGISTRY_CERT_DIR"], "ca.crt")
-            )
-            self.machine.scp(
-                registry_cert,
-                r"{}:/etc/docker/certs.d/{}/ca.crt".format(
-                    self.node.name,
-                    REGISTRY_BASE_URL,
-                ),
-            )
-            self.node.state_registry_cert = True
-            with self.app.app_context():
-                db.update(self.node.id, self.node, 'nodes')
-        except RuntimeError as e:
-            self.logger.error('failed to retrieve registry certificate')
             self.logger.error(e)
 
     def _install_weave(self):
@@ -196,9 +169,6 @@ class DeployMasterNode(DeployNode):
             if not self.node.state_weave_launch:
                 self._weave_launch()
                 time.sleep(1)
-            if not self.node.state_registry_cert:
-                self._registry_cert()
-                time.sleep(1)
             if not self.node.state_docker_cert:
                 self._docker_cert()
                 time.sleep(1)
@@ -223,9 +193,9 @@ class DeployMasterNode(DeployNode):
     def _is_completed(self):
         if all([self.node.state_node_create, self.node.state_install_weave,
                 self.node.state_weave_permission, self.node.state_weave_launch,
-                self.node.state_registry_cert, self.node.state_docker_cert,
-                self.node.state_fswatcher, self.node.state_recovery,
-                self.node.state_rng_tools, self.node.state_pull_images]):
+                self.node.state_docker_cert, self.node.state_fswatcher,
+                self.node.state_recovery, self.node.state_rng_tools,
+                self.node.state_pull_images]):
             self.node.state_complete = True
             self.logger.info('node deployment is done')
             with self.app.app_context():
@@ -315,9 +285,6 @@ class DeployWorkerNode(DeployNode):
             if not self.node.state_weave_launch:
                 self._weave_launch()
                 time.sleep(1)
-            if not self.node.state_registry_cert:
-                self._registry_cert()
-                time.sleep(1)
             if not self.node.state_recovery:
                 self._recovery()
                 time.sleep(1)
@@ -336,8 +303,8 @@ class DeployWorkerNode(DeployNode):
     def _is_completed(self):
         if all([self.node.state_node_create, self.node.state_install_weave,
                 self.node.state_weave_permission, self.node.state_weave_launch,
-                self.node.state_registry_cert, self.node.state_recovery,
-                self.node.state_rng_tools, self.node.state_pull_images]):
+                self.node.state_recovery, self.node.state_rng_tools,
+                self.node.state_pull_images]):
             self.node.state_complete = True
             self.logger.info('node deployment is done')
             with self.app.app_context():

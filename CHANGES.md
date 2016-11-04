@@ -2,6 +2,12 @@
 
 Here you can see the full list of changes between each `gluu-engine` release.
 
+## Version 0.5.9
+
+Released on November 4th, 2016.
+
+* Added auto-update check to determine whether license need to be updated or not.
+
 ## Version 0.5.8
 
 Released on October 26th, 2016.

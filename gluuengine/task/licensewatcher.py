@@ -62,6 +62,12 @@ class LicenseWatcherTask(object):
             self.logger.info("license key is currently unavailable")
             return
 
+        if not license_key.auto_update:
+            self.logger.info("auto-update feature for license is disabled")
+            return
+
+        self.logger.info("auto-updating license")
+
         try:
             # get current datetime from license server
             current_date = retrieve_current_date()

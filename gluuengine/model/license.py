@@ -109,3 +109,13 @@ class LicenseKey(BaseModel):
     @property
     def is_active(self):
         return self.metadata.get("active") is True
+
+    @property
+    def auto_update(self):
+        # for backward compatibility, license that doesn't have
+        # autoupdate field is marked as having auto-update feature;
+        # subsequent update will fetch the field and then we can apply
+        # auto-update check
+        if "autoupdate" not in self.metadata:
+            return True
+        return self.metadata.get("autoupdate") is True

@@ -8,6 +8,8 @@ from flask import url_for
 from flask import request
 from flask import current_app
 from flask_restful import Resource
+from sqlalchemy import JSON
+from sqlalchemy import BigInteger
 
 from ..database import db
 from ..model import LicenseKey
@@ -70,7 +72,8 @@ class LicenseKeyListResource(Resource):
             }, 403
 
         license_key.updated_at = retrieve_current_date()
-        db.persist(license_key, "license_keys")
+        db.persist(license_key, "license_keys",
+                   types={"metadata": JSON, "updated_at": BigInteger})
 
         headers = {
             "Location": url_for("licensekey", license_key_id=license_key.id),

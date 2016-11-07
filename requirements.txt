@@ -11,3 +11,5 @@ Flask-PyMongo==0.4.1
 futures==3.0.5
 gunicorn==19.6.0
 click==6.6
+flask-dataset==0.1.2
+PyMySQL==0.7.9

@@ -127,5 +127,6 @@ class AwsProvider(BaseProvider):
         self.amazonec2_instance_type = fields.get('amazonec2_instance_type', 'm4.large')
         self.amazonec2_private_address_only = fields.get('amazonec2_private_address_only', False)
 
+
 class RackspaceProvider(BaseProvider):
     pass

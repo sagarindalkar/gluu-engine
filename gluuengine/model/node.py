@@ -3,13 +3,6 @@
 #
 # All rights reserved.
 
-#{
-#    "provider_id": "<id>",
-#    "provider_type": "",
-#    "name": "<>",
-#    "type": "<master|worker|keystore>",
-#}
-
 import uuid
 
 from .base import BaseModel
@@ -23,19 +16,7 @@ class Node(BaseModel):
         'name',
         'type',
         'provider_id',
-        #'provider_type'
     ])
-
-    # def __init__(self, fields=None):  # pragma: no cover
-    #     self.id = str(uuid.uuid4())
-    #     self.populate(fields)
-
-    # def populate(self, fields=None):  # pragma: no cover
-    #     fields = fields or {}
-    #     self.name = fields.get('name', '')
-    #     self.type = fields.get('type', '')
-    #     self.provider_id = fields.get('provider_id', '')
-    #     #self.provider_type = fields.get('provider_type', '')
 
     def count_containers(self, type_="", state=STATE_SUCCESS):
         """Counts available containers objects (models).
@@ -73,7 +54,8 @@ class DiscoveryNode(Node):
         'state_node_create',
         'state_install_consul',
         'state_complete'
-    ])
+    ], False)
+    resource_fields = dict(Node.resource_fields.items() + state_fields.items())
 
     def __init__(self, fields=None):
         self.id = str(uuid.uuid4())
@@ -82,7 +64,6 @@ class DiscoveryNode(Node):
         self.state_complete = False
         self.type = 'discovery'
         self.populate(fields)
-        self.resource_fields = dict(self.resource_fields.items() + self.state_fields.items())
 
     def populate(self, fields=None):
         fields = fields or {}
@@ -103,7 +84,8 @@ class MasterNode(Node):
         'state_complete',
         "state_rng_tools",
         "state_pull_images",
-    ])
+    ], False)
+    resource_fields = dict(Node.resource_fields.items() + state_fields.items())
 
     def __init__(self, fields=None):
         self.id = str(uuid.uuid4())
@@ -120,7 +102,6 @@ class MasterNode(Node):
         self.state_pull_images = False
         self.type = 'master'
         self.populate(fields)
-        self.resource_fields = dict(self.resource_fields.items() + self.state_fields.items())
 
     def populate(self, fields=None):
         fields = fields or {}
@@ -139,7 +120,8 @@ class WorkerNode(Node):
         'state_complete',
         "state_rng_tools",
         "state_pull_images",
-    ])
+    ], False)
+    resource_fields = dict(Node.resource_fields.items() + state_fields.items())
 
     def __init__(self, fields=None):
         self.id = str(uuid.uuid4())
@@ -154,10 +136,8 @@ class WorkerNode(Node):
         self.state_pull_images = False
         self.type = 'worker'
         self.populate(fields)
-        self.resource_fields = dict(self.resource_fields.items() + self.state_fields.items())
 
     def populate(self, fields=None):
         fields = fields or {}
         self.name = fields.get('name', '')
-        #self.type = fields.get('type', '')
         self.provider_id = fields.get('provider_id', '')

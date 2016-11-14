@@ -3,24 +3,27 @@
 #
 # All rights reserved.
 
+from schematics.models import Model
 
-class BaseModel(object):
-    """Base class for model.
 
-    This class should not be used directly.
-    """
-    resource_fields = {}
+class BaseModel(Model):
+    resource_fields = tuple([])
+
+    def __init__(self, raw_data=None, deserialize_mapping=None, strict=True):
+        super(BaseModel, self).__init__(
+            raw_data=raw_data,
+            deserialize_mapping=deserialize_mapping,
+            strict=False,
+        )
+
+    def expose_public_fields(self):
+        return {
+            k: v for k, v in self.to_primitive().iteritems()
+            if k in self.resource_fields
+        }
 
     def as_dict(self):
-        """Transforms into a ``dict`` of model's resource attributes.
-
-        :returns: A ``dict`` of model's resource attributes.
-        """
-        fields = tuple(self.resource_fields.keys())
-        return {
-            k: v for k, v in self.__dict__.iteritems()
-            if k in fields
-        }
+        return self.expose_public_fields()
 
 
 #: A flag to mark state as ``SUCCESS``

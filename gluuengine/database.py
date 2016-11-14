@@ -3,20 +3,14 @@
 #
 # All rights reserved.
 
-import json
+import inspect
 
-import jsonpickle
 from werkzeug.utils import import_string
 from flask_pymongo import PyMongo
 from flask_dataset import Dataset
 
 
 def _load_pyobject(data):
-    # ``jsonpickle.decode`` automatically instantiates object from
-    # ``py/object`` value stored in database; the problem is,
-    # this object won't recognize new attribute hence we're
-    # instantiating object and setting its attributes manually
-
     # FIXME: "py/object" sometime is not recognized
     if "_pyobject" in data:
         imp_path = data["_pyobject"]
@@ -24,10 +18,13 @@ def _load_pyobject(data):
         imp_path = data["py/object"]
 
     cls = import_string(imp_path)
-    obj = cls()
-    for k, v in data.iteritems():
-        setattr(obj, k, v)
+    obj = cls(data)
     return obj
+
+
+def get_model_path(model):
+    return ".".join([inspect.getmodule(model).__name__,
+                     model.__class__.__name__])
 
 
 class Database(object):
@@ -92,11 +89,9 @@ class PyMongoBackend(PyMongo):
         return _load_pyobject(obj)
 
     def persist(self, obj, table_name, **kwargs):
-        # encode the object to add `py/object` field
-        encoded = jsonpickle.encode(obj)
-        data = json.loads(encoded)
+        data = obj.to_primitive()
         data["_id"] = data["id"]
-        data["_pyobject"] = data.pop("py/object")
+        data["_pyobject"] = get_model_path(obj)
         return self.db[table_name].insert_one(data)
 
     def all(self, table_name):
@@ -107,10 +102,8 @@ class PyMongoBackend(PyMongo):
         return self.db[table_name].delete_one({"id": identifier})
 
     def update(self, identifier, obj, table_name, **kwargs):
-        # encode the object to add `py/object` field
-        encoded = jsonpickle.encode(obj)
-        data = json.loads(encoded)
-        data["_pyobject"] = data.pop("py/object")
+        data = obj.to_primitive()
+        data["_pyobject"] = get_model_path(obj)
         return self.db[table_name].update({"id": identifier}, data, True)
 
     def search_from_table(self, table_name, condition):
@@ -121,10 +114,8 @@ class PyMongoBackend(PyMongo):
         return self.db[table_name].count(condition)
 
     def update_to_table(self, table_name, condition, obj, **kwargs):
-        # encode the object to add `py/object` field
-        encoded = jsonpickle.encode(obj)
-        data = json.loads(encoded)
-        data["_pyobject"] = data.pop("py/object")
+        data = obj.to_primitive()
+        data["_pyobject"] = get_model_path(obj)
         return self.db[table_name].update(condition, data, True)
 
     def delete_from_table(self, table_name, condition):
@@ -145,10 +136,8 @@ class DatasetBackend(Dataset):
 
     def persist(self, obj, table_name, **kwargs):
         with self.app.test_request_context():
-            # encode the object to add `py/object` field
-            encoded = jsonpickle.encode(obj)
-            data = json.loads(encoded)
-            data["_pyobject"] = data.pop("py/object")
+            data = obj.to_primitive()
+            data["_pyobject"] = get_model_path(obj)
             return self._get_table(table_name).insert(
                 data,
                 ensure=True,
@@ -166,10 +155,8 @@ class DatasetBackend(Dataset):
 
     def update(self, identifier, obj, table_name, **kwargs):
         with self.app.test_request_context():
-            # encode the object to add `py/object` field
-            encoded = jsonpickle.encode(obj)
-            data = json.loads(encoded)
-            data["_pyobject"] = data.pop("py/object")
+            data = obj.to_primitive()
+            data["_pyobject"] = get_model_path(obj)
             return self._get_table(table_name).update(
                 {"id": identifier},
                 data,
@@ -188,10 +175,8 @@ class DatasetBackend(Dataset):
 
     def update_to_table(self, table_name, condition, obj, **kwargs):
         with self.app.test_request_context():
-            # encode the object to add `py/object` field
-            encoded = jsonpickle.encode(obj)
-            data = json.loads(encoded)
-            data["_pyobject"] = data.pop("py/object")
+            data = obj.to_primitive()
+            data["_pyobject"] = get_model_path(obj)
             return self._get_table(table_name).update(
                 condition,
                 data,

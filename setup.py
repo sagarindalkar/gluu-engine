@@ -49,6 +49,7 @@ setup(
         "click",
         "flask-dataset",
         "pymysql",
+        "schematics",
     ],
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",

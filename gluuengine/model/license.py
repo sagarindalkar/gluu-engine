@@ -3,55 +3,55 @@
 #
 # All rights reserved.
 
-import uuid
-
-from ..database import db
 from .base import BaseModel
-from ..utils import generate_passkey
-from ..utils import encrypt_text
+from ..database import db
 from ..utils import decrypt_text
 from ..utils import retrieve_current_date
 
+from schematics.types import StringType
+from schematics.types import BooleanType
+from schematics.types import LongType
+from schematics.types import IntType
+from schematics.types import UUIDType
+from schematics.types.compound import ListType
+from schematics.types.compound import PolyModelType
+
+
+class _LicenseMetadata(BaseModel):
+    product = StringType()
+    expiration_date = LongType()
+    creation_date = LongType()
+    active = BooleanType()
+    license_count_limit = IntType()
+    license_name = StringType()
+    autoupdate = BooleanType()
+    license_id = StringType()
+    emails = ListType(StringType)
+    customer_name = StringType()
+
 
 class LicenseKey(BaseModel):
-    resource_fields = dict.fromkeys([
+    resource_fields = (
         "id",
         "name",
         "code",
         "valid",
         "metadata",
         "updated_at",
-    ])
+    )
 
-    def __init__(self, fields=None):
-        self.id = "{}".format(uuid.uuid4())
-        self.passkey = generate_passkey()
-        self.valid = False
-        self.metadata = {}
-        self.signed_license = ""
-        self.updated_at = None
-        self.populate(fields)
-
-    def populate(self, fields=None):
-        fields = fields or {}
-
-        self.name = fields.get("name", "")
-        self.code = fields.get("code", "")
-
-        self.public_key = encrypt_text(
-            fields.get("public_key", ""),
-            self.passkey,
-        )
-
-        self.public_password = encrypt_text(
-            fields.get("public_password", ""),
-            self.passkey,
-        )
-
-        self.license_password = encrypt_text(
-            fields.get("license_password", ""),
-            self.passkey,
-        )
+    id = UUIDType()
+    name = StringType()
+    code = StringType()
+    public_key = StringType()
+    public_password = StringType()
+    license_password = StringType()
+    signed_license = StringType()
+    valid = BooleanType()
+    updated_at = LongType()
+    passkey = StringType()
+    metadata = PolyModelType(_LicenseMetadata, strict=False)
+    _pyobject = StringType()
 
     @property
     def decrypted_public_key(self):

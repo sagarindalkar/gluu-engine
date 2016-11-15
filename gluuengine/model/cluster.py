@@ -3,6 +3,8 @@
 #
 # All rights reserved.
 
+import uuid
+
 from .base import BaseModel
 from .base import STATE_SUCCESS
 from ..database import db
@@ -15,30 +17,7 @@ from schematics.types import UUIDType
 
 
 class Cluster(BaseModel):
-    resource_fields = (
-        'id',
-        'name',
-        'description',
-        'ox_cluster_hostname',
-        'org_name',
-        'org_short_name',
-        'country_code',
-        'city',
-        'state',
-        'admin_email',
-        'base_inum',
-        'inum_org',
-        'inum_org_fn',
-        'inum_appliance',
-        'inum_appliance_fn',
-        # "external_ldap",
-        # "external_ldap_host",
-        # "external_ldap_port",
-        # "external_ldap_binddn",
-        # "external_ldap_inum_appliance",
-    )
-
-    id = UUIDType()
+    id = UUIDType(default=uuid.uuid4)
     name = StringType()
     description = StringType()
     ox_cluster_hostname = StringType()
@@ -82,6 +61,31 @@ class Cluster(BaseModel):
     external_ldap_inum_appliance = StringType()
     external_encoded_salt = StringType()
     _pyobject = StringType()
+
+    @property
+    def resource_fields(self):
+        return {
+            'id': str(self.id),
+            'name': self.name,
+            'description': self.description,
+            'ox_cluster_hostname': self.ox_cluster_hostname,
+            'org_name': self.org_name,
+            'org_short_name': self.org_short_name,
+            'country_code': self.country_code,
+            'city': self.city,
+            'state': self.state,
+            'admin_email': self.admin_email,
+            'base_inum': self.base_inum,
+            'inum_org': self.inum_org,
+            'inum_org_fn': self.inum_org_fn,
+            'inum_appliance': self.inum_appliance,
+            'inum_appliance_fn': self.inum_appliance_fn,
+            # "external_ldap",
+            # "external_ldap_host",
+            # "external_ldap_port",
+            # "external_ldap_binddn",
+            # "external_ldap_inum_appliance",
+        }
 
     @property
     def decrypted_admin_pw(self):

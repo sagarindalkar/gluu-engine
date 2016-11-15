@@ -45,7 +45,7 @@ class LicenseKeyListResource(Resource):
                 "params": errors,
             }, 400
 
-        license_key = LicenseKey(fields=data)
+        license_key = LicenseKey(data)
 
         current_app.logger.info("downloading signed license")
         license_key, err = populate_license(license_key)
@@ -71,7 +71,7 @@ class LicenseKeyListResource(Resource):
                 "message": "non-active license is not allowed",
             }, 403
 
-        license_key.updated_at = retrieve_current_date()
+        license_key.import_data({"updated_at": retrieve_current_date()})
         db.persist(license_key, "license_keys",
                    types={"metadata": JSON, "updated_at": BigInteger})
 

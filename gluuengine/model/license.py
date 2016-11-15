@@ -3,6 +3,8 @@
 #
 # All rights reserved.
 
+import uuid
+
 from .base import BaseModel
 from ..database import db
 from ..utils import decrypt_text
@@ -17,30 +19,23 @@ from schematics.types.compound import ListType
 from schematics.types.compound import PolyModelType
 
 
-class _LicenseMetadata(BaseModel):
-    product = StringType()
-    expiration_date = LongType()
-    creation_date = LongType()
-    active = BooleanType()
-    license_count_limit = IntType()
-    license_name = StringType()
-    autoupdate = BooleanType()
-    license_id = StringType()
-    emails = ListType(StringType)
-    customer_name = StringType()
-
-
 class LicenseKey(BaseModel):
-    resource_fields = (
-        "id",
-        "name",
-        "code",
-        "valid",
-        "metadata",
-        "updated_at",
-    )
+    """This class represents entity for license key.
+    """
 
-    id = UUIDType()
+    class Metadata(BaseModel):
+        product = StringType()
+        expiration_date = LongType()
+        creation_date = LongType()
+        active = BooleanType()
+        license_count_limit = IntType()
+        license_name = StringType()
+        autoupdate = BooleanType()
+        license_id = StringType()
+        emails = ListType(StringType)
+        customer_name = StringType()
+
+    id = UUIDType(default=uuid.uuid4)
     name = StringType()
     code = StringType()
     public_key = StringType()
@@ -50,8 +45,19 @@ class LicenseKey(BaseModel):
     valid = BooleanType()
     updated_at = LongType()
     passkey = StringType()
-    metadata = PolyModelType(_LicenseMetadata, strict=False)
+    metadata = PolyModelType(Metadata, strict=False)
     _pyobject = StringType()
+
+    @property
+    def resource_fields(self):
+        return {
+            "id": str(self.id),
+            "name": self.name,
+            "code": self.code,
+            "valid": self.valid,
+            "metadata": dict(self.metadata) or {},
+            "updated_at": self.updated_at,
+        }
 
     @property
     def decrypted_public_key(self):

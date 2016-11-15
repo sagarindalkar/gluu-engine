@@ -245,7 +245,12 @@ def populate_license(license_key):
         err = "unable to validate license key; reason={}".format(exc)
         decoded_license = {"valid": False, "metadata": {}}
     finally:
-        license_key.valid = decoded_license["valid"]
-        license_key.metadata = decoded_license["metadata"]
-        license_key.signed_license = signed_license
+        # license_key.valid = decoded_license["valid"]
+        # license_key.metadata = decoded_license["metadata"]
+        # license_key.signed_license = signed_license
+        license_key.import_data({
+            "signed_license": signed_license,
+            "valid": decoded_license["valid"],
+            "metadata": decoded_license["metadata"],
+        })
         return license_key, err

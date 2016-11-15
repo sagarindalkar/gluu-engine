@@ -4,7 +4,6 @@
 # All rights reserved.
 
 import re
-import uuid
 
 from marshmallow import validates
 from marshmallow import ValidationError
@@ -120,7 +119,6 @@ class ClusterReq(ExternalLDAPMixin, ma.Schema):
         scim_rs_quads = '{}.{}'.format(*[get_quad() for _ in xrange(2)])
         scim_rp_quads = '{}.{}'.format(*[get_quad() for i in xrange(2)])
 
-        data["id"] = str(uuid.uuid4())
         data["ldaps_port"] = "1636"
         data["ldap_binddn"] = "cn=directory manager"
 

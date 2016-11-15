@@ -5,11 +5,22 @@
 
 import uuid
 
+from schematics.types import BooleanType
+from schematics.types import IntType
+from schematics.types import StringType
+from schematics.types import UUIDType
+from schematics.types.compound import PolyModelType
+
+
 from .base import BaseModel
 from ..database import db
 
 
 class BaseProvider(BaseModel):
+    id = UUIDType(default=uuid.uuid4)
+    name = StringType()
+    _pyobject = StringType()
+
     def is_in_use(self):
         """Checks whether the provider has linked nodes.
 
@@ -18,114 +29,157 @@ class BaseProvider(BaseModel):
         condition = {"provider_id": self.id}
         return bool(db.count_from_table("nodes", condition))
 
+    def _resolve_driver_attr(self, field):
+        try:
+            return self.driver_attrs[field]
+        except (TypeError, KeyError,):
+            return self._initial[field]
+
 
 class GenericProvider(BaseProvider):
-    resource_fields = dict.fromkeys([
-        'id',
-        'name',
-        'driver',
-        'generic_ip_address',
-        'generic_ssh_key',
-        'generic_ssh_user',
-        'generic_ssh_port'
-    ])
+    """This class represents entity for generic provider.
+    """
 
-    def __init__(self, fields=None):
-        self.id = str(uuid.uuid4())
-        self.driver = 'generic'
-        self.populate(fields)
+    class DriverAttrs(BaseModel):
+        generic_ip_address = StringType()
+        generic_ssh_key = StringType()
+        generic_ssh_user = StringType()
+        generic_ssh_port = IntType()
 
-    def populate(self, fields=None):
-        fields = fields or {}
-        self.name = fields.get('name', '')
-        self.generic_ip_address = fields.get('generic_ip_address', '')
-        self.generic_ssh_key = fields.get('generic_ssh_key', '')
-        self.generic_ssh_user = fields.get('generic_ssh_user', '')
-        self.generic_ssh_port = fields.get('generic_ssh_port', '')
+    driver = StringType(default="generic")
+    driver_attrs = PolyModelType(DriverAttrs, strict=False)
+
+    @property
+    def resource_fields(self):
+        return {
+            'id': str(self.id),
+            'name': self.name,
+            'driver': self.driver,
+            "generic_ip_address": self.generic_ip_address,
+            "generic_ssh_key": self.generic_ssh_key,
+            "generic_ssh_user": self.generic_ssh_user,
+            "generic_ssh_port": self.generic_ssh_port,
+        }
+
+    @property
+    def generic_ip_address(self):
+        return self._resolve_driver_attr("generic_ip_address")
+
+    @property
+    def generic_ssh_key(self):
+        return self._resolve_driver_attr("generic_ssh_key")
+
+    @property
+    def generic_ssh_user(self):
+        return self._resolve_driver_attr("generic_ssh_user")
+
+    @property
+    def generic_ssh_port(self):
+        return self._resolve_driver_attr("generic_ssh_port")
 
 
 class DigitalOceanProvider(BaseProvider):
-    resource_fields = dict.fromkeys([
-        "id",
-        "name",
-        "driver",
-        # "digitalocean_access_token",
-        "digitalocean_backups",
-        "digitalocean_private_networking",
-        "digitalocean_region",
-        "digitalocean_size",
-        "digitalocean_image",
-        "digitalocean_ipv6",
-    ])
+    class DriverAttrs(BaseModel):
+        digitalocean_access_token = StringType()
+        digitalocean_backups = BooleanType(default=False)
+        digitalocean_private_networking = BooleanType(default=False)
+        digitalocean_region = StringType()
+        digitalocean_size = StringType(default="4gb")
+        digitalocean_image = StringType(default="ubuntu-14-04-x64")
+        digitalocean_ipv6 = BooleanType(default=False)
 
-    def __init__(self, fields=None):
-        self.id = str(uuid.uuid4())
-        self.driver = "digitalocean"
-        self.digitalocean_image = "ubuntu-14-04-x64"
-        self.digitalocean_ipv6 = False
-        self.populate(fields)
+    driver = StringType(default="digitalocean")
+    driver_attrs = PolyModelType(DriverAttrs, strict=False)
 
-    def populate(self, fields=None):
-        fields = fields or {}
+    @property
+    def resource_fields(self):
+        return {
+            'id': str(self.id),
+            'name': self.name,
+            'driver': self.driver,
+            "digitalocean_backups": self.digitalocean_backups,
+            "digitalocean_private_networking": self.digitalocean_private_networking,
+            "digitalocean_region": self.digitalocean_region,
+            "digitalocean_size": self.digitalocean_size,
+            "digitalocean_image": self.digitalocean_image,
+        }
 
-        self.name = fields.get("name", "")
-        self.digitalocean_access_token = fields.get(
-            "digitalocean_access_token",
-            "",
-        )
-        self.digitalocean_backups = fields.get(
-            "digitalocean_backups",
-            False,
-        )
-        # self.digitalocean_image = fields.get(
-        #     "digitalocean_image",
-        #     "ubuntu-14-04-x64",
-        # )
-        # self.digitalocean_ipv6 = fields.get(
-        #     "digitalocean_ipv6",
-        #     False,
-        # )
-        self.digitalocean_private_networking = fields.get(
-            "digitalocean_private_networking",
-            False,
-        )
-        self.digitalocean_region = fields.get(
-            "digitalocean_region",
-            "",
-        )
-        self.digitalocean_size = fields.get(
-            "digitalocean_size",
-            "4gb",
-        )
+    @property
+    def digitalocean_access_token(self):
+        return self._resolve_driver_attr("digitalocean_access_token")
+
+    @property
+    def digitalocean_backups(self):
+        return self._resolve_driver_attr("digitalocean_backups")
+
+    @property
+    def digitalocean_private_networking(self):
+        return self._resolve_driver_attr("digitalocean_private_networking")
+
+    @property
+    def digitalocean_region(self):
+        return self._resolve_driver_attr("digitalocean_region")
+
+    @property
+    def digitalocean_size(self):
+        return self._resolve_driver_attr("digitalocean_size")
+
+    @property
+    def digitalocean_image(self):
+        return self._resolve_driver_attr("digitalocean_image")
+
+    @property
+    def digitalocean_ipv6(self):
+        return self._resolve_driver_attr("digitalocean_ipv6")
 
 
 class AwsProvider(BaseProvider):
-    resource_fields = dict.fromkeys([
-        'id',
-        'name',
-        'driver',
-        # 'amazonec2_access_key',
-        # 'amazonec2_secret_key',
-        'amazonec2_ami',
-        'amazonec2_instance_type',
-        'amazonec2_region',
-        'amazonec2_private_address_only',
-    ])
+    class DriverAttrs(BaseModel):
+        amazonec2_access_key = StringType()
+        amazonec2_secret_key = StringType()
+        amazonec2_ami = StringType(default="ami-5f709f34")
+        amazonec2_instance_type = StringType(default="m4.large")
+        amazonec2_region = StringType()
+        amazonec2_private_address_only = BooleanType(default=False)
 
-    def __init__(self, fields=None):
-        self.id = str(uuid.uuid4())
-        self.driver = "amazonec2"
-        self.amazonec2_ami = "ami-5f709f34"
-        self.populate(fields)
+    driver = StringType(default="amazonec2")
+    driver_attrs = PolyModelType(DriverAttrs, strict=False)
 
-    def populate(self, fields=None):
-        fields = fields or {}
-        self.name = fields.get('name', '')
-        self.amazonec2_access_key = fields.get('amazonec2_access_key', '')
-        self.amazonec2_secret_key = fields.get('amazonec2_secret_key', '')
-        self.amazonec2_region = fields.get('amazonec2_region', '')
-        self.amazonec2_instance_type = fields.get('amazonec2_instance_type', 'm4.large')
-        self.amazonec2_private_address_only = fields.get('amazonec2_private_address_only', False)
+    @property
+    def resource_fields(self):
+        return {
+            'id': str(self.id),
+            'name': self.name,
+            'driver': self.driver,
+            "amazonec2_ami": self.amazonec2_ami,
+            "amazonec2_instance_type": self.amazonec2_instance_type,
+            "amazonec2_region": self.amazonec2_region,
+            "amazonec2_private_address_only": self.amazonec2_private_address_only,
+        }
+
+    @property
+    def amazonec2_access_key(self):
+        return self._resolve_driver_attr("amazonec2_access_key")
+
+    @property
+    def amazonec2_secret_key(self):
+        return self._resolve_driver_attr("amazonec2_secret_key")
+
+    @property
+    def amazonec2_ami(self):
+        return self._resolve_driver_attr("amazonec2_ami")
+
+    @property
+    def amazonec2_instance_type(self):
+        return self._resolve_driver_attr("amazonec2_instance_type")
+
+    @property
+    def amazonec2_region(self):
+        return self._resolve_driver_attr("amazonec2_region")
+
+    @property
+    def amazonec2_private_address_only(self):
+        return self._resolve_driver_attr("amazonec2_private_address_only")
 
 
 class RackspaceProvider(BaseProvider):

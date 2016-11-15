@@ -6,6 +6,7 @@
 import os
 import re
 
+from marshmallow import post_load
 from marshmallow import validates
 from marshmallow import ValidationError
 from marshmallow.validate import OneOf
@@ -72,6 +73,16 @@ class GenericProviderReq(BaseProviderReq):
             if not (1024 <= value <= 49152):
                 raise ValidationError("port must be 22 or 1024 - 49152 range")
 
+    @post_load
+    def finalize_data(self, data):
+        data["driver_attrs"] = {
+            "generic_ip_address": data.pop("generic_ip_address"),
+            "generic_ssh_key": data.pop("generic_ssh_key"),
+            "generic_ssh_user": data.pop("generic_ssh_user"),
+            "generic_ssh_port": data.pop("generic_ssh_port"),
+        }
+        return data
+
 
 #: List of all DigitalOcean regions.
 #: https://developers.digitalocean.com/documentation/v2/#list-all-regions
@@ -128,18 +139,29 @@ class DigitalOceanProviderReq(BaseProviderReq):
     # Digital Ocean size
     digitalocean_size = ma.Str(validate=OneOf(DO_SIZE_CHOICES), default="4gb")
 
+    @post_load
+    def finalize_data(self, data):
+        data["driver_attrs"] = {
+            "digitalocean_access_token": data.pop("digitalocean_access_token"),
+            "digitalocean_backups": data.pop("digitalocean_backups"),
+            "digitalocean_private_networking": data.pop("digitalocean_private_networking"),
+            "digitalocean_region": data.pop("digitalocean_region"),
+            "digitalocean_size": data.pop("digitalocean_size"),
+        }
+        return data
+
 
 AWS_REGION_CHOICES = (
-    'us-east-1',        #US East (N. Virginia)
-    'us-west-2',        #US West (Oregon)
-    'us-west-1',        #US West (N. California)
-    'eu-west-1',        #EU (Ireland)
-    'eu-central-1',     #EU (Frankfurt)
-    'ap-southeast-1',   #Asia Pacific (Singapore)
-    'ap-northeast-1',   #Asia Pacific (Tokyo)
-    'ap-southeast-2',   #Asia Pacific (Sydney)
-    'ap-northeast-2',   #Asia Pacific (Seoul)
-    'sa-east-1',        #South America (São Paulo)
+    'us-east-1',        # US East (N. Virginia)
+    'us-west-2',        # US West (Oregon)
+    'us-west-1',        # US West (N. California)
+    'eu-west-1',        # EU (Ireland)
+    'eu-central-1',     # EU (Frankfurt)
+    'ap-southeast-1',   # Asia Pacific (Singapore)
+    'ap-northeast-1',   # Asia Pacific (Tokyo)
+    'ap-southeast-2',   # Asia Pacific (Sydney)
+    'ap-northeast-2',   # Asia Pacific (Seoul)
+    'sa-east-1',        # South America (São Paulo)
 )
 
 AWS_INSTANCE_TYPE_CHOICES = (
@@ -147,8 +169,8 @@ AWS_INSTANCE_TYPE_CHOICES = (
     'm4.large',     # 2    8
     'm4.xlarge',    # 4   16
     'm4.2xlarge',   # 8   32
-    'm4.4xlarge',   #16   64
-    'm4.10xlarge',  #40  160
+    'm4.4xlarge',   # 16   64
+    'm4.10xlarge',  # 40  160
 )
 
 #not implemented
@@ -162,3 +184,14 @@ class AwsProviderReq(BaseProviderReq):
     amazonec2_region = ma.Str(required=True, validate=OneOf(AWS_REGION_CHOICES))
     amazonec2_instance_type = ma.Str(validate=OneOf(AWS_INSTANCE_TYPE_CHOICES), default="m4.large")
     amazonec2_private_address_only = ma.Bool(default=False)
+
+    @post_load
+    def finalize_data(self, data):
+        data["driver_attrs"] = {
+            "amazonec2_access_key": data.pop("amazonec2_access_key"),
+            "amazonec2_secret_key": data.pop("amazonec2_secret_key"),
+            "amazonec2_region": data.pop("amazonec2_region"),
+            "amazonec2_instance_type": data.pop("amazonec2_instance_type"),
+            "amazonec2_private_address_only": data.pop("amazonec2_private_address_only"),
+        }
+        return data

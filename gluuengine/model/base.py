@@ -7,7 +7,7 @@ from schematics.models import Model
 
 
 class BaseModel(Model):
-    resource_fields = tuple([])
+    resource_fields = {}
 
     def __init__(self, raw_data=None, deserialize_mapping=None, strict=True):
         super(BaseModel, self).__init__(
@@ -16,14 +16,8 @@ class BaseModel(Model):
             strict=False,
         )
 
-    def expose_public_fields(self):
-        return {
-            k: v for k, v in self.to_primitive().iteritems()
-            if k in self.resource_fields
-        }
-
     def as_dict(self):
-        return self.expose_public_fields()
+        return self.resource_fields
 
 
 #: A flag to mark state as ``SUCCESS``

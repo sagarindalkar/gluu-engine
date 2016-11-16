@@ -75,7 +75,7 @@ class CreateNodeResource(Resource):
                     "message": "worker node needs a master",
                 }, 403
 
-        data, errors = NodeReq().load(request.form)
+        data, errors = NodeReq(context={"type": node_type}).load(request.form)
         if errors:
             return {
                 "status": 400,

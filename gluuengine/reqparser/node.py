@@ -5,6 +5,7 @@
 
 import re
 
+from marshmallow import post_load
 from marshmallow import validates
 from marshmallow import ValidationError
 
@@ -37,3 +38,13 @@ class NodeReq(ma.Schema):
 
         if db.count_from_table('nodes', {'name': value}):
             raise ValidationError("name is already taken")
+
+    @post_load
+    def finalize_data(self, data):
+        if self.context["type"] == "discovery":
+            data["state_attrs"] = {
+                "state_node_create": False,
+                "state_install_consul": False,
+                "state_complete": False,
+            }
+        return data

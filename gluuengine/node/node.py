@@ -123,7 +123,7 @@ class DeployDiscoveryNode(DeployNode):
         try:
             self.logger.info('creating discovery node')
             self.machine.create(self.node, self.provider, None)
-            self.node.state_node_create = True
+            self.node.state_attrs["state_node_create"] = True
             with self.app.app_context():
                 db.update(self.node.id, self.node, 'nodes')
         except RuntimeError as e:
@@ -134,7 +134,7 @@ class DeployDiscoveryNode(DeployNode):
         self.logger.info('installing consul')
         try:
             self.machine.ssh(self.node.name, 'sudo docker run -d --name=consul -p 8500:8500 -h consul --restart=always -v /opt/gluu/consul/data:/data progrium/consul -server -bootstrap')
-            self.node.state_install_consul = True
+            self.node.state_attrs["state_install_consul"] = True
             with self.app.app_context():
                 db.update(self.node.id, self.node, 'nodes')
         except RuntimeError as e:
@@ -143,7 +143,7 @@ class DeployDiscoveryNode(DeployNode):
 
     def _is_completed(self):
         if self.node.state_node_create and self.node.state_install_consul:
-            self.node.state_complete = True
+            self.node.state_attrs["state_complete"] = True
             self.logger.info('node deployment is done')
             with self.app.app_context():
                 db.update(self.node.id, self.node, 'nodes')

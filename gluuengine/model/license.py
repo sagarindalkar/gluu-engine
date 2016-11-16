@@ -14,7 +14,6 @@ from schematics.types import StringType
 from schematics.types import BooleanType
 from schematics.types import LongType
 from schematics.types import IntType
-from schematics.types import UUIDType
 from schematics.types.compound import ListType
 from schematics.types.compound import PolyModelType
 
@@ -35,14 +34,14 @@ class LicenseKey(BaseModel):
         emails = ListType(StringType)
         customer_name = StringType()
 
-    id = UUIDType(default=uuid.uuid4)
+    id = StringType(default=str(uuid.uuid4()))
     name = StringType()
     code = StringType()
     public_key = StringType()
     public_password = StringType()
     license_password = StringType()
     signed_license = StringType()
-    valid = BooleanType()
+    valid = BooleanType(default=False)
     updated_at = LongType()
     passkey = StringType()
     metadata = PolyModelType(Metadata, strict=False)

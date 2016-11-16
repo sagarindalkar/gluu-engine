@@ -8,7 +8,6 @@ import uuid
 from schematics.types import BooleanType
 from schematics.types import IntType
 from schematics.types import StringType
-from schematics.types import UUIDType
 from schematics.types.compound import PolyModelType
 
 
@@ -17,7 +16,7 @@ from ..database import db
 
 
 class BaseProvider(BaseModel):
-    id = UUIDType(default=uuid.uuid4)
+    id = StringType(default=str(uuid.uuid4()))
     name = StringType()
     _pyobject = StringType()
 
@@ -31,9 +30,9 @@ class BaseProvider(BaseModel):
 
     def _resolve_driver_attr(self, field):
         try:
-            return self.driver_attrs[field]
-        except (TypeError, KeyError,):
-            return self._initial[field]
+            return self.driver_attrs.get(field)
+        except (AttributeError, TypeError,):
+            return self._initial.get(field)
 
 
 class GenericProvider(BaseProvider):

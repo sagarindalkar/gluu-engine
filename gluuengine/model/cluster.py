@@ -13,11 +13,10 @@ from ..utils import decrypt_text
 from schematics.types import BooleanType
 from schematics.types import IntType
 from schematics.types import StringType
-from schematics.types import UUIDType
 
 
 class Cluster(BaseModel):
-    id = UUIDType(default=uuid.uuid4)
+    id = StringType(default=str(uuid.uuid4()))
     name = StringType()
     description = StringType()
     ox_cluster_hostname = StringType()

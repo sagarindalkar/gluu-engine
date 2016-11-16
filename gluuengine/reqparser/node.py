@@ -42,9 +42,35 @@ class NodeReq(ma.Schema):
     @post_load
     def finalize_data(self, data):
         if self.context["type"] == "discovery":
-            data["state_attrs"] = {
-                "state_node_create": False,
-                "state_install_consul": False,
-                "state_complete": False,
-            }
+            data["state_attrs"] = dict.fromkeys([
+                "state_node_create",
+                "state_install_consul",
+                "state_complete",
+            ], False)
+        elif self.context["type"] == "master":
+            data["state_attrs"] = dict.fromkeys([
+                "state_node_create",
+                "state_install_weave",
+                "state_weave_permission",
+                "state_weave_launch",
+                "state_docker_cert",
+                "state_fswatcher",
+                "state_recovery",
+                "state_complete",
+                "state_rng_tools",
+                "state_pull_images",
+                "state_registry_cert",
+            ], False)
+        elif self.context["type"] == "worker":
+            data["state_attrs"] = dict.fromkeys([
+                "state_node_create",
+                "state_install_weave",
+                "state_weave_permission",
+                "state_weave_launch",
+                "state_recovery",
+                "state_complete",
+                "state_rng_tools",
+                "state_pull_images",
+                "state_registry_cert",
+            ], False)
         return data

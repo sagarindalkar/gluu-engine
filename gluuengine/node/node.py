@@ -38,7 +38,8 @@ class DeployNode(object):
                 """sudo apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install -y rng-tools""",
             ]
             self.machine.ssh(self.node.name, ' && '.join(cmd_list))
-            self.node.state_rng_tools = True
+            # self.node.state_rng_tools = True
+            self.node.state_attrs["state_rng_tools"] = True
             with self.app.app_context():
                 db.update(self.node.id, self.node, 'nodes')
         except RuntimeError as e:
@@ -53,7 +54,8 @@ class DeployNode(object):
                 'sudo docker pull gluufederation/nginx:{}'.format(self.app.config["GLUU_IMAGE_TAG"]),
             ]
             self.machine.ssh(self.node.name, ' && '.join(cmd_list))
-            self.node.state_pull_images = True
+            # self.node.state_pull_images = True
+            self.node.state_attrs["state_pull_images"] = True
             with self.app.app_context():
                 db.update(self.node.id, self.node, 'nodes')
         except RuntimeError as e:
@@ -71,7 +73,8 @@ class DeployNode(object):
                 "sudo supervisorctl reload",
             ]
             self.machine.ssh(self.node.name, ' && '.join(cmd_list))
-            self.node.state_recovery = True
+            # self.node.state_recovery = True
+            self.node.state_attrs["state_recovery"] = True
             with self.app.app_context():
                 db.update(self.node.id, self.node, 'nodes')
         except RuntimeError as e:
@@ -82,7 +85,8 @@ class DeployNode(object):
         try:
             self.logger.info('installing weave')
             self.machine.ssh(self.node.name, 'sudo curl -L git.io/weave -o /usr/local/bin/weave')
-            self.node.state_install_weave = True
+            # self.node.state_install_weave = True
+            self.node.state_attrs["state_install_weave"] = True
             with self.app.app_context():
                 db.update(self.node.id, self.node, 'nodes')
         except RuntimeError as e:
@@ -93,7 +97,8 @@ class DeployNode(object):
         try:
             self.logger.info('adding exec permission of weave')
             self.machine.ssh(self.node.name, 'sudo chmod +x /usr/local/bin/weave')
-            self.node.state_weave_permission = True
+            # self.node.state_weave_permission = True
+            self.node.state_attrs["state_weave_permission"] = True
             with self.app.app_context():
                 db.update(self.node.id, self.node, 'nodes')
         except RuntimeError as e:
@@ -196,7 +201,8 @@ class DeployMasterNode(DeployNode):
                 self.node.state_docker_cert, self.node.state_fswatcher,
                 self.node.state_recovery, self.node.state_rng_tools,
                 self.node.state_pull_images]):
-            self.node.state_complete = True
+            # self.node.state_complete = True
+            self.node.state_attrs["state_complete"] = True
             self.logger.info('node deployment is done')
             with self.app.app_context():
                 db.update(self.node.id, self.node, 'nodes')
@@ -205,7 +211,8 @@ class DeployMasterNode(DeployNode):
         try:
             self.logger.info('creating {} node ({})'.format(self.node.name, self.node.type))
             self.machine.create(self.node, self.provider, self.discovery)
-            self.node.state_node_create = True
+            # self.node.state_node_create = True
+            self.node.state_attrs["state_node_create"] = True
             with self.app.app_context():
                 db.update(self.node.id, self.node, 'nodes')
         except RuntimeError as e:
@@ -216,7 +223,8 @@ class DeployMasterNode(DeployNode):
         try:
             self.logger.info('launching weave')
             self.machine.ssh(self.node.name, 'sudo weave launch')
-            self.node.state_weave_launch = True
+            # self.node.state_weave_launch = True
+            self.node.state_attrs["state_weave_launch"] = True
             with self.app.app_context():
                 db.update(self.node.id, self.node, 'nodes')
         except RuntimeError as e:
@@ -234,7 +242,8 @@ class DeployMasterNode(DeployNode):
                     os.path.join(local_cert_path, cf),
                     "{}:{}".format(self.node.name, REMOTE_DOCKER_CERT_DIR),
                 )
-            self.node.state_docker_cert = True
+            # self.node.state_docker_cert = True
+            self.node.state_attrs["state_docker_cert"] = True
             with self.app.app_context():
                 db.update(self.node.id, self.node, 'nodes')
         except RuntimeError as e:
@@ -257,7 +266,8 @@ class DeployMasterNode(DeployNode):
                 "sudo supervisorctl reload",
             ]
             self.machine.ssh(self.node.name, ' && '.join(cmd_list))
-            self.node.state_fswatcher = True
+            # self.node.state_fswatcher = True
+            self.node.state_attrs["state_fswatcher"] = True
             with self.app.app_context():
                 db.update(self.node.id, self.node, 'nodes')
         except RuntimeError as e:
@@ -305,7 +315,8 @@ class DeployWorkerNode(DeployNode):
                 self.node.state_weave_permission, self.node.state_weave_launch,
                 self.node.state_recovery, self.node.state_rng_tools,
                 self.node.state_pull_images]):
-            self.node.state_complete = True
+            # self.node.state_complete = True
+            self.node.state_attrs["state_complete"] = True
             self.logger.info('node deployment is done')
             with self.app.app_context():
                 db.update(self.node.id, self.node, 'nodes')
@@ -314,7 +325,8 @@ class DeployWorkerNode(DeployNode):
         try:
             self.logger.info('creating {} node ({})'.format(self.node.name, self.node.type))
             self.machine.create(self.node, self.provider, self.discovery)
-            self.node.state_node_create = True
+            # self.node.state_node_create = True
+            self.node.state_attrs["state_node_create"] = True
             with self.app.app_context():
                 db.update(self.node.id, self.node, 'nodes')
         except RuntimeError as e:
@@ -328,7 +340,8 @@ class DeployWorkerNode(DeployNode):
                 master = db.search_from_table('nodes', {'type': 'master'})[0]
                 ip = self.machine.ip(master.name)
                 self.machine.ssh(self.node.name, 'sudo weave launch {}'.format(ip))
-                self.node.state_weave_launch = True
+                # self.node.state_weave_launch = True
+                self.node.state_attrs["state_weave_launch"] = True
                 db.update(self.node.id, self.node, 'nodes')
         except RuntimeError as e:
             self.logger.error('failed to launch weave')

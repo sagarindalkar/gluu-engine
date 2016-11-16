@@ -64,7 +64,7 @@ class Cluster(BaseModel):
     @property
     def resource_fields(self):
         return {
-            'id': str(self.id),
+            'id': self.id,
             'name': self.name,
             'description': self.description,
             'ox_cluster_hostname': self.ox_cluster_hostname,

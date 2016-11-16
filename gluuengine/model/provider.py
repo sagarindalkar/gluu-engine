@@ -16,10 +16,6 @@ from ..database import db
 
 
 class BaseProvider(BaseModel):
-    id = StringType(default=str(uuid.uuid4()))
-    name = StringType()
-    _pyobject = StringType()
-
     def is_in_use(self):
         """Checks whether the provider has linked nodes.
 
@@ -45,13 +41,16 @@ class GenericProvider(BaseProvider):
         generic_ssh_user = StringType()
         generic_ssh_port = IntType()
 
+    id = StringType(default=str(uuid.uuid4()))
+    name = StringType()
     driver = StringType(default="generic")
     driver_attrs = PolyModelType(DriverAttrs, strict=False)
+    _pyobject = StringType()
 
     @property
     def resource_fields(self):
         return {
-            'id': str(self.id),
+            'id': self.id,
             'name': self.name,
             'driver': self.driver,
             "generic_ip_address": self.generic_ip_address,
@@ -87,17 +86,20 @@ class DigitalOceanProvider(BaseProvider):
         digitalocean_image = StringType(default="ubuntu-14-04-x64")
         digitalocean_ipv6 = BooleanType(default=False)
 
+    id = StringType(default=str(uuid.uuid4()))
+    name = StringType()
     driver = StringType(default="digitalocean")
     driver_attrs = PolyModelType(DriverAttrs, strict=False)
+    _pyobject = StringType()
 
     @property
     def resource_fields(self):
         return {
-            'id': str(self.id),
+            'id': self.id,
             'name': self.name,
             'driver': self.driver,
             "digitalocean_backups": self.digitalocean_backups,
-            "digitalocean_private_networking": self.digitalocean_private_networking,
+            "digitalocean_private_networking": self.digitalocean_private_networking,  # noqa
             "digitalocean_region": self.digitalocean_region,
             "digitalocean_size": self.digitalocean_size,
             "digitalocean_image": self.digitalocean_image,
@@ -141,19 +143,22 @@ class AwsProvider(BaseProvider):
         amazonec2_region = StringType()
         amazonec2_private_address_only = BooleanType(default=False)
 
+    id = StringType(default=str(uuid.uuid4()))
+    name = StringType()
     driver = StringType(default="amazonec2")
     driver_attrs = PolyModelType(DriverAttrs, strict=False)
+    _pyobject = StringType()
 
     @property
     def resource_fields(self):
         return {
-            'id': str(self.id),
+            'id': self.id,
             'name': self.name,
             'driver': self.driver,
             "amazonec2_ami": self.amazonec2_ami,
             "amazonec2_instance_type": self.amazonec2_instance_type,
             "amazonec2_region": self.amazonec2_region,
-            "amazonec2_private_address_only": self.amazonec2_private_address_only,
+            "amazonec2_private_address_only": self.amazonec2_private_address_only,  # noqa
         }
 
     @property

@@ -50,7 +50,7 @@ class LicenseKey(BaseModel):
     @property
     def resource_fields(self):
         return {
-            "id": str(self.id),
+            "id": self.id,
             "name": self.name,
             "code": self.code,
             "valid": self.valid,

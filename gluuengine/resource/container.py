@@ -4,7 +4,6 @@
 # All rights reserved.
 
 import os
-import uuid
 from itertools import cycle
 
 from flask import abort
@@ -287,12 +286,12 @@ class NewContainerResource(Resource):
 
         # pre-populate the container object
         container_class = self.container_classes[container_type]
-        container = container_class()
-        container.cluster_id = cluster.id
-        container.node_id = node.id
-        container.name = "{}_{}".format(container.image, uuid.uuid4())
-
-        container.state = STATE_IN_PROGRESS
+        container = container_class({
+            "cluster_id": cluster.id,
+            "node_id": node.id,
+            "state": STATE_IN_PROGRESS,
+            "container_attrs": data["container_attrs"],
+        })
 
         db.persist(container, "containers")
 
@@ -462,13 +461,15 @@ class ScaleContainerResource(Resource):
 
     def setup_obj_generator(self, app, container_type, number, cluster_id, node_id_pool):
         with app.app_context():
+            current_app.logger.info(number)
             for i in xrange(number):
                 container_class = self.container_classes[container_type]
-                container = container_class()
-                container.cluster_id = cluster_id
-                container.node_id = node_id_pool.next()
-                container.name = "{}_{}".format(container.image, uuid.uuid4())
-                container.state = STATE_IN_PROGRESS
+                container = container_class({
+                    "cluster_id": cluster_id,
+                    "node_id": node_id_pool.next(),
+                    "state": STATE_IN_PROGRESS,
+                    "container_attrs": {},
+                })
                 db.persist(container, "containers")
 
                 # log related setup
@@ -509,6 +510,7 @@ class ScaleContainerResource(Resource):
                 "message": "container deployment requires a cluster",
             }, 403
 
+        # TODO: should fetch node per types, then merge them; this will simplify dataset backend
         #get id list of running nodes
         nodes = db.search_from_table('nodes', {"$or": [{"type": "master"}, {"type": "worker"}]})
         if not nodes:

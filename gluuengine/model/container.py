@@ -64,10 +64,10 @@ class LdapContainer(Container):
             default="/opt/opendj/config/schema/100-user.ldif",
         )
 
-    id = StringType(default=str(uuid.uuid4()))
+    id = StringType(default=lambda: str(uuid.uuid4()))
     cluster_id = StringType()
     node_id = StringType()
-    name = StringType()
+    name = StringType(default=lambda: "gluuopendj_{}".format(uuid.uuid4()))
     type = StringType(default="ldap")
     state = StringType()
     hostname = StringType()
@@ -158,10 +158,10 @@ class OxauthContainer(Container):
         tomcat_conf_dir = StringType(default="/opt/tomcat/conf")
         tomcat_log_folder = StringType(default="/opt/tomcat/logs")
 
-    id = StringType(default=str(uuid.uuid4()))
+    id = StringType(default=lambda: str(uuid.uuid4()))
     cluster_id = StringType()
     node_id = StringType()
-    name = StringType()
+    name = StringType(default=lambda: "gluuoxauth_{}".format(uuid.uuid4()))
     type = StringType(default="oxauth")
     state = StringType()
     hostname = StringType()
@@ -200,10 +200,10 @@ class OxtrustContainer(Container):
         tomcat_conf_dir = StringType(default="/opt/tomcat/conf")
         tomcat_log_folder = StringType(default="/opt/tomcat/logs")
 
-    id = StringType(default=str(uuid.uuid4()))
+    id = StringType(default=lambda: str(uuid.uuid4()))
     cluster_id = StringType()
     node_id = StringType()
-    name = StringType()
+    name = StringType(default=lambda: "gluuoxtrust_{}".format(uuid.uuid4()))
     type = StringType(default="oxtrust")
     state = StringType()
     hostname = StringType()
@@ -229,6 +229,10 @@ class OxtrustContainer(Container):
     def image(self):
         return "gluuoxtrust"
 
+    @property
+    def truststore_fn(self):
+        return self._resolve_container_attr("truststore_fn")
+
 
 class OxidpContainer(Container):
     class ContainerAttrs(BaseModel):
@@ -243,10 +247,10 @@ class OxidpContainer(Container):
         tomcat_log_folder = StringType(default="/opt/tomcat/logs")
         saml_type = StringType(default="shibboleth")
 
-    id = StringType(default=str(uuid.uuid4()))
+    id = StringType(default=lambda: str(uuid.uuid4()))
     cluster_id = StringType()
     node_id = StringType()
-    name = StringType()
+    name = StringType(default=lambda: "gluuoxidp_{}".format(uuid.uuid4()))
     type = StringType(default="oxidp")
     state = StringType()
     hostname = StringType()
@@ -277,10 +281,10 @@ class NginxContainer(Container):
     class ContainerAttrs(BaseModel):
         cert_folder = StringType(default="/etc/certs")
 
-    id = StringType(default=str(uuid.uuid4()))
+    id = StringType(default=lambda: str(uuid.uuid4()))
     cluster_id = StringType()
     node_id = StringType()
-    name = StringType()
+    name = StringType(default=lambda: "gluunginx_{}".format(uuid.uuid4()))
     type = StringType(default="nginx")
     state = StringType()
     hostname = StringType()
@@ -298,6 +302,10 @@ class NginxContainer(Container):
     def image(self):
         return "gluunginx"
 
+    @property
+    def cert_folder(self):
+        return self._resolve_container_attr("cert_folder")
+
 
 class OxasimbaContainer(Container):
     class ContainerAttrs(BaseModel):
@@ -311,10 +319,10 @@ class OxasimbaContainer(Container):
         tomcat_conf_dir = StringType(default="/opt/tomcat/conf")
         tomcat_log_folder = StringType(default="/opt/tomcat/logs")
 
-    id = StringType(default=str(uuid.uuid4()))
+    id = StringType(default=lambda: str(uuid.uuid4()))
     cluster_id = StringType()
     node_id = StringType()
-    name = StringType()
+    name = StringType(default=lambda: "gluuoxasimba_{}".format(uuid.uuid4()))
     type = StringType(default="oxasimba")
     state = StringType()
     hostname = StringType()

@@ -52,6 +52,6 @@ class ContainerReq(ma.Schema):
     def finalize_data(self, data):
         """Build finalized data.
         """
-        out = {"params": data}
-        out.update({"context": self.context})
-        return out
+        data["context"] = self.context
+        data["container_attrs"] = {}
+        return data

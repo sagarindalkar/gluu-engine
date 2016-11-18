@@ -34,7 +34,7 @@ class LicenseKey(BaseModel):
         emails = ListType(StringType)
         customer_name = StringType()
 
-    id = StringType(default=str(uuid.uuid4()))
+    id = StringType(default=lambda: str(uuid.uuid4()))
     name = StringType()
     code = StringType()
     public_key = StringType()

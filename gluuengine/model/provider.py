@@ -41,7 +41,7 @@ class GenericProvider(BaseProvider):
         generic_ssh_user = StringType()
         generic_ssh_port = IntType()
 
-    id = StringType(default=str(uuid.uuid4()))
+    id = StringType(default=lambda: str(uuid.uuid4()))
     name = StringType()
     driver = StringType(default="generic")
     driver_attrs = PolyModelType(DriverAttrs, strict=False)
@@ -86,7 +86,7 @@ class DigitalOceanProvider(BaseProvider):
         digitalocean_image = StringType(default="ubuntu-14-04-x64")
         digitalocean_ipv6 = BooleanType(default=False)
 
-    id = StringType(default=str(uuid.uuid4()))
+    id = StringType(default=lambda: str(uuid.uuid4()))
     name = StringType()
     driver = StringType(default="digitalocean")
     driver_attrs = PolyModelType(DriverAttrs, strict=False)
@@ -143,7 +143,7 @@ class AwsProvider(BaseProvider):
         amazonec2_region = StringType()
         amazonec2_private_address_only = BooleanType(default=False)
 
-    id = StringType(default=str(uuid.uuid4()))
+    id = StringType(default=lambda: str(uuid.uuid4()))
     name = StringType()
     driver = StringType(default="amazonec2")
     driver_attrs = PolyModelType(DriverAttrs, strict=False)

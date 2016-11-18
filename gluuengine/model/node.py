@@ -58,7 +58,7 @@ class DiscoveryNode(Node):
         state_install_consul = BooleanType(default=False)
         state_complete = BooleanType(default=False)
 
-    id = StringType(default=str(uuid.uuid4()))
+    id = StringType(default=lambda: str(uuid.uuid4()))
     name = StringType()
     provider_id = StringType()
     type = StringType(default="discovery")

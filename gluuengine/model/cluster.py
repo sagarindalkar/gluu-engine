@@ -16,7 +16,7 @@ from schematics.types import StringType
 
 
 class Cluster(BaseModel):
-    id = StringType(default=str(uuid.uuid4()))
+    id = StringType(default=lambda: str(uuid.uuid4()))
     name = StringType()
     description = StringType()
     ox_cluster_hostname = StringType()

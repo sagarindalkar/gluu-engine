@@ -103,6 +103,7 @@ class PyMongoBackend(PyMongo):
 
     def update(self, identifier, obj, table_name, **kwargs):
         data = obj.to_primitive()
+        data["_id"] = data["id"]
         data["_pyobject"] = get_model_path(obj)
         return self.db[table_name].update({"id": identifier}, data, True)
 

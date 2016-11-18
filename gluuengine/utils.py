@@ -245,11 +245,9 @@ def populate_license(license_key):
         err = "unable to validate license key; reason={}".format(exc)
         decoded_license = {"valid": False, "metadata": {}}
     finally:
-        # somehow we can't set the attr's value directly,
-        # hence we need to import data
-        license_key.import_data({
-            "signed_license": signed_license,
-            "valid": decoded_license["valid"],
-            "metadata": decoded_license["metadata"],
-        })
+        license_key.signed_license = signed_license
+        license_key.valid = decoded_license["valid"]
+        # setting metadata directly will raise error on value conversion,
+        # hence we're importing the data
+        license_key.metadata.import_data(decoded_license["metadata"])
         return license_key, err

@@ -41,7 +41,7 @@ class LicenseKey(BaseModel):
     public_password = StringType()
     license_password = StringType()
     signed_license = StringType()
-    valid = BooleanType(default=False)
+    valid = BooleanType()
     updated_at = LongType()
     passkey = StringType()
     metadata = PolyModelType(Metadata, strict=False)

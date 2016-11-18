@@ -42,4 +42,5 @@ class LicenseKeyReq(ma.Schema):
         data["license_password"] = encrypt_text(
             data["license_password"], data["passkey"],
         )
+        data["metadata"] = {}
         return data

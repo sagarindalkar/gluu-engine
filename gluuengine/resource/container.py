@@ -50,10 +50,11 @@ CONTAINER_CHOICES = (
 
 def get_container(db, container_id):
     try:
-        container = db.search_from_table(
-            "containers",
-            {"$or": [{"id": container_id}, {"name": container_id}]},
-        )[0]
+        container = db.search_from_table("containers", {"id": container_id})
+        if not container:
+            container = db.search_from_table(
+                "containers", {"name": container_id},
+            )
     except IndexError:
         container = None
     return container
@@ -510,9 +511,11 @@ class ScaleContainerResource(Resource):
                 "message": "container deployment requires a cluster",
             }, 403
 
-        # TODO: should fetch node per types, then merge them; this will simplify dataset backend
-        #get id list of running nodes
-        nodes = db.search_from_table('nodes', {"$or": [{"type": "master"}, {"type": "worker"}]})
+        # get id list of running nodes
+        mnodes = db.search_from_table('nodes', {"type": "master"})
+        wnodes = db.search_from_table('nodes', {"type": "worker"})
+        nodes = mnodes + wnodes
+
         if not nodes:
             return {
                 "status": 403,
@@ -537,7 +540,7 @@ class ScaleContainerResource(Resource):
             for delete_obj in delete_obj_generator:
                 executor.submit(delete_obj.mp_teardown)
 
-    def delete_obj_genarator(self, app, containers):
+    def delete_obj_generator(self, app, containers):
         with app.app_context():
             for container in containers:
                 db.delete_from_table("containers", {"name": container.name})
@@ -572,11 +575,13 @@ class ScaleContainerResource(Resource):
                 "message": "delete request number is greater than running containers",
             }, 403
 
-        #get the list of container object
+        # get the list of container object
         containers = db.search_from_table('containers', {'$and': [{'type': container_type}, {'state': STATE_SUCCESS}]})
 
-        #select and arrange containers
-        nodes = db.search_from_table('nodes', {"$or": [{"type": "master"}, {"type": "worker"}]})
+        # select and arrange containers
+        mnodes = db.search_from_table('nodes', {"type": "master"})
+        wnodes = db.search_from_table('nodes', {"type": "worker"})
+        nodes = mnodes + wnodes
         node_id_pool = self.make_node_id_pool(nodes)
 
         containers_reorder = []
@@ -589,9 +594,9 @@ class ScaleContainerResource(Resource):
             if len(containers_reorder) == number:
                 break
 
-        #get a genatator of delete_object
-        dg = self.delete_obj_genarator(app, containers_reorder)
-        #start backgroung delete oparation
+        # get a genatator of delete_object
+        dg = self.delete_obj_generator(app, containers_reorder)
+        # start backgroung delete operation
         self.delscaleosorus(dg)
 
         return {

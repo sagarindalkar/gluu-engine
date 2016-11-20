@@ -13,8 +13,6 @@ from .database import db
 from .dockerclient import Docker
 from .errors import DockerExecError
 from .machine import Machine
-from .registry import get_registry_cert
-from .registry import REGISTRY_BASE_URL
 
 # global context settings
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
@@ -47,38 +45,36 @@ def _distribute_ox_files(type_):
     click.echo("distributing custom {} files".format(ox["name"]))
 
     with app.app_context():
-        nodes = db.search_from_table(
-            "nodes",
-            {"$or": [{"type": "master"}, {"type": "worker"}]},
-        )
+        mnodes = db.search_from_table("nodes", {"type": "master"})
+        wnodes = db.search_from_table("nodes", {"type": "worker"})
+        nodes = mnodes + wnodes
 
-    src = app.config[ox["override_dir_config"]]
-    dest = src.replace(app.config[ox["override_dir_config"]],
-                       ox["override_remote_dir"])
+        src = app.config[ox["override_dir_config"]]
+        dest = src.replace(app.config[ox["override_dir_config"]],
+                           ox["override_remote_dir"])
 
-    for node in nodes:
-        click.echo("copying {} to {}:{} recursively".format(
-            src, node.name, dest
-        ))
-        mc.scp(src, "{}:{}".format(node.name, os.path.dirname(dest)),
-               recursive=True)
+        for node in nodes:
+            click.echo("copying {} to {}:{} recursively".format(
+                src, node.name, dest
+            ))
+            mc.scp(src, "{}:{}".format(node.name, os.path.dirname(dest)),
+                   recursive=True)
 
-        with app.app_context():
             containers = db.search_from_table(
                 "containers",
                 {"node_id": node.id, "type": type_, "state": "SUCCESS"},
             )
 
-        for container in containers:
-            # we only need to restart tomcat process inside the container
-            click.echo(
-                "restarting tomcat process inside {} container {} "
-                "in {} node".format(ox["name"], container.cid, node.name)
-            )
-            mc.ssh(
-                node.name,
-                "sudo docker exec {} supervisorctl restart tomcat".format(container.cid),
-            )
+            for container in containers:
+                # we only need to restart tomcat process inside the container
+                click.echo(
+                    "restarting tomcat process inside {} container {} "
+                    "in {} node".format(ox["name"], container.cid, node.name)
+                )
+                mc.ssh(
+                    node.name,
+                    "sudo docker exec {} supervisorctl restart tomcat".format(container.cid),
+                )
 
 
 @main.command("distribute-oxauth-files")
@@ -93,39 +89,6 @@ def distribute_oxtrust_files():
     """Distribute custom oxTrust files.
     """
     _distribute_ox_files("oxtrust")
-
-
-@main.command("update-registry-cert")
-def update_reg_cert():
-    """Update and distribute registry certificate.
-    """
-    app = create_app()
-    mc = Machine()
-
-    with app.app_context():
-        nodes = db.search_from_table(
-            "nodes",
-            {"$or": [{"type": "master"}, {"type": "worker"}]},
-        )
-
-        reg_cert = get_registry_cert(
-            os.path.join(app.config["REGISTRY_CERT_DIR"], "ca.crt"),
-            redownload=True,
-        )
-
-        for node in nodes:
-            click.echo("copying registry cert to {} node".format(node.name))
-            mc.ssh(
-                node.name,
-                "mkdir -p /etc/docker/certs.d/{}".format(REGISTRY_BASE_URL)
-            )
-            mc.scp(
-                reg_cert,
-                r"{}:/etc/docker/certs.d/{}/ca.crt".format(
-                    node.name,
-                    REGISTRY_BASE_URL,
-                ),
-            )
 
 
 @main.command("distribute-ssl-cert")

@@ -24,39 +24,39 @@ def distribute_shared_database(app, node):
     logger = logging.getLogger("gluuengine")
     filepath = app.config["SHARED_DATABASE_URI"]
 
-    with app.app_context():
-        clusters = db.all("clusters")
+    # with app.app_context():
+    clusters = db.all("clusters")
 
-        if not clusters:
-            logger.warn("cluster is currently unavailable")
-            return
+    if not clusters:
+        logger.warn("cluster is currently unavailable")
+        return
 
-        containers = db.search_from_table(
-            "containers",
-            {"node_id": node.id},
-        )
+    containers = db.search_from_table(
+        "containers",
+        {"node_id": node.id},
+    )
 
-        data = {}
-        data["clusters"] = {1: clusters[0].as_dict()}
-        data["nodes"] = {1: node.as_dict()}
-        data["containers"] = {
-            idx: container.as_dict()
-            for idx, container in enumerate(containers, 1)
-        }
+    data = {}
+    data["clusters"] = {1: clusters[0].as_dict()}
+    data["nodes"] = {1: node.as_dict()}
+    data["containers"] = {
+        idx: container.as_dict()
+        for idx, container in enumerate(containers, 1)
+    }
 
-        with tempfile.NamedTemporaryFile() as src:
-            src.write(json.dumps(data))
-            src.seek(0)
+    with tempfile.NamedTemporaryFile() as src:
+        src.write(json.dumps(data))
+        src.seek(0)
 
-            try:
-                mc.ssh(
-                    node.name,
-                    "mkdir -p {}".format(os.path.dirname(filepath))
-                )
-                mc.scp(src.name, "{}:{}".format(node.name, filepath))
-            except RuntimeError as exc:
-                logger.warn("something is wrong while copying {}; "
-                            "reason={}".format(filepath, exc))
+        try:
+            mc.ssh(
+                node.name,
+                "mkdir -p {}".format(os.path.dirname(filepath))
+            )
+            mc.scp(src.name, "{}:{}".format(node.name, filepath))
+        except RuntimeError as exc:
+            logger.warn("something is wrong while copying {}; "
+                        "reason={}".format(filepath, exc))
 
 
 # backward-compat

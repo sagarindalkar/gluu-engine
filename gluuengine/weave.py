@@ -18,18 +18,18 @@ class Weave(object):
         self.node = node
         self.app = app
 
-        with self.app.app_context():
-            try:
-                self.master_node = db.search_from_table(
-                    "nodes", {"type": "master"},
-                )[0]
-            except IndexError:
-                self.master_node = None
+        # with self.app.app_context():
+        try:
+            self.master_node = db.search_from_table(
+                "nodes", {"type": "master"},
+            )[0]
+        except IndexError:
+            self.master_node = None
 
-            try:
-                self.cluster = db.all("clusters")[0]
-            except IndexError:
-                self.cluster = None
+        try:
+            self.cluster = db.all("clusters")[0]
+        except IndexError:
+            self.cluster = None
 
         self.machine = Machine()
         self.weave_encryption = self.app.config['WEAVE_ENCRYPTION']

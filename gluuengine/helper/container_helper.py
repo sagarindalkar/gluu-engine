@@ -51,9 +51,9 @@ class BaseContainerHelper(object):
     def __init__(self, container, app, logpath=None):
         self.container = container
         self.app = app
-        with self.app.app_context():
-            self.cluster = db.get(self.container.cluster_id, "clusters")
-            self.node = db.get(self.container.node_id, "nodes")
+        # with self.app.app_context():
+        self.cluster = db.get(self.container.cluster_id, "clusters")
+        self.node = db.get(self.container.node_id, "nodes")
 
         log_level = logging.DEBUG if self.app.config["DEBUG"] else logging.INFO
         if logpath:
@@ -67,13 +67,13 @@ class BaseContainerHelper(object):
 
         mc = Machine()
 
-        with self.app.app_context():
-            try:
-                master_node = db.search_from_table(
-                    "nodes", {"type": "master"},
-                )[0]
-            except IndexError:
-                master_node = self.node
+        # with self.app.app_context():
+        try:
+            master_node = db.search_from_table(
+                "nodes", {"type": "master"},
+            )[0]
+        except IndexError:
+            master_node = self.node
 
         self.docker = Docker(
             mc.config(self.node.name),
@@ -124,12 +124,12 @@ class BaseContainerHelper(object):
                 self.container.cid, self.container.type, dns_search.rstrip("."),
             )
 
-            with self.app.app_context():
-                db.update_to_table(
-                    "containers",
-                    {"name": self.container.name},
-                    self.container,
-                )
+            # with self.app.app_context():
+            db.update_to_table(
+                "containers",
+                {"name": self.container.name},
+                self.container,
+            )
 
             # add DNS record
             self.weave.dns_add(self.container.cid, self.container.hostname)
@@ -151,12 +151,12 @@ class BaseContainerHelper(object):
             # mark container as SUCCESS
             self.container.state = STATE_SUCCESS
 
-            with self.app.app_context():
-                db.update_to_table(
-                    "containers",
-                    {"name": self.container.name},
-                    self.container,
-                )
+            # with self.app.app_context():
+            db.update_to_table(
+                "containers",
+                {"name": self.container.name},
+                self.container,
+            )
 
             # after_setup must be called after container has been marked
             # as SUCCESS
@@ -175,11 +175,11 @@ class BaseContainerHelper(object):
             self.on_setup_error()
         finally:
             # mark containerLog as finished
-            with self.app.app_context():
-                container_log = db.get(self.container.name, "container_logs")
-                if container_log:
-                    container_log.state = STATE_SETUP_FINISHED
-                    db.update(container_log.id, container_log, "container_logs")
+            # with self.app.app_context():
+            container_log = db.get(self.container.name, "container_logs")
+            if container_log:
+                container_log.state = STATE_SETUP_FINISHED
+                db.update(container_log.id, container_log, "container_logs")
 
             # distribute recovery data
             distribute_cluster_data(self.app, self.node)
@@ -211,12 +211,12 @@ class BaseContainerHelper(object):
         # mark container as FAILED
         self.container.state = STATE_FAILED
 
-        with self.app.app_context():
-            db.update_to_table(
-                "containers",
-                {"name": self.container.name},
-                self.container,
-            )
+        # with self.app.app_context():
+        db.update_to_table(
+            "containers",
+            {"name": self.container.name},
+            self.container,
+        )
 
     @run_in_reactor
     def teardown(self):
@@ -259,12 +259,12 @@ class BaseContainerHelper(object):
             self.container.name, elapsed
         ))
 
-        with self.app.app_context():
-            # mark containerLog as finished
-            container_log = db.get(self.container.name, "container_logs")
-            if container_log:
-                container_log.state = STATE_TEARDOWN_FINISHED
-                db.update(container_log.id, container_log, "container_logs")
+        # with self.app.app_context():
+        # mark containerLog as finished
+        container_log = db.get(self.container.name, "container_logs")
+        if container_log:
+            container_log.state = STATE_TEARDOWN_FINISHED
+            db.update(container_log.id, container_log, "container_logs")
 
         # distribute recovery data
         distribute_cluster_data(self.app, self.node)

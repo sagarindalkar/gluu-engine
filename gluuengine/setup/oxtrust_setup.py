@@ -76,9 +76,9 @@ class OxtrustSetup(OxSetup):
         """Discovers nginx container.
         """
         self.logger.debug("discovering available nginx container")
-        with self.app.app_context():
-            if self.cluster.count_containers(type_="nginx"):
-                self.import_nginx_cert()
+        # with self.app.app_context():
+        if self.cluster.count_containers(type_="nginx"):
+            self.import_nginx_cert()
 
     def after_setup(self):
         """Post-setup callback.
@@ -118,14 +118,14 @@ class OxtrustSetup(OxSetup):
             self.container.cid, "/etc/certs/shibIDP.key", key,
         )
 
-        with self.app.app_context():
-            for oxidp in self.cluster.get_containers(type_="oxidp"):
-                self.docker.copy_to_container(
-                    oxidp.cid, crt, "/etc/certs/shibIDP.crt",
-                )
-                self.docker.copy_to_container(
-                    oxidp.cid, key, "/etc/certs/shibIDP.key",
-                )
+        # with self.app.app_context():
+        for oxidp in self.cluster.get_containers(type_="oxidp"):
+            self.docker.copy_to_container(
+                oxidp.cid, crt, "/etc/certs/shibIDP.crt",
+            )
+            self.docker.copy_to_container(
+                oxidp.cid, key, "/etc/certs/shibIDP.key",
+            )
 
         for fn in (crt, key,):
             try:

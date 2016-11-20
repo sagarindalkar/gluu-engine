@@ -17,19 +17,19 @@ class PrometheusHelper(object):
     def __init__(self, app, logger=None):
         self.app = app
 
-        with self.app.app_context():
-            try:
-                self.cluster = db.all("clusters")[0]
-            except IndexError:
-                self.cluster = None
+        # with self.app.app_context():
+        try:
+            self.cluster = db.all("clusters")[0]
+        except IndexError:
+            self.cluster = None
 
-            try:
-                self.provider = db.search_from_table(
-                    "providers",
-                    {"type": "master"},
-                )[0]
-            except IndexError:
-                self.provider = None
+        try:
+            self.provider = db.search_from_table(
+                "providers",
+                {"type": "master"},
+            )[0]
+        except IndexError:
+            self.provider = None
 
         self.target_path = '/etc/gluu/prometheus/prometheus.yml'
         self.docker = Client("unix:///var/run/docker.sock")

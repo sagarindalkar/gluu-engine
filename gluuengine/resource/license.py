@@ -149,25 +149,25 @@ class LicenseKeyResource(Resource):
 
     @run_in_reactor
     def _enable_containers(self, license_key, app):
-        with app.app_context():
-            mc = Machine()
+        # with app.app_context():
+        mc = Machine()
 
-            for worker_node in license_key.get_workers():
-                weave = Weave(worker_node, app)
-                containers = worker_node.get_containers(
-                    type_="oxauth", state=STATE_DISABLED,
+        for worker_node in license_key.get_workers():
+            weave = Weave(worker_node, app)
+            containers = worker_node.get_containers(
+                type_="oxauth", state=STATE_DISABLED,
+            )
+
+            for container in containers:
+                container.state = STATE_SUCCESS
+                db.update(container.id, container, "containers")
+                mc.ssh(
+                    worker_node.name,
+                    "docker restart {}".format(container.cid),
                 )
-
-                for container in containers:
-                    container.state = STATE_SUCCESS
-                    db.update(container.id, container, "containers")
-                    mc.ssh(
-                        worker_node.name,
-                        "docker restart {}".format(container.cid),
-                    )
-                    weave.dns_add(container.cid, container.hostname)
-                    weave.dns_add(
-                        container.cid,
-                        "{}.weave.local".format("oxauth"),
-                    )
-                distribute_cluster_data(app, worker_node)
+                weave.dns_add(container.cid, container.hostname)
+                weave.dns_add(
+                    container.cid,
+                    "{}.weave.local".format("oxauth"),
+                )
+            distribute_cluster_data(app, worker_node)

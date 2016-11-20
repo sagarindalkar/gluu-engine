@@ -50,11 +50,11 @@ CONTAINER_CHOICES = (
 
 def get_container(db, container_id):
     try:
-        container = db.search_from_table("containers", {"id": container_id})
+        container = db.search_from_table("containers", {"id": container_id})[0]
         if not container:
             container = db.search_from_table(
                 "containers", {"name": container_id},
-            )
+            )[0]
     except IndexError:
         container = None
     return container
@@ -461,29 +461,28 @@ class ScaleContainerResource(Resource):
         return cycle(running_nodes_ids)
 
     def setup_obj_generator(self, app, container_type, number, cluster_id, node_id_pool):
-        with app.app_context():
-            current_app.logger.info(number)
-            for i in xrange(number):
-                container_class = self.container_classes[container_type]
-                container = container_class({
-                    "cluster_id": cluster_id,
-                    "node_id": node_id_pool.next(),
-                    "state": STATE_IN_PROGRESS,
-                    "container_attrs": {},
-                })
-                db.persist(container, "containers")
+        # with app.app_context():
+        for i in xrange(number):
+            container_class = self.container_classes[container_type]
+            container = container_class({
+                "cluster_id": cluster_id,
+                "node_id": node_id_pool.next(),
+                "state": STATE_IN_PROGRESS,
+                "container_attrs": {},
+            })
+            db.persist(container, "containers")
 
-                # log related setup
-                container_log = ContainerLog.create_or_get(container)
-                container_log.state = STATE_SETUP_IN_PROGRESS
-                db.update(container_log.id, container_log, "container_logs")
-                logpath = os.path.join(app.config["CONTAINER_LOG_DIR"],
-                                       container_log.setup_log)
+            # log related setup
+            container_log = ContainerLog.create_or_get(container)
+            container_log.state = STATE_SETUP_IN_PROGRESS
+            db.update(container_log.id, container_log, "container_logs")
+            logpath = os.path.join(app.config["CONTAINER_LOG_DIR"],
+                                   container_log.setup_log)
 
-                # make the setup obj
-                helper_class = self.helper_classes[container_type]
-                helper = helper_class(container, app, logpath)
-                yield helper
+            # make the setup obj
+            helper_class = self.helper_classes[container_type]
+            helper = helper_class(container, app, logpath)
+            yield helper
 
     @run_in_reactor
     def scaleosorus(self, setup_obj_generator):
@@ -541,17 +540,17 @@ class ScaleContainerResource(Resource):
                 executor.submit(delete_obj.mp_teardown)
 
     def delete_obj_generator(self, app, containers):
-        with app.app_context():
-            for container in containers:
-                db.delete_from_table("containers", {"name": container.name})
-                container_log = ContainerLog.create_or_get(container)
-                container_log.state = STATE_TEARDOWN_IN_PROGRESS
-                db.update(container_log.id, container_log, "container_logs")
-                logpath = os.path.join(app.config["CONTAINER_LOG_DIR"],
-                                       container_log.teardown_log)
-                helper_class = self.helper_classes[container.type]
-                helper = helper_class(container, app, logpath)
-                yield helper
+        # with app.app_context():
+        for container in containers:
+            db.delete_from_table("containers", {"name": container.name})
+            container_log = ContainerLog.create_or_get(container)
+            container_log.state = STATE_TEARDOWN_IN_PROGRESS
+            db.update(container_log.id, container_log, "container_logs")
+            logpath = os.path.join(app.config["CONTAINER_LOG_DIR"],
+                                   container_log.teardown_log)
+            helper_class = self.helper_classes[container.type]
+            helper = helper_class(container, app, logpath)
+            yield helper
 
     def delete(self, container_type, number):
         app = current_app._get_current_object()

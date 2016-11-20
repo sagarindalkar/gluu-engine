@@ -15,24 +15,24 @@ class NginxSetup(BaseSetup):
         def resolve_weave_ip(container_id):
             return self.docker.get_container_ip(container_id)
 
-        with self.app.app_context():
-            oxauth_containers = []
-            if self.cluster.count_containers("oxauth"):
-                oxauth_containers.append("oxauth.weave.local")
+        # with self.app.app_context():
+        oxauth_containers = []
+        if self.cluster.count_containers("oxauth"):
+            oxauth_containers.append("oxauth.weave.local")
 
-            oxtrust_containers = []
-            if self.cluster.count_containers("oxtrust"):
-                oxtrust_containers.append("oxtrust.weave.local")
+        oxtrust_containers = []
+        if self.cluster.count_containers("oxtrust"):
+            oxtrust_containers.append("oxtrust.weave.local")
 
-            ctx = {
-                "ox_cluster_hostname": self.cluster.ox_cluster_hostname,
-                "cert_file": "/etc/certs/nginx.crt",
-                "key_file": "/etc/certs/nginx.key",
-                "oxauth_containers": oxauth_containers,
-                "oxtrust_containers": oxtrust_containers,
-                # "oxidp_containers": oxidp_containers,
-                # "oxasimba_containers": oxasimba_containers,
-            }
+        ctx = {
+            "ox_cluster_hostname": self.cluster.ox_cluster_hostname,
+            "cert_file": "/etc/certs/nginx.crt",
+            "key_file": "/etc/certs/nginx.key",
+            "oxauth_containers": oxauth_containers,
+            "oxtrust_containers": oxtrust_containers,
+            # "oxidp_containers": oxidp_containers,
+            # "oxasimba_containers": oxasimba_containers,
+        }
 
         src = "nginx/gluu_https.conf"
         dest = "/etc/nginx/sites-available/gluu_https.conf"

@@ -105,12 +105,10 @@ class LicenseWatcherTask(object):
             else:
                 # mark the latest update time
                 license_key.updated_at = retrieve_current_date()
-                # with self.app.app_context():
                 db.update(license_key.id, license_key, "license_keys")
                 self.logger.info("license key has been updated")
                 break
 
-        # with self.app.app_context():
         worker_nodes = license_key.get_workers()
 
         # cache the expiration state
@@ -127,7 +125,6 @@ class LicenseWatcherTask(object):
             distribute_cluster_data(self.app, node)
 
     def get_license_key(self):
-        # with self.app.app_context():
         try:
             license_key = db.all("license_keys")[0]
         except IndexError:
@@ -143,7 +140,6 @@ class LicenseWatcherTask(object):
         :param type_: Type of the container.
         """
         containers = node.get_containers(type_=type_)
-        # with self.app.app_context():
         for container in containers:
             container.state = STATE_DISABLED
             db.update(container.id, container, "containers")
@@ -163,7 +159,6 @@ class LicenseWatcherTask(object):
         :param type_: Type of the container.
         """
         containers = node.get_containers(type_=type_, state=STATE_DISABLED)
-        # with self.app.app_context():
         weave = Weave(node, self.app)
 
         for container in containers:

@@ -51,7 +51,6 @@ class BaseContainerHelper(object):
     def __init__(self, container, app, logpath=None):
         self.container = container
         self.app = app
-        # with self.app.app_context():
         self.cluster = db.get(self.container.cluster_id, "clusters")
         self.node = db.get(self.container.node_id, "nodes")
 
@@ -67,7 +66,6 @@ class BaseContainerHelper(object):
 
         mc = Machine()
 
-        # with self.app.app_context():
         try:
             master_node = db.search_from_table(
                 "nodes", {"type": "master"},
@@ -124,7 +122,6 @@ class BaseContainerHelper(object):
                 self.container.cid, self.container.type, dns_search.rstrip("."),
             )
 
-            # with self.app.app_context():
             db.update_to_table(
                 "containers",
                 {"name": self.container.name},
@@ -151,7 +148,6 @@ class BaseContainerHelper(object):
             # mark container as SUCCESS
             self.container.state = STATE_SUCCESS
 
-            # with self.app.app_context():
             db.update_to_table(
                 "containers",
                 {"name": self.container.name},
@@ -175,8 +171,14 @@ class BaseContainerHelper(object):
             self.on_setup_error()
         finally:
             # mark containerLog as finished
-            # with self.app.app_context():
-            container_log = db.get(self.container.name, "container_logs")
+            try:
+                container_log = db.search_from_table(
+                    "container_logs",
+                    {"container_name": self.container.name},
+                )[0]
+            except IndexError:
+                container_log = None
+
             if container_log:
                 container_log.state = STATE_SETUP_FINISHED
                 db.update(container_log.id, container_log, "container_logs")
@@ -211,7 +213,6 @@ class BaseContainerHelper(object):
         # mark container as FAILED
         self.container.state = STATE_FAILED
 
-        # with self.app.app_context():
         db.update_to_table(
             "containers",
             {"name": self.container.name},
@@ -259,9 +260,15 @@ class BaseContainerHelper(object):
             self.container.name, elapsed
         ))
 
-        # with self.app.app_context():
         # mark containerLog as finished
-        container_log = db.get(self.container.name, "container_logs")
+        try:
+            container_log = db.search_from_table(
+                "container_logs",
+                {"container_name": self.container.name},
+            )[0]
+        except IndexError:
+            container_log = None
+
         if container_log:
             container_log.state = STATE_TEARDOWN_FINISHED
             db.update(container_log.id, container_log, "container_logs")

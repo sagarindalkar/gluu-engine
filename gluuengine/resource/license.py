@@ -8,8 +8,6 @@ from flask import url_for
 from flask import request
 from flask import current_app
 from flask_restful import Resource
-from sqlalchemy import JSON
-from sqlalchemy import BigInteger
 
 from ..database import db
 from ..model import LicenseKey
@@ -72,8 +70,7 @@ class LicenseKeyListResource(Resource):
             }, 403
 
         license_key.import_data({"updated_at": retrieve_current_date()})
-        db.persist(license_key, "license_keys",
-                   types={"metadata": JSON, "updated_at": BigInteger})
+        db.persist(license_key, "license_keys"),
 
         headers = {
             "Location": url_for("licensekey", license_key_id=license_key.id),
@@ -149,7 +146,6 @@ class LicenseKeyResource(Resource):
 
     @run_in_reactor
     def _enable_containers(self, license_key, app):
-        # with app.app_context():
         mc = Machine()
 
         for worker_node in license_key.get_workers():

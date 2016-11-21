@@ -24,7 +24,6 @@ def distribute_shared_database(app, node):
     logger = logging.getLogger("gluuengine")
     filepath = app.config["SHARED_DATABASE_URI"]
 
-    # with app.app_context():
     clusters = db.all("clusters")
 
     if not clusters:

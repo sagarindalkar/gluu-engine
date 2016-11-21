@@ -6,12 +6,12 @@
 import os
 from itertools import cycle
 
+import concurrent.futures
 from flask import abort
 from flask import current_app
 from flask import request
 from flask import url_for
 from flask_restful import Resource
-import concurrent.futures
 from crochet import run_in_reactor
 
 from ..database import db
@@ -84,6 +84,16 @@ def discovery_node_reachable():
         return False
     else:
         return Machine().status(node.name)
+
+
+def get_containerlog(db, containerlog_name):
+    try:
+        log = db.search_from_table(
+            "container_logs", {"container_name": containerlog_name},
+        )[0]
+    except IndexError:
+        log = None
+    return log
 
 
 class ContainerResource(Resource):
@@ -163,7 +173,7 @@ class ContainerResource(Resource):
         headers = {
             "X-Container-Teardown-Log": url_for(
                 "containerlog_teardown",
-                id=container_log.id,
+                container_name=container_log.container_name,
                 _external=True,
             ),
         }
@@ -311,7 +321,7 @@ class NewContainerResource(Resource):
         headers = {
             "X-Container-Setup-Log": url_for(
                 "containerlog_setup",
-                id=container_log.id,
+                container_name=container_log.container_name,
                 _external=True,
             ),
             "Location": url_for("container", container_id=container.name),
@@ -332,32 +342,32 @@ def format_container_log_response(container_log):
     if os.path.exists(setup_log):
         resp["setup_log_url"] = url_for(
             "containerlog_setup",
-            id=container_log.id,
+            container_name=container_log.container_name,
             _external=True,
         )
 
     if os.path.exists(teardown_log):
         resp["teardown_log_url"] = url_for(
             "containerlog_teardown",
-            id=container_log.id,
+            container_name=container_log.container_name,
             _external=True,
         )
     return resp
 
 
 class ContainerLogResource(Resource):
-    def get(self, id):
-        container_log = db.get(id, "container_logs")
+    def get(self, container_name):
+        container_log = get_containerlog(db, container_name)
         if not container_log:
             return {"status": 404, "message": "Container log not found"}, 404
         return format_container_log_response(container_log)
 
-    def delete(self, id):
-        container_log = db.get(id, "container_logs")
+    def delete(self, container_name):
+        container_log = get_containerlog(db, container_name)
         if not container_log:
             return {"status": 404, "message": "Container log not found"}, 404
 
-        db.delete(id, "container_logs")
+        db.delete(container_log.id, "container_logs")
 
         app = current_app._get_current_object()
         abs_setup_log = os.path.join(app.config["CONTAINER_LOG_DIR"],
@@ -375,8 +385,8 @@ class ContainerLogResource(Resource):
 
 
 class ContainerLogSetupResource(Resource):
-    def get(self, id):
-        container_log = db.get(id, "container_logs")
+    def get(self, container_name):
+        container_log = get_containerlog(db, container_name)
         if not container_log:
             return {"status": 404, "message": "Container setup log not found"}, 404
 
@@ -397,8 +407,8 @@ class ContainerLogSetupResource(Resource):
 
 
 class ContainerLogTeardownResource(Resource):
-    def get(self, id):
-        container_log = db.get(id, "container_logs")
+    def get(self, container_name):
+        container_log = get_containerlog(db, container_name)
         if not container_log:
             return {"status": 404, "message": "Container teardown log not found"}, 404
 
@@ -461,7 +471,6 @@ class ScaleContainerResource(Resource):
         return cycle(running_nodes_ids)
 
     def setup_obj_generator(self, app, container_type, number, cluster_id, node_id_pool):
-        # with app.app_context():
         for i in xrange(number):
             container_class = self.container_classes[container_type]
             container = container_class({
@@ -540,7 +549,6 @@ class ScaleContainerResource(Resource):
                 executor.submit(delete_obj.mp_teardown)
 
     def delete_obj_generator(self, app, containers):
-        # with app.app_context():
         for container in containers:
             db.delete_from_table("containers", {"name": container.name})
             container_log = ContainerLog.create_or_get(container)

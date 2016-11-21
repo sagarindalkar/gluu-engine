@@ -17,7 +17,6 @@ class PrometheusHelper(object):
     def __init__(self, app, logger=None):
         self.app = app
 
-        # with self.app.app_context():
         try:
             self.cluster = db.all("clusters")[0]
         except IndexError:

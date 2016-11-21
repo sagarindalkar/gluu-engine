@@ -19,6 +19,13 @@ class BaseModel(Model):
     def as_dict(self):
         return self.resource_fields
 
+    @property
+    def column_types(self):
+        """Special column types. Useful for column check in fixed-schema
+        database backend, for example MySQL.
+        """
+        return {}
+
 
 #: A flag to mark state as ``SUCCESS``
 STATE_SUCCESS = "SUCCESS"

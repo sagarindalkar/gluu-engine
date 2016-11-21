@@ -8,10 +8,10 @@ import inspect
 from werkzeug.utils import import_string
 from flask_pymongo import PyMongo
 from flask_dataset import Dataset
+from sqlalchemy import Unicode
 
 
 def _load_pyobject(data):
-    # FIXME: "py/object" sometime is not recognized
     if "_pyobject" in data:
         imp_path = data["_pyobject"]
     else:
@@ -143,8 +143,13 @@ class DatasetBackend(Dataset):
         return self.app.test_request_context()
 
     def _get_table(self, table_name):
-        return self.connection.get_table(table_name, primary_id="id",
-                                         primary_type="String(36)")
+        table = self.connection.get_table(table_name, primary_id="id",
+                                          primary_type="String(36)")
+
+        # preload the ``_pyobject`` column
+        if not table._has_column("_pyobject"):
+            table.create_column("_pyobject", Unicode(128))
+        return table
 
     def get(self, identifier, table_name):
         obj = self._get_table(table_name).find_one(id=identifier)
@@ -158,8 +163,8 @@ class DatasetBackend(Dataset):
         data["_pyobject"] = get_model_path(obj)
         return self._get_table(table_name).insert(
             data,
-            ensure=True,
-            types=kwargs.get("types", {}),
+            # ensure=True,
+            types=obj.column_types,
         )
 
     def all(self, table_name):
@@ -173,10 +178,10 @@ class DatasetBackend(Dataset):
         data = obj.to_primitive()
         data["_pyobject"] = get_model_path(obj)
         return self._get_table(table_name).update(
-            {"id": identifier},
             data,
-            ensure=True,
-            types=kwargs.get("types", {}),
+            ["id"],
+            # ensure=True,
+            types=obj.column_types,
         )
 
     def search_from_table(self, table_name, condition):
@@ -189,11 +194,13 @@ class DatasetBackend(Dataset):
     def update_to_table(self, table_name, condition, obj, **kwargs):
         data = obj.to_primitive()
         data["_pyobject"] = get_model_path(obj)
+        data.update(condition)
         return self._get_table(table_name).update(
-            condition,
+            # condition,
             data,
-            ensure=True,
-            types=kwargs.get("types", {}),
+            condition.keys(),
+            # ensure=True,
+            types=obj.column_types,
         )
 
     def delete_from_table(self, table_name, condition):

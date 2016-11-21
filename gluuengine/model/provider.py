@@ -4,6 +4,7 @@
 # All rights reserved.
 
 import uuid
+from sqlalchemy import JSON
 
 from schematics.types import BooleanType
 from schematics.types import IntType
@@ -29,6 +30,12 @@ class BaseProvider(BaseModel):
             return self.driver_attrs.get(field)
         except (AttributeError, TypeError,):
             return self._initial.get(field)
+
+    @property
+    def column_types(self):
+        return {
+            "driver_attrs": JSON,
+        }
 
 
 class GenericProvider(BaseProvider):

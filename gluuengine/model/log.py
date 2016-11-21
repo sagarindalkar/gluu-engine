@@ -3,6 +3,8 @@
 #
 # All rights reserved.
 
+import uuid
+
 from schematics.types import StringType
 
 from .base import BaseModel
@@ -10,7 +12,7 @@ from ..database import db
 
 
 class ContainerLog(BaseModel):
-    id = StringType()
+    id = StringType(default=lambda: str(uuid.uuid4()))
     container_name = StringType()
     setup_log = StringType()
     setup_log_url = StringType()
@@ -39,7 +41,6 @@ class ContainerLog(BaseModel):
             pass
 
         container_log = ContainerLog()
-        container_log.id = container.name
         container_log.container_name = container.name
         container_log.setup_log = "{}-setup.log".format(container_log.container_name)  # noqa
         container_log.teardown_log = "{}-teardown.log".format(container_log.container_name)  # noqa

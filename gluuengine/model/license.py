@@ -16,6 +16,8 @@ from schematics.types import LongType
 from schematics.types import IntType
 from schematics.types.compound import ListType
 from schematics.types.compound import PolyModelType
+from sqlalchemy import JSON
+from sqlalchemy import BigInteger
 
 
 class LicenseKey(BaseModel):
@@ -54,7 +56,7 @@ class LicenseKey(BaseModel):
             "name": self.name,
             "code": self.code,
             "valid": self.valid,
-            "metadata": dict(self.metadata) or {},
+            "metadata": dict(self.metadata or {}),
             "updated_at": self.updated_at,
         }
 
@@ -124,3 +126,10 @@ class LicenseKey(BaseModel):
         if "autoupdate" not in self.metadata:
             return True
         return self.metadata.get("autoupdate") is True
+
+    @property
+    def column_types(self):
+        return {
+            "metadata": JSON,
+            "updated_at": BigInteger,
+        }

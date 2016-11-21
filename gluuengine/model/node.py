@@ -4,6 +4,7 @@
 # All rights reserved.
 
 import uuid
+from sqlalchemy import JSON
 
 from schematics.types import BooleanType
 from schematics.types import StringType
@@ -50,6 +51,12 @@ class Node(BaseModel):
             return self.state_attrs.get(field)
         except (AttributeError, TypeError,):
             return self._initial.get(field)
+
+    @property
+    def column_types(self):
+        return {
+            "state_attrs": JSON,
+        }
 
 
 class DiscoveryNode(Node):

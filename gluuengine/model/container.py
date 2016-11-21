@@ -8,6 +8,7 @@ import uuid
 from schematics.types import IntType
 from schematics.types import StringType
 from schematics.types.compound import PolyModelType
+from sqlalchemy import JSON
 
 from .base import BaseModel
 
@@ -30,6 +31,12 @@ class Container(BaseModel):
             "state": self.state,
             "hostname": self.hostname,
             "cid": self.cid,
+        }
+
+    @property
+    def column_types(self):
+        return {
+            "container_attrs": JSON,
         }
 
 

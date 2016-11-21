@@ -18,7 +18,6 @@ class Weave(object):
         self.node = node
         self.app = app
 
-        # with self.app.app_context():
         try:
             self.master_node = db.search_from_table(
                 "nodes", {"type": "master"},

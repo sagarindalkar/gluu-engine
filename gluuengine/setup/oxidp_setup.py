@@ -58,7 +58,6 @@ class OxidpSetup(OxSetup):
 
         # notify oxidp peers to re-render their nutcracker.yml
         # and restart the daemon
-        # with self.app.app_context():
         for container in self.cluster.get_containers(type_="oxidp"):
             if container.cid == self.container.cid:
                 continue
@@ -103,14 +102,12 @@ class OxidpSetup(OxSetup):
             import_certs(self.cluster.external_ldap_host,
                          self.cluster.external_ldap_port)
         else:
-            # with self.app.app_context():
             for ldap in self.cluster.get_containers(type_="ldap"):
                 import_certs(ldap.hostname, self.cluster.ldaps_port)
 
     def render_nutcracker_conf(self):
         """Copies twemproxy configuration into the container.
         """
-        # with self.app.app_context():
         ctx = {
             "oxidp_containers": self.cluster.get_containers(type_="oxidp"),
         }
@@ -130,7 +127,6 @@ class OxidpSetup(OxSetup):
     def teardown(self):
         """Teardowns the container.
         """
-        # with self.app.app_context():
         for container in self.cluster.get_containers(type_="oxidp"):
             setup_obj = OxidpSetup(container, self.cluster,
                                    self.app, logger=self.logger)
@@ -143,7 +139,6 @@ class OxidpSetup(OxSetup):
     def pull_shib_config(self):
         """Copies all existing oxIdp config and metadata files.
         """
-        # with self.app.app_context():
         try:
             oxtrust = self.cluster.get_containers(type_="oxtrust")[0]
         except IndexError:
@@ -220,7 +215,6 @@ class OxidpSetup(OxSetup):
         self.copy_rendered_jinja_template(src, dest, ctx)
 
     def pull_shib_certkey(self):
-        # with self.app.app_context():
         try:
             oxtrust = self.cluster.get_containers(type_="oxtrust")[0]
         except IndexError:
@@ -271,6 +265,5 @@ class OxidpSetup(OxSetup):
         """Discovers nginx node.
         """
         self.logger.debug("discovering available nginx container")
-        # with self.app.app_context():
         if self.cluster.count_containers(type_="nginx"):
             self.import_nginx_cert()

@@ -15,7 +15,6 @@ class NginxSetup(BaseSetup):
         def resolve_weave_ip(container_id):
             return self.docker.get_container_ip(container_id)
 
-        # with self.app.app_context():
         oxauth_containers = []
         if self.cluster.count_containers("oxauth"):
             oxauth_containers.append("oxauth.weave.local")

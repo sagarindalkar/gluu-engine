@@ -29,7 +29,6 @@ class BaseSetup(object):
         self.app = app
         self.build_dir = tempfile.mkdtemp()
         self.container = container
-        # with self.app.app_context():
         self.node = db.get(self.container.node_id, "nodes")
         self.cluster = cluster
         self.jinja_env = Environment(
@@ -38,7 +37,6 @@ class BaseSetup(object):
         self.template_dir = self.app.config["TEMPLATES_DIR"]
         self.machine = Machine()
 
-        # with self.app.app_context():
         try:
             master_node = db.search_from_table(
                 "nodes", {"type": "master"},

@@ -13,7 +13,6 @@ from .nginx_setup import NginxSetup
 
 
 def notify_oxtrust(ngx):
-    # with ngx.app.app_context():
     try:
         oxtrust = ngx.node.get_containers(type_="oxtrust")[0]
         setup_obj = OxtrustSetup(oxtrust, ngx.cluster, ngx.app, ngx.logger)
@@ -26,7 +25,6 @@ def notify_oxtrust(ngx):
 
 
 def notify_oxidp(ngx):
-    # with ngx.app.app_context():
     for oxidp in ngx.cluster.get_containers(type_="oxidp"):
         setup_obj = OxidpSetup(oxidp, ngx.cluster, ngx.app, ngx.logger)
 
@@ -38,7 +36,6 @@ def notify_oxidp(ngx):
 def notify_nginx(ox):
     """Notifies nginx to re-render virtual host and restart the process.
     """
-    # with ox.app.app_context():
     for nginx in ox.cluster.get_containers(type_="nginx"):
         setup_obj = NginxSetup(nginx, ox.cluster, ox.app, ox.logger)
         setup_obj.render_https_conf()

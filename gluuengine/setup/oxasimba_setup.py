@@ -145,7 +145,6 @@ class OxasimbaSetup(OxSetup):  # pragma: no cover
         """Discovers nginx container.
         """
         self.logger.debug("discovering available nginx container")
-        # with self.app.app_context():
         if self.cluster.count_containers(type_="nginx"):
             self.import_nginx_cert()
 

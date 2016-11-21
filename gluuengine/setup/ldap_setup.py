@@ -332,7 +332,6 @@ class LdapSetup(BaseSetup):
         self.index_opendj("userRoot")
 
         try:
-            # with self.app.app_context():
             peer = self.cluster.get_containers(type_="ldap")[0]
             # Initialize data from existing ldap container.
             # To create fully meshed replication, update the other
@@ -357,7 +356,6 @@ class LdapSetup(BaseSetup):
         """
         # import all OpenDJ certficates because oxIdp checks matched
         # certificate
-        # with self.app.app_context():
         for oxidp in self.cluster.get_containers(type_="oxidp"):
             setup_obj = OxidpSetup(oxidp, self.cluster,
                                    self.app, logger=self.logger)
@@ -375,7 +373,6 @@ class LdapSetup(BaseSetup):
         self.write_ldap_pw()
 
         # stop the replication agreement
-        # with self.app.app_context():
         ldap_num = len(self.cluster.get_containers(type_="ldap"))
         if ldap_num > 0:
             self.disable_replication()

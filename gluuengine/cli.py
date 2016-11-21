@@ -44,7 +44,6 @@ def _distribute_ox_files(type_):
 
     click.echo("distributing custom {} files".format(ox["name"]))
 
-    # with app.app_context():
     mnodes = db.search_from_table("nodes", {"type": "master"})
     wnodes = db.search_from_table("nodes", {"type": "worker"})
     nodes = mnodes + wnodes
@@ -107,7 +106,6 @@ def distribute_ssl_cert():
         click.echo("{} is not available; process cancelled".format(ssl_key))
         return
 
-    # with app.app_context():
     try:
         master_node = db.search_from_table("nodes", {"type": "master"})[0]
     except IndexError:

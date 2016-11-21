@@ -91,15 +91,15 @@ def register_resources():
                          endpoint='node')
 
     restapi.add_resource(ContainerLogResource,
-                         '/container_logs/<id>',
+                         '/container_logs/<container_name>',
                          endpoint="containerlog",
                          )
     restapi.add_resource(ContainerLogSetupResource,
-                         '/container_logs/<id>/setup',
+                         '/container_logs/<container_name>/setup',
                          endpoint="containerlog_setup",
                          )
     restapi.add_resource(ContainerLogTeardownResource,
-                         '/container_logs/<id>/teardown',
+                         '/container_logs/<container_name>/teardown',
                          endpoint="containerlog_teardown",
                          )
     restapi.add_resource(ContainerLogListResource,

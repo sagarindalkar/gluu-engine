@@ -577,8 +577,8 @@ class ScaleContainerResource(Resource):
                 "message": "cannot deploy 0 or lower number of container",
             }, 403
 
-        #get the count of requested container type
-        count = db.count_from_table('containers', {'$and': [{'type': container_type}, {'state': STATE_SUCCESS}]})
+        # get the count of requested container type
+        count = db.count_from_table('containers', {'type': container_type, 'state': STATE_SUCCESS})
         if number > count:
             return {
                 "status": 403,
@@ -586,7 +586,7 @@ class ScaleContainerResource(Resource):
             }, 403
 
         # get the list of container object
-        containers = db.search_from_table('containers', {'$and': [{'type': container_type}, {'state': STATE_SUCCESS}]})
+        containers = db.search_from_table('containers', {'type': container_type, 'state': STATE_SUCCESS})
 
         # select and arrange containers
         mnodes = db.search_from_table('nodes', {"type": "master"})

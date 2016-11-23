@@ -38,7 +38,6 @@ setup(
         "Flask",
         "crochet",
         "docker-py>=1.8.0",
-        "jsonpickle",
         "m2crypto",
         "marshmallow",
         "flask_marshmallow",

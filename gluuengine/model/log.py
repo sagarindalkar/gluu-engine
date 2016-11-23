@@ -15,9 +15,7 @@ class ContainerLog(BaseModel):
     id = StringType(default=lambda: str(uuid.uuid4()))
     container_name = StringType()
     setup_log = StringType()
-    setup_log_url = StringType()
     teardown_log = StringType()
-    teardown_log_url = StringType()
     state = StringType()
 
     @property
@@ -25,8 +23,6 @@ class ContainerLog(BaseModel):
         return {
             "id": self.id,
             "container_name": self.container_name,
-            "setup_log_url": self.setup_log_url,
-            "teardown_log_url": self.teardown_log_url,
             "state": self.state,
         }
 

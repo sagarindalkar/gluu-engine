@@ -303,7 +303,7 @@ class NewContainerResource(Resource):
             "state": STATE_IN_PROGRESS,
             "container_attrs": data["container_attrs"],
         })
-
+        container.name = "{}_{}".format(container.image, container.id)
         db.persist(container, "containers")
 
         # log related setup
@@ -321,7 +321,7 @@ class NewContainerResource(Resource):
         headers = {
             "X-Container-Setup-Log": url_for(
                 "containerlog_setup",
-                container_name=container_log.container_name,
+                container_name=container.name,
                 _external=True,
             ),
             "Location": url_for("container", container_id=container.name),
@@ -339,6 +339,7 @@ def format_container_log_response(container_log):
 
     resp = container_log.as_dict()
 
+    resp["setup_log_url"] = ""
     if os.path.exists(setup_log):
         resp["setup_log_url"] = url_for(
             "containerlog_setup",
@@ -346,6 +347,7 @@ def format_container_log_response(container_log):
             _external=True,
         )
 
+    resp["teardown_log_url"] = ""
     if os.path.exists(teardown_log):
         resp["teardown_log_url"] = url_for(
             "containerlog_teardown",
@@ -479,6 +481,7 @@ class ScaleContainerResource(Resource):
                 "state": STATE_IN_PROGRESS,
                 "container_attrs": {},
             })
+            container.name = "{}_{}".format(container.image, container.id)
             db.persist(container, "containers")
 
             # log related setup

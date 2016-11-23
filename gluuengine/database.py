@@ -59,9 +59,9 @@ class Database(object):
         with self.backend._get_context():
             return self.backend.get(identifier, table_name)
 
-    def persist(self, obj, table_name, **kwargs):
+    def persist(self, obj, table_name):
         with self.backend._get_context():
-            return self.backend.persist(obj, table_name, **kwargs)
+            return self.backend.persist(obj, table_name)
 
     def all(self, table_name):
         with self.backend._get_context():
@@ -71,9 +71,9 @@ class Database(object):
         with self.backend._get_context():
             return self.backend.delete(identifier, table_name)
 
-    def update(self, identifier, obj, table_name, **kwargs):
+    def update(self, identifier, obj, table_name):
         with self.backend._get_context():
-            return self.backend.update(identifier, obj, table_name, **kwargs)
+            return self.backend.update(identifier, obj, table_name)
 
     def search_from_table(self, table_name, condition):
         with self.backend._get_context():
@@ -83,9 +83,9 @@ class Database(object):
         with self.backend._get_context():
             return self.backend.count_from_table(table_name, condition)
 
-    def update_to_table(self, table_name, condition, obj, **kwargs):
+    def update_to_table(self, table_name, condition, obj):
         with self.backend._get_context():
-            return self.backend.update_to_table(table_name, condition, obj, **kwargs)
+            return self.backend.update_to_table(table_name, condition, obj)
 
     def delete_from_table(self, table_name, condition):
         with self.backend._get_context():
@@ -103,7 +103,7 @@ class PyMongoBackend(PyMongo):
             return
         return _load_pyobject(obj)
 
-    def persist(self, obj, table_name, **kwargs):
+    def persist(self, obj, table_name):
         data = obj.to_primitive()
         data["_id"] = data["id"]
         data["_pyobject"] = get_model_path(obj)
@@ -116,7 +116,7 @@ class PyMongoBackend(PyMongo):
     def delete(self, identifier, table_name):
         return self.db[table_name].delete_one({"id": identifier})
 
-    def update(self, identifier, obj, table_name, **kwargs):
+    def update(self, identifier, obj, table_name):
         data = obj.to_primitive()
         data["_id"] = data["id"]
         data["_pyobject"] = get_model_path(obj)
@@ -129,7 +129,7 @@ class PyMongoBackend(PyMongo):
     def count_from_table(self, table_name, condition):
         return self.db[table_name].count(condition)
 
-    def update_to_table(self, table_name, condition, obj, **kwargs):
+    def update_to_table(self, table_name, condition, obj):
         data = obj.to_primitive()
         data["_pyobject"] = get_model_path(obj)
         return self.db[table_name].update(condition, data, True)
@@ -158,12 +158,11 @@ class DatasetBackend(Dataset):
             return
         return _load_pyobject(obj)
 
-    def persist(self, obj, table_name, **kwargs):
+    def persist(self, obj, table_name):
         data = obj.to_primitive()
         data["_pyobject"] = get_model_path(obj)
         return self._get_table(table_name).insert(
             data,
-            # ensure=True,
             types=obj.column_types,
         )
 
@@ -174,13 +173,12 @@ class DatasetBackend(Dataset):
     def delete(self, identifier, table_name):
         return self._get_table(table_name).delete(id=identifier)
 
-    def update(self, identifier, obj, table_name, **kwargs):
+    def update(self, identifier, obj, table_name):
         data = obj.to_primitive()
         data["_pyobject"] = get_model_path(obj)
         return self._get_table(table_name).update(
             data,
             ["id"],
-            # ensure=True,
             types=obj.column_types,
         )
 
@@ -191,15 +189,13 @@ class DatasetBackend(Dataset):
     def count_from_table(self, table_name, condition):
         return self._get_table(table_name).count(**condition)
 
-    def update_to_table(self, table_name, condition, obj, **kwargs):
+    def update_to_table(self, table_name, condition, obj):
         data = obj.to_primitive()
         data["_pyobject"] = get_model_path(obj)
         data.update(condition)
         return self._get_table(table_name).update(
-            # condition,
             data,
             condition.keys(),
-            # ensure=True,
             types=obj.column_types,
         )
 

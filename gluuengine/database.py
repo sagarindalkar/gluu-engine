@@ -97,11 +97,11 @@ class PyMongoBackend(PyMongo):
         return self.app.app_context()
 
     def get(self, identifier, table_name):
-        obj = self.db[table_name].find_one({"id": identifier})
+        data = self.db[table_name].find_one({"id": identifier})
 
-        if not obj:
+        if not data:
             return
-        return _load_pyobject(obj)
+        return _load_pyobject(data)
 
     def persist(self, obj, table_name):
         data = obj.to_primitive()
@@ -152,11 +152,11 @@ class DatasetBackend(Dataset):
         return table
 
     def get(self, identifier, table_name):
-        obj = self._get_table(table_name).find_one(id=identifier)
+        data = self._get_table(table_name).find_one(id=identifier)
 
-        if not obj:
+        if not data:
             return
-        return _load_pyobject(obj)
+        return _load_pyobject(data)
 
     def persist(self, obj, table_name):
         data = obj.to_primitive()

@@ -138,6 +138,7 @@ class PyMongoBackend(PyMongo):
         return self.db[table_name].delete_one(condition)
 
 
+# TODO: scoped session
 class DatasetBackend(Dataset):
     def _get_context(self):
         return self.app.test_request_context()
@@ -148,7 +149,7 @@ class DatasetBackend(Dataset):
 
         # preload the ``_pyobject`` column
         if not table._has_column("_pyobject"):
-            table.create_column("_pyobject", Unicode(128))
+            table.create_column("_pyobject", Unicode(255))
         return table
 
     def get(self, identifier, table_name):

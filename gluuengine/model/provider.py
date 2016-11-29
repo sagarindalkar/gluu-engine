@@ -4,12 +4,13 @@
 # All rights reserved.
 
 import uuid
-from sqlalchemy import JSON
 
 from schematics.types import BooleanType
 from schematics.types import IntType
 from schematics.types import StringType
 from schematics.types.compound import PolyModelType
+from sqlalchemy import JSON
+from sqlalchemy import Unicode
 
 
 from .base import BaseModel
@@ -35,6 +36,8 @@ class BaseProvider(BaseModel):
     def column_types(self):
         return {
             "driver_attrs": JSON,
+            "name": Unicode(255),
+            "driver": Unicode(128),
         }
 
 

@@ -9,6 +9,7 @@ from schematics.types import IntType
 from schematics.types import StringType
 from schematics.types.compound import PolyModelType
 from sqlalchemy import JSON
+from sqlalchemy import Unicode
 
 from .base import BaseModel
 
@@ -37,6 +38,10 @@ class Container(BaseModel):
     def column_types(self):
         return {
             "container_attrs": JSON,
+            "cluster_id": Unicode(36),
+            "node_id": Unicode(36),
+            "name": Unicode(255),
+            "state": Unicode(32),
         }
 
 

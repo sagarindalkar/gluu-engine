@@ -5,14 +5,14 @@
 
 import uuid
 
+from schematics.types import BooleanType
+from schematics.types import IntType
+from schematics.types import StringType
+
 from .base import BaseModel
 from .base import STATE_SUCCESS
 from ..database import db
 from ..utils import decrypt_text
-
-from schematics.types import BooleanType
-from schematics.types import IntType
-from schematics.types import StringType
 
 
 class Cluster(BaseModel):

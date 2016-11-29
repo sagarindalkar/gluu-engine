@@ -4,11 +4,12 @@
 # All rights reserved.
 
 import uuid
-from sqlalchemy import JSON
 
 from schematics.types import BooleanType
 from schematics.types import StringType
 from schematics.types.compound import PolyModelType
+from sqlalchemy import JSON
+from sqlalchemy import Unicode
 
 from .base import BaseModel
 from .base import STATE_SUCCESS
@@ -56,6 +57,9 @@ class Node(BaseModel):
     def column_types(self):
         return {
             "state_attrs": JSON,
+            "name": Unicode(255),
+            "provider_id": Unicode(36),
+            "type": Unicode(32),
         }
 
 

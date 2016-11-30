@@ -138,18 +138,22 @@ class PyMongoBackend(PyMongo):
         return self.db[table_name].delete_one(condition)
 
 
-# TODO: scoped session
 class DatasetBackend(Dataset):
     def _get_context(self):
         return self.app.test_request_context()
 
     def _get_table(self, table_name):
+        # FIXME: sometimes ``get.table`` not loading the table correctly;
+        #        it just loads the ``id`` and ``_pyobject`` columns;
         table = self.connection.get_table(table_name, primary_id="id",
                                           primary_type="String(36)")
 
         # preload the ``_pyobject`` column
         if not table._has_column("_pyobject"):
             table.create_column("_pyobject", Unicode(255))
+
+        # self.app.logger.info(table.table)
+        # self.app.logger.info(table.columns)
         return table
 
     def get(self, identifier, table_name):

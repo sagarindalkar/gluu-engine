@@ -145,15 +145,17 @@ class DatasetBackend(Dataset):
     def _get_table(self, table_name):
         # FIXME: sometimes ``get.table`` not loading the table correctly;
         #        it just loads the ``id`` and ``_pyobject`` columns;
-        table = self.connection.get_table(table_name, primary_id="id",
-                                          primary_type="String(36)")
+        # TODO: test on scaling feature
+        if self.connection.engine.has_table(table_name):
+            table = self.connection.get_table(table_name)
+        else:
+            table = self.connection.create_table(
+                table_name, primary_id="id", primary_type="String(36)",
+            )
 
-        # preload the ``_pyobject`` column
-        if not table._has_column("_pyobject"):
-            table.create_column("_pyobject", Unicode(255))
-
-        # self.app.logger.info(table.table)
-        # self.app.logger.info(table.columns)
+            # preload the ``_pyobject`` column
+            if not table._has_column("_pyobject"):
+                table.create_column("_pyobject", Unicode(255))
         return table
 
     def get(self, identifier, table_name):

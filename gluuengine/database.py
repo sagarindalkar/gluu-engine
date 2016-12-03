@@ -147,7 +147,7 @@ class DatasetBackend(Dataset):
         #        it just loads the ``id`` and ``_pyobject`` columns;
         # TODO: test on scaling feature
         if self.connection.engine.has_table(table_name):
-            table = self.connection.get_table(table_name)
+            table = self.connection.load_table(table_name)
         else:
             table = self.connection.create_table(
                 table_name, primary_id="id", primary_type="String(36)",

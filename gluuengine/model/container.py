@@ -8,13 +8,16 @@ import uuid
 from schematics.types import IntType
 from schematics.types import StringType
 from schematics.types.compound import PolyModelType
-from sqlalchemy import JSON
-from sqlalchemy import Unicode
 
+from ._schema import CONTAINER_SCHEMA
 from .base import BaseModel
 
 
 class Container(BaseModel):
+    @property
+    def _schema(self):
+        return CONTAINER_SCHEMA
+
     def _resolve_container_attr(self, field):
         try:
             return self.container_attrs.get(field)
@@ -32,16 +35,6 @@ class Container(BaseModel):
             "state": self.state,
             "hostname": self.hostname,
             "cid": self.cid,
-        }
-
-    @property
-    def column_types(self):
-        return {
-            "container_attrs": JSON,
-            "cluster_id": Unicode(36),
-            "node_id": Unicode(36),
-            "name": Unicode(255),
-            "state": Unicode(32),
         }
 
 

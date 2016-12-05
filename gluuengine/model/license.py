@@ -5,25 +5,23 @@
 
 import uuid
 
-from .base import BaseModel
-from ..database import db
-from ..utils import decrypt_text
-from ..utils import retrieve_current_date
-
 from schematics.types import StringType
 from schematics.types import BooleanType
 from schematics.types import LongType
 from schematics.types import IntType
 from schematics.types.compound import ListType
 from schematics.types.compound import PolyModelType
-from sqlalchemy import JSON
-from sqlalchemy import BigInteger
+
+from ._schema import LICENSE_KEY_SCHEMA
+from .base import BaseModel
+from ..database import db
+from ..utils import decrypt_text
+from ..utils import retrieve_current_date
 
 
 class LicenseKey(BaseModel):
     """This class represents entity for license key.
     """
-
     class Metadata(BaseModel):
         product = StringType()
         expiration_date = LongType()
@@ -48,6 +46,10 @@ class LicenseKey(BaseModel):
     passkey = StringType()
     metadata = PolyModelType(Metadata, strict=False)
     _pyobject = StringType()
+
+    @property
+    def _schema(self):
+        return LICENSE_KEY_SCHEMA
 
     @property
     def resource_fields(self):
@@ -126,10 +128,3 @@ class LicenseKey(BaseModel):
         if "autoupdate" not in self.metadata:
             return True
         return self.metadata.get("autoupdate") is True
-
-    @property
-    def column_types(self):
-        return {
-            "metadata": JSON,
-            "updated_at": BigInteger,
-        }

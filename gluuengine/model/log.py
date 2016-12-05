@@ -7,16 +7,22 @@ import uuid
 
 from schematics.types import StringType
 
+from ._schema import CONTAINER_LOG_SCHEMA
 from .base import BaseModel
 from ..database import db
 
 
 class ContainerLog(BaseModel):
+    @property
+    def _schema(self):
+        return CONTAINER_LOG_SCHEMA
+
     id = StringType(default=lambda: str(uuid.uuid4()))
     container_name = StringType()
     setup_log = StringType()
     teardown_log = StringType()
     state = StringType()
+    _pyobject = StringType()
 
     @property
     def resource_fields(self):

@@ -8,15 +8,18 @@ import uuid
 from schematics.types import BooleanType
 from schematics.types import StringType
 from schematics.types.compound import PolyModelType
-from sqlalchemy import JSON
-from sqlalchemy import Unicode
 
+from ._schema import NODE_SCHEMA
 from .base import BaseModel
 from .base import STATE_SUCCESS
 from ..database import db
 
 
 class Node(BaseModel):
+    @property
+    def _schema(self):
+        return NODE_SCHEMA
+
     def count_containers(self, type_="", state=STATE_SUCCESS):
         """Counts available containers objects (models).
 
@@ -52,15 +55,6 @@ class Node(BaseModel):
             return self.state_attrs.get(field)
         except (AttributeError, TypeError,):
             return self._initial.get(field)
-
-    @property
-    def column_types(self):
-        return {
-            "state_attrs": JSON,
-            "name": Unicode(255),
-            "provider_id": Unicode(36),
-            "type": Unicode(32),
-        }
 
 
 class DiscoveryNode(Node):

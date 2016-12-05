@@ -143,19 +143,13 @@ class DatasetBackend(Dataset):
         return self.app.test_request_context()
 
     def _get_table(self, table_name):
-        # FIXME: sometimes ``get.table`` not loading the table correctly;
-        #        it just loads the ``id`` and ``_pyobject`` columns;
-        # TODO: test on scaling feature
-        if self.connection.engine.has_table(table_name):
-            table = self.connection.load_table(table_name)
-        else:
-            table = self.connection.create_table(
-                table_name, primary_id="id", primary_type="String(36)",
-            )
+        table = self.connection.get_table(
+            table_name, primary_id="id", primary_type="String(36)",
+        )
 
-            # preload the ``_pyobject`` column
-            if not table._has_column("_pyobject"):
-                table.create_column("_pyobject", Unicode(255))
+        # preload the ``_pyobject`` column
+        if not table._has_column("_pyobject"):
+            table.create_column("_pyobject", Unicode(255))
         return table
 
     def get(self, identifier, table_name):
@@ -170,7 +164,7 @@ class DatasetBackend(Dataset):
         data["_pyobject"] = get_model_path(obj)
         return self._get_table(table_name).insert(
             data,
-            types=obj.column_types,
+            types=obj._schema,
         )
 
     def all(self, table_name):
@@ -186,7 +180,7 @@ class DatasetBackend(Dataset):
         return self._get_table(table_name).update(
             data,
             ["id"],
-            types=obj.column_types,
+            types=obj._schema,
         )
 
     def search_from_table(self, table_name, condition):
@@ -203,7 +197,7 @@ class DatasetBackend(Dataset):
         return self._get_table(table_name).update(
             data,
             condition.keys(),
-            types=obj.column_types,
+            types=obj._schema,
         )
 
     def delete_from_table(self, table_name, condition):

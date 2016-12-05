@@ -9,15 +9,18 @@ from schematics.types import BooleanType
 from schematics.types import IntType
 from schematics.types import StringType
 from schematics.types.compound import PolyModelType
-from sqlalchemy import JSON
-from sqlalchemy import Unicode
 
 
+from ._schema import PROVIDER_SCHEMA
 from .base import BaseModel
 from ..database import db
 
 
-class BaseProvider(BaseModel):
+class Provider(BaseModel):
+    @property
+    def _schema(self):
+        return PROVIDER_SCHEMA
+
     def is_in_use(self):
         """Checks whether the provider has linked nodes.
 
@@ -32,16 +35,8 @@ class BaseProvider(BaseModel):
         except (AttributeError, TypeError,):
             return self._initial.get(field)
 
-    @property
-    def column_types(self):
-        return {
-            "driver_attrs": JSON,
-            "name": Unicode(255),
-            "driver": Unicode(128),
-        }
 
-
-class GenericProvider(BaseProvider):
+class GenericProvider(Provider):
     """This class represents entity for generic provider.
     """
 
@@ -86,7 +81,7 @@ class GenericProvider(BaseProvider):
         return self._resolve_driver_attr("generic_ssh_port")
 
 
-class DigitalOceanProvider(BaseProvider):
+class DigitalOceanProvider(Provider):
     class DriverAttrs(BaseModel):
         digitalocean_access_token = StringType()
         digitalocean_backups = BooleanType(default=False)
@@ -144,7 +139,7 @@ class DigitalOceanProvider(BaseProvider):
         return self._resolve_driver_attr("digitalocean_ipv6")
 
 
-class AwsProvider(BaseProvider):
+class AwsProvider(Provider):
     class DriverAttrs(BaseModel):
         amazonec2_access_key = StringType()
         amazonec2_secret_key = StringType()
@@ -196,5 +191,5 @@ class AwsProvider(BaseProvider):
         return self._resolve_driver_attr("amazonec2_private_address_only")
 
 
-class RackspaceProvider(BaseProvider):
+class RackspaceProvider(Provider):
     pass

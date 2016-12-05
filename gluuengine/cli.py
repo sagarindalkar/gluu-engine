@@ -13,6 +13,13 @@ from .database import db
 from .dockerclient import Docker
 from .errors import DockerExecError
 from .machine import Machine
+from .model import CLUSTER_SCHEMA
+from .model import CONTAINER_SCHEMA
+from .model import CONTAINER_LOG_SCHEMA
+from .model import NODE_SCHEMA
+from .model import PROVIDER_SCHEMA
+from .model import LICENSE_KEY_SCHEMA
+
 
 # global context settings
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
@@ -168,3 +175,28 @@ def distribute_ssl_cert():
 
     # mark the process as finished
     click.echo("distributing SSL cert and key is done")
+
+
+@main.command("init-schema")
+def init_schema():
+    """Initialize schema for RDBMS backend.
+    """
+    app = create_app()
+
+    if not app.config["DATABASE_URI"].startswith("mysql"):
+        click.echo("database backend doesn't require preloaded schema")
+        return
+
+    with app.test_request_context():
+        schema_list = [CLUSTER_SCHEMA, CONTAINER_SCHEMA, CONTAINER_LOG_SCHEMA,
+                       NODE_SCHEMA, PROVIDER_SCHEMA, LICENSE_KEY_SCHEMA]
+
+        for schema in schema_list:
+            table = db.backend._get_table(schema["name"])
+
+            for column, type_ in schema["columns"].iteritems():
+                if not table._has_column(column):
+                    click.echo("creating column {} in {} table".format(
+                        column, table.table,
+                    ))
+                    table.create_column(column, type_)

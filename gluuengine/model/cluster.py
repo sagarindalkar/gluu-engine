@@ -9,6 +9,7 @@ from schematics.types import BooleanType
 from schematics.types import IntType
 from schematics.types import StringType
 
+from ._schema import CLUSTER_SCHEMA
 from .base import BaseModel
 from .base import STATE_SUCCESS
 from ..database import db
@@ -121,3 +122,7 @@ class Cluster(BaseModel):
         if type_:
             condition["type"] = type_
         return db.search_from_table("containers", condition)
+
+    @property
+    def _schema(self):
+        return CLUSTER_SCHEMA

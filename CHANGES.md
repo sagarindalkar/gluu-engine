@@ -2,6 +2,12 @@
 
 Here you can see the full list of changes between each `gluu-engine` release.
 
+## Version 0.6.0
+
+Released on December 13th, 2016.
+
+* Added experimental support for MySQL (an alternative to MongoDB).
+
 ## Version 0.5.9
 
 Released on November 4th, 2016.

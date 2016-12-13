@@ -12,3 +12,12 @@ def test_get_config_object():
 
     for item in data:
         assert _get_config_object(item[0]) == item[1]
+
+
+def test_create_app():
+    import os
+    from gluuengine.app import create_app
+
+    os.environ["API_ENV"] = "test"
+    app = create_app()
+    assert hasattr(app, "config")

@@ -10,8 +10,12 @@ def test_cluster_as_dict():
 
 def test_decrypted_admin_pw():
     from gluuengine.model import Cluster
+    from gluuengine.utils import generate_passkey
+    from gluuengine.utils import encrypt_text
 
-    cluster = Cluster({"admin_pw": "secret"})
+    passkey = generate_passkey()
+    admin_pw = encrypt_text("secret", passkey)
+    cluster = Cluster({"admin_pw": admin_pw, "passkey": passkey})
     assert cluster.decrypted_admin_pw == "secret"
 
 

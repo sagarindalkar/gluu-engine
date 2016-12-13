@@ -75,13 +75,13 @@ def create_app():
     return app
 
 
-def register_extensions(app):
+def register_extensions(app):  # pragma: no cover
     restapi.init_app(app)
     db.init_app(app)
     ma.init_app(app)
 
 
-def register_resources():
+def register_resources():  # pragma: no cover
     restapi.add_resource(CreateNodeResource,
                          '/nodes/<string:node_type>',
                          endpoint='create_node')

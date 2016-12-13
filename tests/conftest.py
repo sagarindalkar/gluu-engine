@@ -25,7 +25,7 @@ def app(request):
 def db(request, app):
     from gluuengine.database import db
 
-    db.init_app(app, "MONGOTEST")
+    db.init_app(app)
 
     def teardown():
         try:
@@ -34,7 +34,7 @@ def db(request, app):
             pass
 
         with app.app_context():
-            db.cx.drop_database(db.db.name)
+            db.backend.cx.drop_database(db.backend.db.name)
 
     request.addfinalizer(teardown)
     return db
@@ -54,8 +54,7 @@ def cluster():
 def master_node():
     from gluuengine.model import MasterNode
 
-    node = MasterNode()
-    node.populate({
+    node = MasterNode({
         "name": "master-node",
         "type": "master",
     })
@@ -66,8 +65,7 @@ def master_node():
 def worker_node():
     from gluuengine.model import WorkerNode
 
-    node = WorkerNode()
-    node.populate({
+    node = WorkerNode({
         "name": "worker-node",
         "type": "worker",
     })
@@ -78,8 +76,7 @@ def worker_node():
 def discovery_node():
     from gluuengine.model import DiscoveryNode
 
-    node = DiscoveryNode()
-    node.populate({
+    node = DiscoveryNode({
         "name": "discovery-node",
         "type": "discovery",
     })
@@ -93,7 +90,7 @@ def ldap_container(cluster, master_node):
     ctr = LdapContainer()
     ctr.cluster_id = cluster.id
     ctr.node_id = master_node.id
-    ctr.name = "ldap-node"
+    ctr.name = "ldap-container"
     return ctr
 
 
@@ -151,8 +148,7 @@ def oxasimba_container(cluster, master_node):
 def generic_provider(cluster):
     from gluuengine.model import GenericProvider
 
-    provider = GenericProvider()
-    provider.populate({
+    provider = GenericProvider({
         "name": "generic_provider",
     })
     return provider
@@ -161,9 +157,12 @@ def generic_provider(cluster):
 def digitalocean_provider(cluster):
     from gluuengine.model import DigitalOceanProvider
 
-    provider = DigitalOceanProvider()
-    provider.populate({
+    provider = DigitalOceanProvider({
         "name": "digitalocean_provider",
+        "driver_attrs": {
+            "digitalocean_image": "ubuntu-14-04-x64",
+            "digitalocean_ipv6": False,
+        },
     })
     return provider
 
@@ -177,13 +176,10 @@ def patched_sleep(monkeypatch):
 def license_key():
     from gluuengine.model import LicenseKey
 
-    key = LicenseKey()
-    key.populate({
+    key = LicenseKey({
         "name": "abc",
         "code": "abc",
-        "public_key": "pub_key",
-        "public_password": "pub_password",
-        "license_password": "license_password"
+        "metadata": {},
     })
     return key
 

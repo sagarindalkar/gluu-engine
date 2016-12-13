@@ -5,6 +5,7 @@
 
 import re
 
+from marshmallow import post_load
 from marshmallow import validates
 from marshmallow import ValidationError
 
@@ -37,3 +38,39 @@ class NodeReq(ma.Schema):
 
         if db.count_from_table('nodes', {'name': value}):
             raise ValidationError("name is already taken")
+
+    @post_load
+    def finalize_data(self, data):
+        if self.context["type"] == "discovery":
+            data["state_attrs"] = dict.fromkeys([
+                "state_node_create",
+                "state_install_consul",
+                "state_complete",
+            ], False)
+        elif self.context["type"] == "master":
+            data["state_attrs"] = dict.fromkeys([
+                "state_node_create",
+                "state_install_weave",
+                "state_weave_permission",
+                "state_weave_launch",
+                "state_docker_cert",
+                "state_fswatcher",
+                "state_recovery",
+                "state_complete",
+                "state_rng_tools",
+                "state_pull_images",
+                "state_registry_cert",
+            ], False)
+        elif self.context["type"] == "worker":
+            data["state_attrs"] = dict.fromkeys([
+                "state_node_create",
+                "state_install_weave",
+                "state_weave_permission",
+                "state_weave_launch",
+                "state_recovery",
+                "state_complete",
+                "state_rng_tools",
+                "state_pull_images",
+                "state_registry_cert",
+            ], False)
+        return data

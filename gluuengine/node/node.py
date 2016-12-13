@@ -11,9 +11,6 @@ from ..database import db
 from ..machine import Machine
 from ..log import create_file_logger
 
-from ..registry import REGISTRY_BASE_URL
-from ..registry import get_registry_cert
-
 REMOTE_DOCKER_CERT_DIR = "/opt/gluu/docker/certs"
 CERT_FILES = ['ca.pem', 'cert.pem', 'key.pem']
 
@@ -30,8 +27,7 @@ class DeployNode(object):
         self.node = node_model_obj
         self.logger = create_file_logger(app.config['NODE_LOG_PATH'], name=self.node.name)
         self.machine = Machine()
-        with self.app.app_context():
-            self.provider = db.get(self.node.provider_id, 'providers')
+        self.provider = db.get(self.node.provider_id, 'providers')
 
     def _rng_tools(self):
         try:
@@ -41,9 +37,8 @@ class DeployNode(object):
                 """sudo apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install -y rng-tools""",
             ]
             self.machine.ssh(self.node.name, ' && '.join(cmd_list))
-            self.node.state_rng_tools = True
-            with self.app.app_context():
-                db.update(self.node.id, self.node, 'nodes')
+            self.node.state_attrs["state_rng_tools"] = True
+            db.update(self.node.id, self.node, 'nodes')
         except RuntimeError as e:
             self.logger.error('failed to install rng-tools')
             self.logger.error(e)
@@ -52,13 +47,12 @@ class DeployNode(object):
         try:
             self.logger.info("pulling gluu images in {} node".format(self.node.name))
             cmd_list = [
-                'sudo docker pull {}/gluuoxauth:{}'.format(REGISTRY_BASE_URL, self.app.config["GLUU_IMAGE_TAG"]),
-                'sudo docker pull {}/gluunginx:{}'.format(REGISTRY_BASE_URL, self.app.config["GLUU_IMAGE_TAG"]),
+                'sudo docker pull gluufederation/oxauth:{}'.format(self.app.config["GLUU_IMAGE_TAG"]),
+                'sudo docker pull gluufederation/nginx:{}'.format(self.app.config["GLUU_IMAGE_TAG"]),
             ]
             self.machine.ssh(self.node.name, ' && '.join(cmd_list))
-            self.node.state_pull_images = True
-            with self.app.app_context():
-                db.update(self.node.id, self.node, 'nodes')
+            self.node.state_attrs["state_pull_images"] = True
+            db.update(self.node.id, self.node, 'nodes')
         except RuntimeError as e:
             self.logger.error('failed to pull images')
             self.logger.error(e)
@@ -74,44 +68,18 @@ class DeployNode(object):
                 "sudo supervisorctl reload",
             ]
             self.machine.ssh(self.node.name, ' && '.join(cmd_list))
-            self.node.state_recovery = True
-            with self.app.app_context():
-                db.update(self.node.id, self.node, 'nodes')
+            self.node.state_attrs["state_recovery"] = True
+            db.update(self.node.id, self.node, 'nodes')
         except RuntimeError as e:
             self.logger.error('failed to install recovery script')
-            self.logger.error(e)
-
-    def _registry_cert(self):
-        try:
-            self.logger.info("retrieving registry certificate")
-            self.machine.ssh(
-                self.node.name,
-                r"sudo mkdir -p /etc/docker/certs.d/{}".format(REGISTRY_BASE_URL),
-            )
-            registry_cert = get_registry_cert(
-                os.path.join(self.app.config["REGISTRY_CERT_DIR"], "ca.crt")
-            )
-            self.machine.scp(
-                registry_cert,
-                r"{}:/etc/docker/certs.d/{}/ca.crt".format(
-                    self.node.name,
-                    REGISTRY_BASE_URL,
-                ),
-            )
-            self.node.state_registry_cert = True
-            with self.app.app_context():
-                db.update(self.node.id, self.node, 'nodes')
-        except RuntimeError as e:
-            self.logger.error('failed to retrieve registry certificate')
             self.logger.error(e)
 
     def _install_weave(self):
         try:
             self.logger.info('installing weave')
             self.machine.ssh(self.node.name, 'sudo curl -L git.io/weave -o /usr/local/bin/weave')
-            self.node.state_install_weave = True
-            with self.app.app_context():
-                db.update(self.node.id, self.node, 'nodes')
+            self.node.state_attrs["state_install_weave"] = True
+            db.update(self.node.id, self.node, 'nodes')
         except RuntimeError as e:
             self.logger.error('failed to install weave')
             self.logger.error(e)
@@ -120,9 +88,8 @@ class DeployNode(object):
         try:
             self.logger.info('adding exec permission of weave')
             self.machine.ssh(self.node.name, 'sudo chmod +x /usr/local/bin/weave')
-            self.node.state_weave_permission = True
-            with self.app.app_context():
-                db.update(self.node.id, self.node, 'nodes')
+            self.node.state_attrs["state_weave_permission"] = True
+            db.update(self.node.id, self.node, 'nodes')
         except RuntimeError as e:
             self.logger.error('failed to set weave permission')
             self.logger.error(e)
@@ -150,9 +117,8 @@ class DeployDiscoveryNode(DeployNode):
         try:
             self.logger.info('creating discovery node')
             self.machine.create(self.node, self.provider, None)
-            self.node.state_node_create = True
-            with self.app.app_context():
-                db.update(self.node.id, self.node, 'nodes')
+            self.node.state_attrs["state_node_create"] = True
+            db.update(self.node.id, self.node, 'nodes')
         except RuntimeError as e:
             self.logger.error('failed to create node')
             self.logger.error(e)
@@ -161,19 +127,17 @@ class DeployDiscoveryNode(DeployNode):
         self.logger.info('installing consul')
         try:
             self.machine.ssh(self.node.name, 'sudo docker run -d --name=consul -p 8500:8500 -h consul --restart=always -v /opt/gluu/consul/data:/data progrium/consul -server -bootstrap')
-            self.node.state_install_consul = True
-            with self.app.app_context():
-                db.update(self.node.id, self.node, 'nodes')
+            self.node.state_attrs["state_install_consul"] = True
+            db.update(self.node.id, self.node, 'nodes')
         except RuntimeError as e:
             self.logger.error('failed to install consul')
             self.logger.error(e)
 
     def _is_completed(self):
         if self.node.state_node_create and self.node.state_install_consul:
-            self.node.state_complete = True
+            self.node.state_attrs["state_complete"] = True
             self.logger.info('node deployment is done')
-            with self.app.app_context():
-                db.update(self.node.id, self.node, 'nodes')
+            db.update(self.node.id, self.node, 'nodes')
 
 
 class DeployMasterNode(DeployNode):
@@ -195,9 +159,6 @@ class DeployMasterNode(DeployNode):
                 time.sleep(1)
             if not self.node.state_weave_launch:
                 self._weave_launch()
-                time.sleep(1)
-            if not self.node.state_registry_cert:
-                self._registry_cert()
                 time.sleep(1)
             if not self.node.state_docker_cert:
                 self._docker_cert()
@@ -223,21 +184,19 @@ class DeployMasterNode(DeployNode):
     def _is_completed(self):
         if all([self.node.state_node_create, self.node.state_install_weave,
                 self.node.state_weave_permission, self.node.state_weave_launch,
-                self.node.state_registry_cert, self.node.state_docker_cert,
-                self.node.state_fswatcher, self.node.state_recovery,
-                self.node.state_rng_tools, self.node.state_pull_images]):
-            self.node.state_complete = True
+                self.node.state_docker_cert, self.node.state_fswatcher,
+                self.node.state_recovery, self.node.state_rng_tools,
+                self.node.state_pull_images]):
+            self.node.state_attrs["state_complete"] = True
             self.logger.info('node deployment is done')
-            with self.app.app_context():
-                db.update(self.node.id, self.node, 'nodes')
+            db.update(self.node.id, self.node, 'nodes')
 
     def _node_create(self):
         try:
             self.logger.info('creating {} node ({})'.format(self.node.name, self.node.type))
             self.machine.create(self.node, self.provider, self.discovery)
-            self.node.state_node_create = True
-            with self.app.app_context():
-                db.update(self.node.id, self.node, 'nodes')
+            self.node.state_attrs["state_node_create"] = True
+            db.update(self.node.id, self.node, 'nodes')
         except RuntimeError as e:
             self.logger.error('failed to create node')
             self.logger.error(e)
@@ -246,9 +205,8 @@ class DeployMasterNode(DeployNode):
         try:
             self.logger.info('launching weave')
             self.machine.ssh(self.node.name, 'sudo weave launch')
-            self.node.state_weave_launch = True
-            with self.app.app_context():
-                db.update(self.node.id, self.node, 'nodes')
+            self.node.state_attrs["state_weave_launch"] = True
+            db.update(self.node.id, self.node, 'nodes')
         except RuntimeError as e:
             self.logger.error('failed to launch weave')
             self.logger.error(e)
@@ -264,9 +222,8 @@ class DeployMasterNode(DeployNode):
                     os.path.join(local_cert_path, cf),
                     "{}:{}".format(self.node.name, REMOTE_DOCKER_CERT_DIR),
                 )
-            self.node.state_docker_cert = True
-            with self.app.app_context():
-                db.update(self.node.id, self.node, 'nodes')
+            self.node.state_attrs["state_docker_cert"] = True
+            db.update(self.node.id, self.node, 'nodes')
         except RuntimeError as e:
             self.logger.error('failed to push docker client cert into master node')
             self.logger.error(e)
@@ -287,9 +244,8 @@ class DeployMasterNode(DeployNode):
                 "sudo supervisorctl reload",
             ]
             self.machine.ssh(self.node.name, ' && '.join(cmd_list))
-            self.node.state_fswatcher = True
-            with self.app.app_context():
-                db.update(self.node.id, self.node, 'nodes')
+            self.node.state_attrs["state_fswatcher"] = True
+            db.update(self.node.id, self.node, 'nodes')
         except RuntimeError as e:
             self.logger.error('failed to install fswatcher script')
             self.logger.error(e)
@@ -315,9 +271,6 @@ class DeployWorkerNode(DeployNode):
             if not self.node.state_weave_launch:
                 self._weave_launch()
                 time.sleep(1)
-            if not self.node.state_registry_cert:
-                self._registry_cert()
-                time.sleep(1)
             if not self.node.state_recovery:
                 self._recovery()
                 time.sleep(1)
@@ -336,20 +289,18 @@ class DeployWorkerNode(DeployNode):
     def _is_completed(self):
         if all([self.node.state_node_create, self.node.state_install_weave,
                 self.node.state_weave_permission, self.node.state_weave_launch,
-                self.node.state_registry_cert, self.node.state_recovery,
-                self.node.state_rng_tools, self.node.state_pull_images]):
-            self.node.state_complete = True
+                self.node.state_recovery, self.node.state_rng_tools,
+                self.node.state_pull_images]):
+            self.node.state_attrs["state_complete"] = True
             self.logger.info('node deployment is done')
-            with self.app.app_context():
-                db.update(self.node.id, self.node, 'nodes')
+            db.update(self.node.id, self.node, 'nodes')
 
     def _node_create(self):
         try:
             self.logger.info('creating {} node ({})'.format(self.node.name, self.node.type))
             self.machine.create(self.node, self.provider, self.discovery)
-            self.node.state_node_create = True
-            with self.app.app_context():
-                db.update(self.node.id, self.node, 'nodes')
+            self.node.state_attrs["state_node_create"] = True
+            db.update(self.node.id, self.node, 'nodes')
         except RuntimeError as e:
             self.logger.error('failed to create node')
             self.logger.error(e)
@@ -357,12 +308,11 @@ class DeployWorkerNode(DeployNode):
     def _weave_launch(self):
         try:
             self.logger.info('launching weave')
-            with self.app.app_context():
-                master = db.search_from_table('nodes', {'type': 'master'})[0]
-                ip = self.machine.ip(master.name)
-                self.machine.ssh(self.node.name, 'sudo weave launch {}'.format(ip))
-                self.node.state_weave_launch = True
-                db.update(self.node.id, self.node, 'nodes')
+            master = db.search_from_table('nodes', {'type': 'master'})[0]
+            ip = self.machine.ip(master.name)
+            self.machine.ssh(self.node.name, 'sudo weave launch {}'.format(ip))
+            self.node.state_attrs["state_weave_launch"] = True
+            db.update(self.node.id, self.node, 'nodes')
         except RuntimeError as e:
             self.logger.error('failed to launch weave')
             self.logger.error(e)

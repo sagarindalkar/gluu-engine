@@ -36,8 +36,6 @@ from .database import db
 from .setup.signals import connect_setup_signals
 from .setup.signals import connect_teardown_signals
 from .log import configure_global_logging
-from .task import LicenseWatcherTask
-from .utils import as_boolean
 
 
 def _get_config_object(api_env=""):
@@ -72,14 +70,6 @@ def create_app():
     register_extensions(app)
 
     crochet_setup()
-
-    if as_boolean(app.config["ENABLE_LICENSE"]):
-        runfile = os.path.join(app.config["DATA_DIR"], "lwatcher.run")
-        if not os.path.isfile(runfile):
-            with open(runfile, "w") as fd:
-                fd.write("1")
-            LicenseWatcherTask(app).perform_job()
-
     connect_setup_signals()
     connect_teardown_signals()
     return app
@@ -101,15 +91,15 @@ def register_resources():
                          endpoint='node')
 
     restapi.add_resource(ContainerLogResource,
-                         '/container_logs/<id>',
+                         '/container_logs/<container_name>',
                          endpoint="containerlog",
                          )
     restapi.add_resource(ContainerLogSetupResource,
-                         '/container_logs/<id>/setup',
+                         '/container_logs/<container_name>/setup',
                          endpoint="containerlog_setup",
                          )
     restapi.add_resource(ContainerLogTeardownResource,
-                         '/container_logs/<id>/teardown',
+                         '/container_logs/<container_name>/teardown',
                          endpoint="containerlog_teardown",
                          )
     restapi.add_resource(ContainerLogListResource,

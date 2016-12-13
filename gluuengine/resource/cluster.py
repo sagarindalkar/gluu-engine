@@ -92,7 +92,7 @@ class ClusterListResource(Resource):
                 "params": errors,
             }, 400
 
-        cluster = Cluster(fields=data)
+        cluster = Cluster(data)
         db.persist(cluster, "clusters")
 
         headers = {

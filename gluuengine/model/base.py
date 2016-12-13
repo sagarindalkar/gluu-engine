@@ -3,24 +3,28 @@
 #
 # All rights reserved.
 
+from schematics.models import Model
 
-class BaseModel(object):
-    """Base class for model.
 
-    This class should not be used directly.
-    """
+class BaseModel(Model):
     resource_fields = {}
 
-    def as_dict(self):
-        """Transforms into a ``dict`` of model's resource attributes.
+    def __init__(self, raw_data=None, deserialize_mapping=None, strict=True):
+        super(BaseModel, self).__init__(
+            raw_data=raw_data,
+            deserialize_mapping=deserialize_mapping,
+            strict=False,
+        )
 
-        :returns: A ``dict`` of model's resource attributes.
+    def as_dict(self):
+        return self.resource_fields
+
+    @property
+    def column_types(self):
+        """Special column types. Useful for column check in fixed-schema
+        database backend, for example MySQL.
         """
-        fields = tuple(self.resource_fields.keys())
-        return {
-            k: v for k, v in self.__dict__.iteritems()
-            if k in fields
-        }
+        return {}
 
 
 #: A flag to mark state as ``SUCCESS``

@@ -8,6 +8,7 @@ import os.path
 import shutil
 import tempfile
 import time
+import uuid
 
 from jinja2 import Environment
 from jinja2 import PackageLoader
@@ -28,8 +29,7 @@ class BaseSetup(object):
         self.app = app
         self.build_dir = tempfile.mkdtemp()
         self.container = container
-        with self.app.app_context():
-            self.node = db.get(self.container.node_id, "nodes")
+        self.node = db.get(self.container.node_id, "nodes")
         self.cluster = cluster
         self.jinja_env = Environment(
             loader=PackageLoader("gluuengine", "templates")
@@ -37,13 +37,12 @@ class BaseSetup(object):
         self.template_dir = self.app.config["TEMPLATES_DIR"]
         self.machine = Machine()
 
-        with self.app.app_context():
-            try:
-                master_node = db.search_from_table(
-                    "nodes", {"type": "master"},
-                )[0]
-            except IndexError:  # pragma: no cover
-                master_node = self.node
+        try:
+            master_node = db.search_from_table(
+                "nodes", {"type": "master"},
+            )[0]
+        except IndexError:  # pragma: no cover
+            master_node = self.node
 
         self.docker = Docker(
             self.machine.config(self.node.name),
@@ -273,6 +272,28 @@ class BaseSetup(object):
             hostname = "ldap.{}".format(dns_search.rstrip("."))
         return hostname
 
+    def get_web_cert(self):
+        hostname = self.cluster.ox_cluster_hostname.split(":")[0]
+
+        if not os.path.exists(self.app.config["SSL_CERT_DIR"]):
+            os.makedirs(self.app.config["SSL_CERT_DIR"])
+
+        ssl_cert = os.path.join(self.app.config["SSL_CERT_DIR"], "nginx.crt")
+        ssl_key = os.path.join(self.app.config["SSL_CERT_DIR"], "nginx.key")
+
+        if os.path.exists(ssl_cert) and os.path.exists(ssl_key):
+            # copy cert and key
+            self.logger.debug("copying existing SSL cert")
+            self.docker.copy_to_container(self.container.cid, ssl_cert, "/etc/certs/nginx.crt")
+            self.logger.debug("copying existing SSL key")
+            self.docker.copy_to_container(self.container.cid, ssl_key, "/etc/certs/nginx.key")
+        else:
+            self.gen_cert("nginx", self.cluster.decrypted_admin_pw,
+                          "www-data", "www-data", hostname)
+            # save certs locally, so we can reuse and distribute them
+            self.docker.copy_from_container(self.container.cid, "/etc/certs/nginx.crt", ssl_cert)
+            self.docker.copy_from_container(self.container.cid, "/etc/certs/nginx.key", ssl_key)
+
 
 class OxSetup(BaseSetup):
     def write_salt_file(self):
@@ -386,7 +407,7 @@ class OxSetup(BaseSetup):
 
         import_cmd = " ".join([
             "keytool -importcert -trustcacerts",
-            "-alias '{}'".format(self.cluster.ox_cluster_hostname),
+            "-alias '{}'".format(uuid.uuid4()),
             "-file /etc/certs/nginx.der",
             "-keystore {}".format(self.container.truststore_fn),
             "-storepass changeit -noprompt",
@@ -397,5 +418,4 @@ class OxSetup(BaseSetup):
             self.docker.exec_cmd(self.container.cid, import_cmd)
         except DockerExecError as exc:  # pragma: no cover
             if exc.exit_code == 1:
-                # certificate already imported
-                pass
+                self.logger.warn("certificate already imported")

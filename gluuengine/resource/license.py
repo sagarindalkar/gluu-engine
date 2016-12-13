@@ -43,7 +43,7 @@ class LicenseKeyListResource(Resource):
                 "params": errors,
             }, 400
 
-        license_key = LicenseKey(fields=data)
+        license_key = LicenseKey(data)
 
         current_app.logger.info("downloading signed license")
         license_key, err = populate_license(license_key)
@@ -63,8 +63,14 @@ class LicenseKeyListResource(Resource):
                 "message": "non-Docker Edition product license is not allowed",
             }, 403
 
-        license_key.updated_at = retrieve_current_date()
-        db.persist(license_key, "license_keys")
+        if not license_key.is_active:
+            return {
+                "status": 403,
+                "message": "non-active license is not allowed",
+            }, 403
+
+        license_key.import_data({"updated_at": retrieve_current_date()})
+        db.persist(license_key, "license_keys"),
 
         headers = {
             "Location": url_for("licensekey", license_key_id=license_key.id),
@@ -107,6 +113,12 @@ class LicenseKeyResource(Resource):
                 "message": "non-Docker Edition product license is not allowed",
             }, 403
 
+        if not license_key.is_active:
+            return {
+                "status": 403,
+                "message": "non-active license is not allowed",
+            }, 403
+
         license_key.updated_at = retrieve_current_date()
         db.update(license_key.id, license_key, "license_keys")
 
@@ -130,36 +142,28 @@ class LicenseKeyResource(Resource):
             return {"status": 403, "message": msg}, 403
 
         db.delete(license_key_id, "license_keys")
-        distribute_cluster_data(current_app.config["SHARED_DATABASE_URI"],
-                                current_app._get_current_object())
         return {}, 204
 
     @run_in_reactor
     def _enable_containers(self, license_key, app):
-        with app.app_context():
-            mc = Machine()
-            containers = []
+        mc = Machine()
 
-            for worker_node in license_key.get_workers():
-                weave = Weave(worker_node, app)
-                for type_ in ("oxauth", "oxidp",):
-                    containers = worker_node.get_containers(
-                        type_=type_, state=STATE_DISABLED,
-                    )
+        for worker_node in license_key.get_workers():
+            weave = Weave(worker_node, app)
+            containers = worker_node.get_containers(
+                type_="oxauth", state=STATE_DISABLED,
+            )
 
-                    for container in containers:
-                        container.state = STATE_SUCCESS
-                        db.update(container.id, container, "containers")
-                        mc.ssh(
-                            worker_node.name,
-                            "docker restart {}".format(container.cid),
-                        )
-                        weave.dns_add(container.cid, container.hostname)
-                        weave.dns_add(
-                            container.cid,
-                            "{}.weave.local".format(type_),
-                        )
-
-            if containers:
-                # distribute json only if disabled containers exist
-                distribute_cluster_data(app.config["SHARED_DATABASE_URI"], app)
+            for container in containers:
+                container.state = STATE_SUCCESS
+                db.update(container.id, container, "containers")
+                mc.ssh(
+                    worker_node.name,
+                    "docker restart {}".format(container.cid),
+                )
+                weave.dns_add(container.cid, container.hostname)
+                weave.dns_add(
+                    container.cid,
+                    "{}.weave.local".format("oxauth"),
+                )
+            distribute_cluster_data(app, worker_node)

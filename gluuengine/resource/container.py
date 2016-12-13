@@ -4,15 +4,14 @@
 # All rights reserved.
 
 import os
-import uuid
 from itertools import cycle
 
+import concurrent.futures
 from flask import abort
 from flask import current_app
 from flask import request
 from flask import url_for
 from flask_restful import Resource
-import concurrent.futures
 from crochet import run_in_reactor
 
 from ..database import db
@@ -51,10 +50,11 @@ CONTAINER_CHOICES = (
 
 def get_container(db, container_id):
     try:
-        container = db.search_from_table(
-            "containers",
-            {"$or": [{"id": container_id}, {"name": container_id}]},
-        )[0]
+        container = db.search_from_table("containers", {"id": container_id})[0]
+        if not container:
+            container = db.search_from_table(
+                "containers", {"name": container_id},
+            )[0]
     except IndexError:
         container = None
     return container
@@ -84,6 +84,16 @@ def discovery_node_reachable():
         return False
     else:
         return Machine().status(node.name)
+
+
+def get_containerlog(db, containerlog_name):
+    try:
+        log = db.search_from_table(
+            "container_logs", {"container_name": containerlog_name},
+        )[0]
+    except IndexError:
+        log = None
+    return log
 
 
 class ContainerResource(Resource):
@@ -163,7 +173,7 @@ class ContainerResource(Resource):
         headers = {
             "X-Container-Teardown-Log": url_for(
                 "containerlog_teardown",
-                id=container_log.id,
+                container_name=container_log.container_name,
                 _external=True,
             ),
         }
@@ -287,13 +297,13 @@ class NewContainerResource(Resource):
 
         # pre-populate the container object
         container_class = self.container_classes[container_type]
-        container = container_class()
-        container.cluster_id = cluster.id
-        container.node_id = node.id
-        container.name = "{}_{}".format(container.image, uuid.uuid4())
-
-        container.state = STATE_IN_PROGRESS
-
+        container = container_class({
+            "cluster_id": cluster.id,
+            "node_id": node.id,
+            "state": STATE_IN_PROGRESS,
+            "container_attrs": data["container_attrs"],
+        })
+        container.name = "{}_{}".format(container.image, container.id)
         db.persist(container, "containers")
 
         # log related setup
@@ -311,7 +321,7 @@ class NewContainerResource(Resource):
         headers = {
             "X-Container-Setup-Log": url_for(
                 "containerlog_setup",
-                id=container_log.id,
+                container_name=container.name,
                 _external=True,
             ),
             "Location": url_for("container", container_id=container.name),
@@ -329,35 +339,37 @@ def format_container_log_response(container_log):
 
     resp = container_log.as_dict()
 
+    resp["setup_log_url"] = ""
     if os.path.exists(setup_log):
         resp["setup_log_url"] = url_for(
             "containerlog_setup",
-            id=container_log.id,
+            container_name=container_log.container_name,
             _external=True,
         )
 
+    resp["teardown_log_url"] = ""
     if os.path.exists(teardown_log):
         resp["teardown_log_url"] = url_for(
             "containerlog_teardown",
-            id=container_log.id,
+            container_name=container_log.container_name,
             _external=True,
         )
     return resp
 
 
 class ContainerLogResource(Resource):
-    def get(self, id):
-        container_log = db.get(id, "container_logs")
+    def get(self, container_name):
+        container_log = get_containerlog(db, container_name)
         if not container_log:
             return {"status": 404, "message": "Container log not found"}, 404
         return format_container_log_response(container_log)
 
-    def delete(self, id):
-        container_log = db.get(id, "container_logs")
+    def delete(self, container_name):
+        container_log = get_containerlog(db, container_name)
         if not container_log:
             return {"status": 404, "message": "Container log not found"}, 404
 
-        db.delete(id, "container_logs")
+        db.delete(container_log.id, "container_logs")
 
         app = current_app._get_current_object()
         abs_setup_log = os.path.join(app.config["CONTAINER_LOG_DIR"],
@@ -375,8 +387,8 @@ class ContainerLogResource(Resource):
 
 
 class ContainerLogSetupResource(Resource):
-    def get(self, id):
-        container_log = db.get(id, "container_logs")
+    def get(self, container_name):
+        container_log = get_containerlog(db, container_name)
         if not container_log:
             return {"status": 404, "message": "Container setup log not found"}, 404
 
@@ -397,8 +409,8 @@ class ContainerLogSetupResource(Resource):
 
 
 class ContainerLogTeardownResource(Resource):
-    def get(self, id):
-        container_log = db.get(id, "container_logs")
+    def get(self, container_name):
+        container_log = get_containerlog(db, container_name)
         if not container_log:
             return {"status": 404, "message": "Container teardown log not found"}, 404
 
@@ -446,7 +458,12 @@ class ScaleContainerResource(Resource):
     def get_running_nodes(self):
         m = Machine()
         running_nodes = m.list('running')
-        running_nodes.remove('gluu.discovery')
+
+        try:
+            dcv_node = db.search_from_table("nodes", {"type": "discovery"})[0]
+            running_nodes.remove(dcv_node.name)
+        except IndexError:
+            pass
         return running_nodes
 
     def make_node_id_pool(self, nodes):
@@ -456,27 +473,28 @@ class ScaleContainerResource(Resource):
         return cycle(running_nodes_ids)
 
     def setup_obj_generator(self, app, container_type, number, cluster_id, node_id_pool):
-        with app.app_context():
-            for i in xrange(number):
-                container_class = self.container_classes[container_type]
-                container = container_class()
-                container.cluster_id = cluster_id
-                container.node_id = node_id_pool.next()
-                container.name = "{}_{}".format(container.image, uuid.uuid4())
-                container.state = STATE_IN_PROGRESS
-                db.persist(container, "containers")
+        for i in xrange(number):
+            container_class = self.container_classes[container_type]
+            container = container_class({
+                "cluster_id": cluster_id,
+                "node_id": node_id_pool.next(),
+                "state": STATE_IN_PROGRESS,
+                "container_attrs": {},
+            })
+            container.name = "{}_{}".format(container.image, container.id)
+            db.persist(container, "containers")
 
-                # log related setup
-                container_log = ContainerLog.create_or_get(container)
-                container_log.state = STATE_SETUP_IN_PROGRESS
-                db.update(container_log.id, container_log, "container_logs")
-                logpath = os.path.join(app.config["CONTAINER_LOG_DIR"],
-                                       container_log.setup_log)
+            # log related setup
+            container_log = ContainerLog.create_or_get(container)
+            container_log.state = STATE_SETUP_IN_PROGRESS
+            db.update(container_log.id, container_log, "container_logs")
+            logpath = os.path.join(app.config["CONTAINER_LOG_DIR"],
+                                   container_log.setup_log)
 
-                # make the setup obj
-                helper_class = self.helper_classes[container_type]
-                helper = helper_class(container, app, logpath)
-                yield helper
+            # make the setup obj
+            helper_class = self.helper_classes[container_type]
+            helper = helper_class(container, app, logpath)
+            yield helper
 
     @run_in_reactor
     def scaleosorus(self, setup_obj_generator):
@@ -504,8 +522,11 @@ class ScaleContainerResource(Resource):
                 "message": "container deployment requires a cluster",
             }, 403
 
-        #get id list of running nodes
-        nodes = db.search_from_table('nodes', {"$or": [{"type": "master"}, {"type": "worker"}]})
+        # get id list of running nodes
+        mnodes = db.search_from_table('nodes', {"type": "master"})
+        wnodes = db.search_from_table('nodes', {"type": "worker"})
+        nodes = mnodes + wnodes
+
         if not nodes:
             return {
                 "status": 403,
@@ -530,18 +551,17 @@ class ScaleContainerResource(Resource):
             for delete_obj in delete_obj_generator:
                 executor.submit(delete_obj.mp_teardown)
 
-    def delete_obj_genarator(self, app, containers):
-        with app.app_context():
-            for container in containers:
-                db.delete_from_table("containers", {"name": container.name})
-                container_log = ContainerLog.create_or_get(container)
-                container_log.state = STATE_TEARDOWN_IN_PROGRESS
-                db.update(container_log.id, container_log, "container_logs")
-                logpath = os.path.join(app.config["CONTAINER_LOG_DIR"],
-                                       container_log.teardown_log)
-                helper_class = self.helper_classes[container.type]
-                helper = helper_class(container, app, logpath)
-                yield helper
+    def delete_obj_generator(self, app, containers):
+        for container in containers:
+            db.delete_from_table("containers", {"name": container.name})
+            container_log = ContainerLog.create_or_get(container)
+            container_log.state = STATE_TEARDOWN_IN_PROGRESS
+            db.update(container_log.id, container_log, "container_logs")
+            logpath = os.path.join(app.config["CONTAINER_LOG_DIR"],
+                                   container_log.teardown_log)
+            helper_class = self.helper_classes[container.type]
+            helper = helper_class(container, app, logpath)
+            yield helper
 
     def delete(self, container_type, number):
         app = current_app._get_current_object()
@@ -557,19 +577,21 @@ class ScaleContainerResource(Resource):
                 "message": "cannot deploy 0 or lower number of container",
             }, 403
 
-        #get the count of requested container type
-        count = db.count_from_table('containers', {'$and': [{'type': container_type}, {'state': STATE_SUCCESS}]})
+        # get the count of requested container type
+        count = db.count_from_table('containers', {'type': container_type, 'state': STATE_SUCCESS})
         if number > count:
             return {
                 "status": 403,
                 "message": "delete request number is greater than running containers",
             }, 403
 
-        #get the list of container object
-        containers = db.search_from_table('containers', {'$and': [{'type': container_type}, {'state': STATE_SUCCESS}]})
+        # get the list of container object
+        containers = db.search_from_table('containers', {'type': container_type, 'state': STATE_SUCCESS})
 
-        #select and arrange containers
-        nodes = db.search_from_table('nodes', {"$or": [{"type": "master"}, {"type": "worker"}]})
+        # select and arrange containers
+        mnodes = db.search_from_table('nodes', {"type": "master"})
+        wnodes = db.search_from_table('nodes', {"type": "worker"})
+        nodes = mnodes + wnodes
         node_id_pool = self.make_node_id_pool(nodes)
 
         containers_reorder = []
@@ -582,9 +604,9 @@ class ScaleContainerResource(Resource):
             if len(containers_reorder) == number:
                 break
 
-        #get a genatator of delete_object
-        dg = self.delete_obj_genarator(app, containers_reorder)
-        #start backgroung delete oparation
+        # get a genatator of delete_object
+        dg = self.delete_obj_generator(app, containers_reorder)
+        # start backgroung delete operation
         self.delscaleosorus(dg)
 
         return {

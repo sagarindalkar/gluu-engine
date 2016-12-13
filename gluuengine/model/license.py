@@ -5,53 +5,62 @@
 
 import uuid
 
-from ..database import db
+from schematics.types import StringType
+from schematics.types import BooleanType
+from schematics.types import LongType
+from schematics.types import IntType
+from schematics.types.compound import ListType
+from schematics.types.compound import PolyModelType
+
+from ._schema import LICENSE_KEY_SCHEMA
 from .base import BaseModel
-from ..utils import generate_passkey
-from ..utils import encrypt_text
+from ..database import db
 from ..utils import decrypt_text
 from ..utils import retrieve_current_date
 
 
 class LicenseKey(BaseModel):
-    resource_fields = dict.fromkeys([
-        "id",
-        "name",
-        "code",
-        "valid",
-        "metadata",
-        "updated_at",
-    ])
+    """This class represents entity for license key.
+    """
+    class Metadata(BaseModel):
+        product = StringType()
+        expiration_date = LongType()
+        creation_date = LongType()
+        active = BooleanType()
+        license_count_limit = IntType()
+        license_name = StringType()
+        autoupdate = BooleanType()
+        license_id = StringType()
+        emails = ListType(StringType)
+        customer_name = StringType()
 
-    def __init__(self, fields=None):
-        self.id = "{}".format(uuid.uuid4())
-        self.passkey = generate_passkey()
-        self.valid = False
-        self.metadata = {}
-        self.signed_license = ""
-        self.updated_at = None
-        self.populate(fields)
+    id = StringType(default=lambda: str(uuid.uuid4()))
+    name = StringType()
+    code = StringType()
+    public_key = StringType()
+    public_password = StringType()
+    license_password = StringType()
+    signed_license = StringType()
+    valid = BooleanType()
+    updated_at = LongType()
+    passkey = StringType()
+    metadata = PolyModelType(Metadata, strict=False)
+    _pyobject = StringType()
 
-    def populate(self, fields=None):
-        fields = fields or {}
+    @property
+    def _schema(self):
+        return LICENSE_KEY_SCHEMA
 
-        self.name = fields.get("name", "")
-        self.code = fields.get("code", "")
-
-        self.public_key = encrypt_text(
-            fields.get("public_key", ""),
-            self.passkey,
-        )
-
-        self.public_password = encrypt_text(
-            fields.get("public_password", ""),
-            self.passkey,
-        )
-
-        self.license_password = encrypt_text(
-            fields.get("license_password", ""),
-            self.passkey,
-        )
+    @property
+    def resource_fields(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "code": self.code,
+            "valid": self.valid,
+            "metadata": dict(self.metadata or {}),
+            "updated_at": self.updated_at,
+        }
 
     @property
     def decrypted_public_key(self):
@@ -105,3 +114,17 @@ class LicenseKey(BaseModel):
     @property
     def mismatched(self):
         return self.metadata.get("product") != "de"
+
+    @property
+    def is_active(self):
+        return self.metadata.get("active") is True
+
+    @property
+    def auto_update(self):
+        # for backward compatibility, license that doesn't have
+        # autoupdate field is marked as having auto-update feature;
+        # subsequent update will fetch the field and then we can apply
+        # auto-update check
+        if "autoupdate" not in self.metadata:
+            return True
+        return self.metadata.get("autoupdate") is True

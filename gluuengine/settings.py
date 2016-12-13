@@ -22,8 +22,6 @@ class Config(object):
         "DATABASE_URI",
         "mongodb://mongo:27017/gluuengine",
     )
-    # flask-pymongo compatibility
-    MONGO_URI = DATABASE_URI
     SHARED_DATABASE_URI = os.environ.get(
         "SHARED_DATABASE_URI",
         os.path.join(DATA_DIR, "db", "shared.json"),
@@ -72,14 +70,13 @@ class DevConfig(Config):
     """
     DEBUG = True
     DATABASE_URI = os.environ.get("DATABASE_URI", "mongodb://mongo:27017/gluuengine-dev")
-    MONGO_URI = DATABASE_URI
     ENABLE_LICENSE = False
 
 
 class TestConfig(Config):
     TESTING = True
     DEBUG = True
-    DATABASE_URI = os.environ.get("DATABASE_URI", "mongodb://localhost:27017/gluuengine-test")
+    DATABASE_URI = os.environ.get("DATABASE_URI", "mongodb://mongo:27017/gluuengine-test")
     MONGOTEST_URI = DATABASE_URI
     SHARED_DATABASE_URI = os.environ.get(
         "SHARED_DATABASE_URI",

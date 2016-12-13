@@ -3,27 +3,34 @@
 #
 # All rights reserved.
 
+import uuid
+
+from schematics.types import StringType
+
+from ._schema import CONTAINER_LOG_SCHEMA
 from .base import BaseModel
 from ..database import db
 
 
 class ContainerLog(BaseModel):
-    resource_fields = dict.fromkeys([
-        "id",
-        "container_name",
-        "setup_log_url",
-        "teardown_log_url",
-        "state",
-    ])
+    @property
+    def _schema(self):
+        return CONTAINER_LOG_SCHEMA
 
-    def __init__(self):
-        self.id = ""
-        self.container_name = ""
-        self.setup_log = ""
-        self.setup_log_url = ""
-        self.teardown_log = ""
-        self.teardown_log_url = ""
-        self.state = ""
+    id = StringType(default=lambda: str(uuid.uuid4()))
+    container_name = StringType()
+    setup_log = StringType()
+    teardown_log = StringType()
+    state = StringType()
+    _pyobject = StringType()
+
+    @property
+    def resource_fields(self):
+        return {
+            "id": self.id,
+            "container_name": self.container_name,
+            "state": self.state,
+        }
 
     @staticmethod
     def create_or_get(container):
@@ -36,9 +43,8 @@ class ContainerLog(BaseModel):
             pass
 
         container_log = ContainerLog()
-        container_log.id = container.name
         container_log.container_name = container.name
-        container_log.setup_log = "{}-setup.log".format(container_log.container_name)
-        container_log.teardown_log = "{}-teardown.log".format(container_log.container_name)
+        container_log.setup_log = "{}-setup.log".format(container_log.container_name)  # noqa
+        container_log.teardown_log = "{}-teardown.log".format(container_log.container_name)  # noqa
         db.persist(container_log, "container_logs")
         return container_log

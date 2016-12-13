@@ -312,15 +312,10 @@ class LdapSetup(BaseSetup):
     def add_auto_startup_entry(self):
         """Adds supervisor program for auto-startup.
         """
-        # add supervisord entry
-        payload = """
-[program:opendj]
-command=/opt/opendj/bin/start-ds --quiet -N
-"""
-
-        self.logger.debug("adding supervisord entry")
-        cmd = '''sh -c "echo '{}' >> /etc/supervisor/conf.d/supervisord.conf"'''.format(payload)
-        self.docker.exec_cmd(self.container.cid, cmd)
+        self.logger.debug("adding opendj config for supervisord")
+        src = "opendj/opendj.conf"
+        dest = "/etc/supervisor/conf.d/opendj.conf"
+        self.copy_rendered_jinja_template(src, dest)
 
     def setup(self):
         """Runs the actual setup.
@@ -337,12 +332,11 @@ command=/opt/opendj/bin/start-ds --quiet -N
         self.index_opendj("userRoot")
 
         try:
-            with self.app.app_context():
-                peer = self.cluster.get_containers(type_="ldap")[0]
-                # Initialize data from existing ldap container.
-                # To create fully meshed replication, update the other
-                # ldap container to use this new ldap container as a master.
-                self.replicate_from(peer)
+            peer = self.cluster.get_containers(type_="ldap")[0]
+            # Initialize data from existing ldap container.
+            # To create fully meshed replication, update the other
+            # ldap container to use this new ldap container as a master.
+            self.replicate_from(peer)
         except IndexError:
             self.logger.info("importing data from ldif files")
             self.import_ldif()
@@ -362,11 +356,10 @@ command=/opt/opendj/bin/start-ds --quiet -N
         """
         # import all OpenDJ certficates because oxIdp checks matched
         # certificate
-        with self.app.app_context():
-            for oxidp in self.cluster.get_containers(type_="oxidp"):
-                setup_obj = OxidpSetup(oxidp, self.cluster,
-                                       self.app, logger=self.logger)
-                setup_obj.import_ldap_certs()
+        for oxidp in self.cluster.get_containers(type_="oxidp"):
+            setup_obj = OxidpSetup(oxidp, self.cluster,
+                                   self.app, logger=self.logger)
+            setup_obj.import_ldap_certs()
 
     def after_setup(self):
         """Runs post-setup.
@@ -380,12 +373,11 @@ command=/opt/opendj/bin/start-ds --quiet -N
         self.write_ldap_pw()
 
         # stop the replication agreement
-        with self.app.app_context():
-            ldap_num = len(self.cluster.get_containers(type_="ldap"))
-            if ldap_num > 0:
-                self.disable_replication()
-                # wait for process to run in the background
-                time.sleep(5)
+        ldap_num = len(self.cluster.get_containers(type_="ldap"))
+        if ldap_num > 0:
+            self.disable_replication()
+            # wait for process to run in the background
+            time.sleep(5)
 
         # remove password file
         self.delete_ldap_pw()

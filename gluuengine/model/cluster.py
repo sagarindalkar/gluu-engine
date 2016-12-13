@@ -5,161 +5,87 @@
 
 import uuid
 
+from schematics.types import BooleanType
+from schematics.types import IntType
+from schematics.types import StringType
+
+from ._schema import CLUSTER_SCHEMA
 from .base import BaseModel
 from .base import STATE_SUCCESS
 from ..database import db
-from ..utils import get_quad
-from ..utils import get_random_chars
-from ..utils import encrypt_text
 from ..utils import decrypt_text
-from ..utils import generate_passkey
-from ..utils import ldap_encode
 
 
 class Cluster(BaseModel):
-    resource_fields = dict.fromkeys([
-        'id',
-        'name',
-        'description',
-        'ox_cluster_hostname',
-        'org_name',
-        'org_short_name',
-        'country_code',
-        'city',
-        'state',
-        'admin_email',
-        'base_inum',
-        'inum_org',
-        'inum_org_fn',
-        'inum_appliance',
-        'inum_appliance_fn',
-        # "external_ldap",
-        # "external_ldap_host",
-        # "external_ldap_port",
-        # "external_ldap_binddn",
-        # "external_ldap_inum_appliance",
-    ])
+    id = StringType(default=lambda: str(uuid.uuid4()))
+    name = StringType()
+    description = StringType()
+    ox_cluster_hostname = StringType()
+    ldaps_port = StringType()
+    ldap_binddn = StringType()
+    org_name = StringType()
+    org_short_name = StringType()
+    country_code = StringType()
+    city = StringType()
+    state = StringType()
+    admin_email = StringType()
+    passkey = StringType()
+    admin_pw = StringType()
+    encoded_ldap_pw = StringType()
+    encoded_ox_ldap_pw = StringType()
+    base_inum = StringType()
+    inum_org = StringType()
+    inum_org_fn = StringType()
+    inum_appliance = StringType()
+    inum_appliance_fn = StringType()
+    oxauth_client_id = StringType()
+    oxauth_client_encoded_pw = StringType()
+    oxauth_openid_jks_fn = StringType()
+    oxauth_openid_jks_pass = StringType()
+    scim_rs_client_id = StringType()
+    scim_rs_client_jks_fn = StringType()
+    scim_rs_client_jks_pass = StringType()
+    scim_rs_client_jks_pass_encoded = StringType()
+    scim_rp_client_id = StringType()
+    scim_rp_client_jks_fn = StringType()
+    scim_rp_client_jks_pass = StringType()
+    encoded_shib_jks_pw = StringType()
+    shib_jks_fn = StringType()
+    encoded_asimba_jks_pw = StringType()
+    asimba_jks_fn = StringType()
+    external_ldap = BooleanType()
+    external_ldap_host = StringType()
+    external_ldap_port = IntType()
+    external_ldap_binddn = StringType()
+    external_ldap_encoded_password = StringType()
+    external_ldap_inum_appliance = StringType()
+    external_encoded_salt = StringType()
+    _pyobject = StringType()
 
-    def __init__(self, fields=None):
-        fields = fields or {}
-
-        # Cluster unique identifier
-        self.id = "{}".format(uuid.uuid4())
-
-        # Cluster name
-        self.name = fields.get("name")
-
-        # Description of cluster
-        self.description = fields.get("description")
-
-        self.ox_cluster_hostname = fields.get("ox_cluster_hostname")
-        self.ldaps_port = "1636"
-        self.ldap_binddn = "cn=directory manager"
-
-        # Name of org for X.509 certificate
-        self.org_name = fields.get("org_name")
-
-        # Short name of org for X.509 certificate
-        self.org_short_name = fields.get("org_short_name")
-
-        # ISO 3166-1 alpha-2 country code
-        self.country_code = fields.get("country_code")
-
-        # City for X.509 certificate
-        self.city = fields.get("city")
-
-        # State or province for X.509 certificate
-        self.state = fields.get("state")
-
-        # Admin email address for X.509 certificate
-        self.admin_email = fields.get("admin_email")
-
-        # pass key
-        self.passkey = generate_passkey()
-
-        # Secret for ldap cn=directory manager, and oxTrust admin
-        admin_pw = fields.get("admin_pw", get_random_chars())
-        self.admin_pw = encrypt_text(admin_pw, self.passkey)
-        self.encoded_ldap_pw = ldap_encode(admin_pw)
-        self.encoded_ox_ldap_pw = self.admin_pw
-
-        # Unique identifier for domain
-        self.base_inum = '@!%s.%s.%s.%s' % tuple([get_quad() for i in xrange(4)])
-
-        # Unique identifier for organization
-        org_quads = '%s.%s' % tuple([get_quad() for i in xrange(2)])
-        self.inum_org = '%s!0001!%s' % (self.base_inum, org_quads)
-
-        # Unique identifier for cluster
-        appliance_quads = '%s.%s' % tuple([get_quad() for i in xrange(2)])
-        self.inum_appliance = '%s!0002!%s' % (self.base_inum, appliance_quads)
-
-        # Unique organization identifier sans special characters
-        self.inum_org_fn = self.inum_org.replace('@', '').replace('!', '').replace('.', '')
-
-        # Unique cluster identifier sans special characters
-        self.inum_appliance_fn = self.inum_appliance.replace('@', '').replace('!', '').replace('.', '')
-
-        # ox-related attrs
-        client_quads = '%s.%s' % tuple([get_quad() for i in xrange(2)])
-        self.oxauth_client_id = '%s!0008!%s' % (self.inum_org, client_quads)
-        oxauth_client_pw = get_random_chars()
-        self.oxauth_client_encoded_pw = encrypt_text(oxauth_client_pw, self.passkey)
-        self.oxauth_openid_jks_fn = "/etc/certs/oxauth-keys.jks"
-        self.oxauth_openid_jks_pass = get_random_chars()
-
-        # scim-related attrs
-        scim_rs_quads = '%s.%s' % tuple([get_quad() for i in xrange(2)])
-        self.scim_rs_client_id = '%s!0008!%s' % (self.inum_org, scim_rs_quads)
-        self.scim_rs_client_jks_fn = "/etc/certs/scim-rs.jks"
-        self.scim_rs_client_jks_pass = get_random_chars()
-        self.scim_rs_client_jks_pass_encoded = encrypt_text(
-            self.scim_rs_client_jks_pass, self.passkey,
-        )
-
-        scim_rp_quads = '%s.%s' % tuple([get_quad() for i in xrange(2)])
-        self.scim_rp_client_id = '%s!0008!%s' % (self.inum_org, scim_rp_quads)
-        self.scim_rp_client_jks_fn = "/etc/certs/scim-rp.jks"
-        self.scim_rp_client_jks_pass = "secret"
-
-        # key store for oxIdp
-        self.encoded_shib_jks_pw = self.admin_pw
-        self.shib_jks_fn = "/etc/certs/shibIDP.jks"
-
-        # key store for oxAsimba
-        self.encoded_asimba_jks_pw = self.admin_pw
-        self.asimba_jks_fn = "/etc/certs/asimbaIDP.jks"
-
-        # a flag to decide whether `external_ldap_*` attributes
-        # should be filled
-        self.external_ldap = fields.get(
-            "external_ldap",
-            False,
-        )
-        self.external_ldap_host = fields.get(
-            "external_ldap_host",
-            "",
-        )
-        self.external_ldap_port = fields.get(
-            "external_ldap_port",
-            "",
-        )
-        self.external_ldap_binddn = fields.get(
-            "external_ldap_binddn",
-            "",
-        )
-        self.external_ldap_encoded_password = fields.get(
-            "external_ldap_encoded_password",
-            "",
-        )
-        self.external_ldap_inum_appliance = fields.get(
-            "external_ldap_inum_appliance",
-            "",
-        )
-        self.external_encoded_salt = fields.get(
-            "external_encoded_salt",
-            "",
-        )
+    @property
+    def resource_fields(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'description': self.description,
+            'ox_cluster_hostname': self.ox_cluster_hostname,
+            'org_name': self.org_name,
+            'org_short_name': self.org_short_name,
+            'country_code': self.country_code,
+            'city': self.city,
+            'state': self.state,
+            'admin_email': self.admin_email,
+            'base_inum': self.base_inum,
+            'inum_org': self.inum_org,
+            'inum_org_fn': self.inum_org_fn,
+            'inum_appliance': self.inum_appliance,
+            'inum_appliance_fn': self.inum_appliance_fn,
+            # "external_ldap",
+            # "external_ldap_host",
+            # "external_ldap_port",
+            # "external_ldap_binddn",
+            # "external_ldap_inum_appliance",
+        }
 
     @property
     def decrypted_admin_pw(self):
@@ -196,3 +122,7 @@ class Cluster(BaseModel):
         if type_:
             condition["type"] = type_
         return db.search_from_table("containers", condition)
+
+    @property
+    def _schema(self):
+        return CLUSTER_SCHEMA

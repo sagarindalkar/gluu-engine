@@ -38,7 +38,6 @@ setup(
         "Flask",
         "crochet",
         "docker-py>=1.8.0",
-        "jsonpickle",
         "m2crypto",
         "marshmallow",
         "flask_marshmallow",
@@ -47,6 +46,9 @@ setup(
         "gunicorn",
         "futures",
         "click",
+        "flask-dataset",
+        "pymysql",
+        "schematics",
     ],
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",

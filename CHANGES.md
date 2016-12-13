@@ -2,6 +2,48 @@
 
 Here you can see the full list of changes between each `gluu-engine` release.
 
+## Version 0.6.0
+
+Released on December 13th, 2016.
+
+* Added experimental support for MySQL (an alternative to MongoDB).
+
+## Version 0.5.9
+
+Released on November 4th, 2016.
+
+* Added auto-update check to determine whether license need to be updated or not.
+
+## Version 0.5.8
+
+Released on October 26th, 2016.
+
+* `pre_fork` delay time has been increased.
+* Sensitive fields are hidden from API responses.
+* Added command to distribute SSL certificate and key.
+* Added new rule to validate `active` flag in license's metadata. Related issue: [#103](https://github.com/GluuFederation/gluu-engine/issues/103).
+
+## Version 0.5.7
+
+Released on October 17th, 2016.
+
+* Fixed task launcher being running in each gunicorn worker. Related issue: [#101](https://github.com/GluuFederation/gluu-engine/issues/101).
+
+## Version 0.5.6
+
+Released on October 13th, 2016.
+
+* Updated `oxauth-config.json` template.
+* Updated `gluu_https.conf` template for `gluunginx` container.
+* Smaller entries in `shared.json`.
+* Reuse same SSL certs and keys for web frontends.
+
+## Version 0.5.5
+
+Released on September 19th, 2016.
+
+* Fixed error when having connection problem to license server.
+
 ## Version 0.5.4
 
 Released on September 16th, 2016.

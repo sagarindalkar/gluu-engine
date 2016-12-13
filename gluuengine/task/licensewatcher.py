@@ -7,6 +7,7 @@ import logging
 import time
 
 from crochet import run_in_reactor
+from requests.exceptions import ConnectionError
 from twisted.internet.task import LoopingCall
 
 from ..database import db
@@ -61,8 +62,18 @@ class LicenseWatcherTask(object):
             self.logger.info("license key is currently unavailable")
             return
 
-        # get current datetime from license server
-        current_date = retrieve_current_date()
+        if not license_key.auto_update:
+            self.logger.info("auto-update feature for license is disabled")
+            return
+
+        self.logger.info("auto-updating license")
+
+        try:
+            # get current datetime from license server
+            current_date = retrieve_current_date()
+        except ConnectionError:
+            self.logger.warn("unable to get current date from license server")
+            return
 
         # if license has been already updated within 24 hours,
         # no need to re-populate the license
@@ -94,39 +105,31 @@ class LicenseWatcherTask(object):
             else:
                 # mark the latest update time
                 license_key.updated_at = retrieve_current_date()
-                with self.app.app_context():
-                    db.update(license_key.id, license_key, "license_keys")
+                db.update(license_key.id, license_key, "license_keys")
                 self.logger.info("license key has been updated")
                 break
 
-        with self.app.app_context():
-            worker_nodes = license_key.get_workers()
+        worker_nodes = license_key.get_workers()
 
-            # cache the expiration state
-            license_expired = license_key.expired
+        # cache the expiration state
+        license_expired = license_key.expired
 
-            for node in worker_nodes:
-                if license_expired:
-                    # disable specific containers
-                    self.disable_containers(node, "oxauth")
-                else:
-                    # if we have specific containers being disabled in node,
-                    # try to re-enable the containers
-                    self.enable_containers(node, "oxauth")
-
-            # distribute data as we may have new state about containers
-            if worker_nodes:
-                distribute_cluster_data(
-                    self.app.config["SHARED_DATABASE_URI"], self.app,
-                )
+        for node in worker_nodes:
+            if license_expired:
+                # disable specific containers
+                self.disable_containers(node, "oxauth")
+            else:
+                # if we have specific containers being disabled in node,
+                # try to re-enable the containers
+                self.enable_containers(node, "oxauth")
+            distribute_cluster_data(self.app, node)
 
     def get_license_key(self):
-        with self.app.app_context():
-            try:
-                license_key = db.all("license_keys")[0]
-            except IndexError:
-                license_key = None
-            return license_key
+        try:
+            license_key = db.all("license_keys")[0]
+        except IndexError:
+            license_key = None
+        return license_key
 
     def disable_containers(self, node, type_):
         """Disables containers having specific type.
@@ -137,16 +140,15 @@ class LicenseWatcherTask(object):
         :param type_: Type of the container.
         """
         containers = node.get_containers(type_=type_)
-        with self.app.app_context():
-            for container in containers:
-                container.state = STATE_DISABLED
-                db.update(container.id, container, "containers")
+        for container in containers:
+            container.state = STATE_DISABLED
+            db.update(container.id, container, "containers")
 
-                self.machine.ssh(
-                    node.name, "sudo docker stop {}".format(container.cid),
-                )
-                self.logger.info("{} container {} has been "
-                                 "disabled".format(type_, container.name))
+            self.machine.ssh(
+                node.name, "sudo docker stop {}".format(container.cid),
+            )
+            self.logger.info("{} container {} has been "
+                             "disabled".format(type_, container.name))
 
     def enable_containers(self, node, type_):
         """Enables containers having specific type.
@@ -157,17 +159,16 @@ class LicenseWatcherTask(object):
         :param type_: Type of the container.
         """
         containers = node.get_containers(type_=type_, state=STATE_DISABLED)
-        with self.app.app_context():
-            weave = Weave(node, self.app)
+        weave = Weave(node, self.app)
 
-            for container in containers:
-                container.state = STATE_SUCCESS
-                db.update(container.id, container, "containers")
+        for container in containers:
+            container.state = STATE_SUCCESS
+            db.update(container.id, container, "containers")
 
-                self.machine.ssh(
-                    node.name, "sudo docker restart {}".format(container.cid),
-                )
-                weave.dns_add(container.cid, container.hostname)
-                weave.dns_add(container.cid, "{}.weave.local".format(type_))
-                self.logger.info("{} container {} has been "
-                                 "enabled".format(type_, container.id))
+            self.machine.ssh(
+                node.name, "sudo docker restart {}".format(container.cid),
+            )
+            weave.dns_add(container.cid, container.hostname)
+            weave.dns_add(container.cid, "{}.weave.local".format(type_))
+            self.logger.info("{} container {} has been "
+                             "enabled".format(type_, container.id))

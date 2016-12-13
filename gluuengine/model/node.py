@@ -109,7 +109,7 @@ class MasterNode(Node):
         state_pull_images = BooleanType(default=False)
         state_registry_cert = BooleanType(default=False)
 
-    id = StringType(default=str(uuid.uuid4()))
+    id = StringType(default=lambda: str(uuid.uuid4()))
     name = StringType()
     provider_id = StringType()
     type = StringType(default="master")
@@ -193,7 +193,7 @@ class WorkerNode(Node):
         state_pull_images = BooleanType(default=False)
         state_registry_cert = BooleanType(default=False)
 
-    id = StringType(default=str(uuid.uuid4()))
+    id = StringType(default=lambda: str(uuid.uuid4()))
     name = StringType()
     provider_id = StringType()
     type = StringType(default="worker")

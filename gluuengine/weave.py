@@ -5,7 +5,6 @@
 
 import re
 
-from .database import db
 from .machine import Machine
 
 # older weave dns-args returns --dns x.x.x.x --dns-search=weave.local.
@@ -14,26 +13,11 @@ DNS_ARGS_RE = re.compile(r"--dns[=|\s](.+) --dns-search=(.+)")
 
 
 class Weave(object):
-    def __init__(self, node, app):
+    def __init__(self, node, app=None):
         self.node = node
-        self.app = app
-
-        try:
-            self.master_node = db.search_from_table(
-                "nodes", {"type": "master"},
-            )[0]
-        except IndexError:
-            self.master_node = None
-
-        try:
-            self.cluster = db.all("clusters")[0]
-        except IndexError:
-            self.cluster = None
-
         self.machine = Machine()
-        self.weave_encryption = self.app.config['WEAVE_ENCRYPTION']
 
-    def attach(self, container_id, cidr=""):
+    def attach(self, container_id, cidr=""):  # pragma: no cover
         """Adds container into weave network.
 
         :param cidr: CIDR, e.g. ``10.2.1.1/24``.
@@ -42,7 +26,7 @@ class Weave(object):
         attach_cmd = "sudo weave attach {} {}".format(cidr, container_id)
         self.machine.ssh(self.node.name, attach_cmd)
 
-    def detach(self, container_id, cidr=""):
+    def detach(self, container_id, cidr=""):  # pragma: no cover
         """Removes container from weave network.
 
         :param cidr: CIDR, e.g. ``10.2.1.1/24``.
@@ -70,11 +54,11 @@ class Weave(object):
 
         :returns: A tuple consists of docker bridge IP and DNS search
         """
-        bridge_ip = None
+        dns = None
         dns_search = None
         output = self.machine.ssh(self.node.name, "sudo weave dns-args")
 
         rgx = DNS_ARGS_RE.match(output)
         if rgx:
-            bridge_ip, dns_search = rgx.groups()
-        return bridge_ip, dns_search
+            dns, dns_search = rgx.groups()
+        return dns, dns_search

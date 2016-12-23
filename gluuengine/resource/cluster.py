@@ -10,8 +10,8 @@ from flask_restful import Resource
 from ..database import db
 from ..model import Cluster
 from ..reqparser import ClusterReq
-from ..reqparser import ClusterUpdateReq
-from ..utils import as_boolean
+# from ..reqparser import ClusterUpdateReq
+# from ..utils import as_boolean
 
 
 class ClusterResource(Resource):
@@ -34,31 +34,31 @@ class ClusterResource(Resource):
         db.delete(cluster_id, "clusters")
         return {}, 204
 
-    def put(self, cluster_id):
-        cluster = db.get(cluster_id, "clusters")
+    # def put(self, cluster_id):
+    #     cluster = db.get(cluster_id, "clusters")
 
-        if not cluster:
-            return {"status": 404, "message": "Cluster not found"}, 404
+    #     if not cluster:
+    #         return {"status": 404, "message": "Cluster not found"}, 404
 
-        external_ldap = as_boolean(request.form.get("external_ldap", False))
+    #     external_ldap = as_boolean(request.form.get("external_ldap", False))
 
-        data, errors = ClusterUpdateReq(
-            context={"external_ldap": external_ldap},
-        ).load(request.form)
+    #     data, errors = ClusterUpdateReq(
+    #         context={"external_ldap": external_ldap},
+    #     ).load(request.form)
 
-        if errors:
-            return {
-                "status": 400,
-                "message": "Invalid data",
-                "params": errors,
-            }, 400
+    #     if errors:
+    #         return {
+    #             "status": 400,
+    #             "message": "Invalid data",
+    #             "params": errors,
+    #         }, 400
 
-        # only set attr with user inputs
-        for k, v in data.iteritems():
-            setattr(cluster, k, v)
+    #     # only set attr with user inputs
+    #     for k, v in data.iteritems():
+    #         setattr(cluster, k, v)
 
-        db.update(cluster.id, cluster, "clusters")
-        return cluster.as_dict()
+    #     db.update(cluster.id, cluster, "clusters")
+    #     return cluster.as_dict()
 
 
 class ClusterListResource(Resource):

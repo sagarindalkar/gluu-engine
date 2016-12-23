@@ -3,7 +3,7 @@
 #
 # All rights reserved.
 
-from .container_helper import LdapContainerHelper  # noqa
+# from .container_helper import LdapContainerHelper  # noqa
 from .container_helper import OxauthContainerHelper  # noqa
 from .container_helper import OxtrustContainerHelper  # noqa
 from .container_helper import OxidpContainerHelper  # noqa

@@ -12,7 +12,7 @@ from marshmallow import post_load
 from ..extensions import ma
 from ..utils import generate_passkey
 from ..utils import encrypt_text
-from ..utils import ldap_encode
+# from ..utils import ldap_encode
 from ..utils import get_quad
 from ..utils import get_random_chars
 
@@ -119,13 +119,13 @@ class ClusterReq(ExternalLDAPMixin, ma.Schema):
         scim_rs_quads = '{}.{}'.format(*[get_quad() for _ in xrange(2)])
         scim_rp_quads = '{}.{}'.format(*[get_quad() for i in xrange(2)])
 
-        data["ldaps_port"] = "1636"
-        data["ldap_binddn"] = "cn=directory manager"
+        # data["ldaps_port"] = "1636"
+        # data["ldap_binddn"] = "cn=directory manager"
 
         data["passkey"] = generate_passkey()
         data["admin_pw"] = encrypt_text(plain_admin_pw, data["passkey"])
-        data["encoded_ldap_pw"] = ldap_encode(plain_admin_pw)
-        data["encoded_ox_ldap_pw"] = data["admin_pw"]
+        # data["encoded_ldap_pw"] = ldap_encode(plain_admin_pw)
+        # data["encoded_ox_ldap_pw"] = data["admin_pw"]
 
         data["base_inum"] = "@!{}.{}.{}.{}".format(
             *[get_quad() for _ in xrange(4)]
@@ -186,5 +186,5 @@ class ClusterReq(ExternalLDAPMixin, ma.Schema):
         return data
 
 
-class ClusterUpdateReq(ExternalLDAPMixin, ma.Schema):
-    pass
+# class ClusterUpdateReq(ExternalLDAPMixin, ma.Schema):
+#     pass

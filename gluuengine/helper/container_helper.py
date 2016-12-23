@@ -21,7 +21,7 @@ from ..model import STATE_FAILED
 from ..model import STATE_DISABLED
 from ..model import STATE_SETUP_FINISHED
 from ..model import STATE_TEARDOWN_FINISHED
-from ..setup import LdapSetup
+# from ..setup import LdapSetup
 from ..setup import OxauthSetup
 from ..setup import OxtrustSetup
 from ..setup import OxidpSetup
@@ -131,7 +131,8 @@ class BaseContainerHelper(object):
             # add DNS record
             self.weave.dns_add(self.container.cid, self.container.hostname)
 
-            if self.container.type in ("ldap", "oxauth", "oxtrust",):
+            # if self.container.type in ("ldap", "oxauth", "oxtrust",):
+            if self.container.type in ("oxauth", "oxtrust",):
                 # useful for failover in ox apps
                 self.weave.dns_add(
                     self.container.cid,
@@ -281,20 +282,20 @@ class BaseContainerHelper(object):
             self.logger.removeHandler(handler)
 
 
-class LdapContainerHelper(BaseContainerHelper):
-    setup_class = LdapSetup
-    ulimits = [
-        {"name": "nofile", "soft": 65536, "hard": 131072},
-    ]
+# class LdapContainerHelper(BaseContainerHelper):
+#     setup_class = LdapSetup
+#     ulimits = [
+#         {"name": "nofile", "soft": 65536, "hard": 131072},
+#     ]
 
-    def __init__(self, container, app, logpath=None):
-        db_volume = os.path.join(app.config["OPENDJ_VOLUME_DIR"], container.name, "db")
-        self.volumes = {
-            db_volume: {
-                "bind": "/opt/opendj/db",
-            },
-        }
-        super(LdapContainerHelper, self).__init__(container, app, logpath)
+#     def __init__(self, container, app, logpath=None):
+#         db_volume = os.path.join(app.config["OPENDJ_VOLUME_DIR"], container.name, "db")
+#         self.volumes = {
+#             db_volume: {
+#                 "bind": "/opt/opendj/db",
+#             },
+#         }
+#         super(LdapContainerHelper, self).__init__(container, app, logpath)
 
 
 class OxauthContainerHelper(BaseContainerHelper):

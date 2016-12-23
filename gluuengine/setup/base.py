@@ -18,7 +18,7 @@ from ..log import create_file_logger
 from ..errors import DockerExecError
 from ..machine import Machine
 from ..dockerclient import Docker
-from ..weave import Weave
+# from ..weave import Weave
 
 
 class BaseSetup(object):
@@ -245,32 +245,43 @@ class BaseSetup(object):
 
     @property
     def ldap_binddn(self):
-        if self.cluster.external_ldap:
-            return self.cluster.external_ldap_binddn
-        return self.cluster.ldap_binddn
+        # if self.cluster.external_ldap:
+        return self.cluster.external_ldap_binddn
+        # return self.cluster.ldap_binddn
 
     @property
     def encoded_ox_ldap_pw(self):
-        if self.cluster.external_ldap:
-            return self.cluster.external_ldap_encoded_password
-        return self.cluster.encoded_ox_ldap_pw
+        # if self.cluster.external_ldap:
+        return self.cluster.external_ldap_encoded_password
+        # return self.cluster.encoded_ox_ldap_pw
 
     @property
     def inum_appliance(self):
-        if self.cluster.external_ldap:
-            return self.cluster.external_ldap_inum_appliance
-        return self.cluster.inum_appliance
+        # if self.cluster.external_ldap:
+        return self.cluster.external_ldap_inum_appliance
+        # return self.cluster.inum_appliance
 
     @property
     def ldap_host(self):
         # get hostname for ldap failover
-        if self.cluster.external_ldap:
-            hostname = self.cluster.external_ldap_host
-        else:
-            weave = Weave(self.node, self.app)
-            _, dns_search = weave.dns_args()
-            hostname = "ldap.{}".format(dns_search.rstrip("."))
+        # if self.cluster.external_ldap:
+        hostname = self.cluster.external_ldap_host
+        # else:
+        #     weave = Weave(self.node, self.app)
+        #     _, dns_search = weave.dns_args()
+        #     hostname = "ldap.{}".format(dns_search.rstrip("."))
         return hostname
+
+    @property
+    def ldap_port(self):
+        # get hostname for ldap failover
+        # if self.cluster.external_ldap:
+        port = self.cluster.external_ldap_port
+        # else:
+        #     weave = Weave(self.node, self.app)
+        #     _, dns_search = weave.dns_args()
+        #     hostname = "ldap.{}".format(dns_search.rstrip("."))
+        return port
 
     def get_web_cert(self):
         hostname = self.cluster.ox_cluster_hostname.split(":")[0]
@@ -299,10 +310,10 @@ class OxSetup(BaseSetup):
     def write_salt_file(self):
         """Copies salt file.
         """
-        if self.cluster.external_ldap:
-            salt = self.cluster.external_encoded_salt
-        else:
-            salt = self.cluster.passkey
+        # if self.cluster.external_ldap:
+        salt = self.cluster.external_encoded_salt
+        # else:
+        #     salt = self.cluster.passkey
 
         self.logger.debug("writing salt file")
 
@@ -374,7 +385,8 @@ class OxSetup(BaseSetup):
         ctx = {
             "ldap_binddn": self.ldap_binddn,
             "encoded_ox_ldap_pw": self.encoded_ox_ldap_pw,
-            "ldap_hosts": "{}:{}".format(self.ldap_failover_hostname(), self.cluster.ldaps_port),
+            # "ldap_hosts": "{}:{}".format(self.ldap_failover_hostname(), self.cluster.ldaps_port),
+            "ldap_hosts": "{}:{}".format(self.ldap_failover_hostname(), self.ldap_port),
             "inum_appliance": self.inum_appliance,
             "cert_folder": self.container.cert_folder,
         }

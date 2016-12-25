@@ -84,17 +84,6 @@ def discovery_node():
 
 
 @pytest.fixture()
-def ldap_container(cluster, master_node):
-    from gluuengine.model import LdapContainer
-
-    ctr = LdapContainer()
-    ctr.cluster_id = cluster.id
-    ctr.node_id = master_node.id
-    ctr.name = "ldap-container"
-    return ctr
-
-
-@pytest.fixture()
 def oxauth_container(cluster, master_node):
     from gluuengine.model import OxauthContainer
 
@@ -373,7 +362,7 @@ def patched_exec_cmd(monkeypatch):
 
 @pytest.fixture()
 def base_setup(monkeypatch, app, db, swarm_config,
-               cluster, ldap_container, master_node):
+               cluster, oxauth_container, master_node):
     from gluuengine.setup.base import BaseSetup
 
     class FakeBaseSetup(BaseSetup):
@@ -390,7 +379,7 @@ def base_setup(monkeypatch, app, db, swarm_config,
     )
 
     db.persist(master_node, "nodes")
-    return FakeBaseSetup(ldap_container, cluster, app)
+    return FakeBaseSetup(oxauth_container, cluster, app)
 
 
 @pytest.fixture()

@@ -2,6 +2,12 @@
 
 Here you can see the full list of changes between each `gluu-engine` release.
 
+## Version 0.6.1
+
+Released on December 30th, 2016.
+
+* Added volume for oxTrust logs in master node.
+
 ## Version 0.6.0
 
 Released on December 13th, 2016.

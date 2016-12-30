@@ -325,6 +325,9 @@ class OxtrustContainerHelper(BaseContainerHelper):
     setup_class = OxtrustSetup
 
     def __init__(self, container, app, logpath=None):
+        log_volume = os.path.join(
+            app.config["OXTRUST_LOGS_VOLUME_DIR"], container.name, "logs",
+        )
         self.volumes = {
             "/opt/idp": {
                 "bind": "/opt/idp",
@@ -337,6 +340,9 @@ class OxtrustContainerHelper(BaseContainerHelper):
             },
             "/var/gluu/webapps/oxtrust/libs": {
                 'bind': '/var/gluu/webapps/oxtrust/libs',
+            },
+            log_volume: {
+                "bind": "/opt/tomcat/logs",
             },
         }
         super(OxtrustContainerHelper, self).__init__(container, app, logpath)

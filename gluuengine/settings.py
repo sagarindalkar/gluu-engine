@@ -55,6 +55,7 @@ class Config(object):
 
     OXAUTH_LOGS_VOLUME_DIR = os.path.join(LOG_DIR, "oxauth")
     OXIDP_LOGS_VOLUME_DIR = os.path.join(LOG_DIR, "oxidp")
+    OXTRUST_LOGS_VOLUME_DIR = os.path.join(LOG_DIR, "oxtrust")
 
     GLUU_IMAGE_TAG = os.environ.get("GLUU_IMAGE_TAG", "latest")
     ENABLE_LICENSE = True

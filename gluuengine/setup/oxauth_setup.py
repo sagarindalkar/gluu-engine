@@ -11,24 +11,25 @@ from .base import OxSetup
 
 
 class OxauthSetup(OxSetup):
-    def render_server_xml_template(self):
-        """Copies rendered Tomcat's server.xml into the container.
-        """
-        src = "oxauth/server.xml"
-        dest = os.path.join(self.container.tomcat_conf_dir, os.path.basename(src))
-        ctx = {
-            "shib_jks_pass": self.cluster.decrypted_admin_pw,
-            "shib_jks_fn": self.cluster.shib_jks_fn,
-        }
-        self.copy_rendered_jinja_template(src, dest, ctx)
+    # def render_server_xml_template(self):
+    #     """Copies rendered Tomcat's server.xml into the container.
+    #     """
+    #     src = "oxauth/server.xml"
+    #     # dest = os.path.join(self.container.tomcat_conf_dir, os.path.basename(src))
+    #     dest = os.path.join(self.container.container_attrs["conf_dir"], os.path.basename(src))
+    #     ctx = {
+    #         "shib_jks_pass": self.cluster.decrypted_admin_pw,
+    #         "shib_jks_fn": self.cluster.shib_jks_fn,
+    #     }
+    #     self.copy_rendered_jinja_template(src, dest, ctx)
 
     def add_auto_startup_entry(self):
         """Adds supervisor program for auto-startup.
         """
-        self.logger.debug("adding tomcat config for supervisord")
-        src = "_shared/tomcat.conf"
-        dest = "/etc/supervisor/conf.d/tomcat.conf"
-        self.copy_rendered_jinja_template(src, dest)
+        # self.logger.debug("adding tomcat config for supervisord")
+        # src = "_shared/tomcat.conf"
+        # dest = "/etc/supervisor/conf.d/tomcat.conf"
+        # self.copy_rendered_jinja_template(src, dest)
 
         self.logger.debug("adding httpd config for supervisord")
         src = "_shared/httpd.conf"
@@ -40,15 +41,17 @@ class OxauthSetup(OxSetup):
 
         # render config templates
         self.render_ldap_props_template()
-        self.render_server_xml_template()
-        self.render_oxauth_context()
+        # self.render_server_xml_template()
+        # self.render_oxauth_context()
 
         self.write_salt_file()
         self.render_httpd_conf()
         self.configure_vhost()
 
+        # self.gen_cert("shibIDP", self.cluster.decrypted_admin_pw,
+        #               "tomcat", "tomcat", hostname)
         self.gen_cert("shibIDP", self.cluster.decrypted_admin_pw,
-                      "tomcat", "tomcat", hostname)
+                      "jetty", "jetty", hostname)
         self.get_web_cert()
 
         self.gen_keystore(
@@ -57,14 +60,17 @@ class OxauthSetup(OxSetup):
             self.cluster.decrypted_admin_pw,
             "{}/shibIDP.key".format(self.container.cert_folder),
             "{}/shibIDP.crt".format(self.container.cert_folder),
-            "tomcat",
-            "tomcat",
+            # "tomcat",
+            # "tomcat",
+            "jetty",
+            "jetty",
             hostname,
         )
 
         self.pull_oxauth_override()
         self.add_auto_startup_entry()
-        self.change_cert_access("tomcat", "tomcat")
+        # self.change_cert_access("tomcat", "tomcat")
+        self.change_cert_access("jetty", "jetty")
         self.reload_supervisor()
         return True
 
@@ -94,15 +100,15 @@ class OxauthSetup(OxSetup):
         }
         self.copy_rendered_jinja_template(src, dest, ctx)
 
-    def render_oxauth_context(self):
-        """Renders oxAuth context file for Tomcat.
-        """
-        src = "oxauth/oxauth.xml"
-        dest = "/opt/tomcat/conf/Catalina/localhost/oxauth.xml"
-        ctx = {
-            "oxauth_jsf_salt": os.urandom(16).encode("hex"),
-        }
-        self.copy_rendered_jinja_template(src, dest, ctx)
+    # def render_oxauth_context(self):
+    #     """Renders oxAuth context file for Tomcat.
+    #     """
+    #     src = "oxauth/oxauth.xml"
+    #     dest = "/opt/tomcat/conf/Catalina/localhost/oxauth.xml"
+    #     ctx = {
+    #         "oxauth_jsf_salt": os.urandom(16).encode("hex"),
+    #     }
+    #     self.copy_rendered_jinja_template(src, dest, ctx)
 
     def pull_oxauth_override(self):
         src = self.app.config["OXAUTH_OVERRIDE_DIR"]

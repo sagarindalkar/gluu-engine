@@ -9,8 +9,6 @@
 
     "baseEndpoint":"https://{{ ox_cluster_hostname }}/identity/seam/resource/restv1",
 
-    "authMode":"",
-
     "idpUrl":"https://{{ ox_cluster_hostname }}",
     "applianceUrl":"https://{{ ox_cluster_hostname }}",
 
@@ -18,16 +16,14 @@
     "keystorePassword":"{{ shib_jks_pass }}",
 
     "personObjectClassTypes":[
-        "inetOrgPerson",
+        "gluuCustomPerson",
         "gluuPerson",
-        "eduPerson",
-        "ox-{{ inum_org_fn }}"
+        "eduPerson"
     ],
     "personObjectClassDisplayNames":[
-        "inetOrgPerson",
+        "gluuCustomPerson",
         "gluuPerson",
-        "eduPerson",
-        "Custom"
+        "eduPerson"
     ],
 
     "svnConfigurationStoreRoot":"unused",
@@ -37,13 +33,9 @@
     "allowPersonModification":true,
     "updateApplianceStatus":true,
 
-    "schemaAddAttributeDefinition":"( %%s NAME '%%s' EQUALITY caseIgnoreMatch ORDERING caseIgnoreOrderingMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 USAGE userApplications X-SCHEMA-FILE '100-user.ldif' X-ORIGIN 'gluu' )",
-    "schemaAddObjectClassWithoutAttributeTypesDefinition":"( %%s NAME '%%s' SUP top STRUCTURAL MUST objectClass X-SCHEMA-FILE '100-user.ldif' X-ORIGIN 'gluu' )",
-    "schemaAddObjectClassWithAttributeTypesDefinition":"( %%s NAME '%%s' SUP top STRUCTURAL MUST objectClass MAY ( %%s ) X-SCHEMA-FILE '100-user.ldif' X-ORIGIN 'gluu' )",
-
     "clientAssociationAttribute":"inum",
 
-    "personCustomObjectClass":"ox-{{ inum_org_fn }}",
+    "personCustomObjectClass":"gluuCustomPerson",
 
     "contactObjectClassTypes":[
 
@@ -58,11 +50,9 @@
     "photoRepositoryCountLeveles":3,
     "photoRepositoryCountFoldersPerLevel":20,
 
-    "shibboleth2IdpRootDir":"/opt/idp",
-    "shibboleth2SpConfDir":"/opt/idp/sp",
-    "shibboleth2FederationRootDir":"/opt/shibboleth-federation",
+    "shibboleth3FederationRootDir":"/opt/shibboleth-federation",
 
-    "velocityLog":"/opt/tomcat/logs/velocity.log",
+    "velocityLog":"/opt/gluu/jetty/identity/logs/velocity.log",
 
     "spMetadataPath":"",
 
@@ -86,13 +76,9 @@
     "idpLdapServer":"{{ ldap_hosts }}",
     "idpUserFields":"",
 
-    "mysqlUrl":"",
-    "mysqlUser":"",
-    "mysqlPassword":"",
+    "ldifStore":"/var/ox/identity/removed",
 
-    "ldifStore":"/var/ox/oxtrust/removed",
-
-    "caCertsLocation":"{{ truststore_fn }}",
+    "caCertsLocation":"/usr/java/latest/jre/lib/security/cacerts",
     "caCertsPassphrase":"",
 
     "certDir":"/etc/certs/",
@@ -105,13 +91,6 @@
     "servicesRestartTrigger":"/opt/gluu/essential_files/trigger_restart_of_services_delete_me_to_do_so",
 
     "oxAuthIssuer":"https://{{ ox_cluster_hostname }}",
-    "oxAuthAuthorizeUrl":"https://{{ ox_cluster_hostname }}/oxauth/authorize",
-    "oxAuthRegisterUrl":"https://{{ ox_cluster_hostname }}/oxauth/seam/resource/restv1/oxauth/register",
-    "oxAuthTokenUrl":"https://{{ ox_cluster_hostname }}/oxauth/seam/resource/restv1/oxauth/token",
-    "oxAuthTokenValidationUrl":"https://{{ ox_cluster_hostname }}/oxauth/seam/resource/restv1/oxauth/validate",
-    "oxAuthEndSessionUrl":"https://{{ ox_cluster_hostname }}/oxauth/seam/resource/restv1/oxauth/end_session",
-    "oxAuthUserInfo":"https://{{ ox_cluster_hostname }}/oxauth/seam/resource/restv1/oxauth/userinfo",
-    "oxAuthLogoutUrl":"https://{{ ox_cluster_hostname }}/oxauth/logout",
     "oxAuthSectorIdentifierUrl":"https://{{ ox_cluster_hostname }}/oxauth/sectoridentifier",
 
     "oxAuthClientId":"{{ oxauth_client_id }}",
@@ -122,16 +101,40 @@
     "logoutRedirectUrl":"https://{{ ox_cluster_hostname }}/identity/authentication/finishlogout",
 
     "umaIssuer":"https://{{ ox_cluster_hostname }}",
-    "umaClientId":"{{ scim_rs_client_id }}",
-    "umaClientKeyId":"",
-    "umaResourceId":"1447184268430",
-    "umaScope":"https://{{ ox_cluster_hostname }}/oxauth/seam/resource/restv1/uma/scopes/scim_access",
-    "umaClientKeyStoreFile":"{{ scim_rs_client_jks_fn }}",
-    "umaClientKeyStorePassword":"{{ scim_rs_client_jks_pass_encoded }}",
+
+    "scimUmaClientId":"{{ scim_rs_client_id }}",
+    "scimUmaClientKeyId":"",
+    "scimUmaResourceId":"1447184268430",
+    "scimUmaScope":"https://{{ ox_cluster_hostname }}/oxauth/seam/resource/restv1/uma/scopes/scim_access",
+    "scimUmaClientKeyStoreFile":"{{ scim_rs_client_jks_fn }}",
+    "scimUmaClientKeyStorePassword":"{{ scim_rs_client_jks_pass_encoded }}",
+
+    "passportUmaClientId":"{{ passport_rs_client_id }}",
+    "passportUmaClientKeyId":"",
+    "passportUmaResourceId":"1447184268440",
+    "passportUmaScope":"https://{{ ox_cluster_hostname }}/oxauth/seam/resource/restv1/uma/scopes/passport_access",
+    "passportUmaClientKeyStoreFile":"{{ passport_rs_client_jks_fn }}",
+    "passportUmaClientKeyStorePassword":"{{ passport_rs_client_jks_pass_encoded }}",
 
     "cssLocation":"",
     "jsLocation":"",
 
+    "rptConnectionPoolUseConnectionPooling":false,
+    "rptConnectionPoolMaxTotal":200,
+    "rptConnectionPoolDefaultMaxPerRoute":20,
+    "rptConnectionPoolValidateAfterInactivity":10,
+    "rptConnectionPoolCustomKeepAliveTimeout":5,
+
     "scimTestMode":false,
-    "scimTestModeAccessToken":""
+    "scimTestModeAccessToken":"",
+
+    "shibbolethVersion":"{{ shibboleth_version }}",
+    "shibboleth3IdpRootDir":"{{ idp3_folder }}",
+    "shibboleth3SpConfDir":"{{ idp3_folder }}/sp",
+    "organizationName":"{{ org_name }}",
+    "idp3SigningCert":"/etc/certs/idp-signing.crt",
+    "idp3EncryptionCert":"/etc/certs/idp-encryption.crt",
+
+    "clientWhiteList": ["*"],
+    "clientBlackList": ["*.attacker.com/*"]
 }

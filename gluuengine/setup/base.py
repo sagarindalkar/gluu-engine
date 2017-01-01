@@ -321,7 +321,8 @@ class OxSetup(BaseSetup):
         with codecs.open(local_dest, "w", encoding="utf-8") as fp:
             fp.write("encodeSalt = {}".format(salt))
 
-        remote_dest = os.path.join(self.container.tomcat_conf_dir, "salt")
+        # remote_dest = os.path.join(self.container.tomcat_conf_dir, "salt")
+        remote_dest = os.path.join(self.container.container_attrs["conf_dir"], "salt")
         self.docker.copy_to_container(self.container.cid, local_dest, remote_dest)
 
     def gen_keystore(self, suffix, keystore_fn, keystore_pw, in_key,
@@ -380,7 +381,8 @@ class OxSetup(BaseSetup):
         """
 
         src = "_shared/ox-ldap.properties"
-        dest = os.path.join(self.container.tomcat_conf_dir, os.path.basename(src))
+        # dest = os.path.join(self.container.tomcat_conf_dir, os.path.basename(src))
+        dest = os.path.join(self.container.container_attrs["conf_dir"], os.path.basename(src))
 
         ctx = {
             "ldap_binddn": self.ldap_binddn,

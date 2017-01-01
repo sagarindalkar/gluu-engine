@@ -28,8 +28,10 @@ class OxasimbaSetup(OxSetup):  # pragma: no cover
         self.copy_props_template()
         self.render_config_template()
 
+        # self.gen_cert("asimba", self.cluster.decrypted_admin_pw,
+        #               "tomcat", "tomcat", hostname)
         self.gen_cert("asimba", self.cluster.decrypted_admin_pw,
-                      "tomcat", "tomcat", hostname)
+                      "jetty", "jetty", hostname)
         self.get_web_cert()
 
         # Asimba keystore
@@ -39,23 +41,28 @@ class OxasimbaSetup(OxSetup):  # pragma: no cover
             self.cluster.decrypted_admin_pw,
             "{}/asimba.key".format(self.container.cert_folder),
             "{}/asimba.crt".format(self.container.cert_folder),
-            "tomcat",
-            "tomcat",
+            # "tomcat",
+            # "tomcat",
+            "jetty",
+            "jetty",
             hostname,
         )
 
         # add auto startup entry
         self.add_auto_startup_entry()
-        self.change_cert_access("tomcat", "tomcat")
+        # self.change_cert_access("tomcat", "tomcat")
+        self.change_cert_access("jetty", "jetty")
         self.reconfigure_asimba()
         self.reload_supervisor()
         return True
 
     def add_auto_startup_entry(self):
-        self.logger.debug("adding tomcat config for supervisord")
-        src = "_shared/tomcat.conf"
-        dest = "/etc/supervisor/conf.d/tomcat.conf"
-        self.copy_rendered_jinja_template(src, dest)
+        # self.logger.debug("adding tomcat config for supervisord")
+        # src = "_shared/tomcat.conf"
+        # dest = "/etc/supervisor/conf.d/tomcat.conf"
+        # self.copy_rendered_jinja_template(src, dest)
+
+        # TODO: add jetty config
 
         self.logger.debug("adding httpd config for supervisord")
         src = "_shared/httpd.conf"
@@ -64,7 +71,8 @@ class OxasimbaSetup(OxSetup):  # pragma: no cover
 
     def render_server_xml_template(self):
         src = "oxasimba/server.xml"
-        dest = os.path.join(self.container.tomcat_conf_dir, os.path.basename(src))
+        # dest = os.path.join(self.container.tomcat_conf_dir, os.path.basename(src))
+        dest = os.path.join(self.container.container_attrs["conf_dir"], os.path.basename(src))
         ctx = {
             "asimba_jks_pass": self.cluster.decrypted_admin_pw,
             "asimba_jks_fn": self.cluster.asimba_jks_fn,
@@ -84,14 +92,17 @@ class OxasimbaSetup(OxSetup):  # pragma: no cover
         self.copy_rendered_jinja_template(src, dest, ctx)
 
     def unpack_jar(self):
-        unpack_cmd = "unzip -qq /opt/tomcat/webapps/oxasimba.war " \
+        # unpack_cmd = "unzip -qq /opt/tomcat/webapps/oxasimba.war " \
+        #              "-d /tmp/asimba"
+        unpack_cmd = "unzip -qq /opt/gluu/jetty/oxasimba/webapps/oxasimba.war " \
                      "-d /tmp/asimba"
         self.docker.exec_cmd(self.container.cid, unpack_cmd)
         time.sleep(5)
 
     def copy_selector_template(self):
         src = self.get_template_path("oxasimba/asimba-selector.xml")
-        dest = "{}/asimba-selector.xml".format(self.container.tomcat_conf_dir)
+        # dest = "{}/asimba-selector.xml".format(self.container.tomcat_conf_dir)
+        dest = "{}/asimba-selector.xml".format(self.container.container_attrs["conf_dir"])
         self.docker.copy_to_container(self.container.cid, src, dest)
 
     def copy_props_template(self):
@@ -119,11 +130,13 @@ class OxasimbaSetup(OxSetup):  # pragma: no cover
         self.docker.exec_cmd(self.container.cid, jar_cmd)
 
         # remove oxasimba.war
-        rm_cmd = "rm /opt/tomcat/webapps/oxasimba.war"
+        # rm_cmd = "rm /opt/tomcat/webapps/oxasimba.war"
+        rm_cmd = "rm /opt/gluu/jetty/oxasimba/webapps/oxasimba.war"
         self.docker.exec_cmd(self.container.cid, rm_cmd)
 
         # install reconfigured asimba.jar
-        mv_cmd = "mv /tmp/asimba.war /opt/tomcat/webapps/asimba.war"
+        # mv_cmd = "mv /tmp/asimba.war /opt/tomcat/webapps/asimba.war"
+        mv_cmd = "mv /tmp/asimba.war /opt/gluu/jetty/oxasimba/webapps/asimba.war"
         self.docker.exec_cmd(self.container.cid, mv_cmd)
 
         # remove temporary asimba

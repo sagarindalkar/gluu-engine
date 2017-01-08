@@ -62,7 +62,10 @@ class OxasimbaSetup(OxSetup):  # pragma: no cover
         # dest = "/etc/supervisor/conf.d/tomcat.conf"
         # self.copy_rendered_jinja_template(src, dest)
 
-        # TODO: add jetty config
+        self.logger.debug("adding jetty config for supervisord")
+        src = "oxasimba/jetty.conf"
+        dest = "/etc/supervisor/conf.d/jetty.conf"
+        self.copy_rendered_jinja_template(src, dest)
 
         self.logger.debug("adding httpd config for supervisord")
         src = "_shared/httpd.conf"

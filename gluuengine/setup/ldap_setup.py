@@ -25,15 +25,15 @@ class LdapSetup(BaseSetup):
         """List of initial ldif files.
         """
         templates = [
-            'opendj/ldif/base.ldif',
-            'opendj/ldif/appliance.ldif',
-            'opendj/ldif/attributes.ldif',
-            'opendj/ldif/scopes.ldif',
-            'opendj/ldif/clients.ldif',
-            'opendj/ldif/people.ldif',
-            'opendj/ldif/groups.ldif',
-            'opendj/ldif/scripts.ldif',
-            'opendj/ldif/asimba.ldif',
+            'ldap/ldif/base.ldif',
+            'ldap/ldif/appliance.ldif',
+            'ldap/ldif/attributes.ldif',
+            'ldap/ldif/scopes.ldif',
+            'ldap/ldif/clients.ldif',
+            'ldap/ldif/people.ldif',
+            'ldap/ldif/groups.ldif',
+            'ldap/ldif/scripts.ldif',
+            'ldap/ldif/asimba.ldif',
         ]
         return map(self.get_template_path, templates)
 
@@ -71,7 +71,7 @@ class LdapSetup(BaseSetup):
         ctx = {
             "inum_org_fn": self.cluster.inum_org_fn,
         }
-        src = self.get_template_path("opendj/schema/100-user.ldif")
+        src = self.get_template_path("ldap/schema/100-user.ldif")
         dest = os.path.join(self.container.schema_folder, "100-user.ldif")
         self.render_template(src, dest, ctx)
 
@@ -81,7 +81,7 @@ class LdapSetup(BaseSetup):
         """
         self.logger.info("running opendj setup")
 
-        src = self.get_template_path("opendj/opendj-setup.properties")
+        src = self.get_template_path("ldap/opendj-setup.properties")
         dest = os.path.join(self.container.ldap_base_folder, os.path.basename(src))
         ctx = {
             "ldap_hostname": self.ldap_failover_hostname(),
@@ -313,7 +313,7 @@ class LdapSetup(BaseSetup):
         """Adds supervisor program for auto-startup.
         """
         self.logger.debug("adding opendj config for supervisord")
-        src = "opendj/opendj.conf"
+        src = "ldap/opendj.conf"
         dest = "/etc/supervisor/conf.d/opendj.conf"
         self.copy_rendered_jinja_template(src, dest)
 
@@ -436,7 +436,7 @@ class LdapSetup(BaseSetup):
             "oxasimba_config_base64": generate_base64_contents(self.render_oxasimba_config(), 1),
         }
         self.copy_rendered_jinja_template(
-            "opendj/ldif/configuration.ldif",
+            "ldap/ldif/configuration.ldif",
             "/opt/opendj/ldif/configuration.ldif",
             ctx,
         )
@@ -601,7 +601,7 @@ class LdapSetup(BaseSetup):
             "scim_rp_client_base64_jwks": generate_base64_contents(scim_rp_client_jwks, 1),
         }
         self.copy_rendered_jinja_template(
-            "opendj/ldif/scim.ldif",
+            "ldap/ldif/scim.ldif",
             "/opt/opendj/ldif/scim.ldif",
             ctx,
         )

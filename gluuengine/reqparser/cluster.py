@@ -120,7 +120,7 @@ class ClusterReq(ExternalLDAPMixin, ma.Schema):
         scim_rp_quads = '{}.{}'.format(*[get_quad() for i in xrange(2)])
 
         # data["ldaps_port"] = "1636"
-        # data["ldap_binddn"] = "cn=directory manager"
+        # data["ldap_binddn"] = "cn=directory manager,o=gluu"
 
         data["passkey"] = generate_passkey()
         data["admin_pw"] = encrypt_text(plain_admin_pw, data["passkey"])

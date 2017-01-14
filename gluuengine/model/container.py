@@ -47,7 +47,7 @@ class Container(BaseModel):
 #         )
 #         cert_folder = StringType(default="/etc/certs")
 #         opendj_cert_fn = StringType(default='/etc/certs/opendj.crt')
-#         ldap_binddn = StringType(default='cn=directory manager')
+#         ldap_binddn = StringType(default='cn=directory manager,o=gluu')
 #         ldap_port = StringType(default='1389')
 #         ldaps_port = StringType(default='1636')
 #         ldap_jmx_port = StringType(default='1689')
@@ -156,7 +156,7 @@ class OxauthContainer(Container):
             default='/usr/lib/jvm/java-7-openjdk-amd64'
                     '/jre/lib/security/cacerts',
         )
-        ldap_binddn = StringType(default='cn=directory manager')
+        ldap_binddn = StringType(default='cn=directory manager,o=gluu')
         cert_folder = StringType(default="/etc/certs")
         # oxauth_lib = StringType(default="/opt/tomcat/webapps/oxauth/WEB-INF/lib")
         oxauth_lib = StringType(default="/opt/gluu/jetty/oxauth/webapps/oxauth/WEB-INF/lib")
@@ -201,7 +201,7 @@ class OxtrustContainer(Container):
             default='/usr/lib/jvm/java-7-openjdk-amd64'
                     '/jre/lib/security/cacerts',
         )
-        ldap_binddn = StringType(default='cn=directory manager')
+        ldap_binddn = StringType(default='cn=directory manager,o=gluu')
         cert_folder = StringType(default="/etc/certs")
         # tomcat_home = StringType(default="/opt/tomcat")
         # tomcat_conf_dir = StringType(default="/opt/tomcat/conf")
@@ -248,7 +248,7 @@ class OxidpContainer(Container):
             default='/usr/lib/jvm/java-7-openjdk-amd64'
                     '/jre/lib/security/cacerts',
         )
-        ldap_binddn = StringType(default='cn=directory manager')
+        ldap_binddn = StringType(default='cn=directory manager,o=gluu')
         cert_folder = StringType(default="/etc/certs")
         # tomcat_home = StringType(default="/opt/tomcat")
         # tomcat_conf_dir = StringType(default="/opt/tomcat/conf")
@@ -322,7 +322,7 @@ class OxasimbaContainer(Container):
             default='/usr/lib/jvm/java-7-openjdk-amd64'
                     '/jre/lib/security/cacerts',
         )
-        ldap_binddn = StringType(default='cn=directory manager')
+        ldap_binddn = StringType(default='cn=directory manager,o=gluu')
         cert_folder = StringType(default="/etc/certs")
         # tomcat_home = StringType(default="/opt/tomcat")
         # tomcat_conf_dir = StringType(default="/opt/tomcat/conf")

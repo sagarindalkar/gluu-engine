@@ -27,14 +27,11 @@ class OxtrustSetup(OxSetup):
         hostname = self.cluster.ox_cluster_hostname.split(":")[0]
 
         self.render_ldap_props_template()
-        # self.render_server_xml_template()
         self.write_salt_file()
         self.render_httpd_conf()
         self.configure_vhost()
         self.render_check_ssl_template()
 
-        # self.gen_cert("shibIDP", self.cluster.decrypted_admin_pw,
-        #               "tomcat", "tomcat", hostname)
         self.gen_cert("shibIDP", self.cluster.decrypted_admin_pw,
                       "jetty", "jetty", hostname)
         self.get_web_cert()
@@ -46,8 +43,6 @@ class OxtrustSetup(OxSetup):
             self.cluster.decrypted_admin_pw,
             "{}/shibIDP.key".format(self.container.cert_folder),
             "{}/shibIDP.crt".format(self.container.cert_folder),
-            # "tomcat",
-            # "tomcat",
             "jetty",
             "jetty",
             hostname,
@@ -55,7 +50,6 @@ class OxtrustSetup(OxSetup):
 
         self.pull_oxtrust_override()
         self.add_auto_startup_entry()
-        # self.change_cert_access("tomcat", "tomcat")
         self.change_cert_access("jetty", "jetty")
         self.reload_supervisor()
         return True
@@ -65,17 +59,6 @@ class OxtrustSetup(OxSetup):
         """
         complete_sgn = signal("ox_teardown_completed")
         complete_sgn.send(self)
-
-    # def render_server_xml_template(self):
-    #     """Copies rendered Tomcat's server.xml into the container.
-    #     """
-    #     src = "oxtrust/server.xml"
-    #     dest = os.path.join(self.container.tomcat_conf_dir, os.path.basename(src))
-    #     ctx = {
-    #         "shib_jks_pass": self.cluster.decrypted_admin_pw,
-    #         "shib_jks_fn": self.cluster.shib_jks_fn,
-    #     }
-    #     self.copy_rendered_jinja_template(src, dest, ctx)
 
     def discover_nginx(self):
         """Discovers nginx container.
@@ -95,11 +78,6 @@ class OxtrustSetup(OxSetup):
     def add_auto_startup_entry(self):
         """Adds supervisor program for auto-startup.
         """
-        # self.logger.debug("adding tomcat config for supervisord")
-        # src = "_shared/tomcat.conf"
-        # dest = "/etc/supervisor/conf.d/tomcat.conf"
-        # self.copy_rendered_jinja_template(src, dest)
-
         self.logger.debug("adding jetty config for supervisord")
         src = "oxtrust/jetty.conf"
         dest = "/etc/supervisor/conf.d/jetty.conf"
@@ -109,13 +87,6 @@ class OxtrustSetup(OxSetup):
         src = "_shared/httpd.conf"
         dest = "/etc/supervisor/conf.d/httpd.conf"
         self.copy_rendered_jinja_template(src, dest)
-
-    # def restart_tomcat(self):
-    #     """Restarts Tomcat via supervisorctl.
-    #     """
-    #     self.logger.debug("restarting tomcat")
-    #     restart_cmd = "supervisorctl restart tomcat"
-    #     self.docker.exec_cmd(self.container.cid, restart_cmd)
 
     def push_shib_certkey(self):
         _, crt = tempfile.mkstemp()

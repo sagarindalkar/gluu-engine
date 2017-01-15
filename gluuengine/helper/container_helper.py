@@ -331,16 +331,13 @@ class OxtrustContainerHelper(BaseContainerHelper):
                 "bind": "/opt/idp",
             },
             "/var/gluu/webapps/oxtrust/pages": {
-                'bind': '/var/gluu/webapps/oxtrust/pages',
+                "bind": "/opt/gluu/jetty/identity/custom/pages",
             },
-            "/var/gluu/webapps/oxtrust/resources": {
-                'bind': '/var/gluu/webapps/oxtrust/resources',
-            },
-            "/var/gluu/webapps/oxtrust/libs": {
-                'bind': '/var/gluu/webapps/oxtrust/libs',
+            "/var/gluu/webapps/oxtrust/static": {
+                "bind": "/opt/gluu/jetty/identity/custom/static",
             },
             log_volume: {
-                "bind": "/opt/tomcat/logs",
+                "bind": "/opt/gluu/jetty/identity/logs",
             },
         }
         super(OxtrustContainerHelper, self).__init__(container, app, logpath)

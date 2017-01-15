@@ -228,5 +228,7 @@
     "clientBlackList": ["*.attacker.com/*"],
     "legacyIdTokenClaims": true,
     "customHeadersWithAuthorizationResponse": true,
-    "frontChannelLogoutSessionSupported":true
+    "frontChannelLogoutSessionSupported":true,
+    "updateUserLastLogonTime": true,
+    "updateClientAccessTime":true
 }

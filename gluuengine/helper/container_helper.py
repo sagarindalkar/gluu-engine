@@ -307,16 +307,13 @@ class OxauthContainerHelper(BaseContainerHelper):
         )
         self.volumes = {
             "/var/gluu/webapps/oxauth/pages": {
-                'bind': '/var/gluu/webapps/oxauth/pages',
+                "bind": "/opt/gluu/jetty/oxauth/custom/pages",
             },
-            "/var/gluu/webapps/oxauth/resources": {
-                'bind': '/var/gluu/webapps/oxauth/resources',
-            },
-            "/var/gluu/webapps/oxauth/libs": {
-                'bind': '/var/gluu/webapps/oxauth/libs',
+            "/var/gluu/webapps/oxauth/static": {
+                "bind": "/opt/gluu/jetty/oxauth/custom/static",
             },
             log_volume: {
-                "bind": "/opt/tomcat/logs",
+                "bind": "/opt/gluu/jetty/oxauth/logs",
             },
         }
         super(OxauthContainerHelper, self).__init__(container, app, logpath)

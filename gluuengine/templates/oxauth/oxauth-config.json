@@ -9,7 +9,6 @@
     "clientInfoEndpoint":"https://{{ ox_cluster_hostname }}/oxauth/seam/resource/restv1/oxauth/clientinfo",
     "checkSessionIFrame":"https://{{ ox_cluster_hostname }}/oxauth/opiframe",
     "endSessionEndpoint":"https://{{ ox_cluster_hostname }}/oxauth/seam/resource/restv1/oxauth/end_session",
-    "endSessionPage":"https://{{ ox_cluster_hostname }}/oxauth/seam/resource/restv1/oxauth/end_session_page",
     "jwksUri":"https://{{ ox_cluster_hostname }}/oxauth/seam/resource/restv1/oxauth/jwks",
     "registrationEndpoint":"https://{{ ox_cluster_hostname }}/oxauth/seam/resource/restv1/oxauth/register",
     "validateTokenEndpoint":"https://{{ ox_cluster_hostname }}/oxauth/seam/resource/restv1/oxauth/validate",

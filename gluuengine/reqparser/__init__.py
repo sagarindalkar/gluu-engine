@@ -12,3 +12,4 @@ from .provider import AwsProviderReq  # noqa
 # from .provider import EditProviderReq  # noqa
 from .license import LicenseKeyReq  # noqa
 from .container import ContainerReq  # noqa
+from .setting import LdapSettingReq  # noqa

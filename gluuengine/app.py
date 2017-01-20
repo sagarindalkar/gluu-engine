@@ -32,6 +32,7 @@ from .resource import ContainerListResource
 from .resource import ContainerResource
 from .resource import NewContainerResource
 from .resource import ScaleContainerResource
+from .resource import LdapSettingResource
 from .database import db
 from .setup.signals import connect_setup_signals
 from .setup.signals import connect_teardown_signals
@@ -149,4 +150,9 @@ def register_resources():  # pragma: no cover
     restapi.add_resource(ScaleContainerResource,
                          "/scale-containers/<string:container_type>/<int:number>",
                          endpoint="scale_container",
+                         )
+
+    restapi.add_resource(LdapSettingResource,
+                         "/settings/ldap",
+                         endpoint="ldap_setting",
                          )

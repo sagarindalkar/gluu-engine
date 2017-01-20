@@ -25,4 +25,6 @@ from .container import ContainerLogListResource  # noqa
 from .container import ContainerListResource  # noqa
 from .container import ContainerResource  # noqa
 from .container import NewContainerResource  # noqa
-from .container import ScaleContainerResource # noqa
+from .container import ScaleContainerResource  # noqa
+
+from .setting import LdapSettingResource  # noqa

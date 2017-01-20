@@ -71,18 +71,18 @@ class ClusterListResource(Resource):
         if len(db.all("clusters")) >= 1:
             return {"status": 403, "message": "cannot add more cluster"}, 403
 
-        truthy = set(('t', 'T', 'true', 'True', 'TRUE', '1', 1, True))
-        falsy = set(('f', 'F', 'false', 'False', 'FALSE', '0', 0, 0.0, False))
-        external_ldap = request.form.get("external_ldap", False)
-        if external_ldap in falsy:
-            external_ldap = False
-        elif external_ldap in truthy:
-            external_ldap = True
-        else:
-            external_ldap = False
+        # truthy = set(('t', 'T', 'true', 'True', 'TRUE', '1', 1, True))
+        # falsy = set(('f', 'F', 'false', 'False', 'FALSE', '0', 0, 0.0, False))
+        # external_ldap = request.form.get("external_ldap", False)
+        # if external_ldap in falsy:
+        #     external_ldap = False
+        # elif external_ldap in truthy:
+        #     external_ldap = True
+        # else:
+        #     external_ldap = False
 
         data, errors = ClusterReq(
-            context={"external_ldap": external_ldap}
+            # context={"external_ldap": external_ldap}
         ).load(request.form)
 
         if errors:

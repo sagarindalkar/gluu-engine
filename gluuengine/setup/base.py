@@ -15,7 +15,7 @@ from jinja2 import PackageLoader
 
 from ..database import db
 from ..log import create_file_logger
-from ..errors import DockerExecError
+# from ..errors import DockerExecError
 from ..machine import Machine
 from ..dockerclient import Docker
 
@@ -385,15 +385,9 @@ class OxSetup(BaseSetup):
         self.docker.exec_cmd(self.container.cid, a2ensite_cmd)
 
     def import_nginx_cert(self):
-        """Imports SSL certificate from nginx container.
+        """Imports SSL certificate (.der format) into keystore.
         """
         self.logger.debug("importing nginx cert to {}".format(self.container.name))
-
-        # imports nginx cert into oxtrust cacerts to avoid
-        # "peer not authenticated" error
-        ssl_cert = os.path.join(self.app.config["SSL_CERT_DIR"], "nginx.crt")
-        self.docker.copy_to_container(self.container.cid, ssl_cert, "/etc/certs/nginx.crt")
-
         der_cmd = "openssl x509 -outform der -in /etc/certs/nginx.crt -out /etc/certs/nginx.der"
         self.docker.exec_cmd(self.container.cid, der_cmd)
 
@@ -405,9 +399,4 @@ class OxSetup(BaseSetup):
             "-storepass changeit -noprompt",
         ])
         import_cmd = '''sh -c "{}"'''.format(import_cmd)
-
-        try:
-            self.docker.exec_cmd(self.container.cid, import_cmd)
-        except DockerExecError as exc:  # pragma: no cover
-            if exc.exit_code == 1:
-                self.logger.warn("certificate already imported")
+        self.docker.exec_cmd(self.container.cid, import_cmd)

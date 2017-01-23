@@ -152,10 +152,6 @@ class Container(BaseModel):
 
 class OxauthContainer(Container):
     class ContainerAttrs(BaseModel):
-        truststore_fn = StringType(
-            default='/usr/lib/jvm/java-7-openjdk-amd64'
-                    '/jre/lib/security/cacerts',
-        )
         ldap_binddn = StringType(default='cn=directory manager,o=gluu')
         cert_folder = StringType(default="/etc/certs")
         oxauth_lib = StringType(default="/opt/gluu/jetty/oxauth/webapps/oxauth/WEB-INF/lib")
@@ -186,13 +182,13 @@ class OxauthContainer(Container):
     def image(self):
         return "gluuoxauth"
 
+    @property
+    def truststore_fn(self):
+        return "/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/security/cacerts"
+
 
 class OxtrustContainer(Container):
     class ContainerAttrs(BaseModel):
-        truststore_fn = StringType(
-            default='/usr/lib/jvm/java-7-openjdk-amd64'
-                    '/jre/lib/security/cacerts',
-        )
         ldap_binddn = StringType(default='cn=directory manager,o=gluu')
         cert_folder = StringType(default="/etc/certs")
         conf_dir = StringType(default="/etc/gluu/conf")
@@ -224,21 +220,14 @@ class OxtrustContainer(Container):
 
     @property
     def truststore_fn(self):
-        return self._resolve_container_attr("truststore_fn")
+        return "/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/security/cacerts"
 
 
 class OxidpContainer(Container):
     class ContainerAttrs(BaseModel):
-        truststore_fn = StringType(
-            default='/usr/lib/jvm/java-7-openjdk-amd64'
-                    '/jre/lib/security/cacerts',
-        )
         ldap_binddn = StringType(default='cn=directory manager,o=gluu')
         cert_folder = StringType(default="/etc/certs")
-        # tomcat_home = StringType(default="/opt/tomcat")
-        # tomcat_conf_dir = StringType(default="/opt/tomcat/conf")
         conf_dir = StringType(default="/etc/gluu/conf")
-        # tomcat_log_folder = StringType(default="/opt/tomcat/logs")
         saml_type = StringType(default="shibboleth")
 
     id = StringType(default=lambda: str(uuid.uuid4()))
@@ -268,7 +257,7 @@ class OxidpContainer(Container):
 
     @property
     def truststore_fn(self):
-        return self._resolve_container_attr("truststore_fn")
+        return "/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/security/cacerts"
 
 
 class NginxContainer(Container):
@@ -303,16 +292,9 @@ class NginxContainer(Container):
 
 class OxasimbaContainer(Container):
     class ContainerAttrs(BaseModel):
-        truststore_fn = StringType(
-            default='/usr/lib/jvm/java-7-openjdk-amd64'
-                    '/jre/lib/security/cacerts',
-        )
         ldap_binddn = StringType(default='cn=directory manager,o=gluu')
         cert_folder = StringType(default="/etc/certs")
-        # tomcat_home = StringType(default="/opt/tomcat")
-        # tomcat_conf_dir = StringType(default="/opt/tomcat/conf")
         conf_dir = StringType(default="/etc/gluu/conf")
-        # tomcat_log_folder = StringType(default="/opt/tomcat/logs")
 
     id = StringType(default=lambda: str(uuid.uuid4()))
     cluster_id = StringType()
@@ -337,6 +319,6 @@ class OxasimbaContainer(Container):
     def cert_folder(self):
         return self._resolve_container_attr("cert_folder")
 
-    # @property
-    # def tomcat_conf_dir(self):
-    #     return self._resolve_container_attr("tomcat_conf_dir")
+    @property
+    def truststore_fn(self):
+        return "/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/security/cacerts"

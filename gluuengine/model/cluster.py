@@ -126,3 +126,7 @@ class Cluster(BaseModel):
     @property
     def _schema(self):
         return CLUSTER_SCHEMA
+
+    @property
+    def shib_jks_fn(self):
+        return "/etc/certs/shibIDP.jks"

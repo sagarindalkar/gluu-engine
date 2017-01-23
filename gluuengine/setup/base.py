@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015 Gluu
+# Copyright (c) 2017 Gluu
 #
 # All rights reserved.
 
@@ -18,7 +18,6 @@ from ..log import create_file_logger
 from ..errors import DockerExecError
 from ..machine import Machine
 from ..dockerclient import Docker
-# from ..weave import Weave
 
 
 class BaseSetup(object):
@@ -48,6 +47,11 @@ class BaseSetup(object):
             self.machine.config(self.node.name),
             self.machine.swarm_config(master_node.name),
         )
+
+        try:
+            self.ldap_setting = db.all("ldap_settings")[0]
+        except IndexError:
+            self.ldap_setting = None
 
     def setup(self):  # pragma: no cover
         """Runs the actual setup. Must be overriden by subclass.
@@ -240,48 +244,29 @@ class BaseSetup(object):
         self.docker.exec_cmd(self.container.cid, "supervisorctl reload")
         time.sleep(self.supervisor_reload_delay)
 
-    def ldap_failover_hostname(self):
-        return self.ldap_host
-
     @property
     def ldap_binddn(self):
-        # if self.cluster.external_ldap:
-        return self.cluster.external_ldap_binddn
-        # return self.cluster.ldap_binddn
+        return getattr(self.ldap_setting, "bind_dn", "")
 
     @property
-    def encoded_ox_ldap_pw(self):
-        # if self.cluster.external_ldap:
-        return self.cluster.external_ldap_encoded_password
-        # return self.cluster.encoded_ox_ldap_pw
+    def encoded_bind_password(self):
+        return getattr(self.ldap_setting, "encoded_bind_password", "")
+
+    @property
+    def encoded_salt(self):
+        return getattr(self.ldap_setting, "encoded_salt", "")
 
     @property
     def inum_appliance(self):
-        # if self.cluster.external_ldap:
-        return self.cluster.external_ldap_inum_appliance
-        # return self.cluster.inum_appliance
-
-    @property
-    def ldap_host(self):
-        # get hostname for ldap failover
-        # if self.cluster.external_ldap:
-        hostname = self.cluster.external_ldap_host
-        # else:
-        #     weave = Weave(self.node, self.app)
-        #     _, dns_search = weave.dns_args()
-        #     hostname = "ldap.{}".format(dns_search.rstrip("."))
-        return hostname
+        return getattr(self.ldap_setting, "inum_appliance", "")
 
     @property
     def ldap_port(self):
-        # get hostname for ldap failover
-        # if self.cluster.external_ldap:
-        port = self.cluster.external_ldap_port
-        # else:
-        #     weave = Weave(self.node, self.app)
-        #     _, dns_search = weave.dns_args()
-        #     hostname = "ldap.{}".format(dns_search.rstrip("."))
-        return port
+        return getattr(self.ldap_setting, "port", 0)
+
+    @property
+    def ldap_host(self):
+        return getattr(self.ldap_setting, "host", "")
 
     def get_web_cert(self):
         hostname = self.cluster.ox_cluster_hostname.split(":")[0]
@@ -310,13 +295,9 @@ class OxSetup(BaseSetup):
     def write_salt_file(self):
         """Copies salt file.
         """
-        # if self.cluster.external_ldap:
-        salt = self.cluster.external_encoded_salt
-        # else:
-        #     salt = self.cluster.passkey
-
         self.logger.debug("writing salt file")
 
+        salt = self.encoded_salt
         local_dest = os.path.join(self.build_dir, "salt")
         with codecs.open(local_dest, "w", encoding="utf-8") as fp:
             fp.write("encodeSalt = {}".format(salt))
@@ -380,14 +361,12 @@ class OxSetup(BaseSetup):
         """
 
         src = "_shared/ox-ldap.properties"
-        # dest = os.path.join(self.container.tomcat_conf_dir, os.path.basename(src))
         dest = os.path.join(self.container.container_attrs["conf_dir"], os.path.basename(src))
 
         ctx = {
             "ldap_binddn": self.ldap_binddn,
-            "encoded_ox_ldap_pw": self.encoded_ox_ldap_pw,
-            # "ldap_hosts": "{}:{}".format(self.ldap_failover_hostname(), self.cluster.ldaps_port),
-            "ldap_hosts": "{}:{}".format(self.ldap_failover_hostname(), self.ldap_port),
+            "encoded_ox_ldap_pw": self.encoded_bind_password,
+            "ldap_hosts": "{}:{}".format(self.ldap_host, self.ldap_port),
             "inum_appliance": self.inum_appliance,
             "cert_folder": self.container.cert_folder,
         }

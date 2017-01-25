@@ -15,7 +15,6 @@ from jinja2 import PackageLoader
 
 from ..database import db
 from ..log import create_file_logger
-# from ..errors import DockerExecError
 from ..machine import Machine
 from ..dockerclient import Docker
 
@@ -371,18 +370,6 @@ class OxSetup(BaseSetup):
             "cert_folder": self.container.cert_folder,
         }
         self.copy_rendered_jinja_template(src, dest, ctx)
-
-    def configure_vhost(self):
-        """Configures Apache2 virtual host.
-        """
-        a2enmod_cmd = "a2enmod ssl headers proxy proxy_http proxy_ajp"
-        self.docker.exec_cmd(self.container.cid, a2enmod_cmd)
-
-        a2dissite_cmd = "a2dissite 000-default"
-        self.docker.exec_cmd(self.container.cid, a2dissite_cmd)
-
-        a2ensite_cmd = "a2ensite gluu_httpd"
-        self.docker.exec_cmd(self.container.cid, a2ensite_cmd)
 
     def import_nginx_cert(self):
         """Imports SSL certificate (.der format) into keystore.

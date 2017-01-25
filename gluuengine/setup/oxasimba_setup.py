@@ -20,16 +20,12 @@ class OxasimbaSetup(OxSetup):  # pragma: no cover
         self.copy_selector_template()
         self.render_ldap_props_template()
         self.render_server_xml_template()
-        self.render_httpd_conf()
-        self.configure_vhost()
 
         # customize asimba and rebuild
         self.unpack_jar()
         self.copy_props_template()
         self.render_config_template()
 
-        # self.gen_cert("asimba", self.cluster.decrypted_admin_pw,
-        #               "tomcat", "tomcat", hostname)
         self.gen_cert("asimba", self.cluster.decrypted_admin_pw,
                       "jetty", "jetty", hostname)
         self.get_web_cert()
@@ -41,8 +37,6 @@ class OxasimbaSetup(OxSetup):  # pragma: no cover
             self.cluster.decrypted_admin_pw,
             "{}/asimba.key".format(self.container.cert_folder),
             "{}/asimba.crt".format(self.container.cert_folder),
-            # "tomcat",
-            # "tomcat",
             "jetty",
             "jetty",
             hostname,
@@ -50,31 +44,19 @@ class OxasimbaSetup(OxSetup):  # pragma: no cover
 
         # add auto startup entry
         self.add_auto_startup_entry()
-        # self.change_cert_access("tomcat", "tomcat")
         self.change_cert_access("jetty", "jetty")
         self.reconfigure_asimba()
         self.reload_supervisor()
         return True
 
     def add_auto_startup_entry(self):
-        # self.logger.debug("adding tomcat config for supervisord")
-        # src = "_shared/tomcat.conf"
-        # dest = "/etc/supervisor/conf.d/tomcat.conf"
-        # self.copy_rendered_jinja_template(src, dest)
-
         self.logger.debug("adding jetty config for supervisord")
         src = "oxasimba/jetty.conf"
         dest = "/etc/supervisor/conf.d/jetty.conf"
         self.copy_rendered_jinja_template(src, dest)
 
-        self.logger.debug("adding httpd config for supervisord")
-        src = "_shared/httpd.conf"
-        dest = "/etc/supervisor/conf.d/httpd.conf"
-        self.copy_rendered_jinja_template(src, dest)
-
     def render_server_xml_template(self):
         src = "oxasimba/server.xml"
-        # dest = os.path.join(self.container.tomcat_conf_dir, os.path.basename(src))
         dest = os.path.join(self.container.container_attrs["conf_dir"], os.path.basename(src))
         ctx = {
             "asimba_jks_pass": self.cluster.decrypted_admin_pw,
@@ -82,21 +64,7 @@ class OxasimbaSetup(OxSetup):  # pragma: no cover
         }
         self.copy_rendered_jinja_template(src, dest, ctx)
 
-    def render_httpd_conf(self):
-        src = "oxasimba/gluu_httpd.conf"
-        file_basename = os.path.basename(src)
-        dest = os.path.join("/etc/apache2/sites-available", file_basename)
-
-        ctx = {
-            "hostname": self.container.hostname,
-            "httpd_cert_fn": "/etc/certs/nginx.crt",
-            "httpd_key_fn": "/etc/certs/nginx.key",
-        }
-        self.copy_rendered_jinja_template(src, dest, ctx)
-
     def unpack_jar(self):
-        # unpack_cmd = "unzip -qq /opt/tomcat/webapps/oxasimba.war " \
-        #              "-d /tmp/asimba"
         unpack_cmd = "unzip -qq /opt/gluu/jetty/oxasimba/webapps/oxasimba.war " \
                      "-d /tmp/asimba"
         self.docker.exec_cmd(self.container.cid, unpack_cmd)
@@ -104,7 +72,6 @@ class OxasimbaSetup(OxSetup):  # pragma: no cover
 
     def copy_selector_template(self):
         src = self.get_template_path("oxasimba/asimba-selector.xml")
-        # dest = "{}/asimba-selector.xml".format(self.container.tomcat_conf_dir)
         dest = "{}/asimba-selector.xml".format(self.container.container_attrs["conf_dir"])
         self.docker.copy_to_container(self.container.cid, src, dest)
 
@@ -133,12 +100,10 @@ class OxasimbaSetup(OxSetup):  # pragma: no cover
         self.docker.exec_cmd(self.container.cid, jar_cmd)
 
         # remove oxasimba.war
-        # rm_cmd = "rm /opt/tomcat/webapps/oxasimba.war"
         rm_cmd = "rm /opt/gluu/jetty/oxasimba/webapps/oxasimba.war"
         self.docker.exec_cmd(self.container.cid, rm_cmd)
 
         # install reconfigured asimba.jar
-        # mv_cmd = "mv /tmp/asimba.war /opt/tomcat/webapps/asimba.war"
         mv_cmd = "mv /tmp/asimba.war /opt/gluu/jetty/oxasimba/webapps/asimba.war"
         self.docker.exec_cmd(self.container.cid, mv_cmd)
 

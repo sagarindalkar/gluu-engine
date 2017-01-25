@@ -28,8 +28,6 @@ class OxtrustSetup(OxSetup):
 
         self.render_ldap_props_template()
         self.write_salt_file()
-        self.render_httpd_conf()
-        self.configure_vhost()
         self.render_check_ssl_template()
 
         self.gen_cert("shibIDP", self.cluster.decrypted_admin_pw,
@@ -83,11 +81,6 @@ class OxtrustSetup(OxSetup):
         dest = "/etc/supervisor/conf.d/jetty.conf"
         self.copy_rendered_jinja_template(src, dest)
 
-        self.logger.debug("adding httpd config for supervisord")
-        src = "_shared/httpd.conf"
-        dest = "/etc/supervisor/conf.d/httpd.conf"
-        self.copy_rendered_jinja_template(src, dest)
-
     def push_shib_certkey(self):
         _, crt = tempfile.mkstemp()
         self.docker.copy_from_container(
@@ -119,17 +112,3 @@ class OxtrustSetup(OxSetup):
             dest = "{}:/var/gluu/webapps/oxtrust".format(self.node.name)
             self.logger.info("copying {} to {} recursively".format(src, dest))
             self.machine.scp(src, dest, recursive=True)
-
-    def render_httpd_conf(self):
-        """Copies rendered Apache2's virtual host into the container.
-        """
-        src = "oxtrust/gluu_httpd.conf"
-        file_basename = os.path.basename(src)
-        dest = os.path.join("/etc/apache2/sites-available", file_basename)
-
-        ctx = {
-            "hostname": self.container.hostname,
-            "httpd_cert_fn": "/etc/certs/nginx.crt",
-            "httpd_key_fn": "/etc/certs/nginx.key",
-        }
-        self.copy_rendered_jinja_template(src, dest, ctx)

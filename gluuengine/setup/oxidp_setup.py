@@ -23,8 +23,6 @@ class OxidpSetup(OxSetup):
         self.render_server_xml_template()
         self.render_ldap_props_template()
         self.write_salt_file()
-        self.render_httpd_conf()
-        self.configure_vhost()
 
         self.gen_cert("shibIDP", self.cluster.decrypted_admin_pw,
                       "tomcat", "tomcat", hostname)
@@ -169,30 +167,10 @@ class OxidpSetup(OxSetup):
     def add_auto_startup_entry(self):
         """Adds supervisor program for auto-startup.
         """
-        # self.logger.debug("adding tomcat config for supervisord")
-        # src = "_shared/tomcat.conf"
-        # dest = "/etc/supervisor/conf.d/tomcat.conf"
-        # self.copy_rendered_jinja_template(src, dest)
-
         self.logger.debug("adding jetty config for supervisord")
         src = "oxidp/jetty.conf"
         dest = "/etc/supervisor/conf.d/jetty.conf"
         self.copy_rendered_jinja_template(src, dest)
-
-        self.logger.debug("adding httpd config for supervisord")
-        src = "_shared/httpd.conf"
-        dest = "/etc/supervisor/conf.d/httpd.conf"
-        self.copy_rendered_jinja_template(src, dest)
-
-        # self.logger.debug("adding memcached config for supervisord")
-        # src = "oxidp/memcached.conf"
-        # dest = "/etc/supervisor/conf.d/memcached.conf"
-        # self.copy_rendered_jinja_template(src, dest)
-
-        # self.logger.debug("adding nutcracker config for supervisord")
-        # src = "oxidp/nutcracker.conf"
-        # dest = "/etc/supervisor/conf.d/nutcracker.conf"
-        # self.copy_rendered_jinja_template(src, dest)
 
     def render_server_xml_template(self):
         """Copies rendered Tomcat's server.xml into the container.
@@ -202,20 +180,6 @@ class OxidpSetup(OxSetup):
         ctx = {
             "shib_jks_pass": self.cluster.decrypted_admin_pw,
             "shib_jks_fn": self.cluster.shib_jks_fn,
-        }
-        self.copy_rendered_jinja_template(src, dest, ctx)
-
-    def render_httpd_conf(self):
-        """Copies rendered Apache2's virtual host into the container.
-        """
-        src = "oxidp/gluu_httpd.conf"
-        file_basename = os.path.basename(src)
-        dest = os.path.join("/etc/apache2/sites-available", file_basename)
-
-        ctx = {
-            "hostname": self.container.hostname,
-            "httpd_cert_fn": "/etc/certs/nginx.crt",
-            "httpd_key_fn": "/etc/certs/nginx.key",
         }
         self.copy_rendered_jinja_template(src, dest, ctx)
 

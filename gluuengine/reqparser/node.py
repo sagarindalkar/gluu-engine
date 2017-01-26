@@ -59,7 +59,6 @@ class NodeReq(ma.Schema):
                 "state_complete",
                 "state_rng_tools",
                 "state_pull_images",
-                "state_registry_cert",
             ], False)
         elif self.context["type"] == "worker":
             data["state_attrs"] = dict.fromkeys([
@@ -71,6 +70,5 @@ class NodeReq(ma.Schema):
                 "state_complete",
                 "state_rng_tools",
                 "state_pull_images",
-                "state_registry_cert",
             ], False)
         return data

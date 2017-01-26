@@ -10,7 +10,6 @@ import os
 from docker.tls import TLSConfig
 
 from ..utils import po_run
-from ..registry import REGISTRY_BASE_URL
 
 LS_FIELDS = ["Name", "Active", "ActiveHost", "ActiveSwarm", "DriverName",
              "State", "URL", "Swarm", "Error", "DockerVersion", "ResponseTime"]
@@ -129,11 +128,7 @@ class Machine(object):
             cmd.append(self._dicovery(discovery))
             cmd.append('--engine-label=org.gluu.node-type={}'.format(node.type))
 
-        if node.type in ("master", "worker",):
-            cmd.append("--engine-insecure-registry=https://{}".format(REGISTRY_BASE_URL))
-
         cmd.append(node.name)
-
         cmd = " ".join(cmd)
         self._run(cmd)
         return True

@@ -107,7 +107,6 @@ class MasterNode(Node):
         state_complete = BooleanType(default=False)
         state_rng_tools = BooleanType(default=False)
         state_pull_images = BooleanType(default=False)
-        state_registry_cert = BooleanType(default=False)
 
     id = StringType(default=lambda: str(uuid.uuid4()))
     name = StringType()
@@ -133,7 +132,6 @@ class MasterNode(Node):
             "state_complete": self.state_complete,
             "state_rng_tools": self.state_rng_tools,
             "state_pull_images": self.state_pull_images,
-            # "state_registry_cert": self.state_registry_cert,
         }
 
     @property
@@ -176,10 +174,6 @@ class MasterNode(Node):
     def state_pull_images(self):
         return self._resolve_state_attr("state_pull_images")
 
-    @property
-    def state_registry_cert(self):
-        return self._resolve_state_attr("state_registry_cert")
-
 
 class WorkerNode(Node):
     class StateAttrs(BaseModel):
@@ -191,7 +185,6 @@ class WorkerNode(Node):
         state_complete = BooleanType(default=False)
         state_rng_tools = BooleanType(default=False)
         state_pull_images = BooleanType(default=False)
-        state_registry_cert = BooleanType(default=False)
 
     id = StringType(default=lambda: str(uuid.uuid4()))
     name = StringType()
@@ -215,7 +208,6 @@ class WorkerNode(Node):
             "state_complete": self.state_complete,
             "state_rng_tools": self.state_rng_tools,
             "state_pull_images": self.state_pull_images,
-            # "state_registry_cert": self.state_registry_cert,
         }
 
     @property
@@ -249,7 +241,3 @@ class WorkerNode(Node):
     @property
     def state_pull_images(self):
         return self._resolve_state_attr("state_pull_images")
-
-    @property
-    def state_registry_cert(self):
-        return self._resolve_state_attr("state_registry_cert")

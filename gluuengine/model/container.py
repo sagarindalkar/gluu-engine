@@ -332,7 +332,7 @@ class OxelevenContainer(Container):
     cluster_id = StringType()
     node_id = StringType()
     name = StringType()
-    type = StringType(default="Oxeleven")
+    type = StringType(default="oxeleven")
     state = StringType()
     hostname = StringType()
     cid = StringType()

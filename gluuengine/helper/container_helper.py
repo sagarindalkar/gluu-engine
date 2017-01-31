@@ -107,8 +107,8 @@ class BaseContainerHelper(object):
                 dns=[bridge_ip],
                 dns_search=[dns_search],
                 ulimits=self.ulimits,
-                command = ['oxeleven', self.cluster.decrypted_admin_pw] if self.container.type == 'oxeleven' else [],
                 # hostname=self.container.hostname,
+                command=['oxeleven', self.cluster.decrypted_admin_pw] if self.container.type == 'oxeleven' else [],
             )
 
             # container is not running

@@ -10,6 +10,7 @@ from blinker import signal
 from .oxtrust_setup import OxtrustSetup
 from .oxidp_setup import OxidpSetup
 from .nginx_setup import NginxSetup
+from .oxeleven_setup import OxelevenSetup
 
 
 def notify_oxtrust(ngx):

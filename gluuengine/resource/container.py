@@ -45,6 +45,7 @@ CONTAINER_CHOICES = (
     # "oxidp",  # disabled for now
     "nginx",
     # "oxasimba",  # disabled for now
+    "oxeleven",
 )
 
 
@@ -203,6 +204,7 @@ class NewContainerResource(Resource):
         # "oxidp": OxidpContainerHelper,  # disabled for now
         "nginx": NginxContainerHelper,
         # "oxasimba": OxasimbaContainerHelper,
+        "oxeleven": OxelevenContainerHelper,
     }
 
     container_classes = {
@@ -212,6 +214,7 @@ class NewContainerResource(Resource):
         # "oxidp": OxidpContainer,  # disabled for now
         "nginx": NginxContainer,
         # "oxasimba": OxasimbaContainer,
+        "oxeleven": OxelevenContainer,
     }
 
     def post(self, container_type):
@@ -263,20 +266,20 @@ class NewContainerResource(Resource):
                 "message": "access denied due to discovery node being unreachable",
             }, 403
 
-        # only allow 1 oxtrust per cluster
-        if container_type == "oxtrust" and cluster.count_containers(type_="oxtrust"):
+        trust_or_oxeleven = (container_type in ('oxtrust','oxeleven'))
+
+        # only allow one oxtrust and one oxeleven per cluster
+        if trust_or_oxeleven and cluster.count_containers(type_=container_type):
             return {
                 "status": 403,
-                "message": "cannot deploy additional oxtrust container "
-                           "to cluster",
+                "message": "cannot deploy additional {} container to cluster".format(container_type),
             }, 403
 
-        # only allow oxtrust in master node
-        if container_type == "oxtrust" and node.type != "master":
+        # oxtrust and oxeleven only deploy in master node
+        if trust_or_oxeleven and node.type != "master":
             return {
                 "status": 403,
-                "message": "cannot deploy oxtrust container "
-                           "to non-master node",
+                "message": "cannot deploy {} container to non-master node".format(container_type),
             }, 403
 
         # only allow 1 nginx per node

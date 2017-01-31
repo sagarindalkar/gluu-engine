@@ -322,3 +322,27 @@ class OxasimbaContainer(Container):
     @property
     def truststore_fn(self):
         return "/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/security/cacerts"
+
+
+class OxelevenContainer(Container):
+    class ContainerAttrs(BaseModel):
+        pass
+
+    id = StringType(default=lambda: str(uuid.uuid4()))
+    cluster_id = StringType()
+    node_id = StringType()
+    name = StringType()
+    type = StringType(default="Oxeleven")
+    state = StringType()
+    hostname = StringType()
+    cid = StringType()
+    container_attrs = PolyModelType(ContainerAttrs, strict=False)
+    _pyobject = StringType()
+
+    @property
+    def recovery_priority(self):
+        return 0
+
+    @property
+    def image(self):
+        return "Oxeleven"

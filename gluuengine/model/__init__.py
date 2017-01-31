@@ -20,6 +20,8 @@ from .container import OxtrustContainer  # noqa
 from .container import OxidpContainer  # noqa
 from .container import NginxContainer  # noqa
 from .container import OxasimbaContainer  # noqa
+from .container import OxelevenContainer  # noqa
+
 
 from .base import STATE_IN_PROGRESS  # noqa
 from .base import STATE_FAILED  # noqa

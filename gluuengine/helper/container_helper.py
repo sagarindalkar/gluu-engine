@@ -40,8 +40,6 @@ class BaseContainerHelper(object):
 
     port_bindings = {}
 
-    volumes = {}
-
     ulimits = []
 
     @abc.abstractproperty
@@ -80,6 +78,8 @@ class BaseContainerHelper(object):
         )
 
         self.weave = Weave(self.node, self.app)
+        self._bridge_ip = ""
+        self._dns_search = ""
         # self.prometheus = PrometheusHelper(self.app, logger=self.logger)
 
     @run_in_reactor
@@ -93,22 +93,20 @@ class BaseContainerHelper(object):
             self.logger.info("{} setup is started".format(self.container.name))
             start = time.time()
 
-            # get docker bridge IP as it's where weavedns runs
-            bridge_ip, dns_search = self.weave.dns_args()
-
             cid = self.docker.setup_container(
                 name=self.container.name,
-                image="{}:{}".format(self.container.image.replace("gluu", ""), self.app.config["GLUU_IMAGE_TAG"]),
+                image="{}:{}".format(self.container.image.replace("gluu", ""),
+                                     self.app.config["GLUU_IMAGE_TAG"]),
                 env=[
                     "constraint:node=={}".format(self.node.name),
                 ],
                 port_bindings=self.port_bindings,
                 volumes=self.volumes,
-                dns=[bridge_ip],
-                dns_search=[dns_search],
+                dns=[self.bridge_ip],
+                dns_search=[self.dns_search],
                 ulimits=self.ulimits,
                 # hostname=self.container.hostname,
-                command=['oxeleven', self.cluster.decrypted_admin_pw] if self.container.type == 'oxeleven' else [],
+                command=self.command,
             )
 
             # container is not running
@@ -121,7 +119,7 @@ class BaseContainerHelper(object):
             # container.cid in short format
             self.container.cid = cid[:12]
             self.container.hostname = "{}.{}.{}".format(
-                self.container.cid, self.container.type, dns_search.rstrip("."),
+                self.container.cid, self.container.type, self.dns_search.rstrip("."),
             )
 
             db.update_to_table(
@@ -130,19 +128,9 @@ class BaseContainerHelper(object):
                 self.container,
             )
 
-            # add DNS record
+            # add DNS records
             self.weave.dns_add(self.container.cid, self.container.hostname)
-
-            # if self.container.type in ("ldap", "oxauth", "oxtrust",):
-            if self.container.type in ("oxauth", "oxtrust",):
-                # useful for failover in ox apps
-                self.weave.dns_add(
-                    self.container.cid,
-                    "{}.{}".format(self.container.type, dns_search.rstrip(".")),
-                )
-
-            if self.container.type == "nginx":
-                self.weave.dns_add(self.container.cid, self.cluster.ox_cluster_hostname)
+            self.weave.dns_add(self.container.cid, self.extra_dns)
 
             setup_obj = self.setup_class(self.container, self.cluster,
                                          self.app, logger=self.logger)
@@ -283,6 +271,32 @@ class BaseContainerHelper(object):
             handler.close()
             self.logger.removeHandler(handler)
 
+    @property
+    def extra_dns(self):
+        """Extra DNS record.
+        """
+        return "{}.{}".format(self.container.type, self.dns_search.rstrip("."))
+
+    @property
+    def command(self):
+        return []
+
+    @property
+    def volumes(self):
+        return {}
+
+    @property
+    def bridge_ip(self):
+        if not self._bridge_ip:
+            self._bridge_ip, _ = self.weave.dns_args()
+        return self._bridge_ip
+
+    @property
+    def dns_search(self):
+        if not self._dns_search:
+            _, self._dns_search = self.weave.dns_args()
+        return self._dns_search
+
 
 # class LdapContainerHelper(BaseContainerHelper):
 #     setup_class = LdapSetup
@@ -290,24 +304,27 @@ class BaseContainerHelper(object):
 #         {"name": "nofile", "soft": 65536, "hard": 131072},
 #     ]
 
-#     def __init__(self, container, app, logpath=None):
-#         db_volume = os.path.join(app.config["OPENDJ_VOLUME_DIR"], container.name, "db")
-#         self.volumes = {
+#     @property
+#     def volumes(self):
+#         db_volume = os.path.join(self.app.config["OPENDJ_VOLUME_DIR"],
+#                                  self.container.name,
+#                                  "db")
+#         return {
 #             db_volume: {
 #                 "bind": "/opt/opendj/db",
 #             },
 #         }
-#         super(LdapContainerHelper, self).__init__(container, app, logpath)
 
 
 class OxauthContainerHelper(BaseContainerHelper):
     setup_class = OxauthSetup
 
-    def __init__(self, container, app, logpath=None):
-        log_volume = os.path.join(
-            app.config["OXAUTH_LOGS_VOLUME_DIR"], container.name, "logs",
-        )
-        self.volumes = {
+    @property
+    def volumes(self):
+        log_volume = os.path.join(self.app.config["OXAUTH_LOGS_VOLUME_DIR"],
+                                  self.container.name,
+                                  "logs")
+        return {
             "/var/gluu/webapps/oxauth/pages": {
                 "bind": "/opt/gluu/jetty/oxauth/custom/pages",
             },
@@ -318,17 +335,17 @@ class OxauthContainerHelper(BaseContainerHelper):
                 "bind": "/opt/gluu/jetty/oxauth/logs",
             },
         }
-        super(OxauthContainerHelper, self).__init__(container, app, logpath)
 
 
 class OxtrustContainerHelper(BaseContainerHelper):
     setup_class = OxtrustSetup
 
-    def __init__(self, container, app, logpath=None):
-        log_volume = os.path.join(
-            app.config["OXTRUST_LOGS_VOLUME_DIR"], container.name, "logs",
-        )
-        self.volumes = {
+    @property
+    def volumes(self):
+        log_volume = os.path.join(self.app.config["OXTRUST_LOGS_VOLUME_DIR"],
+                                  self.container.name,
+                                  "logs")
+        return {
             "/opt/idp": {
                 "bind": "/opt/idp",
             },
@@ -342,27 +359,30 @@ class OxtrustContainerHelper(BaseContainerHelper):
                 "bind": "/opt/gluu/jetty/identity/logs",
             },
         }
-        super(OxtrustContainerHelper, self).__init__(container, app, logpath)
 
 
 class OxidpContainerHelper(BaseContainerHelper):
     setup_class = OxidpSetup
 
-    def __init__(self, container, app, logpath=None):
-        log_volume = os.path.join(
-            app.config["OXIDP_LOGS_VOLUME_DIR"], container.name, "logs",
-        )
-        self.volumes = {
+    @property
+    def volumes(self):
+        log_volume = os.path.join(self.app.config["OXIDP_LOGS_VOLUME_DIR"],
+                                  self.container.name,
+                                  "logs")
+        return {
             log_volume: {
                 "bind": "/opt/idp/logs",
             },
         }
-        super(OxidpContainerHelper, self).__init__(container, app, logpath)
 
 
 class NginxContainerHelper(BaseContainerHelper):
     setup_class = NginxSetup
     port_bindings = {80: ("0.0.0.0", 80,), 443: ("0.0.0.0", 443,)}
+
+    @property
+    def extra_dns(self):
+        return self.cluster.ox_cluster_hostname
 
 
 class OxasimbaContainerHelper(BaseContainerHelper):
@@ -370,3 +390,7 @@ class OxasimbaContainerHelper(BaseContainerHelper):
 
 class OxelevenContainerHelper(BaseContainerHelper):
     setup_class = OxelevenSetup
+
+    @property
+    def command(self):
+        return ['oxeleven', self.cluster.decrypted_admin_pw]

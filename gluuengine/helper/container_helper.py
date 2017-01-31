@@ -27,6 +27,7 @@ from ..setup import OxtrustSetup
 from ..setup import OxidpSetup
 from ..setup import NginxSetup
 from ..setup import OxasimbaSetup
+from ..setup import OxelevenSetup
 from ..log import create_file_logger
 from ..utils import exc_traceback
 from ..machine import Machine

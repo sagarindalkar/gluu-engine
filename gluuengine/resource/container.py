@@ -26,6 +26,7 @@ from ..helper import OxtrustContainerHelper
 # from ..helper import OxidpContainerHelper
 from ..helper import NginxContainerHelper
 # from ..helper import OxasimbaContainerHelper
+from ..helper import OxelevenContainerHelper
 # from ..model import LdapContainer
 from ..model import OxauthContainer
 from ..model import OxtrustContainer
@@ -33,6 +34,7 @@ from ..model import OxtrustContainer
 from ..model import NginxContainer
 # from ..model import OxasimbaContainer
 from ..model import ContainerLog
+from ..model import OxelevenContainer
 from ..machine import Machine
 from ..utils import as_boolean
 

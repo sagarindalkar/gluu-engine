@@ -147,7 +147,7 @@ class Container(BaseModel):
 #     @property
 #     def image(self):
 #         # currently only supports opendj
-#         return "gluuopendj"
+#         return "opendj"
 
 
 class OxauthContainer(Container):
@@ -180,7 +180,7 @@ class OxauthContainer(Container):
 
     @property
     def image(self):
-        return "gluuoxauth"
+        return "oxauth"
 
     @property
     def truststore_fn(self):
@@ -216,7 +216,7 @@ class OxtrustContainer(Container):
 
     @property
     def image(self):
-        return "gluuoxtrust"
+        return "oxtrust"
 
     @property
     def truststore_fn(self):
@@ -249,7 +249,7 @@ class OxidpContainer(Container):
 
     @property
     def image(self):
-        return "gluuoxidp"
+        return "oxidp"
 
     @property
     def cert_folder(self):
@@ -283,7 +283,7 @@ class NginxContainer(Container):
 
     @property
     def image(self):
-        return "gluunginx"
+        return "nginx"
 
     @property
     def cert_folder(self):
@@ -313,7 +313,7 @@ class OxasimbaContainer(Container):
 
     @property
     def image(self):
-        return "gluuoxasimba"
+        return "oxasimba"
 
     @property
     def cert_folder(self):
@@ -345,4 +345,4 @@ class OxelevenContainer(Container):
 
     @property
     def image(self):
-        return "Oxeleven"
+        return "oxeleven"

@@ -95,7 +95,7 @@ class BaseContainerHelper(object):
 
             cid = self.docker.setup_container(
                 name=self.container.name,
-                image="{}:{}".format(self.container.image.replace("gluu", ""),
+                image="{}:{}".format(self.container.image,
                                      self.app.config["GLUU_IMAGE_TAG"]),
                 env=[
                     "constraint:node=={}".format(self.node.name),

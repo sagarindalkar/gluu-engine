@@ -73,14 +73,6 @@ class OxtrustSetup(OxSetup):
         complete_sgn = signal("ox_setup_completed")
         complete_sgn.send(self)
 
-    def add_auto_startup_entry(self):
-        """Adds supervisor program for auto-startup.
-        """
-        self.logger.debug("adding jetty config for supervisord")
-        src = "oxtrust/jetty.conf"
-        dest = "/etc/supervisor/conf.d/jetty.conf"
-        self.copy_rendered_jinja_template(src, dest)
-
     def push_shib_certkey(self):
         _, crt = tempfile.mkstemp()
         self.docker.copy_from_container(

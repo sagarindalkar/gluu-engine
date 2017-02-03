@@ -289,6 +289,10 @@ class BaseSetup(object):
             self.docker.copy_from_container(self.container.cid, "/etc/certs/nginx.crt", ssl_cert)
             self.docker.copy_from_container(self.container.cid, "/etc/certs/nginx.key", ssl_key)
 
+    def add_auto_startup_entry(self):
+        """Adds supervisor program for auto-startup.
+        """
+
 
 class OxSetup(BaseSetup):
     def write_salt_file(self):

@@ -47,14 +47,6 @@ class NginxSetup(BaseSetup):
                       "/etc/nginx/sites-enabled/gluu_https.conf"
         self.docker.exec_cmd(self.container.cid, symlink_cmd)
 
-    def add_auto_startup_entry(self):
-        """Adds supervisor program for auto-startup.
-        """
-        self.logger.debug("adding nginx config for supervisord")
-        src = "nginx/nginx.conf"
-        dest = "/etc/supervisor/conf.d/nginx.conf"
-        self.copy_rendered_jinja_template(src, dest)
-
     def restart_nginx(self):
         """Restarts nginx via supervisorctl.
         """

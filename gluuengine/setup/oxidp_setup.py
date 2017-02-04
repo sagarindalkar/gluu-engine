@@ -164,14 +164,6 @@ class OxidpSetup(OxSetup):
         except OSError:
             pass
 
-    def add_auto_startup_entry(self):
-        """Adds supervisor program for auto-startup.
-        """
-        self.logger.debug("adding jetty config for supervisord")
-        src = "oxidp/jetty.conf"
-        dest = "/etc/supervisor/conf.d/jetty.conf"
-        self.copy_rendered_jinja_template(src, dest)
-
     def render_server_xml_template(self):
         """Copies rendered Tomcat's server.xml into the container.
         """

@@ -49,12 +49,6 @@ class OxasimbaSetup(OxSetup):  # pragma: no cover
         self.reload_supervisor()
         return True
 
-    def add_auto_startup_entry(self):
-        self.logger.debug("adding jetty config for supervisord")
-        src = "oxasimba/jetty.conf"
-        dest = "/etc/supervisor/conf.d/jetty.conf"
-        self.copy_rendered_jinja_template(src, dest)
-
     def render_server_xml_template(self):
         src = "oxasimba/server.xml"
         dest = os.path.join(self.container.container_attrs["conf_dir"], os.path.basename(src))

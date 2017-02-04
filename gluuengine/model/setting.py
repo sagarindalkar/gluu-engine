@@ -32,3 +32,19 @@ class LdapSetting(BaseModel):
             "inum_appliance": self.inum_appliance,
             # "inum_org": self.inum_org,
         }
+
+    @property
+    def inum_org_fn(self):
+        return (
+            self.inum_org.replace('@', '')
+                         .replace('!', '')
+                         .replace('.', '')
+        )
+
+    @property
+    def inum_appliance_fn(self):
+        return (
+            self.inum_appliance.replace('@', '')
+                               .replace('!', '')
+                               .replace('.', '')
+        )

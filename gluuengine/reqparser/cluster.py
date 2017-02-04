@@ -24,52 +24,6 @@ from ..utils import encrypt_text
 CLUSTER_NAME_RE = re.compile(r"^[a-zA-Z0-9]+[a-zA-Z0-9-_\.]+[a-zA-Z0-9]$")
 
 
-# class ExternalLDAPMixin(object):
-#     external_ldap = ma.Bool(missing=False)
-#     external_ldap_host = ma.Str(missing="")
-#     external_ldap_port = ma.Int(missing=0)
-#     external_ldap_binddn = ma.Str(missing="")
-#     external_ldap_encoded_password = ma.Str(missing="")
-#     external_encoded_salt = ma.Str(missing="")
-#     external_ldap_inum_appliance = ma.Str(missing="")
-
-#     @validates("external_ldap_host")
-#     def validate_external_ldap_host(self, value):
-#         if self.context.get("external_ldap") and not value:
-#             raise ValidationError("Field is required when "
-#                                   "external_ldap is enabled")
-
-#     @validates("external_ldap_port")
-#     def validate_external_ldap_port(self, value):
-#         if self.context.get("external_ldap") and not value:
-#             raise ValidationError("Field is required when "
-#                                   "external_ldap is enabled")
-
-#     @validates("external_ldap_binddn")
-#     def validate_external_ldap_binddn(self, value):
-#         if self.context.get("external_ldap") and not value:
-#             raise ValidationError("Field is required when "
-#                                   "external_ldap is enabled")
-
-#     @validates("external_ldap_inum_appliance")
-#     def validate_external_ldap_inum_appliance(self, value):
-#         if self.context.get("external_ldap") and not value:
-#             raise ValidationError("Field is required when "
-#                                   "external_ldap is enabled")
-
-#     @validates("external_ldap_encoded_password")
-#     def validate_external_ldap_encoded_password(self, value):
-#         if self.context.get("external_ldap") and not value:
-#             raise ValidationError("Field is required when "
-#                                   "external_ldap is enabled")
-
-#     @validates("external_encoded_salt")
-#     def validate_external_encoded_salt(self, value):
-#         if self.context.get("external_ldap") and not value:
-#             raise ValidationError("Field is required when "
-#                                   "external_ldap is enabled")
-
-
 # class ClusterReq(ExternalLDAPMixin, ma.Schema):
 class ClusterReq(ma.Schema):
     name = ma.Str(required=True)
@@ -120,73 +74,39 @@ class ClusterReq(ma.Schema):
         # scim_rs_quads = '{}.{}'.format(*[get_quad() for _ in xrange(2)])
         # scim_rp_quads = '{}.{}'.format(*[get_quad() for i in xrange(2)])
 
-        # data["ldaps_port"] = "1636"
-        # data["ldap_binddn"] = "cn=directory manager,o=gluu"
-
         data["passkey"] = generate_passkey()
         data["admin_pw"] = encrypt_text(plain_admin_pw, data["passkey"])
         # data["encoded_ldap_pw"] = ldap_encode(plain_admin_pw)
         # data["encoded_ox_ldap_pw"] = data["admin_pw"]
-
         # data["base_inum"] = "@!{}.{}.{}.{}".format(
         #     *[get_quad() for _ in xrange(4)]
         # )
-
         # data["inum_org"] = '{}!0001!{}'.format(data["base_inum"], org_quads)
-
         # data["inum_appliance"] = '{}!0002!{}'.format(
         #     data["base_inum"], appliance_quads,
         # )
-
-        # data["inum_org_fn"] = (
-        #     data["inum_org"].replace('@', '')
-        #                     .replace('!', '')
-        #                     .replace('.', '')
-        # )
-
-        # data["inum_appliance_fn"] = (
-        #     data["inum_appliance"].replace('@', '')
-        #                           .replace('!', '')
-        #                           .replace('.', '')
-        # )
-
         # data["oxauth_client_id"] = '{}!0008!{}'.format(
         #     data["inum_org"], client_quads,
         # )
-
         # data["oxauth_client_encoded_pw"] = encrypt_text(
         #     oxauth_client_pw, data["passkey"],
         # )
-
-        # data["oxauth_openid_jks_fn"] = "/etc/certs/oxauth-keys.jks"
         # data["oxauth_openid_jks_pass"] = get_random_chars()
-
         # data["scim_rs_client_id"] = '{}!0008!{}'.format(
         #     data["inum_org"], scim_rs_quads,
         # )
-
-        # data["scim_rs_client_jks_fn"] = "/etc/certs/scim-rs.jks"
         # data["scim_rs_client_jks_pass"] = get_random_chars()
-
         # data["scim_rs_client_jks_pass_encoded"] = encrypt_text(
         #     data["scim_rs_client_jks_pass"], data["passkey"],
         # )
-
         # data["scim_rp_client_id"] = '{}!0008!{}'.format(
         #     data["inum_org"], scim_rp_quads,
         # )
-
-        # data["scim_rp_client_jks_fn"] = "/etc/certs/scim-rp.jks"
         # data["scim_rp_client_jks_pass"] = "secret"
-
         # data["encoded_shib_jks_pw"] = data["admin_pw"]
-        # data["shib_jks_fn"] = "/etc/certs/shibIDP.jks"
-
         # data["encoded_asimba_jks_pw"] = data["admin_pw"]
-        # data["asimba_jks_fn"] = "/etc/certs/asimbaIDP.jks"
         return data
 
 
-# class ClusterUpdateReq(ExternalLDAPMixin, ma.Schema):
 # class ClusterUpdateReq(ma.Schema):
 #     pass

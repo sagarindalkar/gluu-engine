@@ -391,3 +391,10 @@ class OxSetup(BaseSetup):
         ])
         import_cmd = '''sh -c "{}"'''.format(import_cmd)
         self.docker.exec_cmd(self.container.cid, import_cmd)
+
+    def discover_nginx(self):
+        """Discovers nginx node.
+        """
+        self.logger.debug("discovering available nginx container")
+        if self.cluster.count_containers(type_="nginx"):
+            self.import_nginx_cert()

@@ -58,13 +58,6 @@ class OxtrustSetup(OxSetup):
         complete_sgn = signal("ox_teardown_completed")
         complete_sgn.send(self)
 
-    def discover_nginx(self):
-        """Discovers nginx container.
-        """
-        self.logger.debug("discovering available nginx container")
-        if self.cluster.count_containers(type_="nginx"):
-            self.import_nginx_cert()
-
     def after_setup(self):
         """Post-setup callback.
         """

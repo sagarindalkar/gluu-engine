@@ -19,7 +19,6 @@ class OxasimbaSetup(OxSetup):  # pragma: no cover
         # render config templates
         self.copy_selector_template()
         self.render_ldap_props_template()
-        self.render_server_xml_template()
 
         # customize asimba and rebuild
         self.unpack_jar()
@@ -48,15 +47,6 @@ class OxasimbaSetup(OxSetup):  # pragma: no cover
         self.reconfigure_asimba()
         self.reload_supervisor()
         return True
-
-    def render_server_xml_template(self):
-        src = "oxasimba/server.xml"
-        dest = os.path.join(self.container.container_attrs["conf_dir"], os.path.basename(src))
-        ctx = {
-            "asimba_jks_pass": self.cluster.decrypted_admin_pw,
-            "asimba_jks_fn": self.cluster.asimba_jks_fn,
-        }
-        self.copy_rendered_jinja_template(src, dest, ctx)
 
     def unpack_jar(self):
         unpack_cmd = "unzip -qq /opt/gluu/jetty/oxasimba/webapps/oxasimba.war " \

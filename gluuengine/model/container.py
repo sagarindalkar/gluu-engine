@@ -184,7 +184,7 @@ class OxauthContainer(Container):
 
     @property
     def truststore_fn(self):
-        return "/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/security/cacerts"
+        return "/usr/lib/jvm/default-java/jre/lib/security/cacerts"
 
 
 class OxtrustContainer(Container):
@@ -220,7 +220,7 @@ class OxtrustContainer(Container):
 
     @property
     def truststore_fn(self):
-        return "/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/security/cacerts"
+        return "/usr/lib/jvm/default-java/jre/lib/security/cacerts"
 
 
 class OxidpContainer(Container):
@@ -257,7 +257,7 @@ class OxidpContainer(Container):
 
     @property
     def truststore_fn(self):
-        return "/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/security/cacerts"
+        return "/usr/lib/jvm/default-java/jre/lib/security/cacerts"
 
 
 class NginxContainer(Container):
@@ -321,7 +321,7 @@ class OxasimbaContainer(Container):
 
     @property
     def truststore_fn(self):
-        return "/usr/lib/jvm/java-8-openjdk-amd64/jre/lib/security/cacerts"
+        return "/usr/lib/jvm/default-java/jre/lib/security/cacerts"
 
 
 class OxelevenContainer(Container):

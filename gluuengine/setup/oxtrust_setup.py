@@ -31,7 +31,7 @@ class OxtrustSetup(OxSetup):
         self.render_check_ssl_template()
 
         self.gen_cert("shibIDP", self.cluster.decrypted_admin_pw,
-                      "jetty", "jetty", hostname)
+                      "root", "root", hostname)
         self.get_web_cert()
 
         # IDP keystore
@@ -41,14 +41,13 @@ class OxtrustSetup(OxSetup):
             self.cluster.decrypted_admin_pw,
             "{}/shibIDP.key".format(self.container.cert_folder),
             "{}/shibIDP.crt".format(self.container.cert_folder),
-            "jetty",
-            "jetty",
+            "root",
+            "root",
             hostname,
         )
 
         self.pull_oxtrust_override()
         self.add_auto_startup_entry()
-        self.change_cert_access("jetty", "jetty")
         self.reload_supervisor()
         return True
 

@@ -12,29 +12,10 @@ from .base import OxSetup
 
 class OxauthSetup(OxSetup):
     def setup(self):
-        hostname = self.container.hostname
-
         self.render_ldap_props_template()
         self.write_salt_file()
-
-        self.gen_cert("shibIDP", self.cluster.decrypted_admin_pw,
-                      "jetty", "jetty", hostname)
-        self.get_web_cert()
-
-        self.gen_keystore(
-            "shibIDP",
-            self.cluster.shib_jks_fn,
-            self.cluster.decrypted_admin_pw,
-            "{}/shibIDP.key".format(self.container.cert_folder),
-            "{}/shibIDP.crt".format(self.container.cert_folder),
-            "jetty",
-            "jetty",
-            hostname,
-        )
-
         self.pull_oxauth_override()
         self.add_auto_startup_entry()
-        self.change_cert_access("jetty", "jetty")
         self.reload_supervisor()
         return True
 

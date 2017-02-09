@@ -390,7 +390,3 @@ class OxasimbaContainerHelper(BaseContainerHelper):
 
 class OxelevenContainerHelper(BaseContainerHelper):
     setup_class = OxelevenSetup
-
-    @property
-    def command(self):
-        return ['oxeleven', self.cluster.decrypted_admin_pw]

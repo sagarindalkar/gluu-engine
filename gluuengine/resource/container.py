@@ -107,6 +107,7 @@ class ContainerResource(Resource):
         # "oxidp": OxidpContainerHelper,  # disabled for now
         "nginx": NginxContainerHelper,
         # "oxasimba": OxasimbaContainerHelper,
+        "oxeleven": OxelevenContainerHelper,
     }
 
     def get(self, container_id):

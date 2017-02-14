@@ -72,14 +72,14 @@ def _distribute_ox_files(type_):
         )
 
         for container in containers:
-            # we only need to restart tomcat process inside the container
+            # we only need to restart jetty process inside the container
             click.echo(
-                "restarting tomcat process inside {} container {} "
+                "restarting jetty process inside {} container {} "
                 "in {} node".format(ox["name"], container.cid, node.name)
             )
             mc.ssh(
                 node.name,
-                "sudo docker exec {} supervisorctl restart tomcat".format(container.cid),
+                "sudo docker exec {} supervisorctl restart jetty".format(container.cid),
             )
 
 

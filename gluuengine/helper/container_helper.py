@@ -331,6 +331,9 @@ class OxauthContainerHelper(BaseContainerHelper):
             "/var/gluu/webapps/oxauth/static": {
                 "bind": "/opt/gluu/jetty/oxauth/custom/static",
             },
+            "/var/gluu/webapps/oxauth/lib": {
+                "bind": "/opt/gluu/jetty/oxauth/lib/ext",
+            },
             log_volume: {
                 "bind": "/opt/gluu/jetty/oxauth/logs",
             },
@@ -354,6 +357,9 @@ class OxtrustContainerHelper(BaseContainerHelper):
             },
             "/var/gluu/webapps/oxtrust/static": {
                 "bind": "/opt/gluu/jetty/identity/custom/static",
+            },
+            "/var/gluu/webapps/oxtrust/lib": {
+                "bind": "/opt/gluu/jetty/identity/lib/ext",
             },
             log_volume: {
                 "bind": "/opt/gluu/jetty/identity/logs",

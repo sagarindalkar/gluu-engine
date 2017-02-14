@@ -30,11 +30,9 @@ class OxtrustSetup(OxSetup):
         self.write_salt_file()
         self.render_check_ssl_template()
 
+        # IDP cert and keystore
         self.gen_cert("shibIDP", self.cluster.decrypted_admin_pw,
                       "root", "root", hostname)
-        self.get_web_cert()
-
-        # IDP keystore
         self.gen_keystore(
             "shibIDP",
             self.cluster.shib_jks_fn,
@@ -45,8 +43,9 @@ class OxtrustSetup(OxSetup):
             "root",
             hostname,
         )
+        # web SSL cert and key
+        self.get_web_cert()
 
-        self.pull_oxtrust_override()
         self.add_auto_startup_entry()
         self.reload_supervisor()
         return True
@@ -88,11 +87,3 @@ class OxtrustSetup(OxSetup):
                 os.unlink(fn)
             except OSError:
                 pass
-
-    def pull_oxtrust_override(self):
-        src = self.app.config["OXTRUST_OVERRIDE_DIR"]
-
-        if os.path.exists(src):
-            dest = "{}:/var/gluu/webapps/oxtrust".format(self.node.name)
-            self.logger.info("copying {} to {} recursively".format(src, dest))
-            self.machine.scp(src, dest, recursive=True)

@@ -3,8 +3,6 @@
 #
 # All rights reserved.
 
-import os.path
-
 from blinker import signal
 
 from .base import OxSetup
@@ -14,7 +12,6 @@ class OxauthSetup(OxSetup):
     def setup(self):
         self.render_ldap_props_template()
         self.write_salt_file()
-        self.pull_oxauth_override()
         self.add_auto_startup_entry()
         self.reload_supervisor()
         return True
@@ -30,11 +27,3 @@ class OxauthSetup(OxSetup):
         """
         complete_sgn = signal("ox_setup_completed")
         complete_sgn.send(self)
-
-    def pull_oxauth_override(self):
-        src = self.app.config["OXAUTH_OVERRIDE_DIR"]
-
-        if os.path.exists(src):
-            dest = "{}:/var/gluu/webapps/oxauth".format(self.node.name)
-            self.logger.info("copying {} to {} recursively".format(src, dest))
-            self.machine.scp(src, dest, recursive=True)

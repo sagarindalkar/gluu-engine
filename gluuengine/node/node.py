@@ -14,12 +14,6 @@ from ..log import create_file_logger
 REMOTE_DOCKER_CERT_DIR = "/opt/gluu/docker/certs"
 CERT_FILES = ['ca.pem', 'cert.pem', 'key.pem']
 
-FSWATCHER_SCRIPT = "https://github.com/GluuFederation/cluster-tools/raw/master/fswatcher/fswatcher.py"
-FSWATCHER_CONF = "https://github.com/GluuFederation/cluster-tools/raw/master/fswatcher/fswatcher.conf"
-RECOVERY_SCRIPT = "https://github.com/GluuFederation/cluster-tools/raw/master/recovery/recovery.py"
-RECOVERY_CONF = "https://github.com/GluuFederation/cluster-tools/raw/master/recovery/recovery.conf"
-RNG_TOOLS_CONF = "https://raw.githubusercontent.com/GluuFederation/cluster-tools/master/rng_tools"
-
 
 class DeployNode(object):
     def __init__(self, node_model_obj, app):
@@ -33,7 +27,7 @@ class DeployNode(object):
         try:
             self.logger.info("installing rng-tools in {} node".format(self.node.name))
             cmd_list = [
-                "sudo wget {} -O /etc/default/rng-tools".format(RNG_TOOLS_CONF),
+                "sudo wget {} -O /etc/default/rng-tools".format(self.app.config["RNG_TOOLS_CONF_URL"]),
                 """sudo apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install -y rng-tools""",
             ]
             self.machine.ssh(self.node.name, ' && '.join(cmd_list))
@@ -61,10 +55,10 @@ class DeployNode(object):
         try:
             self.logger.info("installing recovery in {} node".format(self.node.name))
             cmd_list = [
-                "sudo wget {} -P /usr/bin".format(RECOVERY_SCRIPT),
+                "sudo wget {} -P /usr/bin".format(self.app.config["RECOVERY_SCRIPT_URL"]),
                 "sudo chmod +x /usr/bin/recovery.py",
                 "sudo apt-get -qq install -y --force-yes supervisor",
-                "sudo wget {} -P /etc/supervisor/conf.d".format(RECOVERY_CONF),
+                "sudo wget {} -P /etc/supervisor/conf.d".format(self.app.config["RECOVERY_CONF_URL"]),
                 "sudo supervisorctl reload",
             ]
             self.machine.ssh(self.node.name, ' && '.join(cmd_list))
@@ -232,7 +226,7 @@ class DeployMasterNode(DeployNode):
         try:
             self.logger.info("installing fswatcher in {} node".format(self.node.name))
             cmd_list = [
-                "sudo wget {} -P /usr/bin".format(FSWATCHER_SCRIPT),
+                "sudo wget {} -P /usr/bin".format(self.app.config["FSWATCHER_SCRIPT_URL"]),
                 "sudo chmod +x /usr/bin/fswatcher.py",
                 "sudo apt-get -qq install -y --force-yes supervisor python-pip",
                 "sudo pip -q install --upgrade pip",
@@ -240,7 +234,7 @@ class DeployMasterNode(DeployNode):
                 "sudo mkdir -p /root/.virtualenvs",
                 "sudo virtualenv /root/.virtualenvs/fswatcher",
                 "sudo /root/.virtualenvs/fswatcher/bin/pip -q install watchdog",
-                "sudo wget {} -P /etc/supervisor/conf.d".format(FSWATCHER_CONF),
+                "sudo wget {} -P /etc/supervisor/conf.d".format(self.app.config["FSWATCHER_CONF_URL"]),
                 "sudo supervisorctl reload",
             ]
             self.machine.ssh(self.node.name, ' && '.join(cmd_list))

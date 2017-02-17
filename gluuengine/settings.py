@@ -59,6 +59,27 @@ class Config(object):
     GLUU_IMAGE_TAG = os.environ.get("GLUU_IMAGE_TAG", "latest")
     ENABLE_LICENSE = True
 
+    FSWATCHER_SCRIPT_URL = os.environ.get(
+        "FSWATCHER_SCRIPT_URL",
+        "https://github.com/GluuFederation/cluster-tools/raw/master/fswatcher/fswatcher.py",
+    )
+    FSWATCHER_CONF_URL = os.environ.get(
+        "FSWATCHER_CONF_URL",
+        "https://github.com/GluuFederation/cluster-tools/raw/master/fswatcher/fswatcher.conf",
+    )
+    RECOVERY_SCRIPT_URL = os.environ.get(
+        "RECOVERY_SCRIPT_URL",
+        "https://github.com/GluuFederation/cluster-tools/raw/master/recovery/recovery.py",
+    )
+    RECOVERY_CONF_URL = os.environ.get(
+        "RECOVERY_CONF_URL",
+        "https://github.com/GluuFederation/cluster-tools/raw/master/recovery/recovery.conf",
+    )
+    RNG_TOOLS_CONF_URL = os.environ.get(
+        "RNG_TOOLS_CONF_URL",
+        "https://raw.githubusercontent.com/GluuFederation/cluster-tools/master/rng_tools",
+    )
+
 
 class ProdConfig(Config):
     """Production configuration.

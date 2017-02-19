@@ -63,6 +63,8 @@ def _distribute_ox_files(type_):
         click.echo("copying {} to {}:{} recursively".format(
             src, node.name, dest
         ))
+
+        mc.ssh(node.name, "mkdir -p {}".format(dest))
         mc.scp(src, "{}:{}".format(node.name, os.path.dirname(dest)),
                recursive=True)
 

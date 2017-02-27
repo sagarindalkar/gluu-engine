@@ -2,6 +2,12 @@
 
 Here you can see the full list of changes between each `gluu-engine` release.
 
+## Version 0.6.2
+
+Released on February 28th, 2017.
+
+* Fixed incorrect query to search discovery node.
+
 ## Version 0.6.1
 
 Released on December 30th, 2016.

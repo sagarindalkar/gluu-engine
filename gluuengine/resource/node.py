@@ -220,7 +220,7 @@ class NodeResource(Resource):
 
         try:
             dcv_node = db.search_from_table(
-                "nodes", {"type": "master"}
+                "nodes", {"type": "discovery"}
             )[0]
         except IndexError:
             dcv_node = None

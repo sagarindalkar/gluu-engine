@@ -397,6 +397,16 @@ class NginxContainerHelper(BaseContainerHelper):
     # def extra_dns(self):
     #     return self.cluster.ox_cluster_hostname
 
+    @property
+    def aliases(self):
+        _aliases = [self.container.type]
+
+        # add domain with ``.local`` suffix, useful for testing cluster without
+        # actual public domain
+        if self.cluster.ox_cluster_hostname.endswith(".local"):
+            _aliases.append(self.cluster.ox_cluster_hostname)
+        return _aliases
+
 
 class OxasimbaContainerHelper(BaseContainerHelper):
     setup_class = OxasimbaSetup

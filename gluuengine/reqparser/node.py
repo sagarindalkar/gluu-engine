@@ -50,12 +50,12 @@ class NodeReq(ma.Schema):
         elif self.context["type"] == "master":
             data["state_attrs"] = dict.fromkeys([
                 "state_node_create",
-                "state_install_weave",
-                "state_weave_permission",
-                "state_weave_launch",
+                # "state_install_weave",
+                # "state_weave_permission",
+                # "state_weave_launch",
                 "state_docker_cert",
                 "state_fswatcher",
-                "state_recovery",
+                # "state_recovery",
                 "state_complete",
                 "state_rng_tools",
                 "state_pull_images",
@@ -63,10 +63,10 @@ class NodeReq(ma.Schema):
         elif self.context["type"] == "worker":
             data["state_attrs"] = dict.fromkeys([
                 "state_node_create",
-                "state_install_weave",
-                "state_weave_permission",
-                "state_weave_launch",
-                "state_recovery",
+                # "state_install_weave",
+                # "state_weave_permission",
+                # "state_weave_launch",
+                # "state_recovery",
                 "state_complete",
                 "state_rng_tools",
                 "state_pull_images",

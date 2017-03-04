@@ -38,8 +38,11 @@ class Docker(object):
             return True if images else False
 
     def setup_container(self, name, image, env=None, port_bindings=None,
-                        volumes=None, dns=None, dns_search=None, ulimits=None,
-                        hostname=None, command=None):
+                        volumes=None,
+                        # dns=None,
+                        # dns_search=None,
+                        ulimits=None,
+                        hostname=None, command=None, aliases=None):
         image = "{}/{}".format(self.registry_base_url, image)
 
         # pull the image first if not exist
@@ -52,22 +55,23 @@ class Docker(object):
             env=env,
             port_bindings=port_bindings,
             volumes=volumes,
-            dns=dns,
-            dns_search=dns_search,
+            # dns=dns,
+            # dns_search=dns_search,
             ulimits=ulimits,
             hostname=hostname,
             command=command,
+            aliases=aliases,
         )
 
-    def get_container_ip(self, container_id):
-        """Gets container IP.
+    # def get_container_ip(self, container_id):
+    #     """Gets container IP.
 
-        :param container_id: ID or name of the container.
-        :returns: Container's IP address.
-        """
-        with self._get_client() as client:
-            info = client.inspect_container(container_id)
-            return info["NetworkSettings"]["Networks"]["weave"]["IPAddress"]
+    #     :param container_id: ID or name of the container.
+    #     :returns: Container's IP address.
+    #     """
+    #     with self._get_client() as client:
+    #         info = client.inspect_container(container_id)
+    #         return info["NetworkSettings"]["Networks"]["weave"]["IPAddress"]
 
     def remove_container(self, container_id):
         """Removes container.
@@ -108,8 +112,13 @@ class Docker(object):
             return True
 
     def run_container(self, name, image, env=None, port_bindings=None,
-                      volumes=None, dns=None, dns_search=None,
-                      ulimits=None, hostname=None, command=None):
+                      volumes=None,
+                      # dns=None,
+                      # dns_search=None,
+                      ulimits=None,
+                      hostname=None,
+                      command=None,
+                      aliases=None):
         """Runs a docker container in detached mode.
 
         This is a two-steps operation:
@@ -131,10 +140,11 @@ class Docker(object):
         env = env or {}
         port_bindings = port_bindings or {}
         volumes = volumes or {}
-        dns = dns or []
-        dns_search = dns_search or []
+        # dns = dns or []
+        # dns_search = dns_search or []
         ulimits = ulimits or []
         command = command or []
+        aliases = aliases or []
 
         with self._get_client() as client:
             container = client.create_container(
@@ -145,17 +155,24 @@ class Docker(object):
                 host_config=client.create_host_config(
                     port_bindings=port_bindings,
                     binds=volumes,
-                    dns=dns,
-                    dns_search=dns_search,
+                    # dns=dns,
+                    # dns_search=dns_search,
                     ulimits=ulimits,
-                    network_mode="weave",
+                    # network_mode="weave",
+                    # network_mode="gluunet",
                     restart_policy={
-                        "Name": "unless-stopped",
-                        "MaximumRetryCount": 10,
+                        # "Name": "unless-stopped",
+                        # "MaximumRetryCount": 10,
+                        "Name": "always",
                     },
                 ),
                 hostname=hostname,
                 command=command,
+                networking_config=client.create_networking_config({
+                    "gluunet": client.create_endpoint_config(
+                        aliases=aliases,
+                    )
+                }),
             )
             container_id = container["Id"]
 

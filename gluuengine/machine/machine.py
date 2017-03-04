@@ -13,7 +13,8 @@ from ..utils import po_run
 
 LS_FIELDS = ["Name", "Active", "ActiveHost", "ActiveSwarm", "DriverName",
              "State", "URL", "Swarm", "Error", "DockerVersion", "ResponseTime"]
-GLUU_GET_DOCKER = 'https://raw.githubusercontent.com/GluuFederation/cluster-tools/master/get_docker.sh'
+# GLUU_GET_DOCKER = 'https://raw.githubusercontent.com/GluuFederation/cluster-tools/master/get_docker.sh'
+GLUU_GET_DOCKER = 'https://raw.githubusercontent.com/GluuFederation/cluster-tools/ce-3/get_docker.sh'
 
 class Machine(object):
     def __init__(self, path='docker-machine'):

@@ -32,7 +32,7 @@ from ..log import create_file_logger
 from ..utils import exc_traceback
 from ..machine import Machine
 from ..dockerclient import Docker
-from ..weave import Weave
+# from ..weave import Weave
 
 
 class BaseContainerHelper(object):
@@ -77,9 +77,9 @@ class BaseContainerHelper(object):
             mc.swarm_config(master_node.name),
         )
 
-        self.weave = Weave(self.node, self.app)
-        self._bridge_ip = ""
-        self._dns_search = ""
+        # self.weave = Weave(self.node, self.app)
+        # self._bridge_ip = ""
+        # self._dns_search = ""
         # self.prometheus = PrometheusHelper(self.app, logger=self.logger)
 
     @run_in_reactor
@@ -102,11 +102,12 @@ class BaseContainerHelper(object):
                 ],
                 port_bindings=self.port_bindings,
                 volumes=self.volumes,
-                dns=[self.bridge_ip],
-                dns_search=[self.dns_search],
+                # dns=[self.bridge_ip],
+                # dns_search=[self.dns_search],
                 ulimits=self.ulimits,
                 # hostname=self.container.hostname,
                 command=self.command,
+                aliases=self.aliases,
             )
 
             # container is not running
@@ -118,9 +119,10 @@ class BaseContainerHelper(object):
 
             # container.cid in short format
             self.container.cid = cid[:12]
-            self.container.hostname = "{}.{}.{}".format(
-                self.container.cid, self.container.type, self.dns_search.rstrip("."),
-            )
+            # self.container.hostname = "{}.{}.{}".format(
+            #     self.container.cid, self.container.type, self.dns_search.rstrip("."),
+            # )
+            self.container.hostname = "{}.{}".format(self.container.cid, self.container.type)
 
             db.update_to_table(
                 "containers",
@@ -128,9 +130,9 @@ class BaseContainerHelper(object):
                 self.container,
             )
 
-            # add DNS records
-            self.weave.dns_add(self.container.cid, self.container.hostname)
-            self.weave.dns_add(self.container.cid, self.extra_dns)
+            # # add DNS records
+            # self.weave.dns_add(self.container.cid, self.container.hostname)
+            # self.weave.dns_add(self.container.cid, self.extra_dns)
 
             setup_obj = self.setup_class(self.container, self.cluster,
                                          self.app, logger=self.logger)
@@ -271,11 +273,12 @@ class BaseContainerHelper(object):
             handler.close()
             self.logger.removeHandler(handler)
 
-    @property
-    def extra_dns(self):
-        """Extra DNS record.
-        """
-        return "{}.{}".format(self.container.type, self.dns_search.rstrip("."))
+    # @property
+    # def extra_dns(self):
+    #     """Extra DNS record.
+    #     """
+    #     # return "{}.{}".format(self.container.type, self.dns_search.rstrip("."))
+    #     return self.container.type
 
     @property
     def command(self):
@@ -285,17 +288,21 @@ class BaseContainerHelper(object):
     def volumes(self):
         return {}
 
-    @property
-    def bridge_ip(self):
-        if not self._bridge_ip:
-            self._bridge_ip, _ = self.weave.dns_args()
-        return self._bridge_ip
+    # @property
+    # def bridge_ip(self):
+    #     if not self._bridge_ip:
+    #         self._bridge_ip, _ = self.weave.dns_args()
+    #     return self._bridge_ip
+
+    # @property
+    # def dns_search(self):
+    #     if not self._dns_search:
+    #         _, self._dns_search = self.weave.dns_args()
+    #     return self._dns_search
 
     @property
-    def dns_search(self):
-        if not self._dns_search:
-            _, self._dns_search = self.weave.dns_args()
-        return self._dns_search
+    def aliases(self):
+        return [self.container.type]
 
 
 # class LdapContainerHelper(BaseContainerHelper):
@@ -386,9 +393,9 @@ class NginxContainerHelper(BaseContainerHelper):
     setup_class = NginxSetup
     port_bindings = {80: ("0.0.0.0", 80,), 443: ("0.0.0.0", 443,)}
 
-    @property
-    def extra_dns(self):
-        return self.cluster.ox_cluster_hostname
+    # @property
+    # def extra_dns(self):
+    #     return self.cluster.ox_cluster_hostname
 
 
 class OxasimbaContainerHelper(BaseContainerHelper):

@@ -15,7 +15,7 @@ from ..reqparser import LicenseKeyReq
 from ..model import STATE_DISABLED
 from ..model import STATE_SUCCESS
 from ..helper import distribute_cluster_data
-from ..weave import Weave
+# from ..weave import Weave
 from ..machine import Machine
 from ..utils import retrieve_current_date
 from ..utils import populate_license
@@ -149,7 +149,7 @@ class LicenseKeyResource(Resource):
         mc = Machine()
 
         for worker_node in license_key.get_workers():
-            weave = Weave(worker_node, app)
+            # weave = Weave(worker_node, app)
             containers = worker_node.get_containers(
                 type_="oxauth", state=STATE_DISABLED,
             )
@@ -161,9 +161,9 @@ class LicenseKeyResource(Resource):
                     worker_node.name,
                     "docker restart {}".format(container.cid),
                 )
-                weave.dns_add(container.cid, container.hostname)
-                weave.dns_add(
-                    container.cid,
-                    "{}.weave.local".format("oxauth"),
-                )
+                # weave.dns_add(container.cid, container.hostname)
+                # weave.dns_add(
+                #     container.cid,
+                #     "{}.weave.local".format("oxauth"),
+                # )
             distribute_cluster_data(app, worker_node)

@@ -255,7 +255,7 @@ class DeployMasterNode(DeployNode):
     def _network_create(self):
         try:
             self.logger.info("creating overlay network")
-            self.machine.ssh("sudo docker network create --driver overlay --subnet=10.0.9.0/24 gluunet")
+            self.machine.ssh(self.node.name, "sudo docker network create --driver overlay --subnet=10.0.9.0/24 gluunet")
             self.node.state_attrs["state_network_create"] = True
             db.update(self.node.id, self.node, "nodes")
         except RuntimeError as exc:

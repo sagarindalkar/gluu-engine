@@ -188,6 +188,7 @@ class Machine(object):
         return True
 
     def ssh(self, machine_name, cmd=""):
+        stdout = ""
         if cmd:
             cmd = 'ssh {} {}'.format(machine_name, cmd)
             stdout, stderr, error = self._run(cmd)

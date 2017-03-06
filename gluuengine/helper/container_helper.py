@@ -13,7 +13,7 @@ from requests.exceptions import SSLError
 from requests.exceptions import ConnectionError
 from crochet import run_in_reactor
 
-from .node_helper import distribute_cluster_data
+# from .node_helper import distribute_cluster_data
 # from .prometheus_helper import PrometheusHelper
 from ..database import db
 from ..model import STATE_SUCCESS
@@ -176,8 +176,8 @@ class BaseContainerHelper(object):
                 container_log.state = STATE_SETUP_FINISHED
                 db.update(container_log.id, container_log, "container_logs")
 
-            # distribute recovery data
-            distribute_cluster_data(self.app, self.node)
+            # # distribute recovery data
+            # distribute_cluster_data(self.app, self.node)
 
             for handler in self.logger.handlers:
                 handler.close()
@@ -266,8 +266,8 @@ class BaseContainerHelper(object):
             container_log.state = STATE_TEARDOWN_FINISHED
             db.update(container_log.id, container_log, "container_logs")
 
-        # distribute recovery data
-        distribute_cluster_data(self.app, self.node)
+        # # distribute recovery data
+        # distribute_cluster_data(self.app, self.node)
 
         for handler in self.logger.handlers:
             handler.close()

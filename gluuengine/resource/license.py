@@ -14,7 +14,7 @@ from ..model import LicenseKey
 from ..reqparser import LicenseKeyReq
 from ..model import STATE_DISABLED
 from ..model import STATE_SUCCESS
-from ..helper import distribute_cluster_data
+# from ..helper import distribute_cluster_data
 # from ..weave import Weave
 from ..machine import Machine
 from ..utils import retrieve_current_date
@@ -166,4 +166,4 @@ class LicenseKeyResource(Resource):
                 #     container.cid,
                 #     "{}.weave.local".format("oxauth"),
                 # )
-            distribute_cluster_data(app, worker_node)
+            # distribute_cluster_data(app, worker_node)

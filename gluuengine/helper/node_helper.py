@@ -58,5 +58,5 @@ def distribute_shared_database(app, node):
                         "reason={}".format(filepath, exc))
 
 
-# backward-compat
-distribute_cluster_data = distribute_shared_database
+# # backward-compat
+# distribute_cluster_data = distribute_shared_database

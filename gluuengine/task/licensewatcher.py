@@ -11,7 +11,7 @@ from requests.exceptions import ConnectionError
 from twisted.internet.task import LoopingCall
 
 from ..database import db
-from ..helper import distribute_cluster_data
+# from ..helper import distribute_cluster_data
 from ..model import STATE_DISABLED
 from ..model import STATE_SUCCESS
 # from ..weave import Weave
@@ -122,7 +122,7 @@ class LicenseWatcherTask(object):
                 # if we have specific containers being disabled in node,
                 # try to re-enable the containers
                 self.enable_containers(node, "oxauth")
-            distribute_cluster_data(self.app, node)
+            # distribute_cluster_data(self.app, node)
 
     def get_license_key(self):
         try:

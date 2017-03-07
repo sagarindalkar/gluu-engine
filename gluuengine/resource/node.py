@@ -20,7 +20,7 @@ from ..database import db
 from ..utils import as_boolean
 
 # TODO: put it in config
-NODE_TYPES = ('master', 'worker', 'discovery',)
+NODE_TYPES = ('master', 'worker', 'discovery', 'msgcon')
 DISCOVERY_PORT = '8500'
 
 
@@ -28,7 +28,24 @@ class Discovery(object):
     pass
 
 
-#TODO this is very ugly code now
+def find_discovery():
+    try:
+        dnode = db.search_from_table(
+            "nodes", {"type": "discovery"}
+        )[0]
+    except IndexError:
+        dnode = None
+    return dnode
+
+
+def load_discovery():
+    dnode = find_discovery()
+    discovery = Discovery()
+    discovery.ip = self.machine.ip(dnode.name)
+    discovery.port = DISCOVERY_PORT
+    return discovery
+
+
 class CreateNodeResource(Resource):
     def __init__(self):
         self.machine = Machine()
@@ -42,18 +59,37 @@ class CreateNodeResource(Resource):
                 "message": "Node type is not supported",
             }, 404
 
-        try:
-            dcv_node = db.search_from_table(
-                "nodes", {"type": "discovery"}
-            )[0]
-        except IndexError:
-            dcv_node = None
-
-        if node_type == 'discovery' and dcv_node:
+        data, errors = NodeReq(context={"type": node_type}).load(request.form)
+        if errors:
             return {
-                "status": 403,
-                "message": "discovery node is already created",
-            }, 403
+                "status": 400,
+                "message": "Invalid data",
+                "params": errors,
+            }, 400
+
+        if node_type == 'discovery':
+            if db.count_from_table('nodes', {'type': 'discovery'}):
+                return {
+                    "status": 403,
+                    "message": "discovery node is already created",
+                }, 403
+
+            node = DiscoveryNode(data)
+            db.persist(node, 'nodes')
+            dn = DeployDiscoveryNode(node, app)
+            dn.deploy()
+
+        if node_type == 'msgcon':
+            if not db.count_from_table('nodes', {'type': 'master'}):
+                return {
+                    "status": 403,
+                    "message": "msgcon node needs a master node",
+                }, 403
+            discovery = load_discovery()
+            node = MsgconNode(data)
+            db.persist(node, 'nodes')
+            dn = DeployMsgconNode(node, discovery, app)
+            dn.deploy()
 
         if node_type == 'master':
             if not db.count_from_table('nodes', {'type': 'discovery'}):
@@ -67,40 +103,19 @@ class CreateNodeResource(Resource):
                     "status": 403,
                     "message": "master node is already created",
                 }, 403
+            discovery = load_discovery()
+            node = MasterNode(data)
+            db.persist(node, 'nodes')
+            dn = DeployMasterNode(node, discovery, app)
+            dn.deploy()
 
         if node_type == 'worker':
             if not db.count_from_table('nodes', {'type': 'master'}):
                 return {
                     "status": 403,
-                    "message": "worker node needs a master",
+                    "message": "worker node needs a master node",
                 }, 403
 
-        data, errors = NodeReq(context={"type": node_type}).load(request.form)
-        if errors:
-            return {
-                "status": 400,
-                "message": "Invalid data",
-                "params": errors,
-            }, 400
-
-        if node_type != 'discovery':
-            discovery = Discovery()
-            discovery.ip = self.machine.ip(dcv_node.name)
-            discovery.port = DISCOVERY_PORT
-
-        if node_type == 'discovery':
-            node = DiscoveryNode(data)
-            db.persist(node, 'nodes')
-            ddn = DeployDiscoveryNode(node, app)
-            ddn.deploy()
-
-        if node_type == 'master':
-            node = MasterNode(data)
-            db.persist(node, 'nodes')
-            dmn = DeployMasterNode(node, discovery, app)
-            dmn.deploy()
-
-        if node_type == 'worker':
             if as_boolean(app.config["ENABLE_LICENSE"]):
                 try:
                     license_key = db.all("license_keys")[0]
@@ -132,11 +147,11 @@ class CreateNodeResource(Resource):
                         "status": 403,
                         "message": "creating worker node requires active license",
                     }, 403
-
+            discovery = load_discovery()
             node = WorkerNode(data)
             db.persist(node, 'nodes')
-            dwn = DeployWorkerNode(node, discovery, app)
-            dwn.deploy()
+            dn = DeployWorkerNode(node, discovery, app)
+            dn.deploy()
 
         headers = {
             "Location": url_for("node", node_name=node.name),

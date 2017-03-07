@@ -47,6 +47,15 @@ class NodeReq(ma.Schema):
                 "state_install_consul",
                 "state_complete",
             ], False)
+        if self.context["type"] == "msgcon":
+            data["state_attrs"] = dict.fromkeys([
+                "state_node_create",
+                "state_install_mysql",
+                "state_install_activemq",
+                "state_install_msgcon",
+                "state_pull_images",
+                "state_complete",
+            ], False)
         elif self.context["type"] == "master":
             data["state_attrs"] = dict.fromkeys([
                 "state_node_create",

@@ -77,15 +77,6 @@ def test_reload_supervisor(base_setup, patched_exec_cmd, patched_sleep):
 
 
 @pytest.mark.skip(reason="rewrite needed")
-def test_ldap_failover_hostname(monkeypatch, base_setup):
-    monkeypatch.setattr(
-        "gluuengine.weave.Weave.dns_args",
-        lambda cls: ("", "weave.local",),
-    )
-    assert base_setup.ldap_failover_hostname() == "ldap.weave.local"
-
-
-@pytest.mark.skip(reason="rewrite needed")
 def test_write_salt_file(ox_setup, patched_po_run):
     ox_setup.write_salt_file()
 
@@ -94,15 +85,6 @@ def test_write_salt_file(ox_setup, patched_po_run):
 def test_gen_keystore(ox_setup, patched_po_run, patched_exec_cmd):
     ox_setup.gen_keystore("shibIDP", "/tmp/shibIDP.jks", "changeme",
                           "in.key", "in.crt", "root", "root", "localhost")
-
-
-@pytest.mark.skip(reason="rewrite needed")
-def test_render_ldap_props_template(monkeypatch, ox_setup, patched_po_run):
-    monkeypatch.setattr(
-        "gluuengine.setup.base.OxSetup.ldap_failover_hostname",
-        lambda cls: "ldap.weave.local",
-    )
-    ox_setup.render_ldap_props_template()
 
 
 @pytest.mark.skip(reason="rewrite needed")

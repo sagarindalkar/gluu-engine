@@ -20,7 +20,6 @@ def test_cluster_post(app, db):
             "state": "Texas",
             "admin_email": "john@example.com",
             "admin_pw": "secret",
-            "weave_ip_network": "10.20.10.1/24",
         },
     )
     actual_data = json.loads(resp.data)
@@ -105,7 +104,6 @@ def test_cluster_post_max_cluster_reached(app, db, cluster):
             "state": "Texas",
             "admin_email": "john@example.com",
             "admin_pw": "secret",
-            "weave_ip_network": "10.20.10.1/24",
         },
     )
     assert resp.status_code == 403
@@ -126,33 +124,6 @@ def test_cluster_post_invalid_country_code(app, db):
             "state": "Texas",
             "admin_email": "john@example.com",
             "admin_pw": "secret",
-            "weave_ip_network": "10.20.10.1/24",
-        },
-    )
-    assert resp.status_code == 400
-
-
-@pytest.mark.skip(reason="rewrite needed")
-@pytest.mark.parametrize("weave_ip_network", [
-    "abc",
-    "10.20.10.0",
-    "500.1.2.3/256",
-])
-def test_cluster_post_invalid_weave_network(app, db, weave_ip_network):
-    resp = app.test_client().post(
-        "/clusters",
-        data={
-            "name": "test-cluster-1",
-            "description": "test cluster",
-            "ox_cluster_hostname": "ox.example.com",
-            "org_name": "Gluu Federation",
-            "org_short_name": "Gluu",
-            "country_code": "US",
-            "city": "Austin",
-            "state": "Texas",
-            "admin_email": "john@example.com",
-            "admin_pw": "secret",
-            "weave_ip_network": weave_ip_network,
         },
     )
     assert resp.status_code == 400

@@ -51,43 +51,6 @@ class DeployNode(object):
             self.logger.error('failed to pull images')
             self.logger.error(e)
 
-    # def _recovery(self):
-    #     try:
-    #         self.logger.info("installing recovery in {} node".format(self.node.name))
-    #         cmd_list = [
-    #             "sudo wget {} -P /usr/bin".format(self.app.config["RECOVERY_SCRIPT_URL"]),
-    #             "sudo chmod +x /usr/bin/recovery.py",
-    #             "sudo apt-get -qq install -y --force-yes supervisor",
-    #             "sudo wget {} -P /etc/supervisor/conf.d".format(self.app.config["RECOVERY_CONF_URL"]),
-    #             "sudo supervisorctl reload",
-    #         ]
-    #         self.machine.ssh(self.node.name, ' && '.join(cmd_list))
-    #         self.node.state_attrs["state_recovery"] = True
-    #         db.update(self.node.id, self.node, 'nodes')
-    #     except RuntimeError as e:
-    #         self.logger.error('failed to install recovery script')
-    #         self.logger.error(e)
-
-    # def _install_weave(self):
-    #     try:
-    #         self.logger.info('installing weave')
-    #         self.machine.ssh(self.node.name, 'sudo curl -L git.io/weave -o /usr/local/bin/weave')
-    #         self.node.state_attrs["state_install_weave"] = True
-    #         db.update(self.node.id, self.node, 'nodes')
-    #     except RuntimeError as e:
-    #         self.logger.error('failed to install weave')
-    #         self.logger.error(e)
-
-    # def _weave_permission(self):
-    #     try:
-    #         self.logger.info('adding exec permission of weave')
-    #         self.machine.ssh(self.node.name, 'sudo chmod +x /usr/local/bin/weave')
-    #         self.node.state_attrs["state_weave_permission"] = True
-    #         db.update(self.node.id, self.node, 'nodes')
-    #     except RuntimeError as e:
-    #         self.logger.error('failed to set weave permission')
-    #         self.logger.error(e)
-
 
 class DeployDiscoveryNode(DeployNode):
     def __init__(self, node_model_obj, app):
@@ -145,23 +108,11 @@ class DeployMasterNode(DeployNode):
             self._node_create()
             time.sleep(1)
         if self.node.state_node_create:
-            # if not self.node.state_install_weave:
-            #     self._install_weave()
-            #     time.sleep(1)
-            # if not self.node.state_weave_permission:
-            #     self._weave_permission()
-            #     time.sleep(1)
-            # if not self.node.state_weave_launch:
-            #     self._weave_launch()
-            #     time.sleep(1)
             # if not self.node.state_docker_cert:
             #     self._docker_cert()
             #     time.sleep(1)
             # if not self.node.state_fswatcher:
             #     self._fswatcher()
-            #     time.sleep(1)
-            # if not self.node.state_recovery:
-            #     self._recovery()
             #     time.sleep(1)
             if not self.node.state_network_create:
                 self._network_create()
@@ -180,12 +131,6 @@ class DeployMasterNode(DeployNode):
 
     def _is_completed(self):
         if all([self.node.state_node_create,
-                # self.node.state_install_weave,
-                # self.node.state_weave_permission,
-                # self.node.state_weave_launch,
-                # self.node.state_docker_cert,
-                # self.node.state_fswatcher,
-                # self.node.state_recovery,
                 self.node.state_network_create,
                 self.node.state_rng_tools,
                 self.node.state_pull_images]):
@@ -202,16 +147,6 @@ class DeployMasterNode(DeployNode):
         except RuntimeError as e:
             self.logger.error('failed to create node')
             self.logger.error(e)
-
-    # def _weave_launch(self):
-    #     try:
-    #         self.logger.info('launching weave')
-    #         self.machine.ssh(self.node.name, 'sudo weave launch')
-    #         self.node.state_attrs["state_weave_launch"] = True
-    #         db.update(self.node.id, self.node, 'nodes')
-    #     except RuntimeError as e:
-    #         self.logger.error('failed to launch weave')
-    #         self.logger.error(e)
 
     # #pushing docker cert so that fswatcher script can work
     # def _docker_cert(self):
@@ -274,18 +209,6 @@ class DeployWorkerNode(DeployNode):
             self._node_create()
             time.sleep(1)
         if self.node.state_node_create:
-            # if not self.node.state_install_weave:
-            #     self._install_weave()
-            #     time.sleep(1)
-            # if not self.node.state_weave_permission:
-            #     self._weave_permission()
-            #     time.sleep(1)
-            # if not self.node.state_weave_launch:
-            #     self._weave_launch()
-            #     time.sleep(1)
-            # if not self.node.state_recovery:
-            #     self._recovery()
-            #     time.sleep(1)
             if not self.node.state_rng_tools:
                 self._rng_tools()
                 time.sleep(1)
@@ -300,10 +223,6 @@ class DeployWorkerNode(DeployNode):
 
     def _is_completed(self):
         if all([self.node.state_node_create,
-                # self.node.state_install_weave,
-                # self.node.state_weave_permission,
-                # self.node.state_weave_launch,
-                # self.node.state_recovery,
                 self.node.state_rng_tools,
                 self.node.state_pull_images]):
             self.node.state_attrs["state_complete"] = True
@@ -319,15 +238,3 @@ class DeployWorkerNode(DeployNode):
         except RuntimeError as e:
             self.logger.error('failed to create node')
             self.logger.error(e)
-
-    # def _weave_launch(self):
-    #     try:
-    #         self.logger.info('launching weave')
-    #         master = db.search_from_table('nodes', {'type': 'master'})[0]
-    #         ip = self.machine.ip(master.name)
-    #         self.machine.ssh(self.node.name, 'sudo weave launch {}'.format(ip))
-    #         self.node.state_attrs["state_weave_launch"] = True
-    #         db.update(self.node.id, self.node, 'nodes')
-    #     except RuntimeError as e:
-    #         self.logger.error('failed to launch weave')
-    #         self.logger.error(e)

@@ -98,12 +98,6 @@ class DiscoveryNode(Node):
 class MasterNode(Node):
     class StateAttrs(BaseModel):
         state_node_create = BooleanType(default=False)
-        # state_install_weave = BooleanType(default=False)
-        # state_weave_permission = BooleanType(default=False)
-        # state_weave_launch = BooleanType(default=False)
-        # state_docker_cert = BooleanType(default=False)
-        # state_fswatcher = BooleanType(default=False)
-        # state_recovery = BooleanType(default=False)
         state_complete = BooleanType(default=False)
         state_rng_tools = BooleanType(default=False)
         state_pull_images = BooleanType(default=False)
@@ -124,12 +118,6 @@ class MasterNode(Node):
             "type": self.type,
             "provider_id": self.provider_id,
             "state_node_create": self.state_node_create,
-            # "state_install_weave": self.state_install_weave,
-            # "state_weave_permission": self.state_weave_permission,
-            # "state_weave_launch": self.state_weave_launch,
-            # "state_docker_cert": self.state_docker_cert,
-            # "state_fswatcher": self.state_fswatcher,
-            # "state_recovery": self.state_recovery,
             "state_complete": self.state_complete,
             "state_rng_tools": self.state_rng_tools,
             "state_pull_images": self.state_pull_images,
@@ -139,30 +127,6 @@ class MasterNode(Node):
     @property
     def state_node_create(self):
         return self._resolve_state_attr("state_node_create")
-
-    # @property
-    # def state_install_weave(self):
-    #     return self._resolve_state_attr("state_install_weave")
-
-    # @property
-    # def state_weave_permission(self):
-    #     return self._resolve_state_attr("state_weave_permission")
-
-    # @property
-    # def state_weave_launch(self):
-    #     return self._resolve_state_attr("state_weave_launch")
-
-    # @property
-    # def state_docker_cert(self):
-    #     return self._resolve_state_attr("state_docker_cert")
-
-    # @property
-    # def state_fswatcher(self):
-    #     return self._resolve_state_attr("state_fswatcher")
-
-    # @property
-    # def state_recovery(self):
-    #     return self._resolve_state_attr("state_recovery")
 
     @property
     def state_complete(self):
@@ -184,10 +148,6 @@ class MasterNode(Node):
 class WorkerNode(Node):
     class StateAttrs(BaseModel):
         state_node_create = BooleanType(default=False)
-        # state_install_weave = BooleanType(default=False)
-        # state_weave_permission = BooleanType(default=False)
-        # state_weave_launch = BooleanType(default=False)
-        # state_recovery = BooleanType(default=False)
         state_complete = BooleanType(default=False)
         state_rng_tools = BooleanType(default=False)
         state_pull_images = BooleanType(default=False)
@@ -207,10 +167,6 @@ class WorkerNode(Node):
             "type": self.type,
             "provider_id": self.provider_id,
             "state_node_create": self.state_node_create,
-            # "state_install_weave": self.state_install_weave,
-            # "state_weave_permission": self.state_weave_permission,
-            # "state_weave_launch": self.state_weave_launch,
-            # "state_recovery": self.state_recovery,
             "state_complete": self.state_complete,
             "state_rng_tools": self.state_rng_tools,
             "state_pull_images": self.state_pull_images,
@@ -219,22 +175,6 @@ class WorkerNode(Node):
     @property
     def state_node_create(self):
         return self._resolve_state_attr("state_node_create")
-
-    # @property
-    # def state_install_weave(self):
-    #     return self._resolve_state_attr("state_install_weave")
-
-    # @property
-    # def state_weave_permission(self):
-    #     return self._resolve_state_attr("state_weave_permission")
-
-    # @property
-    # def state_weave_launch(self):
-    #     return self._resolve_state_attr("state_weave_launch")
-
-    # @property
-    # def state_recovery(self):
-    #     return self._resolve_state_attr("state_recovery")
 
     @property
     def state_complete(self):

@@ -10,6 +10,4 @@ from .container_helper import OxidpContainerHelper  # noqa
 from .container_helper import NginxContainerHelper  # noqa
 from .container_helper import OxasimbaContainerHelper  # noqa
 from .container_helper import OxelevenContainerHelper  # noqa
-
-from .prometheus_helper import PrometheusHelper  # noqa
 # from .node_helper import distribute_cluster_data  # noqa

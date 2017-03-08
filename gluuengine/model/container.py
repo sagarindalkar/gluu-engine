@@ -173,12 +173,6 @@ class OxauthContainer(Container):
         return self._resolve_container_attr("cert_folder")
 
     @property
-    def recovery_priority(self):
-        """Gets recovery priority number used by recovery script.
-        """
-        return 2
-
-    @property
     def image(self):
         return "oxauth"
 
@@ -203,12 +197,6 @@ class OxtrustContainer(Container):
     cid = StringType()
     container_attrs = PolyModelType(ContainerAttrs, strict=False)
     _pyobject = StringType()
-
-    @property
-    def recovery_priority(self):
-        """Gets recovery priority number used by recovery script.
-        """
-        return 3
 
     @property
     def cert_folder(self):
@@ -242,12 +230,6 @@ class OxidpContainer(Container):
     _pyobject = StringType()
 
     @property
-    def recovery_priority(self):
-        """Gets recovery priority number used by recovery script.
-        """
-        return 4
-
-    @property
     def image(self):
         return "oxidp"
 
@@ -276,12 +258,6 @@ class NginxContainer(Container):
     _pyobject = StringType()
 
     @property
-    def recovery_priority(self):
-        """Gets recovery priority number used by recovery script.
-        """
-        return 5
-
-    @property
     def image(self):
         return "nginx"
 
@@ -306,10 +282,6 @@ class OxasimbaContainer(Container):
     cid = StringType()
     container_attrs = PolyModelType(ContainerAttrs, strict=False)
     _pyobject = StringType()
-
-    @property
-    def recovery_priority(self):
-        return 6
 
     @property
     def image(self):
@@ -338,10 +310,6 @@ class OxelevenContainer(Container):
     cid = StringType()
     container_attrs = PolyModelType(ContainerAttrs, strict=False)
     _pyobject = StringType()
-
-    @property
-    def recovery_priority(self):
-        return 0
 
     @property
     def image(self):

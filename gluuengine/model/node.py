@@ -95,6 +95,62 @@ class DiscoveryNode(Node):
         return self._resolve_state_attr("state_complete")
 
 
+class MsgconNode(Node):
+    class StateAttrs(BaseModel):
+        state_node_create = BooleanType(default=False)
+        state_install_mysql= BooleanType(default=False)
+        state_install_activemq = BooleanType(default=False)
+        state_install_msgcon = BooleanType(default=False)
+        state_pull_images = BooleanType(default=False)
+        state_complete = BooleanType(default=False)
+
+    id = StringType(default=lambda: str(uuid.uuid4()))
+    name = StringType()
+    provider_id = StringType()
+    type = StringType(default="msgcon")
+    state_attrs = PolyModelType(StateAttrs, strict=False)
+    _pyobject = StringType()
+
+    @property
+    def resource_fields(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "type": self.type,
+            "provider_id": self.provider_id,
+            "state_node_create": self.state_node_create,
+            "state_install_mysql": self.state_install_mysql,
+            "state_install_activemq": self.state_install_activemq,
+            "state_install_msgcon": self.state_install_msgcon,
+            "state_pull_images": self.state_pull_images,
+            "state_complete": self.state_complete,
+        }
+
+    @property
+    def state_node_create(self):
+        return self._resolve_state_attr("state_node_create")
+
+    @property
+    def state_install_mysql(self):
+        return self._resolve_state_attr("state_install_mysql")
+
+    @property
+    def state_install_activemq(self):
+        return self._resolve_state_attr("state_install_activemq")
+
+    @property
+    def state_install_msgcon(self):
+        return self._resolve_state_attr("state_install_msgcon")
+
+    @property
+    def state_pull_images(self):
+        return self._resolve_state_attr("state_pull_images")
+
+    @property
+    def state_complete(self):
+        return self._resolve_state_attr("state_complete")
+
+
 class MasterNode(Node):
     class StateAttrs(BaseModel):
         state_node_create = BooleanType(default=False)

@@ -12,8 +12,6 @@ from marshmallow import ValidationError
 from ..database import db
 from ..extensions import ma
 
-#PROVIDER_TYPES = ['generic', 'aws', 'digitalocean', 'google'] #TODO: put it in config
-
 NAME_RE = re.compile('^[a-zA-Z0-9.-]+$')
 
 
@@ -59,23 +57,14 @@ class NodeReq(ma.Schema):
         elif self.context["type"] == "master":
             data["state_attrs"] = dict.fromkeys([
                 "state_node_create",
-                "state_install_weave",
-                "state_weave_permission",
-                "state_weave_launch",
-                "state_docker_cert",
-                "state_fswatcher",
-                "state_recovery",
                 "state_complete",
                 "state_rng_tools",
                 "state_pull_images",
+                "state_network_create",
             ], False)
         elif self.context["type"] == "worker":
             data["state_attrs"] = dict.fromkeys([
                 "state_node_create",
-                "state_install_weave",
-                "state_weave_permission",
-                "state_weave_launch",
-                "state_recovery",
                 "state_complete",
                 "state_rng_tools",
                 "state_pull_images",

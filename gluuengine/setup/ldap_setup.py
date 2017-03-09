@@ -508,7 +508,7 @@ class LdapSetup(BaseSetup):
         ctx = {
             "ox_cluster_hostname": self.cluster.ox_cluster_hostname,
             # FIXIT: oxeleven dns should come from oxeleven object
-            "oxeleven_private_dns": "oxeleven.weave.local",
+            "oxeleven_private_dns": "oxeleven",
             "inum_appliance": self.cluster.inum_appliance,
             "inum_org": self.cluster.inum_org,
             "pairwise_calculation_key": get_sys_random_chars(randint(20, 30)),

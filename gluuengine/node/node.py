@@ -3,7 +3,7 @@
 #
 # All rights reserved.
 
-import os
+# import os
 import time
 from crochet import run_in_reactor
 
@@ -49,43 +49,6 @@ class DeployNode(object):
             db.update(self.node.id, self.node, 'nodes')
         except RuntimeError as e:
             self.logger.error('failed to pull images')
-            self.logger.error(e)
-
-    def _recovery(self):
-        try:
-            self.logger.info("installing recovery in {} node".format(self.node.name))
-            cmd_list = [
-                "sudo wget {} -P /usr/bin".format(self.app.config["RECOVERY_SCRIPT_URL"]),
-                "sudo chmod +x /usr/bin/recovery.py",
-                "sudo apt-get -qq install -y --force-yes supervisor",
-                "sudo wget {} -P /etc/supervisor/conf.d".format(self.app.config["RECOVERY_CONF_URL"]),
-                "sudo supervisorctl reload",
-            ]
-            self.machine.ssh(self.node.name, ' && '.join(cmd_list))
-            self.node.state_attrs["state_recovery"] = True
-            db.update(self.node.id, self.node, 'nodes')
-        except RuntimeError as e:
-            self.logger.error('failed to install recovery script')
-            self.logger.error(e)
-
-    def _install_weave(self):
-        try:
-            self.logger.info('installing weave')
-            self.machine.ssh(self.node.name, 'sudo curl -L git.io/weave -o /usr/local/bin/weave')
-            self.node.state_attrs["state_install_weave"] = True
-            db.update(self.node.id, self.node, 'nodes')
-        except RuntimeError as e:
-            self.logger.error('failed to install weave')
-            self.logger.error(e)
-
-    def _weave_permission(self):
-        try:
-            self.logger.info('adding exec permission of weave')
-            self.machine.ssh(self.node.name, 'sudo chmod +x /usr/local/bin/weave')
-            self.node.state_attrs["state_weave_permission"] = True
-            db.update(self.node.id, self.node, 'nodes')
-        except RuntimeError as e:
-            self.logger.error('failed to set weave permission')
             self.logger.error(e)
 
 
@@ -145,23 +108,14 @@ class DeployMasterNode(DeployNode):
             self._node_create()
             time.sleep(1)
         if self.node.state_node_create:
-            if not self.node.state_install_weave:
-                self._install_weave()
-                time.sleep(1)
-            if not self.node.state_weave_permission:
-                self._weave_permission()
-                time.sleep(1)
-            if not self.node.state_weave_launch:
-                self._weave_launch()
-                time.sleep(1)
-            if not self.node.state_docker_cert:
-                self._docker_cert()
-                time.sleep(1)
-            if not self.node.state_fswatcher:
-                self._fswatcher()
-                time.sleep(1)
-            if not self.node.state_recovery:
-                self._recovery()
+            # if not self.node.state_docker_cert:
+            #     self._docker_cert()
+            #     time.sleep(1)
+            # if not self.node.state_fswatcher:
+            #     self._fswatcher()
+            #     time.sleep(1)
+            if not self.node.state_network_create:
+                self._network_create()
                 time.sleep(1)
             if not self.node.state_rng_tools:
                 self._rng_tools()
@@ -176,10 +130,9 @@ class DeployMasterNode(DeployNode):
             self.logger.removeHandler(handler)
 
     def _is_completed(self):
-        if all([self.node.state_node_create, self.node.state_install_weave,
-                self.node.state_weave_permission, self.node.state_weave_launch,
-                self.node.state_docker_cert, self.node.state_fswatcher,
-                self.node.state_recovery, self.node.state_rng_tools,
+        if all([self.node.state_node_create,
+                self.node.state_network_create,
+                self.node.state_rng_tools,
                 self.node.state_pull_images]):
             self.node.state_attrs["state_complete"] = True
             self.logger.info('node deployment is done')
@@ -195,54 +148,54 @@ class DeployMasterNode(DeployNode):
             self.logger.error('failed to create node')
             self.logger.error(e)
 
-    def _weave_launch(self):
-        try:
-            self.logger.info('launching weave')
-            self.machine.ssh(self.node.name, 'sudo weave launch')
-            self.node.state_attrs["state_weave_launch"] = True
-            db.update(self.node.id, self.node, 'nodes')
-        except RuntimeError as e:
-            self.logger.error('failed to launch weave')
-            self.logger.error(e)
+    # #pushing docker cert so that fswatcher script can work
+    # def _docker_cert(self):
+    #     try:
+    #         self.logger.info("pushing docker client cert into master node")
+    #         local_cert_path = os.path.join(os.getenv('HOME'), '.docker/machine/certs')
+    #         self.machine.ssh(self.node.name, 'sudo mkdir -p {}'.format(REMOTE_DOCKER_CERT_DIR))
+    #         for cf in CERT_FILES:
+    #             self.machine.scp(
+    #                 os.path.join(local_cert_path, cf),
+    #                 "{}:{}".format(self.node.name, REMOTE_DOCKER_CERT_DIR),
+    #             )
+    #         self.node.state_attrs["state_docker_cert"] = True
+    #         db.update(self.node.id, self.node, 'nodes')
+    #     except RuntimeError as e:
+    #         self.logger.error('failed to push docker client cert into master node')
+    #         self.logger.error(e)
 
-    #pushing docker cert so that fswatcher script can work
-    def _docker_cert(self):
-        try:
-            self.logger.info("pushing docker client cert into master node")
-            local_cert_path = os.path.join(os.getenv('HOME'), '.docker/machine/certs')
-            self.machine.ssh(self.node.name, 'sudo mkdir -p {}'.format(REMOTE_DOCKER_CERT_DIR))
-            for cf in CERT_FILES:
-                self.machine.scp(
-                    os.path.join(local_cert_path, cf),
-                    "{}:{}".format(self.node.name, REMOTE_DOCKER_CERT_DIR),
-                )
-            self.node.state_attrs["state_docker_cert"] = True
-            db.update(self.node.id, self.node, 'nodes')
-        except RuntimeError as e:
-            self.logger.error('failed to push docker client cert into master node')
-            self.logger.error(e)
+    # def _fswatcher(self):
+    #     try:
+    #         self.logger.info("installing fswatcher in {} node".format(self.node.name))
+    #         cmd_list = [
+    #             "sudo wget {} -P /usr/bin".format(self.app.config["FSWATCHER_SCRIPT_URL"]),
+    #             "sudo chmod +x /usr/bin/fswatcher.py",
+    #             "sudo apt-get -qq install -y --force-yes supervisor python-pip",
+    #             "sudo pip -q install --upgrade pip",
+    #             "sudo pip -q install virtualenv",
+    #             "sudo mkdir -p /root/.virtualenvs",
+    #             "sudo virtualenv /root/.virtualenvs/fswatcher",
+    #             "sudo /root/.virtualenvs/fswatcher/bin/pip -q install watchdog",
+    #             "sudo wget {} -P /etc/supervisor/conf.d".format(self.app.config["FSWATCHER_CONF_URL"]),
+    #             "sudo supervisorctl reload",
+    #         ]
+    #         self.machine.ssh(self.node.name, ' && '.join(cmd_list))
+    #         self.node.state_attrs["state_fswatcher"] = True
+    #         db.update(self.node.id, self.node, 'nodes')
+    #     except RuntimeError as e:
+    #         self.logger.error('failed to install fswatcher script')
+    #         self.logger.error(e)
 
-    def _fswatcher(self):
+    def _network_create(self):
         try:
-            self.logger.info("installing fswatcher in {} node".format(self.node.name))
-            cmd_list = [
-                "sudo wget {} -P /usr/bin".format(self.app.config["FSWATCHER_SCRIPT_URL"]),
-                "sudo chmod +x /usr/bin/fswatcher.py",
-                "sudo apt-get -qq install -y --force-yes supervisor python-pip",
-                "sudo pip -q install --upgrade pip",
-                "sudo pip -q install virtualenv",
-                "sudo mkdir -p /root/.virtualenvs",
-                "sudo virtualenv /root/.virtualenvs/fswatcher",
-                "sudo /root/.virtualenvs/fswatcher/bin/pip -q install watchdog",
-                "sudo wget {} -P /etc/supervisor/conf.d".format(self.app.config["FSWATCHER_CONF_URL"]),
-                "sudo supervisorctl reload",
-            ]
-            self.machine.ssh(self.node.name, ' && '.join(cmd_list))
-            self.node.state_attrs["state_fswatcher"] = True
-            db.update(self.node.id, self.node, 'nodes')
-        except RuntimeError as e:
-            self.logger.error('failed to install fswatcher script')
-            self.logger.error(e)
+            self.logger.info("creating overlay network")
+            self.machine.ssh(self.node.name, "sudo docker network create --driver overlay --subnet=10.0.9.0/24 gluunet")
+            self.node.state_attrs["state_network_create"] = True
+            db.update(self.node.id, self.node, "nodes")
+        except RuntimeError as exc:
+            self.logger.error("failed to create overlay network")
+            self.logger.error(exc)
 
 
 class DeployWorkerNode(DeployNode):
@@ -256,18 +209,6 @@ class DeployWorkerNode(DeployNode):
             self._node_create()
             time.sleep(1)
         if self.node.state_node_create:
-            if not self.node.state_install_weave:
-                self._install_weave()
-                time.sleep(1)
-            if not self.node.state_weave_permission:
-                self._weave_permission()
-                time.sleep(1)
-            if not self.node.state_weave_launch:
-                self._weave_launch()
-                time.sleep(1)
-            if not self.node.state_recovery:
-                self._recovery()
-                time.sleep(1)
             if not self.node.state_rng_tools:
                 self._rng_tools()
                 time.sleep(1)
@@ -281,9 +222,8 @@ class DeployWorkerNode(DeployNode):
             self.logger.removeHandler(handler)
 
     def _is_completed(self):
-        if all([self.node.state_node_create, self.node.state_install_weave,
-                self.node.state_weave_permission, self.node.state_weave_launch,
-                self.node.state_recovery, self.node.state_rng_tools,
+        if all([self.node.state_node_create,
+                self.node.state_rng_tools,
                 self.node.state_pull_images]):
             self.node.state_attrs["state_complete"] = True
             self.logger.info('node deployment is done')
@@ -297,18 +237,6 @@ class DeployWorkerNode(DeployNode):
             db.update(self.node.id, self.node, 'nodes')
         except RuntimeError as e:
             self.logger.error('failed to create node')
-            self.logger.error(e)
-
-    def _weave_launch(self):
-        try:
-            self.logger.info('launching weave')
-            master = db.search_from_table('nodes', {'type': 'master'})[0]
-            ip = self.machine.ip(master.name)
-            self.machine.ssh(self.node.name, 'sudo weave launch {}'.format(ip))
-            self.node.state_attrs["state_weave_launch"] = True
-            db.update(self.node.id, self.node, 'nodes')
-        except RuntimeError as e:
-            self.logger.error('failed to launch weave')
             self.logger.error(e)
 
 
@@ -407,4 +335,3 @@ class DeployMsgconNode(DeployNode):
             self.node.state_attrs["state_complete"] = True
             self.logger.info('node deployment is done')
             db.update(self.node.id, self.node, 'nodes')
-

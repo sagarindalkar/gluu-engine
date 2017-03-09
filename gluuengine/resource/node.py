@@ -12,9 +12,11 @@ from ..reqparser import NodeReq
 from ..model import DiscoveryNode
 from ..model import MasterNode
 from ..model import WorkerNode
+from ..model import MsgconNode
 from ..node import DeployDiscoveryNode
 from ..node import DeployMasterNode
 from ..node import DeployWorkerNode
+from ..node import DeployMsgconNode
 from ..machine import Machine
 from ..database import db
 from ..utils import as_boolean
@@ -38,10 +40,10 @@ def find_discovery():
     return dnode
 
 
-def load_discovery():
+def load_discovery(machine):
     dnode = find_discovery()
     discovery = Discovery()
-    discovery.ip = self.machine.ip(dnode.name)
+    discovery.ip = machine.ip(dnode.name)
     discovery.port = DISCOVERY_PORT
     return discovery
 
@@ -85,7 +87,7 @@ class CreateNodeResource(Resource):
                     "status": 403,
                     "message": "msgcon node needs a master node",
                 }, 403
-            discovery = load_discovery()
+            discovery = load_discovery(self.machine)
             node = MsgconNode(data)
             db.persist(node, 'nodes')
             dn = DeployMsgconNode(node, discovery, app)
@@ -103,7 +105,7 @@ class CreateNodeResource(Resource):
                     "status": 403,
                     "message": "master node is already created",
                 }, 403
-            discovery = load_discovery()
+            discovery = load_discovery(self.machine)
             node = MasterNode(data)
             db.persist(node, 'nodes')
             dn = DeployMasterNode(node, discovery, app)
@@ -147,7 +149,7 @@ class CreateNodeResource(Resource):
                         "status": 403,
                         "message": "creating worker node requires active license",
                     }, 403
-            discovery = load_discovery()
+            discovery = load_discovery(self.machine)
             node = WorkerNode(data)
             db.persist(node, 'nodes')
             dn = DeployWorkerNode(node, discovery, app)

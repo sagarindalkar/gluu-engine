@@ -7,6 +7,7 @@ from .node import Node  # noqa
 from .node import DiscoveryNode  # noqa
 from .node import MasterNode  # noqa
 from .node import WorkerNode  # noqa
+from .node import MsgconNode  # noqa
 from .provider import GenericProvider  # noqa
 from .provider import DigitalOceanProvider  # noqa
 from .provider import AwsProvider  # noqa

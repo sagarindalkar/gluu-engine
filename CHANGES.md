@@ -2,6 +2,12 @@
 
 Here you can see the full list of changes between each `gluu-engine` release.
 
+## Version 0.6.3
+
+Released on March 15th, 2017.
+
+* Added `dataset` wrapper to replace missing Flask-Dataset extension (no longer available in public repository). Related issue: [#113](https://github.com/GluuFederation/gluu-engine/issues/113).
+
 ## Version 0.6.2
 
 Released on February 28th, 2017.

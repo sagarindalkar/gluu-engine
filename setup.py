@@ -48,6 +48,7 @@ setup(
         "click",
         "pymysql",
         "schematics",
+        "dataset",
     ],
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",

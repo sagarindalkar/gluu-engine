@@ -46,7 +46,6 @@ setup(
         "gunicorn",
         "futures",
         "click",
-        "flask-dataset",
         "pymysql",
         "schematics",
     ],

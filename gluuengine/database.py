@@ -5,10 +5,11 @@
 
 import inspect
 
-from werkzeug.utils import import_string
+import dataset
+from flask import _app_ctx_stack
 from flask_pymongo import PyMongo
-from flask_dataset import Dataset
 from sqlalchemy import Unicode
+from werkzeug.utils import import_string
 
 
 def _load_pyobject(data):
@@ -25,6 +26,60 @@ def _load_pyobject(data):
 def get_model_path(model):
     return ".".join([inspect.getmodule(model).__name__,
                      model.__class__.__name__])
+
+
+class Dataset(object):
+    def __init__(self, app=None):
+        self._connection = None
+        self.app = app
+
+        if app:
+            self.init_app(app)
+
+    def init_app(self, app):
+        if not self.app:
+            self.app = app
+
+        app.config.setdefault("DATASET_DATABASE_URI", "sqlite://")
+        app.config.setdefault("DATASET_ENGINE_KWARGS", None)
+        app.extensions = getattr(app, "extensions", {})
+        app.extensions["dataset"] = self
+
+        @app.teardown_appcontext
+        def close(response_or_exc):
+            if response_or_exc is None:
+                self.connection.commit()
+            else:
+                self.connection.rollback()
+            return response_or_exc
+
+    @property
+    def connection(self):
+        if not self._connection:
+            app = self._get_app()
+            self._connection = dataset.connect(
+                app.config["DATASET_DATABASE_URI"],
+                engine_kwargs=app.config["DATASET_ENGINE_KWARGS"],
+            )
+        return self._connection
+
+    def _get_app(self):
+        if self.app:
+            return self.app
+
+        ctx = _app_ctx_stack.top
+        if ctx:
+            return ctx.app
+
+        raise RuntimeError("application not registered on dataset "
+                           "instance and no application bound "
+                           "to current context")
+
+    def __getitem__(self, table_name):
+        return self.connection.get_table(table_name)
+
+    def __getattr__(self, attr):
+        return getattr(self.connection, attr)
 
 
 class Database(object):
@@ -47,7 +102,7 @@ class Database(object):
                 self.app.config["MONGO_URI"] = db_uri
                 self._backend = PyMongoBackend(self.app)
             else:
-                # flask-dataset compatibility
+                # dataset compatibility
                 self.app.config["DATASET_DATABASE_URI"] = db_uri
                 self._backend = DatasetBackend(self.app)
 

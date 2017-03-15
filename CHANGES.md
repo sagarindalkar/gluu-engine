@@ -2,6 +2,12 @@
 
 Here you can see the full list of changes between each `gluu-engine` release.
 
+## Version 0.6.4
+
+Released on March 16th, 2017.
+
+* Added missing `dataset` package.
+
 ## Version 0.6.3
 
 Released on March 15th, 2017.

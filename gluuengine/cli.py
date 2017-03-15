@@ -19,6 +19,7 @@ from .model import CONTAINER_LOG_SCHEMA
 from .model import NODE_SCHEMA
 from .model import PROVIDER_SCHEMA
 from .model import LICENSE_KEY_SCHEMA
+from .model import LDAP_SETTING_SCHEMA
 
 
 # global context settings
@@ -190,8 +191,15 @@ def init_schema():
         return
 
     with app.test_request_context():
-        schema_list = [CLUSTER_SCHEMA, CONTAINER_SCHEMA, CONTAINER_LOG_SCHEMA,
-                       NODE_SCHEMA, PROVIDER_SCHEMA, LICENSE_KEY_SCHEMA]
+        schema_list = (
+            CLUSTER_SCHEMA,
+            CONTAINER_SCHEMA,
+            CONTAINER_LOG_SCHEMA,
+            NODE_SCHEMA,
+            PROVIDER_SCHEMA,
+            LICENSE_KEY_SCHEMA,
+            LDAP_SETTING_SCHEMA,
+        )
 
         for schema in schema_list:
             table = db.backend._get_table(schema["name"])

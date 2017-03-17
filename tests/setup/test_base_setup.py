@@ -25,7 +25,7 @@ def test_render_template(patched_po_run, base_setup):
 
 @pytest.mark.skip(reason="rewrite needed")
 def test_gen_cert(base_setup, patched_exec_cmd):
-    base_setup.gen_cert("ldap", "secret", "root", "root", "localhost")
+    base_setup.gen_cert("oxauth", "secret", "root", "root", "localhost")
 
 
 @pytest.mark.skip(reason="rewrite needed")

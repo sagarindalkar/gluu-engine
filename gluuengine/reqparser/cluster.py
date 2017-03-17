@@ -12,9 +12,6 @@ from marshmallow import post_load
 from ..extensions import ma
 from ..utils import generate_passkey
 from ..utils import encrypt_text
-# from ..utils import ldap_encode
-# from ..utils import get_quad
-# from ..utils import get_random_chars
 
 # cluster name rule:
 #
@@ -24,13 +21,11 @@ from ..utils import encrypt_text
 CLUSTER_NAME_RE = re.compile(r"^[a-zA-Z0-9]+[a-zA-Z0-9-_\.]+[a-zA-Z0-9]$")
 
 
-# class ClusterReq(ExternalLDAPMixin, ma.Schema):
 class ClusterReq(ma.Schema):
     name = ma.Str(required=True)
     description = ma.Str(missing="")
     ox_cluster_hostname = ma.Str(required=True)
     org_name = ma.Str(required=True)
-    # org_short_name = ma.Str(required=True)
     country_code = ma.Str(required=True)
     city = ma.Str(required=True)
     state = ma.Str(required=True)
@@ -67,46 +62,6 @@ class ClusterReq(ma.Schema):
     @post_load
     def finalize_data(self, data):
         plain_admin_pw = data["admin_pw"]
-        # org_quads = '{}.{}'.format(*[get_quad() for _ in xrange(2)])
-        # appliance_quads = '{}.{}'.format(*[get_quad() for _ in xrange(2)])
-        # client_quads = '{}.{}'.format(*[get_quad() for _ in xrange(2)])
-        # oxauth_client_pw = get_random_chars()
-        # scim_rs_quads = '{}.{}'.format(*[get_quad() for _ in xrange(2)])
-        # scim_rp_quads = '{}.{}'.format(*[get_quad() for i in xrange(2)])
-
         data["passkey"] = generate_passkey()
         data["admin_pw"] = encrypt_text(plain_admin_pw, data["passkey"])
-        # data["encoded_ldap_pw"] = ldap_encode(plain_admin_pw)
-        # data["encoded_ox_ldap_pw"] = data["admin_pw"]
-        # data["base_inum"] = "@!{}.{}.{}.{}".format(
-        #     *[get_quad() for _ in xrange(4)]
-        # )
-        # data["inum_org"] = '{}!0001!{}'.format(data["base_inum"], org_quads)
-        # data["inum_appliance"] = '{}!0002!{}'.format(
-        #     data["base_inum"], appliance_quads,
-        # )
-        # data["oxauth_client_id"] = '{}!0008!{}'.format(
-        #     data["inum_org"], client_quads,
-        # )
-        # data["oxauth_client_encoded_pw"] = encrypt_text(
-        #     oxauth_client_pw, data["passkey"],
-        # )
-        # data["oxauth_openid_jks_pass"] = get_random_chars()
-        # data["scim_rs_client_id"] = '{}!0008!{}'.format(
-        #     data["inum_org"], scim_rs_quads,
-        # )
-        # data["scim_rs_client_jks_pass"] = get_random_chars()
-        # data["scim_rs_client_jks_pass_encoded"] = encrypt_text(
-        #     data["scim_rs_client_jks_pass"], data["passkey"],
-        # )
-        # data["scim_rp_client_id"] = '{}!0008!{}'.format(
-        #     data["inum_org"], scim_rp_quads,
-        # )
-        # data["scim_rp_client_jks_pass"] = "secret"
-        # data["encoded_shib_jks_pw"] = data["admin_pw"]
-        # data["encoded_asimba_jks_pw"] = data["admin_pw"]
         return data
-
-
-# class ClusterUpdateReq(ma.Schema):
-#     pass

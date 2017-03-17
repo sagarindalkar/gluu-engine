@@ -2,11 +2,9 @@ import pytest
 
 
 @pytest.mark.skip(reason="rewrite needed")
-def test_setup(oxauth_setup, ldap_node, cluster, db,
-               patched_sleep, patched_exec_cmd, patched_run):
+def test_setup(oxauth_setup, cluster, db, patched_sleep,
+               patched_exec_cmd, patched_run):
     db.persist(cluster, "clusters")
-    ldap_node.state = "SUCCESS"
-    db.persist(ldap_node, "nodes")
     # TODO: it might be better to split the tests
     oxauth_setup.setup()
 

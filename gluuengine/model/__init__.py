@@ -15,7 +15,6 @@ from .provider import AwsProvider  # noqa
 from .cluster import Cluster  # noqa
 from .license import LicenseKey  # noqa
 
-# from .container import LdapContainer  # noqa
 from .container import OxauthContainer  # noqa
 from .container import OxtrustContainer  # noqa
 from .container import OxidpContainer  # noqa

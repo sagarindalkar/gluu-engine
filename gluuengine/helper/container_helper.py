@@ -19,7 +19,6 @@ from ..model import STATE_FAILED
 from ..model import STATE_DISABLED
 from ..model import STATE_SETUP_FINISHED
 from ..model import STATE_TEARDOWN_FINISHED
-# from ..setup import LdapSetup
 from ..setup import OxauthSetup
 from ..setup import OxtrustSetup
 from ..setup import OxidpSetup
@@ -253,24 +252,6 @@ class BaseContainerHelper(object):
     @property
     def aliases(self):
         return [self.container.type]
-
-
-# class LdapContainerHelper(BaseContainerHelper):
-#     setup_class = LdapSetup
-#     ulimits = [
-#         {"name": "nofile", "soft": 65536, "hard": 131072},
-#     ]
-
-#     @property
-#     def volumes(self):
-#         db_volume = os.path.join(self.app.config["OPENDJ_VOLUME_DIR"],
-#                                  self.container.name,
-#                                  "db")
-#         return {
-#             db_volume: {
-#                 "bind": "/opt/opendj/db",
-#             },
-#         }
 
 
 class OxauthContainerHelper(BaseContainerHelper):

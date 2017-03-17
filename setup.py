@@ -49,6 +49,7 @@ setup(
         "pymysql",
         "schematics",
         "dataset",
+        "flask_sqlalchemy",
     ],
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",

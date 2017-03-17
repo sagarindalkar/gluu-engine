@@ -5,23 +5,35 @@
 
 import uuid
 
-from schematics.types import StringType
-from schematics.types.compound import PolyModelType
+from sqlalchemy import JSON
 
-from ._schema import CONTAINER_SCHEMA
-from .base import BaseModel
+from ..database import db
 
 
-class Container(BaseModel):
+class Container(db.Model):
+    __tablename__ = "containers"
+
+    id = db.Column(db.Unicode(36), primary_key=True,
+                   default=lambda: str(uuid.uuid4()))
+    cluster_id = db.Column(db.Unicode(36))
+    node_id = db.Column(db.Unicode(36))
+    container_attrs = db.Column(JSON)
+    name = db.Column(db.Unicode(255))
+    state = db.Column(db.Unicode(32))
+    type = db.Column(db.Unicode(32))
+    hostname = db.Column(db.Unicode(255))
+    cid = db.Column(db.Unicode(128))
+
+    __mapper_args__ = {
+        "polymorphic_on": type,
+        "polymorphic_identity": "container",
+    }
+
     @property
-    def _schema(self):
-        return CONTAINER_SCHEMA
-
-    def _resolve_container_attr(self, field):
-        try:
-            return self.container_attrs.get(field)
-        except (AttributeError, TypeError,):
-            return self._initial.get(field)
+    def image(self):
+        """Container image. Must be overriden in subclass.
+        """
+        raise NotImplemented("image for the container must be defined")
 
     @property
     def resource_fields(self):
@@ -36,28 +48,26 @@ class Container(BaseModel):
             "cid": self.cid,
         }
 
+    def as_dict(self):
+        return self.resource_fields
+
 
 class OxauthContainer(Container):
-    class ContainerAttrs(BaseModel):
-        ldap_binddn = StringType(default='cn=directory manager,o=gluu')
-        cert_folder = StringType(default="/etc/certs")
-        oxauth_lib = StringType(default="/opt/gluu/jetty/oxauth/webapps/oxauth/WEB-INF/lib")
-        conf_dir = StringType(default="/etc/gluu/conf")
+    # __table_args__ = {'extend_existing': True}
 
-    id = StringType(default=lambda: str(uuid.uuid4()))
-    cluster_id = StringType()
-    node_id = StringType()
-    name = StringType()
-    type = StringType(default="oxauth")
-    state = StringType()
-    hostname = StringType()
-    cid = StringType()
-    container_attrs = PolyModelType(ContainerAttrs, strict=False)
-    _pyobject = StringType()
+    # TODO: move this to reqparser
+    # ldap_binddn = StringType(default='cn=directory manager,o=gluu')
+    # cert_folder = StringType(default="/etc/certs")
+    # oxauth_lib = StringType(default="/opt/gluu/jetty/oxauth/webapps/oxauth/WEB-INF/lib")
+    # conf_dir = StringType(default="/etc/gluu/conf")
+
+    __mapper_args__ = {
+        "polymorphic_identity": "oxauth",
+    }
 
     @property
     def cert_folder(self):
-        return self._resolve_container_attr("cert_folder")
+        return self.container_attrs["cert_folder"]
 
     @property
     def image(self):
@@ -69,25 +79,20 @@ class OxauthContainer(Container):
 
 
 class OxtrustContainer(Container):
-    class ContainerAttrs(BaseModel):
-        ldap_binddn = StringType(default='cn=directory manager,o=gluu')
-        cert_folder = StringType(default="/etc/certs")
-        conf_dir = StringType(default="/etc/gluu/conf")
+    # __table_args__ = {'extend_existing': True}
 
-    id = StringType(default=lambda: str(uuid.uuid4()))
-    cluster_id = StringType()
-    node_id = StringType()
-    name = StringType()
-    type = StringType(default="oxtrust")
-    state = StringType()
-    hostname = StringType()
-    cid = StringType()
-    container_attrs = PolyModelType(ContainerAttrs, strict=False)
-    _pyobject = StringType()
+    # TODO: move this to reqparser
+    # ldap_binddn = StringType(default='cn=directory manager,o=gluu')
+    # cert_folder = StringType(default="/etc/certs")
+    # conf_dir = StringType(default="/etc/gluu/conf")
+
+    __mapper_args__ = {
+        "polymorphic_identity": "oxtrust",
+    }
 
     @property
     def cert_folder(self):
-        return self._resolve_container_attr("cert_folder")
+        return self.container_attrs["cert_folder"]
 
     @property
     def image(self):
@@ -99,22 +104,17 @@ class OxtrustContainer(Container):
 
 
 class OxidpContainer(Container):
-    class ContainerAttrs(BaseModel):
-        ldap_binddn = StringType(default='cn=directory manager,o=gluu')
-        cert_folder = StringType(default="/etc/certs")
-        conf_dir = StringType(default="/etc/gluu/conf")
-        saml_type = StringType(default="shibboleth")
+    # __table_args__ = {'extend_existing': True}
 
-    id = StringType(default=lambda: str(uuid.uuid4()))
-    cluster_id = StringType()
-    node_id = StringType()
-    name = StringType()
-    type = StringType(default="oxidp")
-    state = StringType()
-    hostname = StringType()
-    cid = StringType()
-    container_attrs = PolyModelType(ContainerAttrs, strict=False)
-    _pyobject = StringType()
+    # TODO: move this to reqparser
+    # ldap_binddn = StringType(default='cn=directory manager,o=gluu')
+    # cert_folder = StringType(default="/etc/certs")
+    # conf_dir = StringType(default="/etc/gluu/conf")
+    # saml_type = StringType(default="shibboleth")
+
+    __mapper_args__ = {
+        "polymorphic_identity": "oxidp",
+    }
 
     @property
     def image(self):
@@ -122,7 +122,7 @@ class OxidpContainer(Container):
 
     @property
     def cert_folder(self):
-        return self._resolve_container_attr("cert_folder")
+        return self.container_attrs["cert_folder"]
 
     @property
     def truststore_fn(self):
@@ -130,19 +130,14 @@ class OxidpContainer(Container):
 
 
 class NginxContainer(Container):
-    class ContainerAttrs(BaseModel):
-        cert_folder = StringType(default="/etc/certs")
+    # __table_args__ = {'extend_existing': True}
 
-    id = StringType(default=lambda: str(uuid.uuid4()))
-    cluster_id = StringType()
-    node_id = StringType()
-    name = StringType()
-    type = StringType(default="nginx")
-    state = StringType()
-    hostname = StringType()
-    cid = StringType()
-    container_attrs = PolyModelType(ContainerAttrs, strict=False)
-    _pyobject = StringType()
+    # TODO: move this to reqparser
+    # cert_folder = StringType(default="/etc/certs")
+
+    __mapper_args__ = {
+        "polymorphic_identity": "nginx",
+    }
 
     @property
     def image(self):
@@ -150,25 +145,20 @@ class NginxContainer(Container):
 
     @property
     def cert_folder(self):
-        return self._resolve_container_attr("cert_folder")
+        return self.container_attrs["cert_folder"]
 
 
 class OxasimbaContainer(Container):
-    class ContainerAttrs(BaseModel):
-        ldap_binddn = StringType(default='cn=directory manager,o=gluu')
-        cert_folder = StringType(default="/etc/certs")
-        conf_dir = StringType(default="/etc/gluu/conf")
+    # __table_args__ = {'extend_existing': True}
 
-    id = StringType(default=lambda: str(uuid.uuid4()))
-    cluster_id = StringType()
-    node_id = StringType()
-    name = StringType()
-    type = StringType(default="oxasimba")
-    state = StringType()
-    hostname = StringType()
-    cid = StringType()
-    container_attrs = PolyModelType(ContainerAttrs, strict=False)
-    _pyobject = StringType()
+    # TODO: move this to reqparser
+    # ldap_binddn = StringType(default='cn=directory manager,o=gluu')
+    # cert_folder = StringType(default="/etc/certs")
+    # conf_dir = StringType(default="/etc/gluu/conf")
+
+    __mapper_args__ = {
+        "polymorphic_identity": "oxasimba",
+    }
 
     @property
     def image(self):
@@ -176,7 +166,7 @@ class OxasimbaContainer(Container):
 
     @property
     def cert_folder(self):
-        return self._resolve_container_attr("cert_folder")
+        return self.container_attrs["cert_folder"]
 
     @property
     def truststore_fn(self):
@@ -184,19 +174,11 @@ class OxasimbaContainer(Container):
 
 
 class OxelevenContainer(Container):
-    class ContainerAttrs(BaseModel):
-        pass
+    # __table_args__ = {'extend_existing': True}
 
-    id = StringType(default=lambda: str(uuid.uuid4()))
-    cluster_id = StringType()
-    node_id = StringType()
-    name = StringType()
-    type = StringType(default="oxeleven")
-    state = StringType()
-    hostname = StringType()
-    cid = StringType()
-    container_attrs = PolyModelType(ContainerAttrs, strict=False)
-    _pyobject = StringType()
+    __mapper_args__ = {
+        "polymorphic_identity": "oxeleven",
+    }
 
     @property
     def image(self):

@@ -10,6 +10,7 @@ from crochet import run_in_reactor
 from ..database import db
 from ..machine import Machine
 from ..log import create_file_logger
+from ..model.provider import Provider
 
 REMOTE_DOCKER_CERT_DIR = "/opt/gluu/docker/certs"
 CERT_FILES = ['ca.pem', 'cert.pem', 'key.pem']
@@ -21,7 +22,8 @@ class DeployNode(object):
         self.node = node_model_obj
         self.logger = create_file_logger(app.config['NODE_LOG_PATH'], name=self.node.name)
         self.machine = Machine()
-        self.provider = db.get(self.node.provider_id, 'providers')
+        # self.provider = db.get(self.node.provider_id, 'providers')
+        self.provider = Provider.query.get(self.node.provider_id)
 
     def _rng_tools(self):
         try:

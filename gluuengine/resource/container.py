@@ -28,6 +28,7 @@ from ..helper import NginxContainerHelper
 from ..helper import OxelevenContainerHelper
 from ..model import OxauthContainer
 from ..model import OxtrustContainer
+from ..model.container import Container
 # from ..model import OxidpContainer
 from ..model import NginxContainer
 # from ..model import OxasimbaContainer
@@ -35,6 +36,8 @@ from ..model import ContainerLog
 from ..model import OxelevenContainer
 from ..machine import Machine
 from ..utils import as_boolean
+from ..model.node import Node
+from ..model import Cluster
 
 
 #: List of supported container
@@ -49,15 +52,7 @@ CONTAINER_CHOICES = (
 
 
 def get_container(db, container_id):
-    try:
-        container = db.search_from_table("containers", {"id": container_id})[0]
-        if not container:
-            container = db.search_from_table(
-                "containers", {"name": container_id},
-            )[0]
-    except IndexError:
-        container = None
-    return container
+    return Container.query.filter_by(db.or_(id=container_id, name=container_id))
 
 
 def target_node_reachable(node_name):
@@ -65,35 +60,21 @@ def target_node_reachable(node_name):
 
 
 def master_node_reachable():
-    try:
-        node = db.search_from_table(
-            "nodes", {"type": "master"},
-        )[0]
-    except IndexError:
+    node = Node.query.filter_by(type="master").first()
+    if not node:
         return False
-    else:
-        return Machine().status(node.name)
+    return Machine().status(node.name)
 
 
 def discovery_node_reachable():
-    try:
-        node = db.search_from_table(
-            "nodes", {"type": "discovery"},
-        )[0]
-    except IndexError:
+    node = Node.query.filter_by(type="discovery").first()
+    if not node:
         return False
-    else:
-        return Machine().status(node.name)
+    return Machine().status(node.name)
 
 
 def get_containerlog(db, containerlog_name):
-    try:
-        log = db.search_from_table(
-            "container_logs", {"container_name": containerlog_name},
-        )[0]
-    except IndexError:
-        log = None
-    return log
+    return ContainerLog.query.filter_by(container_name=containerlog_name).first()
 
 
 class ContainerResource(Resource):
@@ -131,7 +112,7 @@ class ContainerResource(Resource):
                 "message": "cannot delete container while still in deployment",
             }, 403
 
-        node = db.get(container.node_id, "nodes")
+        node = Node.query.get(container.node_id)
 
         # reject request if target node is unreachable
         if not target_node_reachable(node.name):
@@ -157,11 +138,14 @@ class ContainerResource(Resource):
 
         # remove container (``container.id`` may empty, hence we're using
         # unique ``container.name`` instead)
-        db.delete_from_table("containers", {"name": container.name})
+        db.session.delete(container)
+        db.session.commit()
 
         container_log = ContainerLog.create_or_get(container)
         container_log.state = STATE_TEARDOWN_IN_PROGRESS
-        db.update(container_log.id, container_log, "container_logs")
+        # TODO: update the row
+        db.session.add(container_log)
+        db.session.commit()
         logpath = os.path.join(app.config["CONTAINER_LOG_DIR"],
                                container_log.teardown_log)
 
@@ -183,16 +167,15 @@ class ContainerResource(Resource):
 class ContainerListResource(Resource):
     def get(self, container_type=""):
         if not container_type:
-            containers = db.all("containers")
-            return [container.as_dict() for container in containers]
+            return [container.as_dict() for container in Container.query]
 
         if container_type not in CONTAINER_CHOICES:
             abort(404)
 
-        containers = db.search_from_table(
-            "containers", {"type": container_type},
-        )
-        return [container.as_dict() for container in containers]
+        return [
+            container.as_dict()
+            for container in Container.query.filter_by(type=container_type)
+        ]
 
 
 class NewContainerResource(Resource):
@@ -231,9 +214,8 @@ class NewContainerResource(Resource):
                 "params": errors,
             }, 400
 
-        try:
-            cluster = db.all("clusters")[0]
-        except IndexError:
+        cluster = Cluster.query.first()
+        if not cluster:
             return {
                 "status": 403,
                 "message": "container deployment requires a cluster",
@@ -296,12 +278,15 @@ class NewContainerResource(Resource):
             "container_attrs": data["container_attrs"],
         })
         container.name = "{}_{}".format(container.image, container.id)
-        db.persist(container, "containers")
+        db.session.add(container)
+        db.session.commit()
 
         # log related setup
         container_log = ContainerLog.create_or_get(container)
         container_log.state = STATE_SETUP_IN_PROGRESS
-        db.update(container_log.id, container_log, "container_logs")
+        # TODO: update the row
+        db.session.add(container_log)
+        db.session.commit()
         logpath = os.path.join(app.config["CONTAINER_LOG_DIR"],
                                container_log.setup_log)
 
@@ -424,10 +409,9 @@ class ContainerLogTeardownResource(Resource):
 
 class ContainerLogListResource(Resource):
     def get(self):
-        container_logs = db.all("container_logs")
         return [
             format_container_log_response(container_log)
-            for container_log in container_logs
+            for container_log in ContainerLog.query
         ]
 
 
@@ -452,7 +436,7 @@ class ScaleContainerResource(Resource):
         running_nodes = m.list('running')
 
         try:
-            dcv_node = db.search_from_table("nodes", {"type": "discovery"})[0]
+            dcv_node = Node.query.filter_by(type="discovery").first()
             running_nodes.remove(dcv_node.name)
         except IndexError:
             pass
@@ -474,12 +458,15 @@ class ScaleContainerResource(Resource):
                 "container_attrs": {},
             })
             container.name = "{}_{}".format(container.image, container.id)
-            db.persist(container, "containers")
+            db.session.add(container)
+            db.session.commit()
 
             # log related setup
             container_log = ContainerLog.create_or_get(container)
             container_log.state = STATE_SETUP_IN_PROGRESS
-            db.update(container_log.id, container_log, "container_logs")
+            # TODO: update the row
+            db.session.add(container_log)
+            db.session.commit()
             logpath = os.path.join(app.config["CONTAINER_LOG_DIR"],
                                    container_log.setup_log)
 
@@ -506,19 +493,15 @@ class ScaleContainerResource(Resource):
                 "message": "cannot deploy 0 or lower number of container",
             }, 403
 
-        try:
-            cluster = db.all("clusters")[0]
-        except IndexError:
+        cluster = Cluster.query.first()
+        if not cluster:
             return {
                 "status": 403,
                 "message": "container deployment requires a cluster",
             }, 403
 
         # get id list of running nodes
-        mnodes = db.search_from_table('nodes', {"type": "master"})
-        wnodes = db.search_from_table('nodes', {"type": "worker"})
-        nodes = mnodes + wnodes
-
+        nodes = Node.query.filter(Node.type.in_(["master", "worker"])).all()
         if not nodes:
             return {
                 "status": 403,
@@ -545,10 +528,13 @@ class ScaleContainerResource(Resource):
 
     def delete_obj_generator(self, app, containers):
         for container in containers:
-            db.delete_from_table("containers", {"name": container.name})
+            db.session.delete(container)
+            db.session.commit()
             container_log = ContainerLog.create_or_get(container)
             container_log.state = STATE_TEARDOWN_IN_PROGRESS
-            db.update(container_log.id, container_log, "container_logs")
+            # TODO: update the row
+            db.session.add(container_log)
+            db.session.commit()
             logpath = os.path.join(app.config["CONTAINER_LOG_DIR"],
                                    container_log.teardown_log)
             helper_class = self.helper_classes[container.type]
@@ -570,20 +556,22 @@ class ScaleContainerResource(Resource):
             }, 403
 
         # get the count of requested container type
-        count = db.count_from_table('containers', {'type': container_type, 'state': STATE_SUCCESS})
-        if number > count:
+        counter = Container.query.filter_by(
+            type_=container_type, state=STATE_SUCCESS,
+        ).count()
+        if number > counter:
             return {
                 "status": 403,
                 "message": "delete request number is greater than running containers",
             }, 403
 
         # get the list of container object
-        containers = db.search_from_table('containers', {'type': container_type, 'state': STATE_SUCCESS})
+        containers = Container.query.filter_by(
+            type=container_type, state=STATE_SUCCESS,
+        ).all()
 
         # select and arrange containers
-        mnodes = db.search_from_table('nodes', {"type": "master"})
-        wnodes = db.search_from_table('nodes', {"type": "worker"})
-        nodes = mnodes + wnodes
+        nodes = Node.query.filter(Node.type.in_(["master", "worker"])).all()
         node_id_pool = self.make_node_id_pool(nodes)
 
         containers_reorder = []

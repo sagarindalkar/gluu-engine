@@ -5,22 +5,21 @@
 
 import uuid
 
-from schematics.types import IntType
-from schematics.types import StringType
-
-from .base import BaseModel
+from ..database import db
 
 
-class LdapSetting(BaseModel):
-    id = StringType(default=lambda: str(uuid.uuid4()))
-    host = StringType()
-    port = IntType()
-    bind_dn = StringType()
-    encoded_bind_password = StringType()
-    encoded_salt = StringType()
-    inum_appliance = StringType()
-    inum_org = StringType()
-    _pyobject = StringType()
+class LdapSetting(db.Model):
+    __tablename__ = "ldap_settings"
+
+    id = db.Column(db.Unicode(36), primary_key=True,
+                   default=lambda: str(uuid.uuid4()))
+    host = db.Column(db.Unicode(255))
+    port = db.Column(db.Integer)
+    bind_dn = db.Column(db.Unicode(255))
+    encoded_bind_password = db.Column(db.Unicode(255))
+    encoded_salt = db.Column(db.Unicode(255))
+    inum_appliance = db.Column(db.Unicode(255))
+    inum_org = db.Column(db.Unicode(255))
 
     @property
     def resource_fields(self):
@@ -48,3 +47,6 @@ class LdapSetting(BaseModel):
                                .replace('!', '')
                                .replace('.', '')
         )
+
+    def as_dict(self):
+        return self.resource_fields

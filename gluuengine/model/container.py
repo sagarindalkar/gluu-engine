@@ -79,8 +79,6 @@ class OxauthContainer(Container):
 
 
 class OxtrustContainer(Container):
-    # __table_args__ = {'extend_existing': True}
-
     # TODO: move this to reqparser
     # ldap_binddn = StringType(default='cn=directory manager,o=gluu')
     # cert_folder = StringType(default="/etc/certs")
@@ -104,8 +102,6 @@ class OxtrustContainer(Container):
 
 
 class OxidpContainer(Container):
-    # __table_args__ = {'extend_existing': True}
-
     # TODO: move this to reqparser
     # ldap_binddn = StringType(default='cn=directory manager,o=gluu')
     # cert_folder = StringType(default="/etc/certs")
@@ -130,8 +126,6 @@ class OxidpContainer(Container):
 
 
 class NginxContainer(Container):
-    # __table_args__ = {'extend_existing': True}
-
     # TODO: move this to reqparser
     # cert_folder = StringType(default="/etc/certs")
 
@@ -149,8 +143,6 @@ class NginxContainer(Container):
 
 
 class OxasimbaContainer(Container):
-    # __table_args__ = {'extend_existing': True}
-
     # TODO: move this to reqparser
     # ldap_binddn = StringType(default='cn=directory manager,o=gluu')
     # cert_folder = StringType(default="/etc/certs")
@@ -174,8 +166,6 @@ class OxasimbaContainer(Container):
 
 
 class OxelevenContainer(Container):
-    # __table_args__ = {'extend_existing': True}
-
     __mapper_args__ = {
         "polymorphic_identity": "oxeleven",
     }

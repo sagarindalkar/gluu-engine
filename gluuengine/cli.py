@@ -9,17 +9,19 @@ import uuid
 import click
 
 from .app import create_app
-from .database import db
+# from .database import db
 from .dockerclient import Docker
 from .errors import DockerExecError
 from .machine import Machine
-from .model import CLUSTER_SCHEMA
-from .model import CONTAINER_SCHEMA
-from .model import CONTAINER_LOG_SCHEMA
-from .model import NODE_SCHEMA
-from .model import PROVIDER_SCHEMA
-from .model import LICENSE_KEY_SCHEMA
-from .model import LDAP_SETTING_SCHEMA
+# from .model import CLUSTER_SCHEMA
+# from .model import CONTAINER_SCHEMA
+# from .model import CONTAINER_LOG_SCHEMA
+# from .model import NODE_SCHEMA
+# from .model import PROVIDER_SCHEMA
+# from .model import LICENSE_KEY_SCHEMA
+# from .model import LDAP_SETTING_SCHEMA
+from ..model import Node
+from ..model import Container
 
 
 # global context settings
@@ -52,9 +54,7 @@ def _distribute_ox_files(type_):
 
     click.echo("distributing custom {} files".format(ox["name"]))
 
-    mnodes = db.search_from_table("nodes", {"type": "master"})
-    wnodes = db.search_from_table("nodes", {"type": "worker"})
-    nodes = mnodes + wnodes
+    nodes = Node.query.filter(Node.type.in_(["master", "worker"])).all()
 
     src = app.config[ox["override_dir_config"]]
     dest = src.replace(app.config[ox["override_dir_config"]],
@@ -69,10 +69,9 @@ def _distribute_ox_files(type_):
         mc.scp(src, "{}:{}".format(node.name, os.path.dirname(dest)),
                recursive=True)
 
-        containers = db.search_from_table(
-            "containers",
-            {"node_id": node.id, "type": type_, "state": "SUCCESS"},
-        )
+        containers = Container.query.filter_by(
+            node_id=node.id, type=type_, state="SUCCESS",
+        ).all()
 
         for container in containers:
             # we only need to restart jetty process inside the container
@@ -116,10 +115,7 @@ def distribute_ssl_cert():
         click.echo("{} is not available; process cancelled".format(ssl_key))
         return
 
-    try:
-        master_node = db.search_from_table("nodes", {"type": "master"})[0]
-    except IndexError:
-        master_node = None
+    master_node = Node.query.filter_by(type="master").first()
 
     if not master_node:
         click.echo("master node is not available; process cancelled")
@@ -129,10 +125,9 @@ def distribute_ssl_cert():
     dk = Docker(mc.config(master_node.name),
                 mc.swarm_config(master_node.name))
 
-    ngx_containers = db.search_from_table(
-        "containers",
-        {"type": "nginx", "state": "SUCCESS"},
-    )
+    ngx_containers = Container.query.filter_by(
+        type="nginx", state="SUCCESS",
+    ).all()
     for ngx in ngx_containers:
         click.echo("copying {} to {}:/etc/certs/nginx.crt".format(ssl_cert, ngx.name))
         dk.copy_to_container(ngx.cid, ssl_cert, "/etc/certs/nginx.crt")
@@ -140,14 +135,9 @@ def distribute_ssl_cert():
         dk.copy_to_container(ngx.cid, ssl_key, "/etc/certs/nginx.key")
         dk.exec_cmd(ngx.cid, "supervisorctl restart nginx")
 
-    # oxTrust relies on nginx cert and key, hence we need to update it
-    try:
-        oxtrust = db.search_from_table(
-            "containers",
-            {"type": "oxtrust", "state": "SUCCESS"},
-        )[0]
-    except IndexError:
-        oxtrust = None
+    oxtrust = Container.query.filter_by(
+        type="oxtrust", state="SUCCESS",
+    ).first()
 
     if oxtrust:
         click.echo("copying {} to {}:/etc/certs/nginx.crt".format(ssl_cert, oxtrust.name))
@@ -180,33 +170,33 @@ def distribute_ssl_cert():
     click.echo("distributing SSL cert and key is done")
 
 
-@main.command("init-schema")
-def init_schema():
-    """Initialize schema for RDBMS backend.
-    """
-    app = create_app()
+# @main.command("init-schema")
+# def init_schema():
+#     """Initialize schema for RDBMS backend.
+#     """
+#     app = create_app()
 
-    if not app.config["DATABASE_URI"].startswith("mysql"):
-        click.echo("database backend doesn't require preloaded schema")
-        return
+#     if not app.config["DATABASE_URI"].startswith("mysql"):
+#         click.echo("database backend doesn't require preloaded schema")
+#         return
 
-    with app.test_request_context():
-        schema_list = (
-            CLUSTER_SCHEMA,
-            CONTAINER_SCHEMA,
-            CONTAINER_LOG_SCHEMA,
-            NODE_SCHEMA,
-            PROVIDER_SCHEMA,
-            LICENSE_KEY_SCHEMA,
-            LDAP_SETTING_SCHEMA,
-        )
+#     with app.test_request_context():
+#         schema_list = (
+#             CLUSTER_SCHEMA,
+#             CONTAINER_SCHEMA,
+#             CONTAINER_LOG_SCHEMA,
+#             NODE_SCHEMA,
+#             PROVIDER_SCHEMA,
+#             LICENSE_KEY_SCHEMA,
+#             LDAP_SETTING_SCHEMA,
+#         )
 
-        for schema in schema_list:
-            table = db.backend._get_table(schema["name"])
+#         for schema in schema_list:
+#             table = db.backend._get_table(schema["name"])
 
-            for column, type_ in schema["columns"].iteritems():
-                if not table._has_column(column):
-                    click.echo("creating column {} in {} table".format(
-                        column, table.table,
-                    ))
-                    table.create_column(column, type_)
+#             for column, type_ in schema["columns"].iteritems():
+#                 if not table._has_column(column):
+#                     click.echo("creating column {} in {} table".format(
+#                         column, table.table,
+#                     ))
+#                     table.create_column(column, type_)

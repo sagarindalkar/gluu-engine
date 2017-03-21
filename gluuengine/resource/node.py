@@ -13,14 +13,15 @@ from ..model import DiscoveryNode
 from ..model import MasterNode
 from ..model import WorkerNode
 from ..model import MsgconNode
-from ..model.node import Node
+from ..model import Node
+from ..model import LicenseKey
 from ..node import DeployDiscoveryNode
 from ..node import DeployMasterNode
 from ..node import DeployWorkerNode
 from ..node import DeployMsgconNode
 from ..machine import Machine
 from ..database import db
-# from ..utils import as_boolean
+from ..utils import as_boolean
 
 # TODO: put it in config
 NODE_TYPES = ('master', 'worker', 'discovery', 'msgcon')
@@ -78,7 +79,7 @@ class CreateNodeResource(Resource):
             dn.deploy()
 
         if node_type == 'msgcon':
-            if Node.query.filter_by(type="master").count():
+            if not Node.query.filter_by(type="master").count():
                 return {
                     "status": 403,
                     "message": "msgcon node needs a master node",
@@ -116,37 +117,34 @@ class CreateNodeResource(Resource):
                     "message": "worker node needs a master node",
                 }, 403
 
-            # if as_boolean(app.config["ENABLE_LICENSE"]):
-            #     try:
-            #         license_key = db.all("license_keys")[0]
-            #     except IndexError:
-            #         license_key = None
+            if as_boolean(app.config["ENABLE_LICENSE"]):
+                license_key = LicenseKey.query.first()
 
-            #     if not license_key:
-            #         return {
-            #             "status": 403,
-            #             "message": "creating worker node requires a license key",
-            #         }, 403
+                if not license_key:
+                    return {
+                        "status": 403,
+                        "message": "creating worker node requires a license key",
+                    }, 403
 
-            #     # we have license key, but it's expired
-            #     if license_key.expired:
-            #         return {
-            #             "status": 403,
-            #             "message": "creating worker node requires a non-expired license key",
-            #         }, 403
+                # we have license key, but it's expired
+                if license_key.expired:
+                    return {
+                        "status": 403,
+                        "message": "creating worker node requires a non-expired license key",
+                    }, 403
 
-            #     # we have license key, but it's for another type of product
-            #     if license_key.mismatched:
-            #         return {
-            #             "status": 403,
-            #             "message": "creating worker node requires a DE product license key",
-            #         }, 403
+                # we have license key, but it's for another type of product
+                if license_key.mismatched:
+                    return {
+                        "status": 403,
+                        "message": "creating worker node requires a DE product license key",
+                    }, 403
 
-            #     if not license_key.is_active:
-            #         return {
-            #             "status": 403,
-            #             "message": "creating worker node requires active license",
-            #         }, 403
+                if not license_key.is_active:
+                    return {
+                        "status": 403,
+                        "message": "creating worker node requires active license",
+                    }, 403
             discovery = load_discovery(self.machine)
             node = WorkerNode(**data)
             db.session.add(node)
@@ -176,11 +174,7 @@ class NodeResource(Resource):
         return node.as_dict()
 
     def delete(self, node_name):
-        # nodes = db.search_from_table('nodes', {'name': node_name})
-        # if nodes:
-        #     node = nodes[0]
-        # else:
-        node = Node.query.filter_by(name=node_name).first
+        node = Node.query.filter_by(name=node_name).first()
         if not node:
             return {
                 "status": 404,
@@ -194,16 +188,13 @@ class NodeResource(Resource):
                 "message": "cannot delete node when it has containers",
             }, 403
 
-        # if node.type == 'master' and db.count_from_table('nodes', {'type': 'worker'}):
         if node.type == 'master' and Node.query.filter_by(type="worker").count():
-            # db.count_from_table('nodes', {'type': 'worker'}):
             return {
                 "status": 403,
                 "message": "there are still worker nodes running"
             }, 403
 
         if node.type == 'discovery' and Node.query.filter_by(type="master").count():
-            # db.count_from_table('nodes', {'type': 'master'}):
             return {
                 "status": 403,
                 "message": "master node still running"
@@ -213,7 +204,6 @@ class NodeResource(Resource):
         if running:
             try:
                 self.machine.rm(node.name)
-                # db.delete(node.id, 'nodes')
                 db.session.delete(node)
                 db.session.commit()
             except RuntimeError as e:
@@ -225,7 +215,6 @@ class NodeResource(Resource):
                 }, 500
                 db.session.rollback()
         else:
-            # db.delete(node.id, 'nodes')
             db.session.delete(node)
             db.session.commit()
         return {}, 204
@@ -233,10 +222,6 @@ class NodeResource(Resource):
     def put(self, node_name):
         app = current_app._get_current_object()
 
-        # nodes = db.search_from_table('nodes', {'name': node_name})
-        # if nodes:
-        #     node = nodes[0]
-        # else:
         node = Node.query.filter_by(name=node_name).first()
         if not node:
             return {
@@ -244,12 +229,6 @@ class NodeResource(Resource):
                 "message": "node not found"
             }, 404
 
-        # try:
-        #     dcv_node = db.search_from_table(
-        #         "nodes", {"type": "discovery"}
-        #     )[0]
-        # except IndexError:
-        #     dcv_node = None
         dcv_node = find_discovery()
 
         if node.type != 'discovery':

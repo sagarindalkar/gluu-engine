@@ -13,6 +13,7 @@ from twisted.internet.task import LoopingCall
 from ..database import db
 from ..model import STATE_DISABLED
 from ..model import STATE_SUCCESS
+from ..model import LicenseKey
 from ..machine import Machine
 from ..utils import populate_license
 from ..utils import retrieve_current_date
@@ -103,7 +104,8 @@ class LicenseWatcherTask(object):
             else:
                 # mark the latest update time
                 license_key.updated_at = retrieve_current_date()
-                db.update(license_key.id, license_key, "license_keys")
+                db.session.add(license_key)
+                db.session.commit()
                 self.logger.info("license key has been updated")
                 break
 
@@ -120,14 +122,9 @@ class LicenseWatcherTask(object):
                 # if we have specific containers being disabled in node,
                 # try to re-enable the containers
                 self.enable_containers(node, "oxauth")
-            # distribute_cluster_data(self.app, node)
 
     def get_license_key(self):
-        try:
-            license_key = db.all("license_keys")[0]
-        except IndexError:
-            license_key = None
-        return license_key
+        return LicenseKey.query.first()
 
     def disable_containers(self, node, type_):
         """Disables containers having specific type.
@@ -140,7 +137,8 @@ class LicenseWatcherTask(object):
         containers = node.get_containers(type_=type_)
         for container in containers:
             container.state = STATE_DISABLED
-            db.update(container.id, container, "containers")
+            db.session.add(container)
+            db.session.commit()
 
             self.machine.ssh(
                 node.name, "sudo docker stop {}".format(container.cid),
@@ -160,7 +158,8 @@ class LicenseWatcherTask(object):
 
         for container in containers:
             container.state = STATE_SUCCESS
-            db.update(container.id, container, "containers")
+            db.session.add(container)
+            db.session.commit()
 
             self.machine.ssh(
                 node.name, "sudo docker restart {}".format(container.cid),

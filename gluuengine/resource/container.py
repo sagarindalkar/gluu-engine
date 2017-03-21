@@ -346,7 +346,8 @@ class ContainerLogResource(Resource):
         if not container_log:
             return {"status": 404, "message": "Container log not found"}, 404
 
-        db.delete(container_log.id, "container_logs")
+        db.session.delete(container_log)
+        db.session.commit()
 
         app = current_app._get_current_object()
         abs_setup_log = os.path.join(app.config["CONTAINER_LOG_DIR"],

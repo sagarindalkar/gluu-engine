@@ -19,6 +19,9 @@ from ..model import STATE_FAILED
 from ..model import STATE_DISABLED
 from ..model import STATE_SETUP_FINISHED
 from ..model import STATE_TEARDOWN_FINISHED
+from ..model import Cluster
+from ..model import Node
+from ..model import ContainerLog
 from ..setup import OxauthSetup
 from ..setup import OxtrustSetup
 from ..setup import OxidpSetup
@@ -46,8 +49,8 @@ class BaseContainerHelper(object):
     def __init__(self, container, app, logpath=None):
         self.container = container
         self.app = app
-        self.cluster = db.get(self.container.cluster_id, "clusters")
-        self.node = db.get(self.container.node_id, "nodes")
+        self.cluster = Cluster.query.first()
+        self.node = Node.query.get(self.container.node_id)
 
         log_level = logging.DEBUG if self.app.config["DEBUG"] else logging.INFO
         if logpath:
@@ -60,14 +63,7 @@ class BaseContainerHelper(object):
             self.logger.setLevel(log_level)
 
         mc = Machine()
-
-        try:
-            master_node = db.search_from_table(
-                "nodes", {"type": "master"},
-            )[0]
-        except IndexError:
-            master_node = self.node
-
+        master_node = Node.query.filter_by(type="master").first()
         self.docker = Docker(
             mc.config(self.node.name),
             mc.swarm_config(master_node.name),
@@ -108,12 +104,8 @@ class BaseContainerHelper(object):
             # container.cid in short format
             self.container.cid = cid[:12]
             self.container.hostname = "{}.{}".format(self.container.cid, self.container.type)
-
-            db.update_to_table(
-                "containers",
-                {"name": self.container.name},
-                self.container,
-            )
+            db.session.add(self.container)
+            db.session.commit()
 
             setup_obj = self.setup_class(self.container, self.cluster,
                                          self.app, logger=self.logger)
@@ -121,12 +113,8 @@ class BaseContainerHelper(object):
 
             # mark container as SUCCESS
             self.container.state = STATE_SUCCESS
-
-            db.update_to_table(
-                "containers",
-                {"name": self.container.name},
-                self.container,
-            )
+            db.session.add(self.container)
+            db.session.commit()
 
             # after_setup must be called after container has been marked
             # as SUCCESS
@@ -141,18 +129,14 @@ class BaseContainerHelper(object):
             self.logger.error(exc_traceback())
             self.on_setup_error()
         finally:
-            # mark containerLog as finished
-            try:
-                container_log = db.search_from_table(
-                    "container_logs",
-                    {"container_name": self.container.name},
-                )[0]
-            except IndexError:
-                container_log = None
+            container_log = ContainerLog.query.filter_by(
+                container_name=self.container.name,
+            ).first()
 
             if container_log:
                 container_log.state = STATE_SETUP_FINISHED
-                db.update(container_log.id, container_log, "container_logs")
+                db.session.add(container_log)
+                db.session.commit()
 
             for handler in self.logger.handlers:
                 handler.close()
@@ -180,12 +164,8 @@ class BaseContainerHelper(object):
 
         # mark container as FAILED
         self.container.state = STATE_FAILED
-
-        db.update_to_table(
-            "containers",
-            {"name": self.container.name},
-            self.container,
-        )
+        db.session.add(self.container)
+        db.session.commit()
 
     @run_in_reactor
     def teardown(self):
@@ -225,17 +205,14 @@ class BaseContainerHelper(object):
         ))
 
         # mark containerLog as finished
-        try:
-            container_log = db.search_from_table(
-                "container_logs",
-                {"container_name": self.container.name},
-            )[0]
-        except IndexError:
-            container_log = None
+        container_log = ContainerLog.query.filter_by(
+            container_name=self.container.name,
+        ).first()
 
         if container_log:
             container_log.state = STATE_TEARDOWN_FINISHED
-            db.update(container_log.id, container_log, "container_logs")
+            db.session.add(container_log)
+            db.session.commit()
 
         for handler in self.logger.handlers:
             handler.close()

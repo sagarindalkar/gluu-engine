@@ -17,6 +17,8 @@ from ..database import db
 from ..log import create_file_logger
 from ..machine import Machine
 from ..dockerclient import Docker
+from ..model import Node
+from ..model import LdapSetting
 
 
 class BaseSetup(object):
@@ -34,23 +36,12 @@ class BaseSetup(object):
         )
         self.template_dir = self.app.config["TEMPLATES_DIR"]
         self.machine = Machine()
-
-        try:
-            master_node = db.search_from_table(
-                "nodes", {"type": "master"},
-            )[0]
-        except IndexError:  # pragma: no cover
-            master_node = self.node
-
+        master_node = Node.query.filter_by(type="master").first()
         self.docker = Docker(
             self.machine.config(self.node.name),
             self.machine.swarm_config(master_node.name),
         )
-
-        try:
-            self.ldap_setting = db.all("ldap_settings")[0]
-        except IndexError:
-            self.ldap_setting = None
+        self.ldap_setting = LdapSetting.query.first()
 
     def setup(self):  # pragma: no cover
         """Runs the actual setup. Must be overriden by subclass.

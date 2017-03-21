@@ -8,6 +8,7 @@ import uuid
 from sqlalchemy import JSON
 
 from ..database import db
+from ..model import Node
 
 
 class Provider(db.Model):
@@ -21,7 +22,7 @@ class Provider(db.Model):
 
     __mapper_args__ = {
         "polymorphic_on": driver,
-        "polymorphic_identity": "provider",
+        "polymorphic_identity": "",
     }
 
     @property
@@ -31,13 +32,12 @@ class Provider(db.Model):
     def as_dict(self):
         return self.resource_fields
 
-    # def is_in_use(self):
-    #     """Checks whether the provider has linked nodes.
+    def is_in_use(self):
+        """Checks whether the provider has linked nodes.
 
-    #     :returns: True if provider has any node, otherwise False.
-    #     """
-    #     condition = {"provider_id": self.id}
-    #     return bool(db.count_from_table("nodes", condition))
+        :returns: True if provider has any node, otherwise False.
+        """
+        return bool(Node.query.filter_by(provider_id=self.id).count())
 
 
 class GenericProvider(Provider):
@@ -92,6 +92,7 @@ class DigitalOceanProvider(Provider):
             "digitalocean_region": self.digitalocean_region,
             "digitalocean_size": self.digitalocean_size,
             "digitalocean_image": self.digitalocean_image,
+            "digitalocean_ipv6": self.digitalocean_ipv6,
         }
 
     @property

@@ -126,7 +126,7 @@ class DigitalOceanProviderReq(BaseProviderReq):
     digitalocean_image = ma.Str(missing="ubuntu-14-04-x64")
 
     # enable ipv6 for droplet
-    digitalocean_ipv6 = ma.Bool(default=False)
+    digitalocean_ipv6 = ma.Bool(missing=False)
 
     # enable private networking for droplet
     digitalocean_private_networking = ma.Bool(default=False)
@@ -148,6 +148,7 @@ class DigitalOceanProviderReq(BaseProviderReq):
             "digitalocean_region": data.pop("digitalocean_region"),
             "digitalocean_size": data.pop("digitalocean_size"),
             "digitalocean_image": data.pop("digitalocean_image"),
+            "digitalocean_ipv6": data.pop("digitalocean_ipv6"),
         }
         return data
 

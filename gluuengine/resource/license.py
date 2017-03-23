@@ -35,7 +35,7 @@ class LicenseKeyListResource(Resource):
                 "params": errors,
             }, 400
 
-        license_key = LicenseKey(data)
+        license_key = LicenseKey(**data)
 
         current_app.logger.info("downloading signed license")
         license_key, err = populate_license(license_key)
@@ -68,7 +68,7 @@ class LicenseKeyListResource(Resource):
         headers = {
             "Location": url_for("licensekey", license_key_id=license_key.id),
         }
-        return license_key, 201, headers
+        return license_key.as_dict(), 201, headers
 
     def get(self):
         return [license_key.as_dict() for license_key in LicenseKey.query]
@@ -111,7 +111,6 @@ class LicenseKeyResource(Resource):
             }, 403
 
         license_key.updated_at = retrieve_current_date()
-        # TODO: update the row
         db.session.add(license_key)
         db.session.commit()
 
@@ -123,7 +122,7 @@ class LicenseKeyResource(Resource):
         headers = {
             "Location": url_for("licensekey", license_key_id=license_key.id),
         }
-        return license_key, 200, headers
+        return license_key.as_dict(), 200, headers
 
     def delete(self, license_key_id):
         license_key = LicenseKey.query.get(license_key_id)
@@ -142,17 +141,17 @@ class LicenseKeyResource(Resource):
     def _enable_containers(self, license_key, app):
         mc = Machine()
 
-        for worker_node in license_key.get_workers():
-            containers = worker_node.get_containers(
-                type_="oxauth", state=STATE_DISABLED,
-            )
-
-            for container in containers:
-                container.state = STATE_SUCCESS
-                # TODO: update the row
-                db.session.add(container)
-                db.session.commit()
-                mc.ssh(
-                    worker_node.name,
-                    "docker restart {}".format(container.cid),
+        with app.app_context():
+            for worker_node in license_key.get_workers():
+                containers = worker_node.get_containers(
+                    type_="oxauth", state=STATE_DISABLED,
                 )
+
+                for container in containers:
+                    container.state = STATE_SUCCESS
+                    db.session.add(container)
+                    db.session.commit()
+                    mc.ssh(
+                        worker_node.name,
+                        "docker restart {}".format(container.cid),
+                    )

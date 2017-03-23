@@ -104,12 +104,14 @@ class LicenseWatcherTask(object):
             else:
                 # mark the latest update time
                 license_key.updated_at = retrieve_current_date()
-                db.session.add(license_key)
-                db.session.commit()
+                with self.app.app_context():
+                    db.session.add(license_key)
+                    db.session.commit()
                 self.logger.info("license key has been updated")
                 break
 
-        worker_nodes = license_key.get_workers()
+        with self.app.app_context():
+            worker_nodes = license_key.get_workers()
 
         # cache the expiration state
         license_expired = license_key.expired
@@ -124,7 +126,8 @@ class LicenseWatcherTask(object):
                 self.enable_containers(node, "oxauth")
 
     def get_license_key(self):
-        return LicenseKey.query.first()
+        with self.app.app_context():
+            return LicenseKey.query.first()
 
     def disable_containers(self, node, type_):
         """Disables containers having specific type.
@@ -134,17 +137,19 @@ class LicenseWatcherTask(object):
         :param node: Node object.
         :param type_: Type of the container.
         """
-        containers = node.get_containers(type_=type_)
-        for container in containers:
-            container.state = STATE_DISABLED
-            db.session.add(container)
-            db.session.commit()
+        with self.app.app_context():
+            containers = node.get_containers(type_=type_)
 
-            self.machine.ssh(
-                node.name, "sudo docker stop {}".format(container.cid),
-            )
-            self.logger.info("{} container {} has been "
-                             "disabled".format(type_, container.name))
+            for container in containers:
+                container.state = STATE_DISABLED
+                db.session.add(container)
+                db.session.commit()
+
+                self.machine.ssh(
+                    node.name, "sudo docker stop {}".format(container.cid),
+                )
+                self.logger.info("{} container {} has been "
+                                 "disabled".format(type_, container.name))
 
     def enable_containers(self, node, type_):
         """Enables containers having specific type.
@@ -154,15 +159,16 @@ class LicenseWatcherTask(object):
         :param node: Node object.
         :param type_: Type of the container.
         """
-        containers = node.get_containers(type_=type_, state=STATE_DISABLED)
+        with self.app.app_context():
+            containers = node.get_containers(type_=type_, state=STATE_DISABLED)
 
-        for container in containers:
-            container.state = STATE_SUCCESS
-            db.session.add(container)
-            db.session.commit()
+            for container in containers:
+                container.state = STATE_SUCCESS
+                db.session.add(container)
+                db.session.commit()
 
-            self.machine.ssh(
-                node.name, "sudo docker restart {}".format(container.cid),
-            )
-            self.logger.info("{} container {} has been "
-                             "enabled".format(type_, container.id))
+                self.machine.ssh(
+                    node.name, "sudo docker restart {}".format(container.cid),
+                )
+                self.logger.info("{} container {} has been "
+                                 "enabled".format(type_, container.id))

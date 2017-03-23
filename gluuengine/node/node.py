@@ -370,7 +370,10 @@ class DeployMsgconNode(DeployNode):
         self.logger.info('installing mysql in msgcon node')
         try:
             #FIXIT add security
-            self.machine.ssh(self.node.name, 'docker run -d --name=msgcon_mysql --restart=always mysql:5')
+            self.machine.ssh(self.node.name, 'docker run -d --name=msgcon_mysql --restart=always --network=gluunet \
+                -e MYSQL_ROOT_PASSWORD={mysqlpass} \
+                -v /opt/mysql/data:/var/lib/mysql \
+                mysql:5'.format(mysqlpass=self.app.config['MYSQLPASS']))
             self.node.state_attrs["state_install_mysql"] = True
             db.update(self.node.id, self.node, 'nodes')
         except RuntimeError as e:
@@ -381,7 +384,7 @@ class DeployMsgconNode(DeployNode):
         self.logger.info('installing activemq')
         try:
             #FIXIT add security
-            self.machine.ssh(self.node.name, 'docker run -d --name=msgcon_activemq --restart=always rmohr/activemq')
+            self.machine.ssh(self.node.name, 'docker run -d --name=msgcon_activemq --restart=always --network=gluunet rmohr/activemq')
             self.node.state_attrs["state_install_activemq"] = True
             db.update(self.node.id, self.node, 'nodes')
         except RuntimeError as e:
@@ -391,7 +394,8 @@ class DeployMsgconNode(DeployNode):
     def _install_msgcon(self):
         self.logger.info('installing msgcon')
         try:
-            self.machine.ssh(self.node.name, 'docker run -d --name=msgcon --link msgcon_activemq:activemq --link msgcon_mysql:mysql -v /opt/msgcon/conf:/etc/message-consumer gluufederation/msgcon')
+            #FIXIT msgcon cant fing mysql
+            self.machine.ssh(self.node.name, 'docker run -d --name=msgcon --network=gluunet --link msgcon_activemq:activemq --link msgcon_mysql:mysql -v /opt/msgcon/conf:/etc/message-consumer gluufederation/msgcon')
             self.node.state_attrs["state_install_msgcon"] = True
             db.update(self.node.id, self.node, 'nodes')
         except RuntimeError as e:

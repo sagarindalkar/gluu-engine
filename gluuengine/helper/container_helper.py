@@ -106,16 +106,18 @@ class BaseContainerHelper(object):
 
                 # container.cid in short format
                 self.container.cid = cid[:12]
-                # XXX: the update must be saved to database immediately?
                 self.container.hostname = "{}.{}".format(self.container.cid, self.container.type)
+                db.session.add(self.container)
+                db.session.commit()
 
                 setup_obj = self.setup_class(self.container, self.cluster,
                                              self.app, logger=self.logger)
                 setup_obj.setup()
 
-                # FIXME: the update must be saved to database immediately
                 # mark container as SUCCESS
                 self.container.state = STATE_SUCCESS
+                db.session.add(self.container)
+                db.session.commit()
 
                 # after_setup must be called after container has been marked
                 # as SUCCESS
@@ -129,21 +131,16 @@ class BaseContainerHelper(object):
             except Exception:
                 self.logger.error(exc_traceback())
                 self.on_setup_error()
-            finally:
-                container_log = ContainerLog.query.filter_by(
-                    container_name=self.container.name,
-                ).first()
 
-                if container_log:
-                    container_log.state = STATE_SETUP_FINISHED
-                    db.session.add(container_log)
-
-                for handler in self.logger.handlers:
-                    handler.close()
-                    self.logger.removeHandler(handler)
-
-                db.session.add(self.container)
+            container_log = ContainerLog.create_or_get(self.container)
+            if container_log:
+                container_log.state = STATE_SETUP_FINISHED
+                db.session.add(container_log)
                 db.session.commit()
+
+            for handler in self.logger.handlers:
+                handler.close()
+                self.logger.removeHandler(handler)
 
     def on_setup_error(self):
         """Callback that supposed to be called when error occurs in setup
@@ -168,6 +165,8 @@ class BaseContainerHelper(object):
         with self.app.app_context():
             # mark container as FAILED
             self.container.state = STATE_FAILED
+            db.session.add(self.container)
+            db.session.commit()
 
     @run_in_reactor
     def teardown(self):
@@ -208,19 +207,15 @@ class BaseContainerHelper(object):
 
         with self.app.app_context():
             # mark containerLog as finished
-            container_log = ContainerLog.query.filter_by(
-                container_name=self.container.name,
-            ).first()
-
+            container_log = ContainerLog.create_or_get(self.container)
             if container_log:
                 container_log.state = STATE_TEARDOWN_FINISHED
-                # db.session.add(container_log)
+                db.session.add(container_log)
+                db.session.commit()
 
             for handler in self.logger.handlers:
                 handler.close()
                 self.logger.removeHandler(handler)
-
-            db.session.commit()
 
     @property
     def command(self):

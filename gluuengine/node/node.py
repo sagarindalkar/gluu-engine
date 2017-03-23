@@ -12,7 +12,6 @@ from ..machine import Machine
 from ..log import create_file_logger
 from ..model import Provider
 from sqlalchemy.orm.attributes import flag_modified
-from ..model import Node
 
 # REMOTE_DOCKER_CERT_DIR = "/opt/gluu/docker/certs"
 # CERT_FILES = ['ca.pem', 'cert.pem', 'key.pem']
@@ -21,8 +20,8 @@ from ..model import Node
 class DeployNode(object):
     def __init__(self, node_model_obj, app):
         self.app = app
-        self.node_id = node_model_obj.id
-        self.logger = create_file_logger(app.config['NODE_LOG_PATH'], name=node_model_obj.name)
+        self.node = node_model_obj
+        self.logger = create_file_logger(app.config['NODE_LOG_PATH'], name=self.node.name)
         self.machine = Machine()
 
         with self.app.app_context():
@@ -30,23 +29,22 @@ class DeployNode(object):
 
     def _rng_tools(self):
         with self.app.app_context():
-            node = Node.query.get(self.node_id)
-
-            if not node.state_attrs["state_node_create"]:
+            if not self.node.state_attrs["state_node_create"]:
                 return
 
-            if node.state_attrs["state_rng_tools"]:
+            if self.node.state_attrs["state_rng_tools"]:
                 return
 
             try:
-                self.logger.info("installing rng-tools in {} node".format(node.name))
+                self.logger.info("installing rng-tools in {} node".format(self.node.name))
                 cmd_list = [
                     "sudo wget {} -O /etc/default/rng-tools".format(self.app.config["RNG_TOOLS_CONF_URL"]),
                     """sudo apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install -y rng-tools""",
                 ]
-                self.machine.ssh(node.name, ' && '.join(cmd_list))
-                node.state_attrs["state_rng_tools"] = True
-                flag_modified(node, "state_attrs")
+                self.machine.ssh(self.node.name, ' && '.join(cmd_list))
+                self.node.state_attrs["state_rng_tools"] = True
+                flag_modified(self.node, "state_attrs")
+                db.session.add(self.node)
                 db.session.commit()
             except RuntimeError as e:
                 db.session.rollback()
@@ -55,23 +53,22 @@ class DeployNode(object):
 
     def _pull_images(self):
         with self.app.app_context():
-            node = Node.query.get(self.node_id)
-
-            if not node.state_attrs["state_node_create"]:
+            if not self.node.state_attrs["state_node_create"]:
                 return
 
-            if node.state_attrs["state_pull_images"]:
+            if self.node.state_attrs["state_pull_images"]:
                 return
 
             try:
-                self.logger.info("pulling gluu images in {} node".format(node.name))
+                self.logger.info("pulling gluu images in {} node".format(self.node.name))
                 cmd_list = [
                     'sudo docker pull gluufederation/oxauth:{}'.format(self.app.config["GLUU_IMAGE_TAG"]),
                     'sudo docker pull gluufederation/nginx:{}'.format(self.app.config["GLUU_IMAGE_TAG"]),
                 ]
-                self.machine.ssh(node.name, ' && '.join(cmd_list))
-                node.state_attrs["state_pull_images"] = True
-                flag_modified(node, "state_attrs")
+                self.machine.ssh(self.node.name, ' && '.join(cmd_list))
+                self.node.state_attrs["state_pull_images"] = True
+                flag_modified(self.node, "state_attrs")
+                db.session.add(self.node)
                 db.session.commit()
             except RuntimeError as e:
                 db.session.rollback()
@@ -95,16 +92,15 @@ class DeployDiscoveryNode(DeployNode):
 
     def _node_create(self):
         with self.app.app_context():
-            node = Node.query.get(self.node_id)
-
-            if node.state_attrs["state_node_create"]:
+            if self.node.state_attrs["state_node_create"]:
                 return
 
             try:
                 self.logger.info('creating discovery node')
-                self.machine.create(node, self.provider, None)
-                node.state_attrs["state_node_create"] = True
-                flag_modified(node, "state_attrs")
+                self.machine.create(self.node, self.provider, None)
+                self.node.state_attrs["state_node_create"] = True
+                flag_modified(self.node, "state_attrs")
+                db.session.add(self.node)
                 db.session.commit()
             except RuntimeError as e:
                 db.session.rollback()
@@ -115,20 +111,18 @@ class DeployDiscoveryNode(DeployNode):
 
     def _install_consul(self):
         with self.app.app_context():
-            node = Node.query.get(self.node_id)
-
             # do nothing if node has not created yet
-            if not node.state_attrs["state_node_create"]:
+            if not self.node.state_attrs["state_node_create"]:
                 return
 
             # do nothing if consul already installed
-            if node.state_attrs["state_install_consul"]:
+            if self.node.state_attrs["state_install_consul"]:
                 return
 
             self.logger.info('installing consul')
             try:
                 self.machine.ssh(
-                    node.name,
+                    self.node.name,
                     " ".join([
                         "sudo docker run -d ",
                         "--name=consul -p 8500:8500 -h consul --restart=always",
@@ -136,8 +130,9 @@ class DeployDiscoveryNode(DeployNode):
                         "-server -bootstrap"
                     ])
                 )
-                node.state_attrs["state_install_consul"] = True
-                flag_modified(node, "state_attrs")
+                self.node.state_attrs["state_install_consul"] = True
+                flag_modified(self.node, "state_attrs")
+                db.session.add(self.node)
                 db.session.commit()
             except RuntimeError as e:
                 db.session.rollback()
@@ -148,11 +143,11 @@ class DeployDiscoveryNode(DeployNode):
 
     def _is_completed(self):
         with self.app.app_context():
-            node = Node.query.get(self.node_id)
-            if all([node.state_attrs["state_node_create"],
-                    node.state_attrs["state_install_consul"]]):
-                node.state_attrs["state_complete"] = True
-                flag_modified(node, "state_attrs")
+            if all([self.node.state_attrs["state_node_create"],
+                    self.node.state_attrs["state_install_consul"]]):
+                self.node.state_attrs["state_complete"] = True
+                flag_modified(self.node, "state_attrs")
+                db.session.add(self.node)
                 db.session.commit()
                 self.logger.info('node deployment is done')
 
@@ -176,29 +171,28 @@ class DeployMasterNode(DeployNode):
 
     def _is_completed(self):
         with self.app.app_context():
-            node = Node.query.get(self.node_id)
-            if all([node.state_attrs["state_node_create"],
-                    node.state_attrs["state_network_create"],
-                    node.state_attrs["state_rng_tools"],
-                    node.state_attrs["state_pull_images"]]):
-                node.state_attrs["state_complete"] = True
-                flag_modified(node, "state_attrs")
+            if all([self.node.state_attrs["state_node_create"],
+                    self.node.state_attrs["state_network_create"],
+                    self.node.state_attrs["state_rng_tools"],
+                    self.node.state_attrs["state_pull_images"]]):
+                self.node.state_attrs["state_complete"] = True
+                flag_modified(self.node, "state_attrs")
+                db.session.add(self.node)
                 db.session.commit()
                 self.logger.info('node deployment is done')
 
     def _node_create(self):
         with self.app.app_context():
-            node = Node.query.get(self.node_id)
-
             # do nothing if node has been created
-            if node.state_attrs["state_node_create"]:
+            if self.node.state_attrs["state_node_create"]:
                 return
 
             try:
-                self.logger.info('creating {} node ({})'.format(node.name, node.type))
-                self.machine.create(node, self.provider, self.discovery)
-                node.state_attrs["state_node_create"] = True
-                flag_modified(node, "state_attrs")
+                self.logger.info('creating {} node ({})'.format(self.node.name, self.node.type))
+                self.machine.create(self.node, self.provider, self.discovery)
+                self.node.state_attrs["state_node_create"] = True
+                flag_modified(self.node, "state_attrs")
+                db.session.add(self.node)
                 db.session.commit()
             except RuntimeError as e:
                 db.session.rollback()
@@ -207,24 +201,24 @@ class DeployMasterNode(DeployNode):
 
     # #pushing docker cert so that fswatcher script can work
     # def _docker_cert(self):
-    #     node = Node.query.get(self.node_id)
-    #     if not node.state_attrs["state_node_create"]:
+    #     if not self.node.state_attrs["state_node_create"]:
     #         return
 
-    #     if node.state_attrs["state_docker_cert"]:
+    #     if self.node.state_attrs["state_docker_cert"]:
     #         return
 
     #     try:
     #         self.logger.info("pushing docker client cert into master node")
     #         local_cert_path = os.path.join(os.getenv('HOME'), '.docker/machine/certs')
-    #         self.machine.ssh(node.name, 'sudo mkdir -p {}'.format(REMOTE_DOCKER_CERT_DIR))
+    #         self.machine.ssh(self.node.name, 'sudo mkdir -p {}'.format(REMOTE_DOCKER_CERT_DIR))
     #         for cf in CERT_FILES:
     #             self.machine.scp(
     #                 os.path.join(local_cert_path, cf),
-    #                 "{}:{}".format(node.name, REMOTE_DOCKER_CERT_DIR),
+    #                 "{}:{}".format(self.node.name, REMOTE_DOCKER_CERT_DIR),
     #             )
-    #         node.state_attrs["state_docker_cert"] = True
-    #         flag_modified(node, "state_attrs")
+    #         self.node.state_attrs["state_docker_cert"] = True
+    #         flag_modified(self.node, "state_attrs")
+    #         db.session.add(self.node)
     #         db.session.commit()
     #     except RuntimeError as e:
     #         db.session.rollback()
@@ -232,16 +226,14 @@ class DeployMasterNode(DeployNode):
     #         self.logger.error(e)
 
     # def _fswatcher(self):
-    #     node = Node.query.get(self.node_id)
-
-    #     if not node.state_attrs["state_node_create"]:
+    #     if not self.node.state_attrs["state_node_create"]:
     #         return
 
-    #     if node.state_attrs["state_fswatcher"]:
+    #     if self.node.state_attrs["state_fswatcher"]:
     #         return
 
     #     try:
-    #         self.logger.info("installing fswatcher in {} node".format(node.name))
+    #         self.logger.info("installing fswatcher in {} node".format(self.node.name))
     #         cmd_list = [
     #             "sudo wget {} -P /usr/bin".format(self.app.config["FSWATCHER_SCRIPT_URL"]),
     #             "sudo chmod +x /usr/bin/fswatcher.py",
@@ -254,9 +246,10 @@ class DeployMasterNode(DeployNode):
     #             "sudo wget {} -P /etc/supervisor/conf.d".format(self.app.config["FSWATCHER_CONF_URL"]),
     #             "sudo supervisorctl reload",
     #         ]
-    #         self.machine.ssh(node.name, ' && '.join(cmd_list))
-    #         node.state_attrs["state_fswatcher"] = True
-    #         flag_modified(node, "state_attrs")
+    #         self.machine.ssh(self.node.name, ' && '.join(cmd_list))
+    #         self.node.state_attrs["state_fswatcher"] = True
+    #         flag_modified(self.node, "state_attrs")
+    #         db.session.add(self.node)
     #         db.session.commit()
     #     except RuntimeError as e:
     #         db.session.rollback()
@@ -265,19 +258,18 @@ class DeployMasterNode(DeployNode):
 
     def _network_create(self):
         with self.app.app_context():
-            node = Node.query.get(self.node_id)
-
-            if not node.state_attrs["state_node_create"]:
+            if not self.node.state_attrs["state_node_create"]:
                 return
 
-            if node.state_attrs["state_network_create"]:
+            if self.node.state_attrs["state_network_create"]:
                 return
 
             try:
                 self.logger.info("creating overlay network")
-                self.machine.ssh(node.name, "sudo docker network create --driver overlay --subnet=10.0.9.0/24 gluunet")
-                node.state_attrs["state_network_create"] = True
-                flag_modified(node, "state_attrs")
+                self.machine.ssh(self.node.name, "sudo docker network create --driver overlay --subnet=10.0.9.0/24 gluunet")
+                self.node.state_attrs["state_network_create"] = True
+                flag_modified(self.node, "state_attrs")
+                db.session.add(self.node)
                 db.session.commit()
             except RuntimeError as exc:
                 db.session.rollback()
@@ -303,27 +295,26 @@ class DeployWorkerNode(DeployNode):
 
     def _is_completed(self):
         with self.app.app_context():
-            node = Node.query.get(self.node_id)
-            if all([node.state_attrs["state_node_create"],
-                    node.state_attrs["state_rng_tools"],
-                    node.state_attrs["state_pull_images"]]):
-                node.state_attrs["state_complete"] = True
-                flag_modified(node, "state_attrs")
+            if all([self.node.state_attrs["state_node_create"],
+                    self.node.state_attrs["state_rng_tools"],
+                    self.node.state_attrs["state_pull_images"]]):
+                self.node.state_attrs["state_complete"] = True
+                flag_modified(self.node, "state_attrs")
+                db.session.add(self.node)
                 db.session.commit()
                 self.logger.info('node deployment is done')
 
     def _node_create(self):
         with self.app.app_context():
-            node = Node.query.get(self.node_id)
-
-            if node.state_attrs["state_node_create"]:
+            if self.node.state_attrs["state_node_create"]:
                 return
 
             try:
-                self.logger.info('creating {} node ({})'.format(node.name, node.type))
-                self.machine.create(node, self.provider, self.discovery)
-                node.state_attrs["state_node_create"] = True
-                flag_modified(node, "state_attrs")
+                self.logger.info('creating {} node ({})'.format(self.node.name, self.node.type))
+                self.machine.create(self.node, self.provider, self.discovery)
+                self.node.state_attrs["state_node_create"] = True
+                flag_modified(self.node, "state_attrs")
+                db.session.add(self.node)
                 db.session.commit()
             except RuntimeError as e:
                 db.session.rollback()
@@ -351,42 +342,40 @@ class DeployMsgconNode(DeployNode):
 
     def _node_create(self):
         with self.app.app_context():
-            node = Node.query.get(self.node_id)
-
-            if node.state_attrs["state_node_create"]:
+            if self.node.state_attrs["state_node_create"]:
                 return
 
             try:
-                self.logger.info('creating {} node ({})'.format(node.name, node.type))
-                self.machine.create(node, self.provider, self.discovery)
-                node.state_attrs["state_node_create"] = True
-                flag_modified(node, "state_attrs")
+                self.logger.info('creating {} node ({})'.format(self.node.name, self.node.type))
+                self.machine.create(self.node, self.provider, self.discovery)
+                self.node.state_attrs["state_node_create"] = True
+                flag_modified(self.node, "state_attrs")
+                db.session.add(self.node)
                 db.session.commit()
             except RuntimeError as e:
                 db.session.rollback()
-                self.logger.error('failed to create {} node'.format(node.type))
+                self.logger.error('failed to create {} node'.format(self.node.type))
                 self.logger.error(e)
 
     def _pull_images(self):
         with self.app.app_context():
-            node = Node.query.get(self.node_id)
-
-            if not node.state_attrs["state_node_create"]:
+            if not self.node.state_attrs["state_node_create"]:
                 return
 
-            if node.state_attrs["state_pull_images"]:
+            if self.node.state_attrs["state_pull_images"]:
                 return
 
             try:
-                self.logger.info("pulling images in {} node".format(node.name))
+                self.logger.info("pulling images in {} node".format(self.node.name))
                 cmd_list = [
                     'sudo docker pull mysql:5',
                     'sudo docker pull rmohr/activemq',
                     'sudo docker pull gluufederation/msgcon',
                 ]
-                self.machine.ssh(node.name, ' && '.join(cmd_list))
-                node.state_attrs["state_pull_images"] = True
-                flag_modified(node, "state_attrs")
+                self.machine.ssh(self.node.name, ' && '.join(cmd_list))
+                self.node.state_attrs["state_pull_images"] = True
+                flag_modified(self.node, "state_attrs")
+                db.session.add(self.node)
                 db.session.commit()
             except RuntimeError as e:
                 db.session.rollback()
@@ -395,26 +384,25 @@ class DeployMsgconNode(DeployNode):
 
     def _install_mysql(self):
         with self.app.app_context():
-            node = Node.query.get(self.node_id)
-
-            if not node.state_attrs["state_node_create"]:
+            if not self.node.state_attrs["state_node_create"]:
                 return
 
-            if not node.state_attrs["state_pull_images"]:
+            if not self.node.state_attrs["state_pull_images"]:
                 return
 
-            if node.state_attrs["state_install_mysql"]:
+            if self.node.state_attrs["state_install_mysql"]:
                 return
 
             self.logger.info('installing mysql in msgcon node')
             try:
                 #FIXIT add security
                 self.machine.ssh(
-                    node.name,
+                    self.node.name,
                     'sudo docker run -d --name=msgcon_mysql --restart=always mysql:5',
                 )
-                node.state_attrs["state_install_mysql"] = True
-                flag_modified(node, "state_attrs")
+                self.node.state_attrs["state_install_mysql"] = True
+                flag_modified(self.node, "state_attrs")
+                db.session.add(self.node)
                 db.session.commit()
             except RuntimeError as e:
                 db.session.rollback()
@@ -423,23 +411,22 @@ class DeployMsgconNode(DeployNode):
 
     def _install_activemq(self):
         with self.app.app_context():
-            node = Node.query.get(self.node_id)
-
-            if not node.state_attrs["state_node_create"]:
+            if not self.node.state_attrs["state_node_create"]:
                 return
 
-            if not node.state_attrs["state_pull_images"]:
+            if not self.node.state_attrs["state_pull_images"]:
                 return
 
-            if node.state_attrs["state_install_activemq"]:
+            if self.node.state_attrs["state_install_activemq"]:
                 return
 
             self.logger.info('installing activemq')
             try:
                 #FIXIT add security
-                self.machine.ssh(node.name, 'docker run -d --name=msgcon_activemq --restart=always rmohr/activemq')
-                node.state_attrs["state_install_activemq"] = True
-                flag_modified(node, "state_attrs")
+                self.machine.ssh(self.node.name, 'docker run -d --name=msgcon_activemq --restart=always rmohr/activemq')
+                self.node.state_attrs["state_install_activemq"] = True
+                flag_modified(self.node, "state_attrs")
+                db.session.add(self.node)
                 db.session.commit()
             except RuntimeError as e:
                 db.session.rollback()
@@ -448,21 +435,19 @@ class DeployMsgconNode(DeployNode):
 
     def _install_msgcon(self):
         with self.app.app_context():
-            node = Node.query.get(self.node_id)
-
-            if not node.state_attrs["state_node_create"]:
+            if not self.node.state_attrs["state_node_create"]:
                 return
 
-            if not node.state_attrs["state_pull_images"]:
+            if not self.node.state_attrs["state_pull_images"]:
                 return
 
-            if node.state_attrs["state_install_msgcon"]:
+            if self.node.state_attrs["state_install_msgcon"]:
                 return
 
             self.logger.info('installing msgcon')
             try:
                 self.machine.ssh(
-                    node.name,
+                    self.node.name,
                     " ".join([
                         "docker run -d --name=msgcon"
                         "--link msgcon_activemq:activemq"
@@ -471,8 +456,9 @@ class DeployMsgconNode(DeployNode):
                         "gluufederation/msgcon",
                     ])
                 )
-                node.state_attrs["state_install_msgcon"] = True
-                flag_modified(node, "state_attrs")
+                self.node.state_attrs["state_install_msgcon"] = True
+                flag_modified(self.node, "state_attrs")
+                db.session.add(self.node)
                 db.session.commit()
             except RuntimeError as e:
                 db.session.rollback()
@@ -481,14 +467,13 @@ class DeployMsgconNode(DeployNode):
 
     def _is_completed(self):
         with self.app.app_context():
-            node = Node.query.get(self.node_id)
-
-            if all([node.state_attrs["state_node_create"],
-                    node.state_attrs["state_install_mysql"],
-                    node.state_attrs["state_install_activemq"],
-                    node.state_attrs["state_install_msgcon"],
-                    node.state_attrs["state_pull_images"]]):
-                node.state_attrs["state_complete"] = True
-                flag_modified(node, "state_attrs")
+            if all([self.node.state_attrs["state_node_create"],
+                    self.node.state_attrs["state_install_mysql"],
+                    self.node.state_attrs["state_install_activemq"],
+                    self.node.state_attrs["state_install_msgcon"],
+                    self.node.state_attrs["state_pull_images"]]):
+                self.node.state_attrs["state_complete"] = True
+                flag_modified(self.node, "state_attrs")
+                db.session.add(self.node)
                 db.session.commit()
                 self.logger.info('node deployment is done')

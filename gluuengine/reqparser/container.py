@@ -7,8 +7,9 @@ from marshmallow import post_load
 from marshmallow import validates
 from marshmallow import ValidationError
 
-from ..database import db
 from ..extensions import ma
+from ..model import Node
+from ..model import LicenseKey
 
 
 class ContainerReq(ma.Schema):
@@ -20,7 +21,7 @@ class ContainerReq(ma.Schema):
 
         :param value: ID of the node.
         """
-        node = db.get(value, "nodes")
+        node = Node.query.get(value)
         self.context["node"] = node
 
         if not node:
@@ -30,9 +31,8 @@ class ContainerReq(ma.Schema):
             raise ValidationError("cannot use non master or worker node")
 
         if node.type == "worker" and self.context["enable_license"]:
-            try:
-                license_key = db.all("license_keys")[0]
-            except IndexError:
+            license_key = LicenseKey.query.first()
+            if not license_key:
                 raise ValidationError("cannot deploy container to worker node "
                                       "due to missing license")
 
@@ -53,5 +53,4 @@ class ContainerReq(ma.Schema):
         """Build finalized data.
         """
         data["context"] = self.context
-        data["container_attrs"] = {}
         return data

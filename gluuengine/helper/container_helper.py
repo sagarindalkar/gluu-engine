@@ -49,25 +49,27 @@ class BaseContainerHelper(object):
     def __init__(self, container, app, logpath=None):
         self.container = container
         self.app = app
-        self.cluster = Cluster.query.first()
-        self.node = Node.query.get(self.container.node_id)
 
-        log_level = logging.DEBUG if self.app.config["DEBUG"] else logging.INFO
-        if logpath:
-            self.logger = create_file_logger(logpath, log_level=log_level,
-                                             name=self.container.name)
-        else:
-            self.logger = logging.getLogger(
-                __name__ + "." + self.__class__.__name__,
+        with self.app.app_context():
+            self.cluster = Cluster.query.first()
+            self.node = Node.query.get(self.container.node_id)
+
+            log_level = logging.DEBUG if self.app.config["DEBUG"] else logging.INFO
+            if logpath:
+                self.logger = create_file_logger(logpath, log_level=log_level,
+                                                 name=self.container.name)
+            else:
+                self.logger = logging.getLogger(
+                    __name__ + "." + self.__class__.__name__,
+                )
+                self.logger.setLevel(log_level)
+
+            mc = Machine()
+            master_node = Node.query.filter_by(type="master").first()
+            self.docker = Docker(
+                mc.config(self.node.name),
+                mc.swarm_config(master_node.name),
             )
-            self.logger.setLevel(log_level)
-
-        mc = Machine()
-        master_node = Node.query.filter_by(type="master").first()
-        self.docker = Docker(
-            mc.config(self.node.name),
-            mc.swarm_config(master_node.name),
-        )
 
     @run_in_reactor
     def setup(self):
@@ -76,71 +78,72 @@ class BaseContainerHelper(object):
     def mp_setup(self):
         """Runs the container setup.
         """
-        try:
-            self.logger.info("{} setup is started".format(self.container.name))
-            start = time.time()
+        with self.app.app_context():
+            try:
+                self.logger.info("{} setup is started".format(self.container.name))
+                start = time.time()
 
-            cid = self.docker.setup_container(
-                name=self.container.name,
-                image="{}:{}".format(self.container.image,
-                                     self.app.config["GLUU_IMAGE_TAG"]),
-                env=[
-                    "constraint:node=={}".format(self.node.name),
-                ],
-                port_bindings=self.port_bindings,
-                volumes=self.volumes,
-                ulimits=self.ulimits,
-                command=self.command,
-                aliases=self.aliases,
-            )
+                cid = self.docker.setup_container(
+                    name=self.container.name,
+                    image="{}:{}".format(self.container.image,
+                                         self.app.config["GLUU_IMAGE_TAG"]),
+                    env=[
+                        "constraint:node=={}".format(self.node.name),
+                    ],
+                    port_bindings=self.port_bindings,
+                    volumes=self.volumes,
+                    ulimits=self.ulimits,
+                    command=self.command,
+                    aliases=self.aliases,
+                )
 
-            # container is not running
-            if not cid:
-                self.logger.error("Failed to start the "
-                                  "{!r} container".format(self.container.name))
+                # container is not running
+                if not cid:
+                    self.logger.error("Failed to start the "
+                                      "{!r} container".format(self.container.name))
+                    self.on_setup_error()
+                    return
+
+                # container.cid in short format
+                self.container.cid = cid[:12]
+                # XXX: the update must be saved to database immediately?
+                self.container.hostname = "{}.{}".format(self.container.cid, self.container.type)
+
+                setup_obj = self.setup_class(self.container, self.cluster,
+                                             self.app, logger=self.logger)
+                setup_obj.setup()
+
+                # FIXME: the update must be saved to database immediately
+                # mark container as SUCCESS
+                self.container.state = STATE_SUCCESS
+
+                # after_setup must be called after container has been marked
+                # as SUCCESS
+                setup_obj.after_setup()
+                setup_obj.remove_build_dir()
+
+                elapsed = time.time() - start
+                self.logger.info("{} setup is finished ({} seconds)".format(
+                    self.container.name, elapsed
+                ))
+            except Exception:
+                self.logger.error(exc_traceback())
                 self.on_setup_error()
-                return
+            finally:
+                container_log = ContainerLog.query.filter_by(
+                    container_name=self.container.name,
+                ).first()
 
-            # container.cid in short format
-            self.container.cid = cid[:12]
-            self.container.hostname = "{}.{}".format(self.container.cid, self.container.type)
-            db.session.add(self.container)
-            db.session.commit()
+                if container_log:
+                    container_log.state = STATE_SETUP_FINISHED
+                    db.session.add(container_log)
 
-            setup_obj = self.setup_class(self.container, self.cluster,
-                                         self.app, logger=self.logger)
-            setup_obj.setup()
+                for handler in self.logger.handlers:
+                    handler.close()
+                    self.logger.removeHandler(handler)
 
-            # mark container as SUCCESS
-            self.container.state = STATE_SUCCESS
-            db.session.add(self.container)
-            db.session.commit()
-
-            # after_setup must be called after container has been marked
-            # as SUCCESS
-            setup_obj.after_setup()
-            setup_obj.remove_build_dir()
-
-            elapsed = time.time() - start
-            self.logger.info("{} setup is finished ({} seconds)".format(
-                self.container.name, elapsed
-            ))
-        except Exception:
-            self.logger.error(exc_traceback())
-            self.on_setup_error()
-        finally:
-            container_log = ContainerLog.query.filter_by(
-                container_name=self.container.name,
-            ).first()
-
-            if container_log:
-                container_log.state = STATE_SETUP_FINISHED
-                db.session.add(container_log)
+                db.session.add(self.container)
                 db.session.commit()
-
-            for handler in self.logger.handlers:
-                handler.close()
-                self.logger.removeHandler(handler)
 
     def on_setup_error(self):
         """Callback that supposed to be called when error occurs in setup
@@ -162,10 +165,9 @@ class BaseContainerHelper(object):
             self.logger.warn("can't find container {}; likely it's not "
                              "created yet or missing".format(self.container.name))
 
-        # mark container as FAILED
-        self.container.state = STATE_FAILED
-        db.session.add(self.container)
-        db.session.commit()
+        with self.app.app_context():
+            # mark container as FAILED
+            self.container.state = STATE_FAILED
 
     @run_in_reactor
     def teardown(self):
@@ -204,19 +206,21 @@ class BaseContainerHelper(object):
             self.container.name, elapsed
         ))
 
-        # mark containerLog as finished
-        container_log = ContainerLog.query.filter_by(
-            container_name=self.container.name,
-        ).first()
+        with self.app.app_context():
+            # mark containerLog as finished
+            container_log = ContainerLog.query.filter_by(
+                container_name=self.container.name,
+            ).first()
 
-        if container_log:
-            container_log.state = STATE_TEARDOWN_FINISHED
-            db.session.add(container_log)
+            if container_log:
+                container_log.state = STATE_TEARDOWN_FINISHED
+                # db.session.add(container_log)
+
+            for handler in self.logger.handlers:
+                handler.close()
+                self.logger.removeHandler(handler)
+
             db.session.commit()
-
-        for handler in self.logger.handlers:
-            handler.close()
-            self.logger.removeHandler(handler)
 
     @property
     def command(self):
@@ -314,6 +318,7 @@ class NginxContainerHelper(BaseContainerHelper):
 
 class OxasimbaContainerHelper(BaseContainerHelper):
     setup_class = OxasimbaSetup
+
 
 class OxelevenContainerHelper(BaseContainerHelper):
     setup_class = OxelevenSetup

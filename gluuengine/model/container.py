@@ -55,12 +55,6 @@ class Container(db.Model):
 class OxauthContainer(Container):
     # __table_args__ = {'extend_existing': True}
 
-    # TODO: move this to reqparser
-    # ldap_binddn = StringType(default='cn=directory manager,o=gluu')
-    # cert_folder = StringType(default="/etc/certs")
-    # oxauth_lib = StringType(default="/opt/gluu/jetty/oxauth/webapps/oxauth/WEB-INF/lib")
-    # conf_dir = StringType(default="/etc/gluu/conf")
-
     __mapper_args__ = {
         "polymorphic_identity": "oxauth",
     }
@@ -78,12 +72,17 @@ class OxauthContainer(Container):
         return "/usr/lib/jvm/default-java/jre/lib/security/cacerts"
 
 
-class OxtrustContainer(Container):
-    # TODO: move this to reqparser
-    # ldap_binddn = StringType(default='cn=directory manager,o=gluu')
-    # cert_folder = StringType(default="/etc/certs")
-    # conf_dir = StringType(default="/etc/gluu/conf")
+@db.event.listens_for(OxauthContainer, "init")
+def receive_init_oxauth(target, args, kwargs):
+    target.container_attrs = {
+        "ldap_binddn": "cn=directory manager,o=gluu",
+        "cert_folder": "/etc/certs",
+        "oxauth_lib": "/opt/gluu/jetty/oxauth/webapps/oxauth/WEB-INF/lib",
+        "conf_dir": "/etc/gluu/conf",
+    }
 
+
+class OxtrustContainer(Container):
     __mapper_args__ = {
         "polymorphic_identity": "oxtrust",
     }
@@ -101,13 +100,16 @@ class OxtrustContainer(Container):
         return "/usr/lib/jvm/default-java/jre/lib/security/cacerts"
 
 
-class OxidpContainer(Container):
-    # TODO: move this to reqparser
-    # ldap_binddn = StringType(default='cn=directory manager,o=gluu')
-    # cert_folder = StringType(default="/etc/certs")
-    # conf_dir = StringType(default="/etc/gluu/conf")
-    # saml_type = StringType(default="shibboleth")
+@db.event.listens_for(OxtrustContainer, "init")
+def receive_init_oxtrust(target, args, kwargs):
+    target.container_attrs = {
+        "cert_folder": "/etc/certs",
+        "ldap_binddn": "cn=directory manager,o=gluu",
+        "conf_dir": "/etc/gluu/conf",
+    }
 
+
+class OxidpContainer(Container):
     __mapper_args__ = {
         "polymorphic_identity": "oxidp",
     }
@@ -125,10 +127,17 @@ class OxidpContainer(Container):
         return "/usr/lib/jvm/default-java/jre/lib/security/cacerts"
 
 
-class NginxContainer(Container):
-    # TODO: move this to reqparser
-    # cert_folder = StringType(default="/etc/certs")
+@db.event.listens_for(OxidpContainer, "init")
+def receive_init_oxidp(target, args, kwargs):
+    target.container_attrs = {
+        "cert_folder": "/etc/certs",
+        "ldap_binddn": "cn=directory manager,o=gluu",
+        "conf_dir": "/etc/gluu/conf",
+        "saml_type": "shibboleth",
+    }
 
+
+class NginxContainer(Container):
     __mapper_args__ = {
         "polymorphic_identity": "nginx",
     }
@@ -142,12 +151,14 @@ class NginxContainer(Container):
         return self.container_attrs["cert_folder"]
 
 
-class OxasimbaContainer(Container):
-    # TODO: move this to reqparser
-    # ldap_binddn = StringType(default='cn=directory manager,o=gluu')
-    # cert_folder = StringType(default="/etc/certs")
-    # conf_dir = StringType(default="/etc/gluu/conf")
+@db.event.listens_for(NginxContainer, "init")
+def receive_init_nginx(target, args, kwargs):
+    target.container_attrs = {
+        "cert_folder": "/etc/certs",
+    }
 
+
+class OxasimbaContainer(Container):
     __mapper_args__ = {
         "polymorphic_identity": "oxasimba",
     }
@@ -163,6 +174,15 @@ class OxasimbaContainer(Container):
     @property
     def truststore_fn(self):
         return "/usr/lib/jvm/default-java/jre/lib/security/cacerts"
+
+
+@db.event.listens_for(OxasimbaContainer, "init")
+def receive_init_oxasimba(target, args, kwargs):
+    target.container_attrs = {
+        "cert_folder": "/etc/certs",
+        "ldap_binddn": "cn=directory manager,o=gluu",
+        "conf_dir": "/etc/gluu/conf",
+    }
 
 
 class OxelevenContainer(Container):

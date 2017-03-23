@@ -52,7 +52,9 @@ CONTAINER_CHOICES = (
 
 
 def get_container(db, container_id):
-    return Container.query.filter_by(db.or_(id=container_id, name=container_id))
+    return Container.query.filter(db.or_(
+        Container.id == container_id, Container.name == container_id,
+    )).first()
 
 
 def target_node_reachable(node_name):
@@ -204,7 +206,9 @@ class NewContainerResource(Resource):
             abort(404)
 
         data, errors = ContainerReq(
-            context={"enable_license": as_boolean(app.config["ENABLE_LICENSE"])},
+            context={
+                "enable_license": as_boolean(app.config["ENABLE_LICENSE"]),
+            },
         ).load(request.form)
 
         if errors:
@@ -271,14 +275,15 @@ class NewContainerResource(Resource):
 
         # pre-populate the container object
         container_class = self.container_classes[container_type]
-        container = container_class({
+        container = container_class(**{
             "cluster_id": cluster.id,
             "node_id": node.id,
             "state": STATE_IN_PROGRESS,
-            "container_attrs": data["container_attrs"],
+            # "container_attrs": data["container_attrs"],
         })
-        container.name = "{}_{}".format(container.image, container.id)
         db.session.add(container)
+        db.session.flush()
+        container.name = "{}_{}".format(container.image, container.id)
         db.session.commit()
 
         # log related setup
@@ -450,31 +455,33 @@ class ScaleContainerResource(Resource):
         return cycle(running_nodes_ids)
 
     def setup_obj_generator(self, app, container_type, number, cluster_id, node_id_pool):
-        for i in xrange(number):
-            container_class = self.container_classes[container_type]
-            container = container_class({
-                "cluster_id": cluster_id,
-                "node_id": node_id_pool.next(),
-                "state": STATE_IN_PROGRESS,
-                "container_attrs": {},
-            })
-            container.name = "{}_{}".format(container.image, container.id)
-            db.session.add(container)
-            db.session.commit()
+        with app.app_context():
+            for i in xrange(number):
+                container_class = self.container_classes[container_type]
+                container = container_class(**{
+                    "cluster_id": cluster_id,
+                    "node_id": node_id_pool.next(),
+                    "state": STATE_IN_PROGRESS,
+                    # "container_attrs": {},
+                })
+                db.session.add(container)
+                db.session.flush()
+                container.name = "{}_{}".format(container.image, container.id)
+                db.session.commit()
 
-            # log related setup
-            container_log = ContainerLog.create_or_get(container)
-            container_log.state = STATE_SETUP_IN_PROGRESS
-            # TODO: update the row
-            db.session.add(container_log)
-            db.session.commit()
-            logpath = os.path.join(app.config["CONTAINER_LOG_DIR"],
-                                   container_log.setup_log)
+                # log related setup
+                container_log = ContainerLog.create_or_get(container)
+                container_log.state = STATE_SETUP_IN_PROGRESS
+                # TODO: update the row
+                db.session.add(container_log)
+                db.session.commit()
+                logpath = os.path.join(app.config["CONTAINER_LOG_DIR"],
+                                       container_log.setup_log)
 
-            # make the setup obj
-            helper_class = self.helper_classes[container_type]
-            helper = helper_class(container, app, logpath)
-            yield helper
+                # make the setup obj
+                helper_class = self.helper_classes[container_type]
+                helper = helper_class(container, app, logpath)
+                yield helper
 
     @run_in_reactor
     def scaleosorus(self, setup_obj_generator):
@@ -528,19 +535,20 @@ class ScaleContainerResource(Resource):
                 executor.submit(delete_obj.mp_teardown)
 
     def delete_obj_generator(self, app, containers):
-        for container in containers:
-            db.session.delete(container)
-            db.session.commit()
-            container_log = ContainerLog.create_or_get(container)
-            container_log.state = STATE_TEARDOWN_IN_PROGRESS
-            # TODO: update the row
-            db.session.add(container_log)
-            db.session.commit()
-            logpath = os.path.join(app.config["CONTAINER_LOG_DIR"],
-                                   container_log.teardown_log)
-            helper_class = self.helper_classes[container.type]
-            helper = helper_class(container, app, logpath)
-            yield helper
+        with app.app_context():
+            for container in containers:
+                db.session.delete(container)
+                db.session.commit()
+                container_log = ContainerLog.create_or_get(container)
+                container_log.state = STATE_TEARDOWN_IN_PROGRESS
+                # TODO: update the row
+                db.session.add(container_log)
+                db.session.commit()
+                logpath = os.path.join(app.config["CONTAINER_LOG_DIR"],
+                                       container_log.teardown_log)
+                helper_class = self.helper_classes[container.type]
+                helper = helper_class(container, app, logpath)
+                yield helper
 
     def delete(self, container_type, number):
         app = current_app._get_current_object()
@@ -558,7 +566,7 @@ class ScaleContainerResource(Resource):
 
         # get the count of requested container type
         counter = Container.query.filter_by(
-            type_=container_type, state=STATE_SUCCESS,
+            type=container_type, state=STATE_SUCCESS,
         ).count()
         if number > counter:
             return {

@@ -20,8 +20,10 @@ from .machine import Machine
 # from .model import PROVIDER_SCHEMA
 # from .model import LICENSE_KEY_SCHEMA
 # from .model import LDAP_SETTING_SCHEMA
-from ..model import Node
-from ..model import Container
+from .model import Node
+from .model import Container
+
+# TODO: add DB schema migration scripts
 
 
 # global context settings
@@ -54,35 +56,36 @@ def _distribute_ox_files(type_):
 
     click.echo("distributing custom {} files".format(ox["name"]))
 
-    nodes = Node.query.filter(Node.type.in_(["master", "worker"])).all()
+    with app.app_context():
+        nodes = Node.query.filter(Node.type.in_(["master", "worker"])).all()
 
-    src = app.config[ox["override_dir_config"]]
-    dest = src.replace(app.config[ox["override_dir_config"]],
-                       ox["override_remote_dir"])
+        src = app.config[ox["override_dir_config"]]
+        dest = src.replace(app.config[ox["override_dir_config"]],
+                           ox["override_remote_dir"])
 
-    for node in nodes:
-        click.echo("copying {} to {}:{} recursively".format(
-            src, node.name, dest
-        ))
+        for node in nodes:
+            click.echo("copying {} to {}:{} recursively".format(
+                src, node.name, dest
+            ))
 
-        mc.ssh(node.name, "mkdir -p {}".format(dest))
-        mc.scp(src, "{}:{}".format(node.name, os.path.dirname(dest)),
-               recursive=True)
+            mc.ssh(node.name, "mkdir -p {}".format(dest))
+            mc.scp(src, "{}:{}".format(node.name, os.path.dirname(dest)),
+                   recursive=True)
 
-        containers = Container.query.filter_by(
-            node_id=node.id, type=type_, state="SUCCESS",
-        ).all()
+            containers = Container.query.filter_by(
+                node_id=node.id, type=type_, state="SUCCESS",
+            ).all()
 
-        for container in containers:
-            # we only need to restart jetty process inside the container
-            click.echo(
-                "restarting jetty process inside {} container {} "
-                "in {} node".format(ox["name"], container.cid, node.name)
-            )
-            mc.ssh(
-                node.name,
-                "sudo docker exec {} supervisorctl restart jetty".format(container.cid),
-            )
+            for container in containers:
+                # we only need to restart jetty process inside the container
+                click.echo(
+                    "restarting jetty process inside {} container {} "
+                    "in {} node".format(ox["name"], container.cid, node.name)
+                )
+                mc.ssh(
+                    node.name,
+                    "sudo docker exec {} supervisorctl restart jetty".format(container.cid),
+                )
 
 
 @main.command("distribute-oxauth-files")
@@ -115,56 +118,59 @@ def distribute_ssl_cert():
         click.echo("{} is not available; process cancelled".format(ssl_key))
         return
 
-    master_node = Node.query.filter_by(type="master").first()
+    with app.app_context():
+        master_node = Node.query.filter_by(type="master").first()
 
-    if not master_node:
-        click.echo("master node is not available; process cancelled")
-        return
+        if not master_node:
+            click.echo("master node is not available; process cancelled")
+            return
 
-    mc = Machine()
-    dk = Docker(mc.config(master_node.name),
-                mc.swarm_config(master_node.name))
+        mc = Machine()
+        dk = Docker(mc.config(master_node.name),
+                    mc.swarm_config(master_node.name))
 
-    ngx_containers = Container.query.filter_by(
-        type="nginx", state="SUCCESS",
-    ).all()
-    for ngx in ngx_containers:
-        click.echo("copying {} to {}:/etc/certs/nginx.crt".format(ssl_cert, ngx.name))
-        dk.copy_to_container(ngx.cid, ssl_cert, "/etc/certs/nginx.crt")
-        click.echo("copying {} to {}:/etc/certs/nginx.key".format(ssl_key, ngx.name))
-        dk.copy_to_container(ngx.cid, ssl_key, "/etc/certs/nginx.key")
-        dk.exec_cmd(ngx.cid, "supervisorctl restart nginx")
+        ngx_containers = Container.query.filter_by(
+            type="nginx", state="SUCCESS",
+        ).all()
 
-    oxtrust = Container.query.filter_by(
-        type="oxtrust", state="SUCCESS",
-    ).first()
+        for ngx in ngx_containers:
+            click.echo("copying {} to {}:/etc/certs/nginx.crt".format(ssl_cert, ngx.name))
+            dk.copy_to_container(ngx.cid, ssl_cert, "/etc/certs/nginx.crt")
+            click.echo("copying {} to {}:/etc/certs/nginx.key".format(ssl_key, ngx.name))
+            dk.copy_to_container(ngx.cid, ssl_key, "/etc/certs/nginx.key")
+            dk.exec_cmd(ngx.cid, "supervisorctl restart nginx")
 
-    if oxtrust:
-        click.echo("copying {} to {}:/etc/certs/nginx.crt".format(ssl_cert, oxtrust.name))
-        dk.copy_to_container(oxtrust.cid, ssl_cert, "/etc/certs/nginx.crt")
-        click.echo("copying {} to {}:/etc/certs/nginx.key".format(ssl_key, oxtrust.name))
-        dk.copy_to_container(oxtrust.cid, ssl_key, "/etc/certs/nginx.key")
+        oxtrust = Container.query.filter_by(
+            type="oxtrust", state="SUCCESS",
+        ).first()
 
-        der_cmd = "openssl x509 -outform der -in /etc/certs/nginx.crt " \
-                  "-out /etc/certs/nginx.der"
-        dk.exec_cmd(oxtrust.cid, der_cmd)
+        if oxtrust:
+            click.echo("copying {} to {}:/etc/certs/nginx.crt".format(ssl_cert, oxtrust.name))
+            dk.copy_to_container(oxtrust.cid, ssl_cert, "/etc/certs/nginx.crt")
+            click.echo("copying {} to {}:/etc/certs/nginx.key".format(ssl_key, oxtrust.name))
+            dk.copy_to_container(oxtrust.cid, ssl_key, "/etc/certs/nginx.key")
 
-        import_cmd = " ".join([
-            "keytool -importcert -trustcacerts",
-            "-alias '{}'".format(uuid.uuid4()),
-            "-file /etc/certs/nginx.der",
-            "-keystore {}".format(oxtrust.truststore_fn),
-            "-storepass changeit -noprompt",
-        ])
-        import_cmd = '''sh -c "{}"'''.format(import_cmd)
+            der_cmd = "openssl x509 -outform der -in /etc/certs/nginx.crt " \
+                      "-out /etc/certs/nginx.der"
+            dk.exec_cmd(oxtrust.cid, der_cmd)
 
-        try:
-            click.echo("importing ssl cert into {} keystore".format(oxtrust.name))
-            dk.exec_cmd(oxtrust.cid, import_cmd)
-        except DockerExecError as exc:
-            if exc.exit_code == 1:
-                # certificate already imported
-                click.echo("certificate already imported")
+            import_cmd = " ".join([
+                "keytool -importcert -trustcacerts",
+                "-alias '{}'".format(uuid.uuid4()),
+                "-file /etc/certs/nginx.der",
+                "-keystore {}".format(oxtrust.truststore_fn),
+                "-storepass changeit -noprompt",
+            ])
+            import_cmd = '''sh -c "{}"'''.format(import_cmd)
+
+            try:
+                click.echo("importing ssl cert into {} "
+                           "keystore".format(oxtrust.name))
+                dk.exec_cmd(oxtrust.cid, import_cmd)
+            except DockerExecError as exc:
+                if exc.exit_code == 1:
+                    # certificate already imported
+                    click.echo("certificate already imported")
 
     # mark the process as finished
     click.echo("distributing SSL cert and key is done")

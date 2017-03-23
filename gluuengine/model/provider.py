@@ -7,7 +7,7 @@ import uuid
 
 from sqlalchemy import JSON
 
-from ..database import db
+from ..extensions import db
 from ..model import Node
 
 

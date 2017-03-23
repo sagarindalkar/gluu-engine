@@ -9,7 +9,7 @@ from flask import request
 from flask import current_app
 from flask_restful import Resource
 
-from ..database import db
+from ..extensions import db
 from ..model import LicenseKey
 from ..reqparser import LicenseKeyReq
 from ..model import STATE_DISABLED

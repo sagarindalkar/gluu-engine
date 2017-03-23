@@ -20,7 +20,7 @@ from ..node import DeployMasterNode
 from ..node import DeployWorkerNode
 from ..node import DeployMsgconNode
 from ..machine import Machine
-from ..database import db
+from ..extensions import db
 from ..utils import as_boolean
 
 # TODO: put it in config

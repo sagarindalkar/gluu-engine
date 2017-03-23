@@ -8,7 +8,7 @@ import uuid
 from sqlalchemy import JSON
 
 from .node import Node
-from ..database import db
+from ..extensions import db
 from ..utils import decrypt_text
 from ..utils import retrieve_current_date
 

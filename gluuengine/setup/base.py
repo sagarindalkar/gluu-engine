@@ -13,7 +13,6 @@ import uuid
 from jinja2 import Environment
 from jinja2 import PackageLoader
 
-# from ..database import db
 from ..log import create_file_logger
 from ..machine import Machine
 from ..dockerclient import Docker
@@ -31,7 +30,6 @@ class BaseSetup(object):
         with self.app.app_context():
             self.build_dir = tempfile.mkdtemp()
             self.container = container
-            # self.node = db.get(self.container.node_id, "nodes")
             self.node = Node.query.get(self.container.node_id)
 
             self.cluster = cluster

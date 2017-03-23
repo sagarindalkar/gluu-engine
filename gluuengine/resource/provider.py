@@ -8,7 +8,7 @@ from flask import request
 from flask import url_for
 from flask_restful import Resource
 
-from ..database import db
+from ..extensions import db
 from ..reqparser import GenericProviderReq
 from ..reqparser import DigitalOceanProviderReq
 from ..reqparser import AwsProviderReq

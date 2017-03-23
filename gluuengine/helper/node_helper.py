@@ -10,7 +10,7 @@ import tempfile
 
 from crochet import run_in_reactor
 
-from ..database import db
+from ..extensions import db
 from ..machine import Machine
 from ..model import Container
 

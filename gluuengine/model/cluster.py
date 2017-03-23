@@ -7,7 +7,7 @@ import uuid
 
 from .base import STATE_SUCCESS
 from .container import Container
-from ..database import db
+from ..extensions import db
 from ..utils import decrypt_text
 
 

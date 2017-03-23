@@ -10,7 +10,7 @@ from crochet import run_in_reactor
 from requests.exceptions import ConnectionError
 from twisted.internet.task import LoopingCall
 
-from ..database import db
+from ..extensions import db
 from ..model import STATE_DISABLED
 from ..model import STATE_SUCCESS
 from ..model import LicenseKey

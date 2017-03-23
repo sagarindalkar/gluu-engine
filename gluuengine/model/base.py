@@ -3,30 +3,6 @@
 #
 # All rights reserved.
 
-from schematics.models import Model
-
-
-class BaseModel(Model):
-    resource_fields = {}
-
-    def __init__(self, raw_data=None, deserialize_mapping=None, strict=True):
-        super(BaseModel, self).__init__(
-            raw_data=raw_data,
-            deserialize_mapping=deserialize_mapping,
-            strict=False,
-        )
-
-    def as_dict(self):
-        return self.resource_fields
-
-    @property
-    def column_types(self):
-        """Special column types. Useful for column check in fixed-schema
-        database backend, for example MySQL.
-        """
-        return {}
-
-
 #: A flag to mark state as ``SUCCESS``
 STATE_SUCCESS = "SUCCESS"
 

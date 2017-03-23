@@ -13,7 +13,7 @@ from requests.exceptions import SSLError
 from requests.exceptions import ConnectionError
 from crochet import run_in_reactor
 
-from ..database import db
+from ..extensions import db
 from ..model import STATE_SUCCESS
 from ..model import STATE_FAILED
 from ..model import STATE_DISABLED

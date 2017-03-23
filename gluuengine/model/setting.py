@@ -5,7 +5,7 @@
 
 import uuid
 
-from ..database import db
+from ..extensions import db
 
 
 class LdapSetting(db.Model):

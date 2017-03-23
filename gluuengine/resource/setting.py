@@ -6,7 +6,7 @@
 from flask import request
 from flask_restful import Resource
 
-from ..database import db
+from ..extensions import db
 from ..model import LdapSetting
 from ..reqparser import LdapSettingReq
 

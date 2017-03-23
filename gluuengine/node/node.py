@@ -7,7 +7,7 @@
 import time
 from crochet import run_in_reactor
 
-from ..database import db
+from ..extensions import db
 from ..machine import Machine
 from ..log import create_file_logger
 from ..model import Provider

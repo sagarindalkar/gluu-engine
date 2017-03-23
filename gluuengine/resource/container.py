@@ -14,7 +14,7 @@ from flask import url_for
 from flask_restful import Resource
 from crochet import run_in_reactor
 
-from ..database import db
+from ..extensions import db
 from ..reqparser import ContainerReq
 from ..model import STATE_SUCCESS
 from ..model import STATE_IN_PROGRESS

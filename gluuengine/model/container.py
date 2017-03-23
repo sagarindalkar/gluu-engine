@@ -7,7 +7,7 @@ import uuid
 
 from sqlalchemy import JSON
 
-from ..database import db
+from ..extensions import db
 
 
 class Container(db.Model):

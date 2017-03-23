@@ -7,23 +7,14 @@ import os
 import uuid
 
 import click
+from flask_migrate.cli import db as migrator
 
 from .app import create_app
-# from .database import db
 from .dockerclient import Docker
 from .errors import DockerExecError
 from .machine import Machine
-# from .model import CLUSTER_SCHEMA
-# from .model import CONTAINER_SCHEMA
-# from .model import CONTAINER_LOG_SCHEMA
-# from .model import NODE_SCHEMA
-# from .model import PROVIDER_SCHEMA
-# from .model import LICENSE_KEY_SCHEMA
-# from .model import LDAP_SETTING_SCHEMA
 from .model import Node
 from .model import Container
-
-# TODO: add DB schema migration scripts
 
 
 # global context settings
@@ -176,33 +167,5 @@ def distribute_ssl_cert():
     click.echo("distributing SSL cert and key is done")
 
 
-# @main.command("init-schema")
-# def init_schema():
-#     """Initialize schema for RDBMS backend.
-#     """
-#     app = create_app()
-
-#     if not app.config["DATABASE_URI"].startswith("mysql"):
-#         click.echo("database backend doesn't require preloaded schema")
-#         return
-
-#     with app.test_request_context():
-#         schema_list = (
-#             CLUSTER_SCHEMA,
-#             CONTAINER_SCHEMA,
-#             CONTAINER_LOG_SCHEMA,
-#             NODE_SCHEMA,
-#             PROVIDER_SCHEMA,
-#             LICENSE_KEY_SCHEMA,
-#             LDAP_SETTING_SCHEMA,
-#         )
-
-#         for schema in schema_list:
-#             table = db.backend._get_table(schema["name"])
-
-#             for column, type_ in schema["columns"].iteritems():
-#                 if not table._has_column(column):
-#                     click.echo("creating column {} in {} table".format(
-#                         column, table.table,
-#                     ))
-#                     table.create_column(column, type_)
+# add db migrator commands
+main.add_command(migrator)

@@ -5,7 +5,6 @@
 
 import re
 
-from marshmallow import post_load
 from marshmallow import validates
 from marshmallow import ValidationError
 
@@ -36,37 +35,3 @@ class NodeReq(ma.Schema):
 
         if Node.query.filter_by(name=value).count():
             raise ValidationError("name is already taken")
-
-    @post_load
-    def finalize_data(self, data):
-        if self.context["type"] == "discovery":
-            data["state_attrs"] = dict.fromkeys([
-                "state_node_create",
-                "state_install_consul",
-                "state_complete",
-            ], False)
-        if self.context["type"] == "msgcon":
-            data["state_attrs"] = dict.fromkeys([
-                "state_node_create",
-                "state_install_mysql",
-                "state_install_activemq",
-                "state_install_msgcon",
-                "state_pull_images",
-                "state_complete",
-            ], False)
-        elif self.context["type"] == "master":
-            data["state_attrs"] = dict.fromkeys([
-                "state_node_create",
-                "state_complete",
-                "state_rng_tools",
-                "state_pull_images",
-                "state_network_create",
-            ], False)
-        elif self.context["type"] == "worker":
-            data["state_attrs"] = dict.fromkeys([
-                "state_node_create",
-                "state_complete",
-                "state_rng_tools",
-                "state_pull_images",
-            ], False)
-        return data

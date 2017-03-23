@@ -57,7 +57,7 @@ class CreateNodeResource(Resource):
                 "message": "Node type is not supported",
             }, 404
 
-        data, errors = NodeReq(context={"type": node_type}).load(request.form)
+        data, errors = NodeReq().load(request.form)
         if errors:
             return {
                 "status": 400,
@@ -242,6 +242,8 @@ class NodeResource(Resource):
             dn = DeployMasterNode(node, discovery, app)
         if node.type == 'worker':
             dn = DeployWorkerNode(node, discovery, app)
+        if node.type == "msgcon":
+            dn = DeployMsgconNode(node, discovery, app)
 
         dn.deploy()
         headers = {

@@ -70,10 +70,6 @@ class DiscoveryNode(Node):
         "polymorphic_identity": "discovery",
     }
 
-    # state_node_create = BooleanType(default=False)
-    # state_install_consul = BooleanType(default=False)
-    # state_complete = BooleanType(default=False)
-
     @property
     def resource_fields(self):
         return {
@@ -99,16 +95,19 @@ class DiscoveryNode(Node):
         return self.state_attrs.get("state_complete")
 
 
+@db.event.listens_for(DiscoveryNode, "init")
+def receive_init_discovery(target, args, kwargs):
+    target.state_attrs = dict.fromkeys([
+        "state_node_create",
+        "state_install_consul",
+        "state_complete",
+    ], False)
+
+
 class MsgconNode(Node):
     __mapper_args__ = {
         "polymorphic_identity": "msgcon",
     }
-    # state_node_create = BooleanType(default=False)
-    # state_install_mysql= BooleanType(default=False)
-    # state_install_activemq = BooleanType(default=False)
-    # state_install_msgcon = BooleanType(default=False)
-    # state_pull_images = BooleanType(default=False)
-    # state_complete = BooleanType(default=False)
 
     @property
     def resource_fields(self):
@@ -150,15 +149,22 @@ class MsgconNode(Node):
         return self.state_attrs.get("state_complete")
 
 
+@db.event.listens_for(MsgconNode, "init")
+def receive_init_msgcon(target, args, kwargs):
+    target.state_attrs = dict.fromkeys([
+        "state_node_create",
+        "state_install_mysql",
+        "state_install_activemq",
+        "state_install_msgcon",
+        "state_pull_images",
+        "state_complete",
+    ], False)
+
+
 class MasterNode(Node):
     __mapper_args__ = {
         "polymorphic_identity": "master",
     }
-    # state_node_create = BooleanType(default=False)
-    # state_complete = BooleanType(default=False)
-    # state_rng_tools = BooleanType(default=False)
-    # state_pull_images = BooleanType(default=False)
-    # state_network_create = BooleanType(default=False)
 
     @property
     def resource_fields(self):
@@ -195,14 +201,21 @@ class MasterNode(Node):
         return self.state_attrs.get("state_network_create")
 
 
+@db.event.listens_for(MasterNode, "init")
+def receive_init_master(target, args, kwargs):
+    target.state_attrs = dict.fromkeys([
+        "state_node_create",
+        "state_complete",
+        "state_rng_tools",
+        "state_pull_images",
+        "state_network_create",
+    ], False)
+
+
 class WorkerNode(Node):
     __mapper_args__ = {
         "polymorphic_identity": "worker",
     }
-    # state_node_create = BooleanType(default=False)
-    # state_complete = BooleanType(default=False)
-    # state_rng_tools = BooleanType(default=False)
-    # state_pull_images = BooleanType(default=False)
 
     @property
     def resource_fields(self):
@@ -232,3 +245,13 @@ class WorkerNode(Node):
     @property
     def state_pull_images(self):
         return self.state_attrs.get("state_pull_images")
+
+
+@db.event.listens_for(WorkerNode, "init")
+def receive_init_worker(target, args, kwargs):
+    target.state_attrs = dict.fromkeys([
+        "state_node_create",
+        "state_complete",
+        "state_rng_tools",
+        "state_pull_images",
+    ], False)

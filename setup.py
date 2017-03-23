@@ -46,9 +46,9 @@ setup(
         "gunicorn",
         "futures",
         "click",
-        "flask-dataset",
         "pymysql",
         "schematics",
+        "dataset",
     ],
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",

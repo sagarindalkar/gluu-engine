@@ -95,12 +95,6 @@ class OxidpSetup(OxSetup):
                 if exc.exit_code == 1:
                     pass
 
-        # if self.cluster.external_ldap:
-        # import_certs(self.cluster.external_ldap_host,
-        #              self.cluster.external_ldap_port)
-        # else:
-        #     for ldap in self.cluster.get_containers(type_="ldap"):
-        #         import_certs(ldap.hostname, self.cluster.ldaps_port)
         import_certs(self.ldap_host, self.ldap_port)
 
     # def render_nutcracker_conf(self):

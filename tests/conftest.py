@@ -263,20 +263,6 @@ def dockerclient(swarm_config):
 
 
 # @pytest.fixture()
-# def ldap_setup(request, app, ldap_node, cluster, db, provider):
-#     from gluuengine.setup import LdapSetup
-
-#     db.persist(provider, "providers")
-#     setup_obj = LdapSetup(ldap_node, cluster, app)
-
-#     def teardown():
-#         setup_obj.remove_build_dir()
-
-#     request.addfinalizer(teardown)
-#     return setup_obj
-
-
-# @pytest.fixture()
 # def oxauth_setup(request, app, oxauth_node, cluster, db, provider):
 #     from gluuengine.setup import OxauthSetup
 

@@ -5,8 +5,6 @@
 
 import uuid
 
-# from schematics.types import BooleanType
-# from schematics.types import IntType
 from schematics.types import StringType
 
 from ._schema import CLUSTER_SCHEMA
@@ -28,23 +26,6 @@ class Cluster(BaseModel):
     admin_email = StringType()
     passkey = StringType()
     admin_pw = StringType()
-    # encoded_ldap_pw = StringType()
-    # encoded_ox_ldap_pw = StringType()
-    # base_inum = StringType()
-    # inum_org = StringType()
-    # inum_org_fn = StringType()
-    # inum_appliance = StringType()
-    # inum_appliance_fn = StringType()
-    # oxauth_client_id = StringType()
-    # oxauth_client_encoded_pw = StringType()
-    # oxauth_openid_jks_pass = StringType()
-    # scim_rs_client_id = StringType()
-    # scim_rs_client_jks_pass = StringType()
-    # scim_rs_client_jks_pass_encoded = StringType()
-    # scim_rp_client_id = StringType()
-    # scim_rp_client_jks_pass = StringType()
-    # encoded_shib_jks_pw = StringType()
-    # encoded_asimba_jks_pw = StringType()
     _pyobject = StringType()
 
     @property
@@ -59,9 +40,6 @@ class Cluster(BaseModel):
             'city': self.city,
             'state': self.state,
             'admin_email': self.admin_email,
-            # 'base_inum': self.base_inum,
-            # 'inum_org': self.inum_org,
-            # 'inum_appliance': self.inum_appliance,
         }
 
     @property

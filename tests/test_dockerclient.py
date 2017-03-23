@@ -45,7 +45,7 @@ def test_inspect_container(monkeypatch, dockerclient):
             }
         ]
     )
-    assert len(dockerclient.inspect_container("weave"))
+    assert len(dockerclient.inspect_container("oxauth"))
 
 
 @pytest.mark.parametrize("stream_output, pulled", [

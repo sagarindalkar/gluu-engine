@@ -7,6 +7,7 @@ from .node import Node  # noqa
 from .node import DiscoveryNode  # noqa
 from .node import MasterNode  # noqa
 from .node import WorkerNode  # noqa
+from .node import MsgconNode  # noqa
 from .provider import GenericProvider  # noqa
 from .provider import DigitalOceanProvider  # noqa
 from .provider import AwsProvider  # noqa
@@ -14,7 +15,6 @@ from .provider import AwsProvider  # noqa
 from .cluster import Cluster  # noqa
 from .license import LicenseKey  # noqa
 
-# from .container import LdapContainer  # noqa
 from .container import OxauthContainer  # noqa
 from .container import OxtrustContainer  # noqa
 from .container import OxidpContainer  # noqa

@@ -20,14 +20,12 @@ from ..model import STATE_SUCCESS
 from ..model import STATE_IN_PROGRESS
 from ..model import STATE_SETUP_IN_PROGRESS
 from ..model import STATE_TEARDOWN_IN_PROGRESS
-# from ..helper import LdapContainerHelper
 from ..helper import OxauthContainerHelper
 from ..helper import OxtrustContainerHelper
 # from ..helper import OxidpContainerHelper
 from ..helper import NginxContainerHelper
 # from ..helper import OxasimbaContainerHelper
 from ..helper import OxelevenContainerHelper
-# from ..model import LdapContainer
 from ..model import OxauthContainer
 from ..model import OxtrustContainer
 # from ..model import OxidpContainer
@@ -41,7 +39,6 @@ from ..utils import as_boolean
 
 #: List of supported container
 CONTAINER_CHOICES = (
-    # "ldap",
     "oxauth",
     "oxtrust",
     # "oxidp",  # disabled for now
@@ -101,7 +98,6 @@ def get_containerlog(db, containerlog_name):
 
 class ContainerResource(Resource):
     helper_classes = {
-        # "ldap": LdapContainerHelper,
         "oxauth": OxauthContainerHelper,
         "oxtrust": OxtrustContainerHelper,
         # "oxidp": OxidpContainerHelper,  # disabled for now
@@ -201,7 +197,6 @@ class ContainerListResource(Resource):
 
 class NewContainerResource(Resource):
     helper_classes = {
-        # "ldap": LdapContainerHelper,
         "oxauth": OxauthContainerHelper,
         "oxtrust": OxtrustContainerHelper,
         # "oxidp": OxidpContainerHelper,  # disabled for now
@@ -211,7 +206,6 @@ class NewContainerResource(Resource):
     }
 
     container_classes = {
-        # "ldap": LdapContainer,
         "oxauth": OxauthContainer,
         "oxtrust": OxtrustContainer,
         # "oxidp": OxidpContainer,  # disabled for now
@@ -269,7 +263,7 @@ class NewContainerResource(Resource):
                 "message": "access denied due to discovery node being unreachable",
             }, 403
 
-        trust_or_oxeleven = (container_type in ('oxtrust','oxeleven'))
+        trust_or_oxeleven = (container_type in ('oxtrust', 'oxeleven'))
 
         # only allow one oxtrust and one oxeleven per cluster
         if trust_or_oxeleven and cluster.count_containers(type_=container_type):
@@ -292,14 +286,6 @@ class NewContainerResource(Resource):
                 "message": "cannot deploy additional nginx container "
                            "to specified node",
             }, 403
-
-        # # only allow 1 ldap per node
-        # if container_type == "ldap" and node.count_containers(type_="ldap"):
-        #     return {
-        #         "status": 403,
-        #         "message": "cannot deploy additional ldap container "
-        #                    "to specified node",
-        #     }, 403
 
         # pre-populate the container object
         container_class = self.container_classes[container_type]

@@ -13,15 +13,12 @@ from requests.exceptions import SSLError
 from requests.exceptions import ConnectionError
 from crochet import run_in_reactor
 
-from .node_helper import distribute_cluster_data
-# from .prometheus_helper import PrometheusHelper
 from ..database import db
 from ..model import STATE_SUCCESS
 from ..model import STATE_FAILED
 from ..model import STATE_DISABLED
 from ..model import STATE_SETUP_FINISHED
 from ..model import STATE_TEARDOWN_FINISHED
-# from ..setup import LdapSetup
 from ..setup import OxauthSetup
 from ..setup import OxtrustSetup
 from ..setup import OxidpSetup
@@ -32,7 +29,6 @@ from ..log import create_file_logger
 from ..utils import exc_traceback
 from ..machine import Machine
 from ..dockerclient import Docker
-from ..weave import Weave
 
 
 class BaseContainerHelper(object):
@@ -77,11 +73,6 @@ class BaseContainerHelper(object):
             mc.swarm_config(master_node.name),
         )
 
-        self.weave = Weave(self.node, self.app)
-        self._bridge_ip = ""
-        self._dns_search = ""
-        # self.prometheus = PrometheusHelper(self.app, logger=self.logger)
-
     @run_in_reactor
     def setup(self):
         self.mp_setup()
@@ -102,11 +93,9 @@ class BaseContainerHelper(object):
                 ],
                 port_bindings=self.port_bindings,
                 volumes=self.volumes,
-                dns=[self.bridge_ip],
-                dns_search=[self.dns_search],
                 ulimits=self.ulimits,
-                # hostname=self.container.hostname,
                 command=self.command,
+                aliases=self.aliases,
             )
 
             # container is not running
@@ -118,19 +107,13 @@ class BaseContainerHelper(object):
 
             # container.cid in short format
             self.container.cid = cid[:12]
-            self.container.hostname = "{}.{}.{}".format(
-                self.container.cid, self.container.type, self.dns_search.rstrip("."),
-            )
+            self.container.hostname = "{}.{}".format(self.container.cid, self.container.type)
 
             db.update_to_table(
                 "containers",
                 {"name": self.container.name},
                 self.container,
             )
-
-            # add DNS records
-            self.weave.dns_add(self.container.cid, self.container.hostname)
-            self.weave.dns_add(self.container.cid, self.extra_dns)
 
             setup_obj = self.setup_class(self.container, self.cluster,
                                          self.app, logger=self.logger)
@@ -149,9 +132,6 @@ class BaseContainerHelper(object):
             # as SUCCESS
             setup_obj.after_setup()
             setup_obj.remove_build_dir()
-
-            # # updating prometheus
-            # self.prometheus.update()
 
             elapsed = time.time() - start
             self.logger.info("{} setup is finished ({} seconds)".format(
@@ -173,9 +153,6 @@ class BaseContainerHelper(object):
             if container_log:
                 container_log.state = STATE_SETUP_FINISHED
                 db.update(container_log.id, container_log, "container_logs")
-
-            # distribute recovery data
-            distribute_cluster_data(self.app, self.node)
 
             for handler in self.logger.handlers:
                 handler.close()
@@ -219,10 +196,9 @@ class BaseContainerHelper(object):
         start = time.time()
 
         # only do teardown on container with SUCCESS and DISABLED status
-        # to avoid unnecessary ops (e.g. propagating nginx changes,
-        # removing LDAP replication, etc.) on non-deployed containers;
-        # also, initiate the teardown only if node is exist in database
-        # (node data may be deleted in other thread)
+        # to avoid unnecessary ops (e.g. propagating nginx config changes)
+        # on non-deployed containers; also, initiate the teardown only if
+        # node is exist in database (node data may be deleted in other thread)
         if (self.container.state in (STATE_SUCCESS, STATE_DISABLED,)
                 and self.node):
             setup_obj = self.setup_class(
@@ -243,9 +219,6 @@ class BaseContainerHelper(object):
                     "container {!r} does not exist".format(self.container.name)
                 )
 
-        # # updating prometheus
-        # self.prometheus.update()
-
         elapsed = time.time() - start
         self.logger.info("{} teardown is finished ({} seconds)".format(
             self.container.name, elapsed
@@ -264,18 +237,9 @@ class BaseContainerHelper(object):
             container_log.state = STATE_TEARDOWN_FINISHED
             db.update(container_log.id, container_log, "container_logs")
 
-        # distribute recovery data
-        distribute_cluster_data(self.app, self.node)
-
         for handler in self.logger.handlers:
             handler.close()
             self.logger.removeHandler(handler)
-
-    @property
-    def extra_dns(self):
-        """Extra DNS record.
-        """
-        return "{}.{}".format(self.container.type, self.dns_search.rstrip("."))
 
     @property
     def command(self):
@@ -286,34 +250,8 @@ class BaseContainerHelper(object):
         return {}
 
     @property
-    def bridge_ip(self):
-        if not self._bridge_ip:
-            self._bridge_ip, _ = self.weave.dns_args()
-        return self._bridge_ip
-
-    @property
-    def dns_search(self):
-        if not self._dns_search:
-            _, self._dns_search = self.weave.dns_args()
-        return self._dns_search
-
-
-# class LdapContainerHelper(BaseContainerHelper):
-#     setup_class = LdapSetup
-#     ulimits = [
-#         {"name": "nofile", "soft": 65536, "hard": 131072},
-#     ]
-
-#     @property
-#     def volumes(self):
-#         db_volume = os.path.join(self.app.config["OPENDJ_VOLUME_DIR"],
-#                                  self.container.name,
-#                                  "db")
-#         return {
-#             db_volume: {
-#                 "bind": "/opt/opendj/db",
-#             },
-#         }
+    def aliases(self):
+        return [self.container.type]
 
 
 class OxauthContainerHelper(BaseContainerHelper):
@@ -387,8 +325,14 @@ class NginxContainerHelper(BaseContainerHelper):
     port_bindings = {80: ("0.0.0.0", 80,), 443: ("0.0.0.0", 443,)}
 
     @property
-    def extra_dns(self):
-        return self.cluster.ox_cluster_hostname
+    def aliases(self):
+        _aliases = [self.container.type]
+
+        # add domain with ``.local`` suffix, useful for testing cluster without
+        # actual public domain
+        if self.cluster.ox_cluster_hostname.endswith(".local"):
+            _aliases.append(self.cluster.ox_cluster_hostname)
+        return _aliases
 
 
 class OxasimbaContainerHelper(BaseContainerHelper):

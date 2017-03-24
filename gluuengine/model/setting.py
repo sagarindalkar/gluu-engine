@@ -4,6 +4,7 @@
 # All rights reserved.
 
 import uuid
+from datetime import datetime
 
 from ..extensions import db
 
@@ -14,12 +15,13 @@ class LdapSetting(db.Model):
     id = db.Column(db.Unicode(36), primary_key=True,
                    default=lambda: str(uuid.uuid4()))
     host = db.Column(db.Unicode(255))
-    port = db.Column(db.Integer)
+    port = db.Column(db.Integer, default=1636)
     bind_dn = db.Column(db.Unicode(255))
     encoded_bind_password = db.Column(db.Unicode(255))
     encoded_salt = db.Column(db.Unicode(255))
     inum_appliance = db.Column(db.Unicode(255))
     inum_org = db.Column(db.Unicode(255))
+    created_at = db.Column(db.DateTime(True), default=datetime.utcnow)
 
     @property
     def resource_fields(self):

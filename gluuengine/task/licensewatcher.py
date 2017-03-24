@@ -76,7 +76,7 @@ class LicenseWatcherTask(object):
 
         # if license has been already updated within 24 hours,
         # no need to re-populate the license
-        if (current_date - license_key.updated_at) < UPDATE_INTERVAL_MILLIS:
+        if (current_date - license_key.populated_at) < UPDATE_INTERVAL_MILLIS:
             self.logger.info("license key is up-to-date")
             return
 
@@ -103,7 +103,7 @@ class LicenseWatcherTask(object):
                 retry_attempt += 1
             else:
                 # mark the latest update time
-                license_key.updated_at = retrieve_current_date()
+                license_key.populated_at = retrieve_current_date()
                 with self.app.app_context():
                     db.session.add(license_key)
                     db.session.commit()

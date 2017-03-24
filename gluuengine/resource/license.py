@@ -61,7 +61,7 @@ class LicenseKeyListResource(Resource):
                 "message": "non-active license is not allowed",
             }, 403
 
-        license_key.updated_at = retrieve_current_date()
+        license_key.populated_at = retrieve_current_date()
         db.session.add(license_key)
         db.session.commit()
 
@@ -110,7 +110,7 @@ class LicenseKeyResource(Resource):
                 "message": "non-active license is not allowed",
             }, 403
 
-        license_key.updated_at = retrieve_current_date()
+        license_key.populated_at = retrieve_current_date()
         db.session.add(license_key)
         db.session.commit()
 

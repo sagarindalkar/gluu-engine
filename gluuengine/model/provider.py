@@ -4,6 +4,7 @@
 # All rights reserved.
 
 import uuid
+from datetime import datetime
 
 from sqlalchemy import JSON
 
@@ -19,10 +20,11 @@ class Provider(db.Model):
     name = db.Column(db.Unicode(255))
     driver = db.Column(db.Unicode(128))
     driver_attrs = db.Column(JSON)
+    created_at = db.Column(db.DateTime(True), default=datetime.utcnow)
 
     __mapper_args__ = {
         "polymorphic_on": driver,
-        "polymorphic_identity": "",
+        "polymorphic_identity": "provider",
     }
 
     @property

@@ -4,6 +4,7 @@
 # All rights reserved.
 
 import uuid
+from datetime import datetime
 
 from ..extensions import db
 
@@ -17,6 +18,7 @@ class ContainerLog(db.Model):
     state = db.Column(db.Unicode(32))
     setup_log = db.Column(db.Unicode(255))
     teardown_log = db.Column(db.Unicode(255))
+    created_at = db.Column(db.DateTime(True), default=datetime.utcnow)
 
     @property
     def resource_fields(self):

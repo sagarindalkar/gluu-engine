@@ -157,3 +157,7 @@ def register_resources():  # pragma: no cover
                          "/settings/ldap",
                          endpoint="ldap_setting",
                          )
+
+
+# to satisfy Flask>=0.11, use this as FLASK_APP value
+_application = create_app()

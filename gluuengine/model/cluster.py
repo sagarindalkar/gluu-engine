@@ -4,6 +4,7 @@
 # All rights reserved.
 
 import uuid
+from datetime import datetime
 
 from .base import STATE_SUCCESS
 from .container import Container
@@ -26,6 +27,7 @@ class Cluster(db.Model):
     admin_email = db.Column(db.Unicode(255))
     passkey = db.Column(db.Unicode(255))
     admin_pw = db.Column(db.Unicode(255))
+    created_at = db.Column(db.DateTime(True), default=datetime.utcnow)
 
     @property
     def decrypted_admin_pw(self):

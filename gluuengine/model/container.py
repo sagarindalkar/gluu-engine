@@ -4,6 +4,7 @@
 # All rights reserved.
 
 import uuid
+from datetime import datetime
 
 from sqlalchemy import JSON
 
@@ -23,6 +24,7 @@ class Container(db.Model):
     type = db.Column(db.Unicode(32))
     hostname = db.Column(db.Unicode(255))
     cid = db.Column(db.Unicode(128))
+    created_at = db.Column(db.DateTime(True), default=datetime.utcnow)
 
     __mapper_args__ = {
         "polymorphic_on": type,

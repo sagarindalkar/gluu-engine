@@ -4,6 +4,7 @@
 # All rights reserved.
 
 import uuid
+from datetime import datetime
 
 from sqlalchemy import JSON
 
@@ -40,8 +41,9 @@ class LicenseKey(db.Model):
     license_password = db.Column(db.Unicode(255))
     signed_license = db.Column(db.Text)
     valid = db.Column(db.Boolean)
-    updated_at = db.Column(db.BigInteger)
+    populated_at = db.Column(db.BigInteger)
     passkey = db.Column(db.Unicode(255))
+    created_at = db.Column(db.DateTime(True), default=datetime.utcnow)
 
     @property
     def resource_fields(self):
@@ -51,7 +53,7 @@ class LicenseKey(db.Model):
             "code": self.code,
             "valid": self.valid,
             "metadata": dict(self._metadata or {}),
-            "updated_at": self.updated_at,
+            "populated_at": self.populated_at,
             "public_key": self.decrypted_public_key,
         }
 

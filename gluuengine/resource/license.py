@@ -86,6 +86,17 @@ class LicenseKeyResource(Resource):
         if not license_key:
             return {"status": 404, "message": "license key not found"}, 404
 
+        data, errors = LicenseKeyReq().load(request.form)
+        if errors:
+            return {
+                "status": 400,
+                "message": "Invalid data",
+                "params": errors,
+            }, 400
+
+        for k, v in data.iteritems():
+            setattr(license_key, k, v)
+
         current_app.logger.info("downloading signed license")
         license_key, err = populate_license(license_key)
 

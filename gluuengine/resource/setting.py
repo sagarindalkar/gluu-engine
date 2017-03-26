@@ -19,13 +19,6 @@ class LdapSettingResource(Resource):
                 "status": 400,
                 "message": "Invalid data",
                 "params": errors,
-            }
-
-        if errors:
-            return {
-                "status": 400,
-                "message": "Invalid data",
-                "params": errors,
             }, 400
 
         ldap_setting = LdapSetting.query.first()

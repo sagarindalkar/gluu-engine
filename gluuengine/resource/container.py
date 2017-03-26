@@ -169,14 +169,20 @@ class ContainerResource(Resource):
 class ContainerListResource(Resource):
     def get(self, container_type=""):
         if not container_type:
-            return [container.as_dict() for container in Container.query]
+            return [
+                container.as_dict()
+                for container in Container.query
+                                          .order_by(Container.created_at.asc())
+            ]
 
         if container_type not in CONTAINER_CHOICES:
             abort(404)
 
         return [
             container.as_dict()
-            for container in Container.query.filter_by(type=container_type)
+            for container in Container.query
+                                      .filter_by(type=container_type)
+                                      .order_by(Container.created_at.asc())
         ]
 
 
@@ -418,6 +424,7 @@ class ContainerLogListResource(Resource):
         return [
             format_container_log_response(container_log)
             for container_log in ContainerLog.query
+                                             .order_by(ContainerLog.created_at.asc())
         ]
 
 

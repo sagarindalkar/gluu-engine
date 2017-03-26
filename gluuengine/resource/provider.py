@@ -82,7 +82,11 @@ class ProviderListResource(Resource):
     def get(self, provider_type=""):
         if not provider_type:
             # list all providers regardless their type
-            return [provider.as_dict() for provider in Provider.query]
+            return [
+                provider.as_dict()
+                for provider in Provider.query
+                                        .order_by(Provider.created_at.asc())
+            ]
 
         if provider_type not in PROVIDER_TYPES:
             abort(404)
@@ -91,6 +95,7 @@ class ProviderListResource(Resource):
         return [
             provider.as_dict()
             for provider in Provider.query.filter_by(driver=provider_type)
+                                          .order_by(Provider.created_at.asc())
         ]
 
 

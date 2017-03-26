@@ -160,7 +160,10 @@ class CreateNodeResource(Resource):
 
 class NodeListResource(Resource):
     def get(self):
-        return [node.as_dict() for node in Node.query]
+        return [
+            node.as_dict()
+            for node in Node.query.order_by(Node.created_at.asc())
+        ]
 
 
 class NodeResource(Resource):

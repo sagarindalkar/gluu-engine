@@ -111,10 +111,10 @@ class ProviderResource(Resource):
         if not provider:
             return {"status": 404, "message": "Provider not found"}, 404
 
-        # if provider.is_in_use():
-        #     msg = "Cannot delete provider while having nodes \
-        #           deployed using this provider"
-        #     return {"status": 403, "message": msg}, 403
+        if provider.is_in_use():
+            msg = "Cannot delete provider while having nodes \
+                  deployed using this provider"
+            return {"status": 403, "message": msg}, 403
 
         db.session.delete(provider)
         db.session.commit()

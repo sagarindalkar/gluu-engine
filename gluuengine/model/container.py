@@ -3,19 +3,15 @@
 #
 # All rights reserved.
 
-import uuid
-from datetime import datetime
-
 from sqlalchemy import JSON
 
+from .base import BaseModelMixin
 from ..extensions import db
 
 
-class Container(db.Model):
+class Container(BaseModelMixin, db.Model):
     __tablename__ = "containers"
 
-    id = db.Column(db.Unicode(36), primary_key=True,
-                   default=lambda: str(uuid.uuid4()))
     cluster_id = db.Column(db.Unicode(36))
     node_id = db.Column(db.Unicode(36))
     container_attrs = db.Column(JSON)
@@ -24,7 +20,6 @@ class Container(db.Model):
     type = db.Column(db.Unicode(32))
     hostname = db.Column(db.Unicode(255))
     cid = db.Column(db.Unicode(128))
-    created_at = db.Column(db.DateTime(True), default=datetime.utcnow)
 
     __mapper_args__ = {
         "polymorphic_on": type,
@@ -50,13 +45,8 @@ class Container(db.Model):
             "cid": self.cid,
         }
 
-    def as_dict(self):
-        return self.resource_fields
-
 
 class OxauthContainer(Container):
-    # __table_args__ = {'extend_existing': True}
-
     __mapper_args__ = {
         "polymorphic_identity": "oxauth",
     }

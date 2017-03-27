@@ -3,20 +3,16 @@
 #
 # All rights reserved.
 
-import uuid
-from datetime import datetime
-
 from .base import STATE_SUCCESS
+from .base import BaseModelMixin
 from .container import Container
 from ..extensions import db
 from ..utils import decrypt_text
 
 
-class Cluster(db.Model):
+class Cluster(BaseModelMixin, db.Model):
     __tablename__ = "clusters"
 
-    id = db.Column(db.Unicode(36), primary_key=True,
-                   default=lambda: str(uuid.uuid4()))
     name = db.Column(db.Unicode(255))
     description = db.Column(db.Unicode(255))
     ox_cluster_hostname = db.Column(db.Unicode(255))
@@ -27,7 +23,6 @@ class Cluster(db.Model):
     admin_email = db.Column(db.Unicode(255))
     passkey = db.Column(db.Unicode(255))
     admin_pw = db.Column(db.Unicode(255))
-    created_at = db.Column(db.DateTime(True), default=datetime.utcnow)
 
     @property
     def decrypted_admin_pw(self):
@@ -98,6 +93,3 @@ class Cluster(db.Model):
         if type_:
             condition["type"] = type_
         return Container.query.filter_by(**condition).all()
-
-    def as_dict(self):
-        return self.resource_fields

@@ -3,18 +3,16 @@
 #
 # All rights reserved.
 
-import uuid
-from datetime import datetime
-
 from sqlalchemy import JSON
 
+from .base import BaseModelMixin
 from .node import Node
 from ..extensions import db
 from ..utils import decrypt_text
 from ..utils import retrieve_current_date
 
 
-class LicenseKey(db.Model):
+class LicenseKey(BaseModelMixin, db.Model):
     """This class represents entity for license key.
     """
     __tablename__ = "license_keys"
@@ -31,8 +29,6 @@ class LicenseKey(db.Model):
     #     emails = ListType(StringType)
     #     customer_name = StringType()
 
-    id = db.Column(db.Unicode(36), primary_key=True,
-                   default=lambda: str(uuid.uuid4()))
     _metadata = db.Column("metadata", JSON)
     name = db.Column(db.Unicode(255))
     code = db.Column(db.Unicode(255))
@@ -43,7 +39,6 @@ class LicenseKey(db.Model):
     valid = db.Column(db.Boolean)
     populated_at = db.Column(db.BigInteger)
     passkey = db.Column(db.Unicode(255))
-    created_at = db.Column(db.DateTime(True), default=datetime.utcnow)
 
     @property
     def resource_fields(self):
@@ -117,6 +112,3 @@ class LicenseKey(db.Model):
         if "autoupdate" not in self._metadata:
             return True
         return self._metadata.get("autoupdate") is True
-
-    def as_dict(self):
-        return self.resource_fields

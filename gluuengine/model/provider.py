@@ -3,36 +3,24 @@
 #
 # All rights reserved.
 
-import uuid
-from datetime import datetime
-
 from sqlalchemy import JSON
 
+from .base import BaseModelMixin
 from ..extensions import db
 from ..model import Node
 
 
-class Provider(db.Model):
+class Provider(BaseModelMixin, db.Model):
     __tablename__ = "providers"
 
-    id = db.Column(db.Unicode(36), primary_key=True,
-                   default=lambda: str(uuid.uuid4()))
     name = db.Column(db.Unicode(255))
     driver = db.Column(db.Unicode(128))
     driver_attrs = db.Column(JSON)
-    created_at = db.Column(db.DateTime(True), default=datetime.utcnow)
 
     __mapper_args__ = {
         "polymorphic_on": driver,
         "polymorphic_identity": "provider",
     }
-
-    @property
-    def resource_fields(self):
-        return {}
-
-    def as_dict(self):
-        return self.resource_fields
 
     def is_in_use(self):
         """Checks whether the provider has linked nodes.

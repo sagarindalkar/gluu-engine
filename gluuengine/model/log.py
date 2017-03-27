@@ -3,22 +3,17 @@
 #
 # All rights reserved.
 
-import uuid
-from datetime import datetime
-
+from .base import BaseModelMixin
 from ..extensions import db
 
 
-class ContainerLog(db.Model):
+class ContainerLog(BaseModelMixin, db.Model):
     __tablename__ = "container_logs"
 
-    id = db.Column(db.Unicode(36), primary_key=True,
-                   default=lambda: str(uuid.uuid4()))
     container_name = db.Column(db.Unicode(255))
     state = db.Column(db.Unicode(32))
     setup_log = db.Column(db.Unicode(255))
     teardown_log = db.Column(db.Unicode(255))
-    created_at = db.Column(db.DateTime(True), default=datetime.utcnow)
 
     @property
     def resource_fields(self):
@@ -48,6 +43,3 @@ class ContainerLog(db.Model):
         db.session.add(container_log)
         db.session.commit()
         return container_log
-
-    def as_dict(self):
-        return self.resource_fields

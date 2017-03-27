@@ -3,17 +3,13 @@
 #
 # All rights reserved.
 
-import uuid
-from datetime import datetime
-
+from .base import BaseModelMixin
 from ..extensions import db
 
 
-class LdapSetting(db.Model):
+class LdapSetting(BaseModelMixin, db.Model):
     __tablename__ = "ldap_settings"
 
-    id = db.Column(db.Unicode(36), primary_key=True,
-                   default=lambda: str(uuid.uuid4()))
     host = db.Column(db.Unicode(255))
     port = db.Column(db.Integer, default=1636)
     bind_dn = db.Column(db.Unicode(255))
@@ -21,7 +17,6 @@ class LdapSetting(db.Model):
     encoded_salt = db.Column(db.Unicode(255))
     inum_appliance = db.Column(db.Unicode(255))
     inum_org = db.Column(db.Unicode(255))
-    created_at = db.Column(db.DateTime(True), default=datetime.utcnow)
 
     @property
     def resource_fields(self):
@@ -49,6 +44,3 @@ class LdapSetting(db.Model):
                                .replace('!', '')
                                .replace('.', '')
         )
-
-    def as_dict(self):
-        return self.resource_fields

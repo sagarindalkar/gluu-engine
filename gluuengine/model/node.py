@@ -3,26 +3,21 @@
 #
 # All rights reserved.
 
-import uuid
-from datetime import datetime
-
 from sqlalchemy import JSON
 
+from .base import BaseModelMixin
 from .base import STATE_SUCCESS
 from .container import Container
 from ..extensions import db
 
 
-class Node(db.Model):
+class Node(BaseModelMixin, db.Model):
     __tablename__ = "nodes"
 
-    id = db.Column(db.Unicode(36), primary_key=True,
-                   default=lambda: str(uuid.uuid4()))
     name = db.Column(db.Unicode(36))
     provider_id = db.Column(db.Unicode(36))
     type = db.Column(db.Unicode(32))
     state_attrs = db.Column(JSON)
-    created_at = db.Column(db.DateTime(True), default=datetime.utcnow)
 
     __mapper_args__ = {
         "polymorphic_on": type,
@@ -58,13 +53,6 @@ class Node(db.Model):
         if type_:
             condition["type"] = type_
         return Container.query.filter_by(**condition).all()
-
-    def as_dict(self):
-        return self.resource_fields
-
-    @property
-    def resource_fields(self):
-        return {}
 
 
 class DiscoveryNode(Node):

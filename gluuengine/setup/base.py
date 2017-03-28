@@ -13,10 +13,11 @@ import uuid
 from jinja2 import Environment
 from jinja2 import PackageLoader
 
-from ..database import db
 from ..log import create_file_logger
 from ..machine import Machine
 from ..dockerclient import Docker
+from ..model import Node
+from ..model import LdapSetting
 
 
 class BaseSetup(object):
@@ -25,32 +26,24 @@ class BaseSetup(object):
     def __init__(self, container, cluster, app, logger=None):
         self.logger = logger or create_file_logger()
         self.app = app
-        self.build_dir = tempfile.mkdtemp()
-        self.container = container
-        self.node = db.get(self.container.node_id, "nodes")
-        self.cluster = cluster
-        self.jinja_env = Environment(
-            loader=PackageLoader("gluuengine", "templates")
-        )
-        self.template_dir = self.app.config["TEMPLATES_DIR"]
-        self.machine = Machine()
 
-        try:
-            master_node = db.search_from_table(
-                "nodes", {"type": "master"},
-            )[0]
-        except IndexError:  # pragma: no cover
-            master_node = self.node
+        with self.app.app_context():
+            self.build_dir = tempfile.mkdtemp()
+            self.container = container
+            self.node = Node.query.get(self.container.node_id)
 
-        self.docker = Docker(
-            self.machine.config(self.node.name),
-            self.machine.swarm_config(master_node.name),
-        )
-
-        try:
-            self.ldap_setting = db.all("ldap_settings")[0]
-        except IndexError:
-            self.ldap_setting = None
+            self.cluster = cluster
+            self.jinja_env = Environment(
+                loader=PackageLoader("gluuengine", "templates")
+            )
+            self.template_dir = self.app.config["TEMPLATES_DIR"]
+            self.machine = Machine()
+            master_node = Node.query.filter_by(type="master").first()
+            self.docker = Docker(
+                self.machine.config(self.node.name),
+                self.machine.swarm_config(master_node.name),
+            )
+            self.ldap_setting = LdapSetting.query.first()
 
     def setup(self):  # pragma: no cover
         """Runs the actual setup. Must be overriden by subclass.

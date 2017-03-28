@@ -7,40 +7,39 @@ from flask import request
 from flask import url_for
 from flask_restful import Resource
 
-from ..database import db
+from ..extensions import db
 from ..model import Cluster
 from ..reqparser import ClusterReq
 
 
 class ClusterResource(Resource):
     def get(self, cluster_id):
-        cluster = db.get(cluster_id, "clusters")
+        cluster = Cluster.query.get(cluster_id)
         if not cluster:
             return {"status": 404, "message": "Cluster not found"}, 404
         return cluster.as_dict()
 
     def delete(self, cluster_id):
-        cluster = db.get(cluster_id, "clusters")
+        cluster = Cluster.query.get(cluster_id)
         if not cluster:
             return {"status": 404, "message": "Cluster not found"}, 404
-
         if cluster.count_containers(state=""):
             msg = "Cannot delete cluster while having containers " \
                   "deployed on this cluster"
             return {"status": 403, "message": msg}, 403
 
-        db.delete(cluster_id, "clusters")
+        db.session.delete(cluster)
+        db.session.commit()
         return {}, 204
 
 
 class ClusterListResource(Resource):
     def get(self):
-        clusters = db.all("clusters")
-        return [cluster.as_dict() for cluster in clusters]
+        return [cluster.as_dict() for cluster in Cluster.query]
 
     def post(self):
         # limit to 1 cluster for now
-        if len(db.all("clusters")) >= 1:
+        if Cluster.query.count():
             return {"status": 403, "message": "cannot add more cluster"}, 403
 
         data, errors = ClusterReq().load(request.form)
@@ -52,8 +51,9 @@ class ClusterListResource(Resource):
                 "params": errors,
             }, 400
 
-        cluster = Cluster(data)
-        db.persist(cluster, "clusters")
+        cluster = Cluster(**data)
+        db.session.add(cluster)
+        db.session.commit()
 
         headers = {
             "Location": url_for("cluster", cluster_id=cluster.id),

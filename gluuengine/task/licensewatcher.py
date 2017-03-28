@@ -10,9 +10,10 @@ from crochet import run_in_reactor
 from requests.exceptions import ConnectionError
 from twisted.internet.task import LoopingCall
 
-from ..database import db
+from ..extensions import db
 from ..model import STATE_DISABLED
 from ..model import STATE_SUCCESS
+from ..model import LicenseKey
 from ..machine import Machine
 from ..utils import populate_license
 from ..utils import retrieve_current_date
@@ -75,7 +76,7 @@ class LicenseWatcherTask(object):
 
         # if license has been already updated within 24 hours,
         # no need to re-populate the license
-        if (current_date - license_key.updated_at) < UPDATE_INTERVAL_MILLIS:
+        if (current_date - license_key.populated_at) < UPDATE_INTERVAL_MILLIS:
             self.logger.info("license key is up-to-date")
             return
 
@@ -102,12 +103,15 @@ class LicenseWatcherTask(object):
                 retry_attempt += 1
             else:
                 # mark the latest update time
-                license_key.updated_at = retrieve_current_date()
-                db.update(license_key.id, license_key, "license_keys")
+                license_key.populated_at = retrieve_current_date()
+                with self.app.app_context():
+                    db.session.add(license_key)
+                    db.session.commit()
                 self.logger.info("license key has been updated")
                 break
 
-        worker_nodes = license_key.get_workers()
+        with self.app.app_context():
+            worker_nodes = license_key.get_workers()
 
         # cache the expiration state
         license_expired = license_key.expired
@@ -120,14 +124,10 @@ class LicenseWatcherTask(object):
                 # if we have specific containers being disabled in node,
                 # try to re-enable the containers
                 self.enable_containers(node, "oxauth")
-            # distribute_cluster_data(self.app, node)
 
     def get_license_key(self):
-        try:
-            license_key = db.all("license_keys")[0]
-        except IndexError:
-            license_key = None
-        return license_key
+        with self.app.app_context():
+            return LicenseKey.query.first()
 
     def disable_containers(self, node, type_):
         """Disables containers having specific type.
@@ -137,16 +137,19 @@ class LicenseWatcherTask(object):
         :param node: Node object.
         :param type_: Type of the container.
         """
-        containers = node.get_containers(type_=type_)
-        for container in containers:
-            container.state = STATE_DISABLED
-            db.update(container.id, container, "containers")
+        with self.app.app_context():
+            containers = node.get_containers(type_=type_)
 
-            self.machine.ssh(
-                node.name, "sudo docker stop {}".format(container.cid),
-            )
-            self.logger.info("{} container {} has been "
-                             "disabled".format(type_, container.name))
+            for container in containers:
+                container.state = STATE_DISABLED
+                db.session.add(container)
+                db.session.commit()
+
+                self.machine.ssh(
+                    node.name, "sudo docker stop {}".format(container.cid),
+                )
+                self.logger.info("{} container {} has been "
+                                 "disabled".format(type_, container.name))
 
     def enable_containers(self, node, type_):
         """Enables containers having specific type.
@@ -156,14 +159,16 @@ class LicenseWatcherTask(object):
         :param node: Node object.
         :param type_: Type of the container.
         """
-        containers = node.get_containers(type_=type_, state=STATE_DISABLED)
+        with self.app.app_context():
+            containers = node.get_containers(type_=type_, state=STATE_DISABLED)
 
-        for container in containers:
-            container.state = STATE_SUCCESS
-            db.update(container.id, container, "containers")
+            for container in containers:
+                container.state = STATE_SUCCESS
+                db.session.add(container)
+                db.session.commit()
 
-            self.machine.ssh(
-                node.name, "sudo docker restart {}".format(container.cid),
-            )
-            self.logger.info("{} container {} has been "
-                             "enabled".format(type_, container.id))
+                self.machine.ssh(
+                    node.name, "sudo docker restart {}".format(container.cid),
+                )
+                self.logger.info("{} container {} has been "
+                                 "enabled".format(type_, container.id))

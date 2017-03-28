@@ -3,84 +3,32 @@
 #
 # All rights reserved.
 
-import uuid
-
-from schematics.types import StringType
-
-from ._schema import CLUSTER_SCHEMA
-from .base import BaseModel
 from .base import STATE_SUCCESS
-from ..database import db
+from .base import BaseModelMixin
+from .container import Container
+from ..extensions import db
 from ..utils import decrypt_text
 
 
-class Cluster(BaseModel):
-    id = StringType(default=lambda: str(uuid.uuid4()))
-    name = StringType()
-    description = StringType()
-    ox_cluster_hostname = StringType()
-    org_name = StringType()
-    country_code = StringType()
-    city = StringType()
-    state = StringType()
-    admin_email = StringType()
-    passkey = StringType()
-    admin_pw = StringType()
-    _pyobject = StringType()
+class Cluster(BaseModelMixin, db.Model):
+    __tablename__ = "clusters"
 
-    @property
-    def resource_fields(self):
-        return {
-            'id': self.id,
-            'name': self.name,
-            'description': self.description,
-            'ox_cluster_hostname': self.ox_cluster_hostname,
-            'org_name': self.org_name,
-            'country_code': self.country_code,
-            'city': self.city,
-            'state': self.state,
-            'admin_email': self.admin_email,
-        }
+    name = db.Column(db.Unicode(255))
+    description = db.Column(db.Unicode(255))
+    ox_cluster_hostname = db.Column(db.Unicode(255))
+    org_name = db.Column(db.Unicode(128))
+    country_code = db.Column(db.Unicode(2))
+    city = db.Column(db.Unicode(64))
+    state = db.Column(db.Unicode(64))
+    admin_email = db.Column(db.Unicode(255))
+    passkey = db.Column(db.Unicode(255))
+    admin_pw = db.Column(db.Unicode(255))
 
     @property
     def decrypted_admin_pw(self):
         """Gets decrypted admin password.
         """
         return decrypt_text(self.admin_pw, self.passkey)
-
-    def count_containers(self, type_="", state=STATE_SUCCESS):
-        """Counts available containers objects (models).
-
-        :param state: State of the container (one of SUCCESS, DISABLED,
-                      FAILED, IN_PROGRESS).
-        :param type_: Type of the container.
-        :returns: A list of container objects.
-        """
-        condition = {"cluster_id": self.id}
-        if state:
-            condition["state"] = state
-        if type_:
-            condition["type"] = type_
-        return db.count_from_table("containers", condition)
-
-    def get_containers(self, type_="", state=STATE_SUCCESS):
-        """Gets available container objects (models).
-
-        :param state: State of the container (one of SUCCESS, DISABLED,
-                      FAILED, IN_PROGRESS).
-        :param type_: Type of the container.
-        :returns: A list of container objects.
-        """
-        condition = {"cluster_id": self.id}
-        if state:
-            condition["state"] = state
-        if type_:
-            condition["type"] = type_
-        return db.search_from_table("containers", condition)
-
-    @property
-    def _schema(self):
-        return CLUSTER_SCHEMA
 
     @property
     def shib_jks_fn(self):
@@ -101,3 +49,47 @@ class Cluster(BaseModel):
     @property
     def asimba_jks_fn(self):
         return "/etc/certs/asimbaIDP.jks"
+
+    @property
+    def resource_fields(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'description': self.description,
+            'ox_cluster_hostname': self.ox_cluster_hostname,
+            'org_name': self.org_name,
+            'country_code': self.country_code,
+            'city': self.city,
+            'state': self.state,
+            'admin_email': self.admin_email,
+        }
+
+    def count_containers(self, type_="", state=STATE_SUCCESS):
+        """Counts available containers objects (models).
+
+        :param state: State of the container (one of SUCCESS, DISABLED,
+                      FAILED, IN_PROGRESS).
+        :param type_: Type of the container.
+        :returns: A counter of how many container objects related to the cluster.
+        """
+        condition = {"cluster_id": self.id}
+        if state:
+            condition["state"] = state
+        if type_:
+            condition["type"] = type_
+        return Container.query.filter_by(**condition).count()
+
+    def get_containers(self, type_="", state=STATE_SUCCESS):
+        """Gets available container objects (models).
+
+        :param state: State of the container (one of SUCCESS, DISABLED,
+                      FAILED, IN_PROGRESS).
+        :param type_: Type of the container.
+        :returns: A list of container objects.
+        """
+        condition = {"cluster_id": self.id}
+        if state:
+            condition["state"] = state
+        if type_:
+            condition["type"] = type_
+        return Container.query.filter_by(**condition).all()

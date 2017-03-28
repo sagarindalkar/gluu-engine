@@ -3,29 +3,10 @@
 #
 # All rights reserved.
 
-from schematics.models import Model
+import uuid
+from datetime import datetime
 
-
-class BaseModel(Model):
-    resource_fields = {}
-
-    def __init__(self, raw_data=None, deserialize_mapping=None, strict=True):
-        super(BaseModel, self).__init__(
-            raw_data=raw_data,
-            deserialize_mapping=deserialize_mapping,
-            strict=False,
-        )
-
-    def as_dict(self):
-        return self.resource_fields
-
-    @property
-    def column_types(self):
-        """Special column types. Useful for column check in fixed-schema
-        database backend, for example MySQL.
-        """
-        return {}
-
+from ..extensions import db
 
 #: A flag to mark state as ``SUCCESS``
 STATE_SUCCESS = "SUCCESS"
@@ -43,3 +24,16 @@ STATE_SETUP_IN_PROGRESS = "SETUP_IN_PROGRESS"
 STATE_SETUP_FINISHED = "SETUP_FINISHED"
 STATE_TEARDOWN_IN_PROGRESS = "TEARDOWN_IN_PROGRESS"
 STATE_TEARDOWN_FINISHED = "TEARDOWN_FINISHED"
+
+
+class BaseModelMixin(object):
+    id = db.Column(db.Unicode(36), primary_key=True,
+                   default=lambda: str(uuid.uuid4()))
+    created_at = db.Column(db.DateTime(True), default=datetime.utcnow)
+
+    @property
+    def resource_fields(self):
+        return {}
+
+    def as_dict(self):
+        return self.resource_fields

@@ -6,7 +6,7 @@
 from flask import request
 from flask_restful import Resource
 
-from ..database import db
+from ..extensions import db
 from ..model import LdapSetting
 from ..reqparser import LdapSettingReq
 
@@ -19,41 +19,28 @@ class LdapSettingResource(Resource):
                 "status": 400,
                 "message": "Invalid data",
                 "params": errors,
-            }
-
-        if errors:
-            return {
-                "status": 400,
-                "message": "Invalid data",
-                "params": errors,
             }, 400
 
-        try:
-            ldap_setting = db.all("ldap_settings")[0]
-        except IndexError:
-            ldap_setting = LdapSetting(data)
-            db.persist(ldap_setting, "ldap_settings")
+        ldap_setting = LdapSetting.query.first()
+        if not ldap_setting:
+            ldap_setting = LdapSetting(**data)
         else:
             for k, v in data.iteritems():
                 setattr(ldap_setting, k, v)
-            db.update(ldap_setting.id, ldap_setting, "ldap_settings")
-        finally:
-            return ldap_setting.as_dict()
+
+        db.session.add(ldap_setting)
+        db.session.commit()
+        return ldap_setting.as_dict()
 
     def get(self):
-        try:
-            ldap_setting = db.all("ldap_settings")[0]
-        except IndexError:
-            return {}
-        else:
+        ldap_setting = LdapSetting.query.first()
+        if ldap_setting:
             return ldap_setting.as_dict()
+        return {}
 
     def delete(self):
-        try:
-            ldap_setting = db.all("ldap_settings")[0]
-        except IndexError:
-            ldap_setting = {}
-        else:
-            db.delete(ldap_setting.id, "ldap_settings")
-        finally:
-            return {}, 204
+        ldap_setting = LdapSetting.query.first()
+        if ldap_setting:
+            db.session.delete(ldap_setting)
+            db.session.commit()
+        return {}, 204

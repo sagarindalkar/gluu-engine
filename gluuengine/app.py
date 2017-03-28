@@ -14,6 +14,8 @@ from .settings import DevConfig
 from .settings import TestConfig
 from .extensions import restapi
 from .extensions import ma
+from .extensions import db
+from .extensions import migrate
 from .resource import NodeResource
 from .resource import NodeListResource
 from .resource import CreateNodeResource
@@ -33,7 +35,6 @@ from .resource import ContainerResource
 from .resource import NewContainerResource
 from .resource import ScaleContainerResource
 from .resource import LdapSettingResource
-from .database import db
 from .setup.signals import connect_setup_signals
 from .setup.signals import connect_teardown_signals
 from .log import configure_global_logging
@@ -79,6 +80,7 @@ def register_extensions(app):  # pragma: no cover
     restapi.init_app(app)
     db.init_app(app)
     ma.init_app(app)
+    migrate.init_app(app)
 
 
 def register_resources():  # pragma: no cover
@@ -155,3 +157,7 @@ def register_resources():  # pragma: no cover
                          "/settings/ldap",
                          endpoint="ldap_setting",
                          )
+
+
+# to satisfy Flask>=0.11, use this as FLASK_APP value
+_application = create_app()

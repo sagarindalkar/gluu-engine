@@ -13,12 +13,14 @@ from ..model import DiscoveryNode
 from ..model import MasterNode
 from ..model import WorkerNode
 from ..model import MsgconNode
+from ..model import Node
+from ..model import LicenseKey
 from ..node import DeployDiscoveryNode
 from ..node import DeployMasterNode
 from ..node import DeployWorkerNode
 from ..node import DeployMsgconNode
 from ..machine import Machine
-from ..database import db
+from ..extensions import db
 from ..utils import as_boolean
 
 # TODO: put it in config
@@ -31,13 +33,7 @@ class Discovery(object):
 
 
 def find_discovery():
-    try:
-        dnode = db.search_from_table(
-            "nodes", {"type": "discovery"}
-        )[0]
-    except IndexError:
-        dnode = None
-    return dnode
+    return Node.query.filter_by(type="discovery").first()
 
 
 def load_discovery(machine):
@@ -61,7 +57,7 @@ class CreateNodeResource(Resource):
                 "message": "Node type is not supported",
             }, 404
 
-        data, errors = NodeReq(context={"type": node_type}).load(request.form)
+        data, errors = NodeReq().load(request.form)
         if errors:
             return {
                 "status": 400,
@@ -70,59 +66,59 @@ class CreateNodeResource(Resource):
             }, 400
 
         if node_type == 'discovery':
-            if db.count_from_table('nodes', {'type': 'discovery'}):
+            if Node.query.filter_by(type="discovery").count():
                 return {
                     "status": 403,
                     "message": "discovery node is already created",
                 }, 403
 
-            node = DiscoveryNode(data)
-            db.persist(node, 'nodes')
+            node = DiscoveryNode(**data)
+            db.session.add(node)
+            db.session.commit()
             dn = DeployDiscoveryNode(node, app)
             dn.deploy()
 
         if node_type == 'msgcon':
-            if not db.count_from_table('nodes', {'type': 'master'}):
+            if not Node.query.filter_by(type="master").count():
                 return {
                     "status": 403,
                     "message": "msgcon node needs a master node",
                 }, 403
             discovery = load_discovery(self.machine)
-            node = MsgconNode(data)
-            db.persist(node, 'nodes')
+            node = MsgconNode(**data)
+            db.session.add(node)
+            db.session.commit()
             dn = DeployMsgconNode(node, discovery, app)
             dn.deploy()
 
         if node_type == 'master':
-            if not db.count_from_table('nodes', {'type': 'discovery'}):
+            if not Node.query.filter_by(type="discovery").count():
                 return {
                     "status": 403,
                     "message": "master node needs a discovery",
                 }, 403
 
-            if db.count_from_table('nodes', {'type': 'master'}):
+            if Node.query.filter_by(type="master").count():
                 return {
                     "status": 403,
                     "message": "master node is already created",
                 }, 403
             discovery = load_discovery(self.machine)
-            node = MasterNode(data)
-            db.persist(node, 'nodes')
+            node = MasterNode(**data)
+            db.session.add(node)
+            db.session.commit()
             dn = DeployMasterNode(node, discovery, app)
             dn.deploy()
 
         if node_type == 'worker':
-            if not db.count_from_table('nodes', {'type': 'master'}):
+            if not Node.query.filter_by(type="master").count():
                 return {
                     "status": 403,
                     "message": "worker node needs a master node",
                 }, 403
 
             if as_boolean(app.config["ENABLE_LICENSE"]):
-                try:
-                    license_key = db.all("license_keys")[0]
-                except IndexError:
-                    license_key = None
+                license_key = LicenseKey.query.first()
 
                 if not license_key:
                     return {
@@ -150,8 +146,9 @@ class CreateNodeResource(Resource):
                         "message": "creating worker node requires active license",
                     }, 403
             discovery = load_discovery(self.machine)
-            node = WorkerNode(data)
-            db.persist(node, 'nodes')
+            node = WorkerNode(**data)
+            db.session.add(node)
+            db.session.commit()
             dn = DeployWorkerNode(node, discovery, app)
             dn.deploy()
 
@@ -163,8 +160,10 @@ class CreateNodeResource(Resource):
 
 class NodeListResource(Resource):
     def get(self):
-        nodes = db.all("nodes")
-        return [node.as_dict() for node in nodes]
+        return [
+            node.as_dict()
+            for node in Node.query.order_by(Node.created_at.asc())
+        ]
 
 
 class NodeResource(Resource):
@@ -172,17 +171,14 @@ class NodeResource(Resource):
         self.machine = Machine()
 
     def get(self, node_name):
-        nodes = db.search_from_table('nodes', {'name': node_name})
-        if not nodes:
+        node = Node.query.filter_by(name=node_name).first()
+        if not node:
             return {"status": 404, "message": "node not found"}, 404
-        else:
-            return nodes[0].as_dict()
+        return node.as_dict()
 
     def delete(self, node_name):
-        nodes = db.search_from_table('nodes', {'name': node_name})
-        if nodes:
-            node = nodes[0]
-        else:
+        node = Node.query.filter_by(name=node_name).first()
+        if not node:
             return {
                 "status": 404,
                 "message": "node not found"
@@ -195,13 +191,13 @@ class NodeResource(Resource):
                 "message": "cannot delete node when it has containers",
             }, 403
 
-        if node.type == 'master' and db.count_from_table('nodes', {'type': 'worker'}):
+        if node.type == 'master' and Node.query.filter_by(type="worker").count():
             return {
                 "status": 403,
                 "message": "there are still worker nodes running"
             }, 403
 
-        if node.type == 'discovery' and db.count_from_table('nodes', {'type': 'master'}):
+        if node.type == 'discovery' and Node.query.filter_by(type="master").count():
             return {
                 "status": 403,
                 "message": "master node still running"
@@ -211,7 +207,8 @@ class NodeResource(Resource):
         if running:
             try:
                 self.machine.rm(node.name)
-                db.delete(node.id, 'nodes')
+                db.session.delete(node)
+                db.session.commit()
             except RuntimeError as e:
                 current_app.logger.warn(e)
                 msg = str(e)  # TODO log
@@ -219,28 +216,23 @@ class NodeResource(Resource):
                     "status": 500,
                     "message": msg,
                 }, 500
+                db.session.rollback()
         else:
-            db.delete(node.id, 'nodes')
+            db.session.delete(node)
+            db.session.commit()
         return {}, 204
 
     def put(self, node_name):
         app = current_app._get_current_object()
 
-        nodes = db.search_from_table('nodes', {'name': node_name})
-        if nodes:
-            node = nodes[0]
-        else:
+        node = Node.query.filter_by(name=node_name).first()
+        if not node:
             return {
                 "status": 404,
                 "message": "node not found"
             }, 404
 
-        try:
-            dcv_node = db.search_from_table(
-                "nodes", {"type": "discovery"}
-            )[0]
-        except IndexError:
-            dcv_node = None
+        dcv_node = find_discovery()
 
         if node.type != 'discovery':
             discovery = Discovery()
@@ -253,6 +245,8 @@ class NodeResource(Resource):
             dn = DeployMasterNode(node, discovery, app)
         if node.type == 'worker':
             dn = DeployWorkerNode(node, discovery, app)
+        if node.type == "msgcon":
+            dn = DeployMsgconNode(node, discovery, app)
 
         dn.deploy()
         headers = {

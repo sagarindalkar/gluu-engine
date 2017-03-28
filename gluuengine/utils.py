@@ -249,5 +249,6 @@ def populate_license(license_key):
         license_key.valid = decoded_license["valid"]
         # setting metadata directly will raise error on value conversion,
         # hence we're importing the data
-        license_key.metadata.import_data(decoded_license["metadata"])
+        # license_key.metadata.import_data(decoded_license["metadata"])
+        license_key._metadata = decoded_license["metadata"]
         return license_key, err

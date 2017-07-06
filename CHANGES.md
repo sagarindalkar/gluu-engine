@@ -2,6 +2,12 @@
 
 Here you can see the full list of changes between each `gluu-engine` release.
 
+## Version 0.7.0-beta1
+
+Released on July 7th, 2017.
+
+* Added experimental support for CE 3.0.1 (breaking changes).
+
 ## Version 0.6.4
 
 Released on March 16th, 2017.

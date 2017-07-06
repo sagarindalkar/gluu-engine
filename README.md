@@ -9,3 +9,7 @@ the design of the gluu-engine component.
 ## Deployment
 
 Refer to [installation docs](https://www.gluu.org/docs-docker-edition/admin-guide/installation/) to deploy and run gluu-engine.
+
+## Status
+
+As per 2017-07-07, the development is on-hold state as we're in process of migrating images to other schedulers.

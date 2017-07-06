@@ -14,6 +14,8 @@ from .settings import DevConfig
 from .settings import TestConfig
 from .extensions import restapi
 from .extensions import ma
+from .extensions import db
+from .extensions import migrate
 from .resource import NodeResource
 from .resource import NodeListResource
 from .resource import CreateNodeResource
@@ -32,7 +34,7 @@ from .resource import ContainerListResource
 from .resource import ContainerResource
 from .resource import NewContainerResource
 from .resource import ScaleContainerResource
-from .database import db
+from .resource import LdapSettingResource
 from .setup.signals import connect_setup_signals
 from .setup.signals import connect_teardown_signals
 from .log import configure_global_logging
@@ -59,7 +61,6 @@ def create_app():
     app.config.from_object(_get_config_object(api_env))
 
     # loads custom ``settings.py`` from instance folder
-    # to enable weave encryption put WEAVE_ENCRYPTION = True
     app.instance_path = app.config["INSTANCE_DIR"]
     app.config.from_pyfile(
         os.path.join(app.instance_path, "settings.py"),
@@ -79,6 +80,7 @@ def register_extensions(app):  # pragma: no cover
     restapi.init_app(app)
     db.init_app(app)
     ma.init_app(app)
+    migrate.init_app(app)
 
 
 def register_resources():  # pragma: no cover
@@ -150,3 +152,12 @@ def register_resources():  # pragma: no cover
                          "/scale-containers/<string:container_type>/<int:number>",
                          endpoint="scale_container",
                          )
+
+    restapi.add_resource(LdapSettingResource,
+                         "/settings/ldap",
+                         endpoint="ldap_setting",
+                         )
+
+
+# to satisfy Flask>=0.11, use this as FLASK_APP value
+_application = create_app()

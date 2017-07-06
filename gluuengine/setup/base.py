@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2015 Gluu
+# Copyright (c) 2017 Gluu
 #
 # All rights reserved.
 
@@ -13,12 +13,11 @@ import uuid
 from jinja2 import Environment
 from jinja2 import PackageLoader
 
-from ..database import db
 from ..log import create_file_logger
-from ..errors import DockerExecError
 from ..machine import Machine
 from ..dockerclient import Docker
-from ..weave import Weave
+from ..model import Node
+from ..model import LdapSetting
 
 
 class BaseSetup(object):
@@ -27,27 +26,24 @@ class BaseSetup(object):
     def __init__(self, container, cluster, app, logger=None):
         self.logger = logger or create_file_logger()
         self.app = app
-        self.build_dir = tempfile.mkdtemp()
-        self.container = container
-        self.node = db.get(self.container.node_id, "nodes")
-        self.cluster = cluster
-        self.jinja_env = Environment(
-            loader=PackageLoader("gluuengine", "templates")
-        )
-        self.template_dir = self.app.config["TEMPLATES_DIR"]
-        self.machine = Machine()
 
-        try:
-            master_node = db.search_from_table(
-                "nodes", {"type": "master"},
-            )[0]
-        except IndexError:  # pragma: no cover
-            master_node = self.node
+        with self.app.app_context():
+            self.build_dir = tempfile.mkdtemp()
+            self.container = container
+            self.node = Node.query.get(self.container.node_id)
 
-        self.docker = Docker(
-            self.machine.config(self.node.name),
-            self.machine.swarm_config(master_node.name),
-        )
+            self.cluster = cluster
+            self.jinja_env = Environment(
+                loader=PackageLoader("gluuengine", "templates")
+            )
+            self.template_dir = self.app.config["TEMPLATES_DIR"]
+            self.machine = Machine()
+            master_node = Node.query.filter_by(type="master").first()
+            self.docker = Docker(
+                self.machine.config(self.node.name),
+                self.machine.swarm_config(master_node.name),
+            )
+            self.ldap_setting = LdapSetting.query.first()
 
     def setup(self):  # pragma: no cover
         """Runs the actual setup. Must be overriden by subclass.
@@ -240,37 +236,29 @@ class BaseSetup(object):
         self.docker.exec_cmd(self.container.cid, "supervisorctl reload")
         time.sleep(self.supervisor_reload_delay)
 
-    def ldap_failover_hostname(self):
-        return self.ldap_host
-
     @property
     def ldap_binddn(self):
-        if self.cluster.external_ldap:
-            return self.cluster.external_ldap_binddn
-        return self.cluster.ldap_binddn
+        return getattr(self.ldap_setting, "bind_dn", "")
 
     @property
-    def encoded_ox_ldap_pw(self):
-        if self.cluster.external_ldap:
-            return self.cluster.external_ldap_encoded_password
-        return self.cluster.encoded_ox_ldap_pw
+    def encoded_bind_password(self):
+        return getattr(self.ldap_setting, "encoded_bind_password", "")
+
+    @property
+    def encoded_salt(self):
+        return getattr(self.ldap_setting, "encoded_salt", "")
 
     @property
     def inum_appliance(self):
-        if self.cluster.external_ldap:
-            return self.cluster.external_ldap_inum_appliance
-        return self.cluster.inum_appliance
+        return getattr(self.ldap_setting, "inum_appliance", "")
+
+    @property
+    def ldap_port(self):
+        return getattr(self.ldap_setting, "port", 0)
 
     @property
     def ldap_host(self):
-        # get hostname for ldap failover
-        if self.cluster.external_ldap:
-            hostname = self.cluster.external_ldap_host
-        else:
-            weave = Weave(self.node, self.app)
-            _, dns_search = weave.dns_args()
-            hostname = "ldap.{}".format(dns_search.rstrip("."))
-        return hostname
+        return getattr(self.ldap_setting, "host", "")
 
     def get_web_cert(self):
         hostname = self.cluster.ox_cluster_hostname.split(":")[0]
@@ -294,23 +282,23 @@ class BaseSetup(object):
             self.docker.copy_from_container(self.container.cid, "/etc/certs/nginx.crt", ssl_cert)
             self.docker.copy_from_container(self.container.cid, "/etc/certs/nginx.key", ssl_key)
 
+    def add_auto_startup_entry(self):
+        """Adds supervisor program for auto-startup.
+        """
+
 
 class OxSetup(BaseSetup):
     def write_salt_file(self):
         """Copies salt file.
         """
-        if self.cluster.external_ldap:
-            salt = self.cluster.external_encoded_salt
-        else:
-            salt = self.cluster.passkey
-
         self.logger.debug("writing salt file")
 
+        salt = self.encoded_salt
         local_dest = os.path.join(self.build_dir, "salt")
         with codecs.open(local_dest, "w", encoding="utf-8") as fp:
             fp.write("encodeSalt = {}".format(salt))
 
-        remote_dest = os.path.join(self.container.tomcat_conf_dir, "salt")
+        remote_dest = os.path.join(self.container.container_attrs["conf_dir"], "salt")
         self.docker.copy_to_container(self.container.cid, local_dest, remote_dest)
 
     def gen_keystore(self, suffix, keystore_fn, keystore_pw, in_key,
@@ -369,39 +357,21 @@ class OxSetup(BaseSetup):
         """
 
         src = "_shared/ox-ldap.properties"
-        dest = os.path.join(self.container.tomcat_conf_dir, os.path.basename(src))
+        dest = os.path.join(self.container.container_attrs["conf_dir"], os.path.basename(src))
 
         ctx = {
             "ldap_binddn": self.ldap_binddn,
-            "encoded_ox_ldap_pw": self.encoded_ox_ldap_pw,
-            "ldap_hosts": "{}:{}".format(self.ldap_failover_hostname(), self.cluster.ldaps_port),
+            "encoded_ox_ldap_pw": self.encoded_bind_password,
+            "ldap_hosts": "{}:{}".format(self.ldap_host, self.ldap_port),
             "inum_appliance": self.inum_appliance,
             "cert_folder": self.container.cert_folder,
         }
         self.copy_rendered_jinja_template(src, dest, ctx)
 
-    def configure_vhost(self):
-        """Configures Apache2 virtual host.
-        """
-        a2enmod_cmd = "a2enmod ssl headers proxy proxy_http proxy_ajp"
-        self.docker.exec_cmd(self.container.cid, a2enmod_cmd)
-
-        a2dissite_cmd = "a2dissite 000-default"
-        self.docker.exec_cmd(self.container.cid, a2dissite_cmd)
-
-        a2ensite_cmd = "a2ensite gluu_httpd"
-        self.docker.exec_cmd(self.container.cid, a2ensite_cmd)
-
     def import_nginx_cert(self):
-        """Imports SSL certificate from nginx container.
+        """Imports SSL certificate (.der format) into keystore.
         """
         self.logger.debug("importing nginx cert to {}".format(self.container.name))
-
-        # imports nginx cert into oxtrust cacerts to avoid
-        # "peer not authenticated" error
-        ssl_cert = os.path.join(self.app.config["SSL_CERT_DIR"], "nginx.crt")
-        self.docker.copy_to_container(self.container.cid, ssl_cert, "/etc/certs/nginx.crt")
-
         der_cmd = "openssl x509 -outform der -in /etc/certs/nginx.crt -out /etc/certs/nginx.der"
         self.docker.exec_cmd(self.container.cid, der_cmd)
 
@@ -413,9 +383,11 @@ class OxSetup(BaseSetup):
             "-storepass changeit -noprompt",
         ])
         import_cmd = '''sh -c "{}"'''.format(import_cmd)
+        self.docker.exec_cmd(self.container.cid, import_cmd)
 
-        try:
-            self.docker.exec_cmd(self.container.cid, import_cmd)
-        except DockerExecError as exc:  # pragma: no cover
-            if exc.exit_code == 1:
-                self.logger.warn("certificate already imported")
+    def discover_nginx(self):
+        """Discovers nginx node.
+        """
+        self.logger.debug("discovering available nginx container")
+        if self.cluster.count_containers(type_="nginx"):
+            self.import_nginx_cert()

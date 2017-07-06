@@ -12,16 +12,13 @@ class NginxSetup(BaseSetup):
     def render_https_conf(self):
         """Copies rendered nginx virtual host config.
         """
-        def resolve_weave_ip(container_id):
-            return self.docker.get_container_ip(container_id)
-
         oxauth_containers = []
         if self.cluster.count_containers("oxauth"):
-            oxauth_containers.append("oxauth.weave.local")
+            oxauth_containers.append("oxauth")
 
         oxtrust_containers = []
         if self.cluster.count_containers("oxtrust"):
-            oxtrust_containers.append("oxtrust.weave.local")
+            oxtrust_containers.append("oxtrust")
 
         ctx = {
             "ox_cluster_hostname": self.cluster.ox_cluster_hostname,
@@ -46,14 +43,6 @@ class NginxSetup(BaseSetup):
         symlink_cmd = "ln -sf /etc/nginx/sites-available/gluu_https.conf " \
                       "/etc/nginx/sites-enabled/gluu_https.conf"
         self.docker.exec_cmd(self.container.cid, symlink_cmd)
-
-    def add_auto_startup_entry(self):
-        """Adds supervisor program for auto-startup.
-        """
-        self.logger.debug("adding nginx config for supervisord")
-        src = "nginx/nginx.conf"
-        dest = "/etc/supervisor/conf.d/nginx.conf"
-        self.copy_rendered_jinja_template(src, dest)
 
     def restart_nginx(self):
         """Restarts nginx via supervisorctl.

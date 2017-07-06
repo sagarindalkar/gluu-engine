@@ -10,11 +10,11 @@ import os
 from docker.tls import TLSConfig
 
 from ..utils import po_run
-from ..registry import REGISTRY_BASE_URL
 
 LS_FIELDS = ["Name", "Active", "ActiveHost", "ActiveSwarm", "DriverName",
              "State", "URL", "Swarm", "Error", "DockerVersion", "ResponseTime"]
-GLUU_GET_DOCKER = 'https://raw.githubusercontent.com/GluuFederation/cluster-tools/master/get_docker.sh'
+# GLUU_GET_DOCKER = 'https://raw.githubusercontent.com/GluuFederation/cluster-tools/master/get_docker.sh'
+GLUU_GET_DOCKER = 'https://raw.githubusercontent.com/GluuFederation/cluster-tools/ce-3/get_docker.sh'
 
 class Machine(object):
     def __init__(self, path='docker-machine'):
@@ -129,11 +129,7 @@ class Machine(object):
             cmd.append(self._dicovery(discovery))
             cmd.append('--engine-label=org.gluu.node-type={}'.format(node.type))
 
-        if node.type in ("master", "worker",):
-            cmd.append("--engine-insecure-registry=https://{}".format(REGISTRY_BASE_URL))
-
         cmd.append(node.name)
-
         cmd = " ".join(cmd)
         self._run(cmd)
         return True
@@ -192,6 +188,7 @@ class Machine(object):
         return True
 
     def ssh(self, machine_name, cmd=""):
+        stdout = ""
         if cmd:
             cmd = 'ssh {} {}'.format(machine_name, cmd)
             stdout, stderr, error = self._run(cmd)

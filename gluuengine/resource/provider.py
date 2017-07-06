@@ -8,13 +8,14 @@ from flask import request
 from flask import url_for
 from flask_restful import Resource
 
-from ..database import db
+from ..extensions import db
 from ..reqparser import GenericProviderReq
 from ..reqparser import DigitalOceanProviderReq
 from ..reqparser import AwsProviderReq
 from ..model import GenericProvider
 from ..model import DigitalOceanProvider
 from ..model import AwsProvider
+from ..model.provider import Provider
 
 PROVIDER_TYPES = (
     'generic',
@@ -67,8 +68,9 @@ class CreateProviderResource(Resource):
             }, 400
 
         model_cls = self.model_cls[provider_type]
-        provider = model_cls(data)
-        db.persist(provider, "providers")
+        provider = model_cls(**data)
+        db.session.add(provider)
+        db.session.commit()
 
         headers = {
             "Location": url_for("provider", provider_id=provider.id),
@@ -79,49 +81,33 @@ class CreateProviderResource(Resource):
 class ProviderListResource(Resource):
     def get(self, provider_type=""):
         if not provider_type:
-            # list all providers by type
-            providers = db.all("providers")
-            return [provider.as_dict() for provider in providers]
+            # list all providers regardless their type
+            return [
+                provider.as_dict()
+                for provider in Provider.query
+                                        .order_by(Provider.created_at.asc())
+            ]
 
         if provider_type not in PROVIDER_TYPES:
             abort(404)
 
-        # list specific provider types
-        providers = db.search_from_table("providers", {'driver': provider_type})
-        return [provider.as_dict() for provider in providers]
+        # list specific provider by its type
+        return [
+            provider.as_dict()
+            for provider in Provider.query.filter_by(driver=provider_type)
+                                          .order_by(Provider.created_at.asc())
+        ]
 
 
 class ProviderResource(Resource):
-    def __init__(self):
-        self.validate = {
-            'generic': self.validate_generic,
-            # 'aws': self.validate_aws,
-            'digitalocean': self.validate_digitalocean,
-            # 'google': self.validate_google,
-        }
-
-    def validate_generic(self):
-        data, errors = GenericProviderReq().load(request.form)
-        return data, errors
-
-    # def validate_aws(self):
-    #     pass
-
-    def validate_digitalocean(self):
-        data, errors = DigitalOceanProviderReq().load(request.form)
-        return data, errors
-
-    # def validate_google(self):
-    #     pass
-
     def get(self, provider_id):
-        provider = db.get(provider_id, "providers")
+        provider = Provider.query.get(provider_id)
         if not provider:
             return {"status": 404, "message": "Provider not found"}, 404
         return provider.as_dict()
 
     def delete(self, provider_id):
-        provider = db.get(provider_id, "providers")
+        provider = Provider.query.get(provider_id)
         if not provider:
             return {"status": 404, "message": "Provider not found"}, 404
 
@@ -130,22 +116,6 @@ class ProviderResource(Resource):
                   deployed using this provider"
             return {"status": 403, "message": msg}, 403
 
-        db.delete(provider_id, 'providers')
+        db.session.delete(provider)
+        db.session.commit()
         return {}, 204
-
-    def put(self, provider_id):
-        provider = db.get(provider_id, "providers")
-        if not provider:
-            return {"status": 404, "message": "Provider not found"}, 404
-
-        data, errors = self.validate[provider.driver]()
-        if errors:
-            return {
-                "status": 400,
-                "message": "Invalid data",
-                "params": errors,
-            }, 400
-
-        provider.populate(data)
-        db.update(provider.id, provider, "providers")
-        return provider.as_dict()

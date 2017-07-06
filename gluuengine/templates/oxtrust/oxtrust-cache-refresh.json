@@ -32,6 +32,6 @@
     "useSearchLimit":false,
     "attributeMapping":[
     ],
-    "snapshotFolder":"/var/ox/oxtrust/vds-snapshots",
+    "snapshotFolder":"/var/ox/identity/cr-snapshots",
     "snapshotMaxCount":10
 }

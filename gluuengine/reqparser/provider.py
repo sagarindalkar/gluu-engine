@@ -17,7 +17,7 @@ from ..extensions import ma
 HOSTNAME_RE = re.compile('^(?![0-9]+$)(?!-)[a-zA-Z0-9-]{,63}(?<!-)$')
 NAME_RE = re.compile('^[a-zA-Z0-9_]+$')
 USERNAME_RE = re.compile('^[a-z_][a-z0-9_-]*[$]?$')
-DRIVERS = ['generic', 'amazonec2', 'digitalocean', 'google']
+# DRIVERS = ['generic', 'amazonec2', 'digitalocean', 'google']
 
 
 def valid_ip(ip):
@@ -122,11 +122,11 @@ class DigitalOceanProviderReq(BaseProviderReq):
     # enable backups for droplet
     digitalocean_backups = ma.Bool(default=False)
 
-    # # Digital Ocean Image
-    # digitalocean_image = ma.Str(default="ubuntu-14-04-x64")
+    # Digital Ocean Image
+    digitalocean_image = ma.Str(missing="ubuntu-14-04-x64")
 
-    # # enable ipv6 for droplet
-    # digitalocean_ipv6 = ma.Bool(default=False)
+    # enable ipv6 for droplet
+    digitalocean_ipv6 = ma.Bool(missing=False)
 
     # enable private networking for droplet
     digitalocean_private_networking = ma.Bool(default=False)
@@ -147,6 +147,8 @@ class DigitalOceanProviderReq(BaseProviderReq):
             "digitalocean_private_networking": data.pop("digitalocean_private_networking"),
             "digitalocean_region": data.pop("digitalocean_region"),
             "digitalocean_size": data.pop("digitalocean_size"),
+            "digitalocean_image": data.pop("digitalocean_image"),
+            "digitalocean_ipv6": data.pop("digitalocean_ipv6"),
         }
         return data
 
@@ -181,9 +183,10 @@ AWS_INSTANCE_TYPE_CHOICES = (
 class AwsProviderReq(BaseProviderReq):
     amazonec2_access_key = ma.Str(required=True)
     amazonec2_secret_key = ma.Str(required=True)
-    amazonec2_region = ma.Str(required=True, validate=OneOf(AWS_REGION_CHOICES))
+    amazonec2_region = ma.Str(validate=OneOf(AWS_REGION_CHOICES))
     amazonec2_instance_type = ma.Str(validate=OneOf(AWS_INSTANCE_TYPE_CHOICES), default="m4.large")
     amazonec2_private_address_only = ma.Bool(default=False)
+    amazonec2_ami = ma.Str(missing="ami-5f709f34")
 
     @post_load
     def finalize_data(self, data):
@@ -193,5 +196,6 @@ class AwsProviderReq(BaseProviderReq):
             "amazonec2_region": data.pop("amazonec2_region"),
             "amazonec2_instance_type": data.pop("amazonec2_instance_type"),
             "amazonec2_private_address_only": data.pop("amazonec2_private_address_only"),
+            "amazonec2_ami": data.pop("amazonec2_ami"),
         }
         return data

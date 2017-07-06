@@ -1,16 +1,16 @@
-def test_create_log(app, db, container_log, ldap_container):
+def test_create_log(app, db, container_log, oxauth_container):
     from gluuengine.model import ContainerLog
 
-    ldap_container.name = "ldap-123"
-    db.persist(ldap_container, "containers")
-    container_log.container_name = ldap_container.name
+    oxauth_container.name = "oxauth-123"
+    db.persist(oxauth_container, "containers")
+    container_log.container_name = oxauth_container.name
     db.persist(container_log, "container_logs")
-    assert ContainerLog.create_or_get(ldap_container)
+    assert ContainerLog.create_or_get(oxauth_container)
 
 
-def test_get_log(app, db, container_log, ldap_container):
+def test_get_log(app, db, container_log, oxauth_container):
     from gluuengine.model import ContainerLog
 
-    ldap_container.name = "ldap-123"
-    db.persist(ldap_container, "containers")
-    assert ContainerLog.create_or_get(ldap_container)
+    oxauth_container.name = "oxauth-123"
+    db.persist(oxauth_container, "containers")
+    assert ContainerLog.create_or_get(oxauth_container)

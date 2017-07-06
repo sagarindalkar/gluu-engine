@@ -20,14 +20,11 @@ class OxidpSetup(OxSetup):
         hostname = self.container.hostname
 
         # render config templates
-        self.render_server_xml_template()
         self.render_ldap_props_template()
         self.write_salt_file()
-        self.render_httpd_conf()
-        self.configure_vhost()
 
         self.gen_cert("shibIDP", self.cluster.decrypted_admin_pw,
-                      "tomcat", "tomcat", hostname)
+                      "jetty", "jetty", hostname)
         self.get_web_cert()
 
         # IDP keystore
@@ -37,8 +34,8 @@ class OxidpSetup(OxSetup):
             self.cluster.decrypted_admin_pw,
             "{}/shibIDP.key".format(self.container.cert_folder),
             "{}/shibIDP.crt".format(self.container.cert_folder),
-            "tomcat",
-            "tomcat",
+            "jetty",
+            "jetty",
             hostname,
         )
 
@@ -47,25 +44,25 @@ class OxidpSetup(OxSetup):
         self.pull_shib_certkey()
 
         self.add_auto_startup_entry()
-        self.change_cert_access("tomcat", "tomcat")
+        self.change_cert_access("jetty", "jetty")
         self.reload_supervisor()
         return True
 
     def after_setup(self):
         """Post-setup callback.
         """
-        self.render_nutcracker_conf()
+        # self.render_nutcracker_conf()
 
-        # notify oxidp peers to re-render their nutcracker.yml
-        # and restart the daemon
-        for container in self.cluster.get_containers(type_="oxidp"):
-            if container.cid == self.container.cid:
-                continue
+        # # notify oxidp peers to re-render their nutcracker.yml
+        # # and restart the daemon
+        # for container in self.cluster.get_containers(type_="oxidp"):
+        #     if container.cid == self.container.cid:
+        #         continue
 
-            setup_obj = OxidpSetup(container, self.cluster,
-                                   self.app, logger=self.logger)
-            setup_obj.render_nutcracker_conf()
-            setup_obj.restart_nutcracker()
+        #     setup_obj = OxidpSetup(container, self.cluster,
+        #                            self.app, logger=self.logger)
+        #     setup_obj.render_nutcracker_conf()
+        #     setup_obj.restart_nutcracker()
 
         self.discover_nginx()
         complete_sgn = signal("ox_setup_completed")
@@ -98,40 +95,35 @@ class OxidpSetup(OxSetup):
                 if exc.exit_code == 1:
                     pass
 
-        if self.cluster.external_ldap:
-            import_certs(self.cluster.external_ldap_host,
-                         self.cluster.external_ldap_port)
-        else:
-            for ldap in self.cluster.get_containers(type_="ldap"):
-                import_certs(ldap.hostname, self.cluster.ldaps_port)
+        import_certs(self.ldap_host, self.ldap_port)
 
-    def render_nutcracker_conf(self):
-        """Copies twemproxy configuration into the container.
-        """
-        ctx = {
-            "oxidp_containers": self.cluster.get_containers(type_="oxidp"),
-        }
-        self.copy_rendered_jinja_template(
-            "oxidp/nutcracker.yml",
-            "/etc/nutcracker.yml",
-            ctx,
-        )
+    # def render_nutcracker_conf(self):
+    #     """Copies twemproxy configuration into the container.
+    #     """
+    #     ctx = {
+    #         "oxidp_containers": self.cluster.get_containers(type_="oxidp"),
+    #     }
+    #     self.copy_rendered_jinja_template(
+    #         "oxidp/nutcracker.yml",
+    #         "/etc/nutcracker.yml",
+    #         ctx,
+    #     )
 
-    def restart_nutcracker(self):
-        """Restarts twemproxy via supervisorctl.
-        """
-        self.logger.debug("restarting twemproxy in {}".format(self.container.name))
-        restart_cmd = "supervisorctl restart nutcracker"
-        self.docker.exec_cmd(self.container.cid, restart_cmd)
+    # def restart_nutcracker(self):
+    #     """Restarts twemproxy via supervisorctl.
+    #     """
+    #     self.logger.debug("restarting twemproxy in {}".format(self.container.name))
+    #     restart_cmd = "supervisorctl restart nutcracker"
+    #     self.docker.exec_cmd(self.container.cid, restart_cmd)
 
     def teardown(self):
         """Teardowns the container.
         """
-        for container in self.cluster.get_containers(type_="oxidp"):
-            setup_obj = OxidpSetup(container, self.cluster,
-                                   self.app, logger=self.logger)
-            setup_obj.render_nutcracker_conf()
-            setup_obj.restart_nutcracker()
+        # for container in self.cluster.get_containers(type_="oxidp"):
+        #     setup_obj = OxidpSetup(container, self.cluster,
+        #                            self.app, logger=self.logger)
+        #     setup_obj.render_nutcracker_conf()
+        #     setup_obj.restart_nutcracker()
 
         complete_sgn = signal("ox_teardown_completed")
         complete_sgn.send(self)
@@ -165,54 +157,6 @@ class OxidpSetup(OxSetup):
             shutil.rmtree(tmp)
         except OSError:
             pass
-
-    def add_auto_startup_entry(self):
-        """Adds supervisor program for auto-startup.
-        """
-        self.logger.debug("adding tomcat config for supervisord")
-        src = "_shared/tomcat.conf"
-        dest = "/etc/supervisor/conf.d/tomcat.conf"
-        self.copy_rendered_jinja_template(src, dest)
-
-        self.logger.debug("adding httpd config for supervisord")
-        src = "_shared/httpd.conf"
-        dest = "/etc/supervisor/conf.d/httpd.conf"
-        self.copy_rendered_jinja_template(src, dest)
-
-        self.logger.debug("adding memcached config for supervisord")
-        src = "oxidp/memcached.conf"
-        dest = "/etc/supervisor/conf.d/memcached.conf"
-        self.copy_rendered_jinja_template(src, dest)
-
-        self.logger.debug("adding nutcracker config for supervisord")
-        src = "oxidp/nutcracker.conf"
-        dest = "/etc/supervisor/conf.d/nutcracker.conf"
-        self.copy_rendered_jinja_template(src, dest)
-
-    def render_server_xml_template(self):
-        """Copies rendered Tomcat's server.xml into the container.
-        """
-        src = "oxidp/server.xml"
-        dest = os.path.join(self.container.tomcat_conf_dir, os.path.basename(src))
-        ctx = {
-            "shib_jks_pass": self.cluster.decrypted_admin_pw,
-            "shib_jks_fn": self.cluster.shib_jks_fn,
-        }
-        self.copy_rendered_jinja_template(src, dest, ctx)
-
-    def render_httpd_conf(self):
-        """Copies rendered Apache2's virtual host into the container.
-        """
-        src = "oxidp/gluu_httpd.conf"
-        file_basename = os.path.basename(src)
-        dest = os.path.join("/etc/apache2/sites-available", file_basename)
-
-        ctx = {
-            "hostname": self.container.hostname,
-            "httpd_cert_fn": "/etc/certs/nginx.crt",
-            "httpd_key_fn": "/etc/certs/nginx.key",
-        }
-        self.copy_rendered_jinja_template(src, dest, ctx)
 
     def pull_shib_certkey(self):
         try:
@@ -260,10 +204,3 @@ class OxidpSetup(OxSetup):
                 os.unlink(fn)
             except OSError:
                 pass
-
-    def discover_nginx(self):
-        """Discovers nginx node.
-        """
-        self.logger.debug("discovering available nginx container")
-        if self.cluster.count_containers(type_="nginx"):
-            self.import_nginx_cert()

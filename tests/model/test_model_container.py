@@ -1,7 +1,3 @@
-def test_ldap_recovery_priority(ldap_container):
-    assert ldap_container.recovery_priority == 1
-
-
 def test_oxauth_recovery_priority(oxauth_container):
     assert oxauth_container.recovery_priority == 2
 

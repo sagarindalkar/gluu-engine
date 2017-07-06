@@ -3,26 +3,34 @@
 #
 # All rights reserved.
 
-import uuid
+from sqlalchemy import JSON
 
-from schematics.types import IntType
-from schematics.types import StringType
-from schematics.types.compound import PolyModelType
-
-from ._schema import CONTAINER_SCHEMA
-from .base import BaseModel
+from .base import BaseModelMixin
+from ..extensions import db
 
 
-class Container(BaseModel):
+class Container(BaseModelMixin, db.Model):
+    __tablename__ = "containers"
+
+    cluster_id = db.Column(db.Unicode(36))
+    node_id = db.Column(db.Unicode(36))
+    container_attrs = db.Column(JSON)
+    name = db.Column(db.Unicode(255))
+    state = db.Column(db.Unicode(32))
+    type = db.Column(db.Unicode(32))
+    hostname = db.Column(db.Unicode(255))
+    cid = db.Column(db.Unicode(128))
+
+    __mapper_args__ = {
+        "polymorphic_on": type,
+        "polymorphic_identity": "container",
+    }
+
     @property
-    def _schema(self):
-        return CONTAINER_SCHEMA
-
-    def _resolve_container_attr(self, field):
-        try:
-            return self.container_attrs.get(field)
-        except (AttributeError, TypeError,):
-            return self._initial.get(field)
+    def image(self):
+        """Container image. Must be overriden in subclass.
+        """
+        raise NotImplemented("image for the container must be defined")
 
     @property
     def resource_fields(self):
@@ -38,315 +46,142 @@ class Container(BaseModel):
         }
 
 
-class LdapContainer(Container):
-    class ContainerAttrs(BaseModel):
-        ldap_type = StringType(default="opendj")
-        truststore_fn = StringType(
-            default='/usr/lib/jvm/java-7-openjdk-amd64'
-                    '/jre/lib/security/cacerts',
-        )
-        cert_folder = StringType(default="/etc/certs")
-        opendj_cert_fn = StringType(default='/etc/certs/opendj.crt')
-        ldap_binddn = StringType(default='cn=directory manager')
-        ldap_port = StringType(default='1389')
-        ldaps_port = StringType(default='1636')
-        ldap_jmx_port = StringType(default='1689')
-        ldap_admin_port = StringType(default='4444')
-        ldap_replication_port = StringType(default="8989")
-        ldap_base_folder = StringType(default='/opt/opendj')
-        ldap_start_timeout = IntType(default=30)
-        ldap_setup_command = StringType(default='/opt/opendj/setup')
-        ldap_run_command = StringType(default='/opt/opendj/bin/start-ds')
-        ldap_dsconfig_command = StringType(default="/opt/opendj/bin/dsconfig")
-        ldap_ds_java_prop_command = StringType(
-            default="/opt/opendj/bin/dsjavaproperties",
-        )
-        ldap_pass_fn = StringType(default='/home/ldap/.pw')
-        schema_folder = StringType(
-            default="/opt/opendj/template/config/schema",
-        )
-        org_custom_schema = StringType(
-            default="/opt/opendj/config/schema/100-user.ldif",
-        )
-
-    id = StringType(default=lambda: str(uuid.uuid4()))
-    cluster_id = StringType()
-    node_id = StringType()
-    name = StringType()
-    type = StringType(default="ldap")
-    state = StringType()
-    hostname = StringType()
-    cid = StringType()
-    container_attrs = PolyModelType(ContainerAttrs, strict=False)
-    _pyobject = StringType()
-
-    @property
-    def ldap_pass_fn(self):
-        return self._resolve_container_attr("ldap_pass_fn")
-
-    @property
-    def schema_folder(self):
-        return self._resolve_container_attr("schema_folder")
-
-    @property
-    def ldap_base_folder(self):
-        return self._resolve_container_attr("ldap_base_folder")
-
-    @property
-    def ldap_port(self):
-        return self._resolve_container_attr("ldap_port")
-
-    @property
-    def ldap_jmx_port(self):
-        return self._resolve_container_attr("ldap_jmx_port")
-
-    @property
-    def ldap_admin_port(self):
-        return self._resolve_container_attr("ldap_admin_port")
-
-    @property
-    def ldap_setup_command(self):
-        return self._resolve_container_attr("ldap_setup_command")
-
-    @property
-    def ldap_ds_java_prop_command(self):
-        return self._resolve_container_attr("ldap_ds_java_prop_command")
-
-    @property
-    def ldap_dsconfig_command(self):
-        return self._resolve_container_attr("ldap_dsconfig_command")
-
-    @property
-    def opendj_cert_fn(self):
-        return self._resolve_container_attr("opendj_cert_fn")
-
-    @property
-    def truststore_fn(self):
-        return self._resolve_container_attr("truststore_fn")
-
-    @property
-    def ldap_replication_port(self):
-        return self._resolve_container_attr("ldap_replication_port")
-
-    @property
-    def keytool_command(self):
-        # Full path to java keytool command
-        return '/usr/bin/keytool'
-
-    @property
-    def openssl_command(self):
-        # Full path to openssl command
-        return '/usr/bin/openssl'
-
-    @property
-    def recovery_priority(self):
-        """Gets recovery priority number used by recovery script.
-        """
-        return 1
-
-    @property
-    def image(self):
-        # currently only supports opendj
-        return "gluuopendj"
-
-
 class OxauthContainer(Container):
-    class ContainerAttrs(BaseModel):
-        truststore_fn = StringType(
-            default='/usr/lib/jvm/java-7-openjdk-amd64'
-                    '/jre/lib/security/cacerts',
-        )
-        ldap_binddn = StringType(default='cn=directory manager')
-        cert_folder = StringType(default="/etc/certs")
-        oxauth_lib = StringType(default="/opt/tomcat/webapps/oxauth/WEB-INF/lib")
-        tomcat_home = StringType(default="/opt/tomcat")
-        tomcat_conf_dir = StringType(default="/opt/tomcat/conf")
-        tomcat_log_folder = StringType(default="/opt/tomcat/logs")
-
-    id = StringType(default=lambda: str(uuid.uuid4()))
-    cluster_id = StringType()
-    node_id = StringType()
-    name = StringType()
-    type = StringType(default="oxauth")
-    state = StringType()
-    hostname = StringType()
-    cid = StringType()
-    container_attrs = PolyModelType(ContainerAttrs, strict=False)
-    _pyobject = StringType()
-
-    @property
-    def tomcat_conf_dir(self):
-        return self._resolve_container_attr("tomcat_conf_dir")
+    __mapper_args__ = {
+        "polymorphic_identity": "oxauth",
+    }
 
     @property
     def cert_folder(self):
-        return self._resolve_container_attr("cert_folder")
-
-    @property
-    def recovery_priority(self):
-        """Gets recovery priority number used by recovery script.
-        """
-        return 2
+        return self.container_attrs["cert_folder"]
 
     @property
     def image(self):
-        return "gluuoxauth"
+        return "oxauth"
+
+    @property
+    def truststore_fn(self):
+        return "/usr/lib/jvm/default-java/jre/lib/security/cacerts"
+
+
+@db.event.listens_for(OxauthContainer, "init")
+def receive_init_oxauth(target, args, kwargs):
+    target.container_attrs = {
+        "ldap_binddn": "cn=directory manager,o=gluu",
+        "cert_folder": "/etc/certs",
+        "oxauth_lib": "/opt/gluu/jetty/oxauth/webapps/oxauth/WEB-INF/lib",
+        "conf_dir": "/etc/gluu/conf",
+    }
 
 
 class OxtrustContainer(Container):
-    class ContainerAttrs(BaseModel):
-        truststore_fn = StringType(
-            default='/usr/lib/jvm/java-7-openjdk-amd64'
-                    '/jre/lib/security/cacerts',
-        )
-        ldap_binddn = StringType(default='cn=directory manager')
-        cert_folder = StringType(default="/etc/certs")
-        tomcat_home = StringType(default="/opt/tomcat")
-        tomcat_conf_dir = StringType(default="/opt/tomcat/conf")
-        tomcat_log_folder = StringType(default="/opt/tomcat/logs")
-
-    id = StringType(default=lambda: str(uuid.uuid4()))
-    cluster_id = StringType()
-    node_id = StringType()
-    name = StringType()
-    type = StringType(default="oxtrust")
-    state = StringType()
-    hostname = StringType()
-    cid = StringType()
-    container_attrs = PolyModelType(ContainerAttrs, strict=False)
-    _pyobject = StringType()
-
-    @property
-    def recovery_priority(self):
-        """Gets recovery priority number used by recovery script.
-        """
-        return 3
+    __mapper_args__ = {
+        "polymorphic_identity": "oxtrust",
+    }
 
     @property
     def cert_folder(self):
-        return self._resolve_container_attr("cert_folder")
-
-    @property
-    def tomcat_conf_dir(self):
-        return self._resolve_container_attr("tomcat_conf_dir")
+        return self.container_attrs["cert_folder"]
 
     @property
     def image(self):
-        return "gluuoxtrust"
+        return "oxtrust"
 
     @property
     def truststore_fn(self):
-        return self._resolve_container_attr("truststore_fn")
+        return "/usr/lib/jvm/default-java/jre/lib/security/cacerts"
+
+
+@db.event.listens_for(OxtrustContainer, "init")
+def receive_init_oxtrust(target, args, kwargs):
+    target.container_attrs = {
+        "cert_folder": "/etc/certs",
+        "ldap_binddn": "cn=directory manager,o=gluu",
+        "conf_dir": "/etc/gluu/conf",
+    }
 
 
 class OxidpContainer(Container):
-    class ContainerAttrs(BaseModel):
-        truststore_fn = StringType(
-            default='/usr/lib/jvm/java-7-openjdk-amd64'
-                    '/jre/lib/security/cacerts',
-        )
-        ldap_binddn = StringType(default='cn=directory manager')
-        cert_folder = StringType(default="/etc/certs")
-        tomcat_home = StringType(default="/opt/tomcat")
-        tomcat_conf_dir = StringType(default="/opt/tomcat/conf")
-        tomcat_log_folder = StringType(default="/opt/tomcat/logs")
-        saml_type = StringType(default="shibboleth")
-
-    id = StringType(default=lambda: str(uuid.uuid4()))
-    cluster_id = StringType()
-    node_id = StringType()
-    name = StringType()
-    type = StringType(default="oxidp")
-    state = StringType()
-    hostname = StringType()
-    cid = StringType()
-    container_attrs = PolyModelType(ContainerAttrs, strict=False)
-    _pyobject = StringType()
-
-    @property
-    def recovery_priority(self):
-        """Gets recovery priority number used by recovery script.
-        """
-        return 4
+    __mapper_args__ = {
+        "polymorphic_identity": "oxidp",
+    }
 
     @property
     def image(self):
-        return "gluuoxidp"
+        return "oxidp"
 
     @property
     def cert_folder(self):
-        return self._resolve_container_attr("cert_folder")
+        return self.container_attrs["cert_folder"]
 
     @property
     def truststore_fn(self):
-        return self._resolve_container_attr("truststore_fn")
+        return "/usr/lib/jvm/default-java/jre/lib/security/cacerts"
+
+
+@db.event.listens_for(OxidpContainer, "init")
+def receive_init_oxidp(target, args, kwargs):
+    target.container_attrs = {
+        "cert_folder": "/etc/certs",
+        "ldap_binddn": "cn=directory manager,o=gluu",
+        "conf_dir": "/etc/gluu/conf",
+        "saml_type": "shibboleth",
+    }
 
 
 class NginxContainer(Container):
-    class ContainerAttrs(BaseModel):
-        cert_folder = StringType(default="/etc/certs")
-
-    id = StringType(default=lambda: str(uuid.uuid4()))
-    cluster_id = StringType()
-    node_id = StringType()
-    name = StringType()
-    type = StringType(default="nginx")
-    state = StringType()
-    hostname = StringType()
-    cid = StringType()
-    container_attrs = PolyModelType(ContainerAttrs, strict=False)
-    _pyobject = StringType()
-
-    @property
-    def recovery_priority(self):
-        """Gets recovery priority number used by recovery script.
-        """
-        return 5
+    __mapper_args__ = {
+        "polymorphic_identity": "nginx",
+    }
 
     @property
     def image(self):
-        return "gluunginx"
+        return "nginx"
 
     @property
     def cert_folder(self):
-        return self._resolve_container_attr("cert_folder")
+        return self.container_attrs["cert_folder"]
+
+
+@db.event.listens_for(NginxContainer, "init")
+def receive_init_nginx(target, args, kwargs):
+    target.container_attrs = {
+        "cert_folder": "/etc/certs",
+    }
 
 
 class OxasimbaContainer(Container):
-    class ContainerAttrs(BaseModel):
-        truststore_fn = StringType(
-            default='/usr/lib/jvm/java-7-openjdk-amd64'
-                    '/jre/lib/security/cacerts',
-        )
-        ldap_binddn = StringType(default='cn=directory manager')
-        cert_folder = StringType(default="/etc/certs")
-        tomcat_home = StringType(default="/opt/tomcat")
-        tomcat_conf_dir = StringType(default="/opt/tomcat/conf")
-        tomcat_log_folder = StringType(default="/opt/tomcat/logs")
-
-    id = StringType(default=lambda: str(uuid.uuid4()))
-    cluster_id = StringType()
-    node_id = StringType()
-    name = StringType()
-    type = StringType(default="oxasimba")
-    state = StringType()
-    hostname = StringType()
-    cid = StringType()
-    container_attrs = PolyModelType(ContainerAttrs, strict=False)
-    _pyobject = StringType()
-
-    @property
-    def recovery_priority(self):
-        return 6
+    __mapper_args__ = {
+        "polymorphic_identity": "oxasimba",
+    }
 
     @property
     def image(self):
-        return "gluuoxasimba"
+        return "oxasimba"
 
     @property
     def cert_folder(self):
-        return self._resolve_container_attr("cert_folder")
+        return self.container_attrs["cert_folder"]
 
     @property
-    def tomcat_conf_dir(self):
-        return self._resolve_container_attr("tomcat_conf_dir")
+    def truststore_fn(self):
+        return "/usr/lib/jvm/default-java/jre/lib/security/cacerts"
+
+
+@db.event.listens_for(OxasimbaContainer, "init")
+def receive_init_oxasimba(target, args, kwargs):
+    target.container_attrs = {
+        "cert_folder": "/etc/certs",
+        "ldap_binddn": "cn=directory manager,o=gluu",
+        "conf_dir": "/etc/gluu/conf",
+    }
+
+
+class OxelevenContainer(Container):
+    __mapper_args__ = {
+        "polymorphic_identity": "oxeleven",
+    }
+
+    @property
+    def image(self):
+        return "oxeleven"

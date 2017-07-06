@@ -10,8 +10,9 @@ import tempfile
 
 from crochet import run_in_reactor
 
-from ..database import db
+from ..extensions import db
 from ..machine import Machine
+from ..model import Container
 
 
 @run_in_reactor
@@ -30,10 +31,7 @@ def distribute_shared_database(app, node):
         logger.warn("cluster is currently unavailable")
         return
 
-    containers = db.search_from_table(
-        "containers",
-        {"node_id": node.id},
-    )
+    containers = Container.query.filter_by(node_id=node.id).all()
 
     data = {}
     data["clusters"] = {1: clusters[0].as_dict()}
@@ -58,5 +56,5 @@ def distribute_shared_database(app, node):
                         "reason={}".format(filepath, exc))
 
 
-# backward-compat
-distribute_cluster_data = distribute_shared_database
+# # backward-compat
+# distribute_cluster_data = distribute_shared_database

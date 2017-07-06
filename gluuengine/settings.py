@@ -43,7 +43,7 @@ class Config(object):
     OXIDP_LOGS_VOLUME_DIR = os.path.join(LOG_DIR, "oxidp")
     OXTRUST_LOGS_VOLUME_DIR = os.path.join(LOG_DIR, "oxtrust")
 
-    GLUU_IMAGE_TAG = os.environ.get("GLUU_IMAGE_TAG", "latest")
+    GLUU_IMAGE_TAG = os.environ.get("GLUU_IMAGE_TAG", "gluu-engine")
     ENABLE_LICENSE = True
 
     # FSWATCHER_SCRIPT_URL = os.environ.get(

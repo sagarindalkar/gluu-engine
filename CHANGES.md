@@ -2,6 +2,12 @@
 
 Here you can see the full list of changes between each `gluu-engine` release.
 
+## Version 0.7.0-beta2
+
+Released on July 8th, 2017.
+
+* Fixed module imports.
+
 ## Version 0.7.0-beta1
 
 Released on July 7th, 2017.

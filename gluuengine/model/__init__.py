@@ -39,12 +39,4 @@ from .base import STATE_SETUP_FINISHED  # noqa
 from .base import STATE_TEARDOWN_IN_PROGRESS  # noqa
 from .base import STATE_TEARDOWN_FINISHED  # noqa
 
-from ._schema import CLUSTER_SCHEMA  # noqa
-from ._schema import CONTAINER_SCHEMA  # noqa
-from ._schema import CONTAINER_LOG_SCHEMA  # noqa
-from ._schema import NODE_SCHEMA  # noqa
-from ._schema import PROVIDER_SCHEMA  # noqa
-from ._schema import LICENSE_KEY_SCHEMA  # noqa
-from ._schema import LDAP_SETTING_SCHEMA  # noqa
-
 from .setting import LdapSetting  # noqa
